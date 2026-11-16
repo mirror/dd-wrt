@@ -56,3 +56,10 @@ ct expectation set "ctexpect1";ok
 %synproxy2 type synproxy mss 1460 wscale 7 timestamp sack-perm;ok
 
 synproxy name tcp dport map {443 : "synproxy1", 80 : "synproxy2"};ok
+
+# connlimit
+%connlimit1 type ct count { over 5 };ok
+%connlimit2 type ct count { until 4 };ok
+
+ct count name tcp dport map {22 : "connlimit1", 80 : "connlimit2"};ok
+ct count name "connlimit1";ok

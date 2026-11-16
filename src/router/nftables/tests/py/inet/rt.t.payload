@@ -1,18 +1,17 @@
 # meta nfproto ipv4 rt nexthop 192.168.0.1
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ rt load nexthop4 => reg 1 ]
-  [ cmp eq reg 1 0x0100a8c0 ]
+  [ cmp eq reg 1 0xc0a80001 ]
 
 # rt ip6 nexthop fd00::1
 inet test-inet output
   [ rt load nexthop6 => reg 1 ]
-  [ cmp eq reg 1 0x000000fd 0x00000000 0x00000000 0x01000000 ]
+  [ cmp eq reg 1 0xfd000000 0x00000000 0x00000000 0x00000001 ]
 
 # tcp option maxseg size set rt mtu
 inet test-inet output
   [ rt load tcpmss => reg 1 ]
   [ byteorder reg 1 = hton(reg 1, 2, 2) ]
   [ exthdr write tcpopt reg 1 => 2b @ 2 + 2 ]
-

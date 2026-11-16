@@ -112,8 +112,12 @@ void xt_stmt_xlate(const struct stmt *stmt, struct output_ctx *octx)
 		break;
 	}
 
-	if (rc == 1)
+	if (rc == 1) {
 		nft_print(octx, "%s", xt_xlate_get(xl));
+		if (xt_xlate_get_comment(xl))
+			nft_print(octx, "comment %s",
+				  xt_xlate_get_comment(xl));
+	}
 	xt_xlate_free(xl);
 	free(entry);
 #endif

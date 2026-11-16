@@ -6,10 +6,9 @@ ip test-ip4 input
 # rt ipsec exists
 ip test-ip4 input
   [ rt load ipsec => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # rt ipsec missing
 ip test-ip4 input
   [ rt load ipsec => reg 1 ]
-  [ cmp eq reg 1 0x00000000 ]
-
+  [ cmp eq reg 1 0x00 ]

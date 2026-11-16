@@ -1,0 +1,40 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip6",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "ip6",
+        "name": "imap",
+        "table": "t",
+        "type": "ipv6_addr",
+        "handle": 0,
+        "map": "verdict",
+        "flags": [
+          "interval",
+          "timeout"
+        ],
+        "elem": [
+          [
+            "2000::dead",
+            {
+              "accept": null
+            }
+          ]
+        ]
+      }
+    }
+  ]
+}

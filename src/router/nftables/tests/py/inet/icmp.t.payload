@@ -1,54 +1,53 @@
 # icmp type echo-request
 inet test-inet output 
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
   [ payload load 1b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x08 ]
 
 # icmpv6 type echo-request
 inet test-inet output 
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000003a ]
+  [ cmp eq reg 1 0x3a ]
   [ payload load 1b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000080 ]
+  [ cmp eq reg 1 0x80 ]
 
 # meta nfproto ipv4 icmp type echo-request
 inet test-inet output 
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
   [ payload load 1b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x08 ]
 
 # meta nfproto ipv4 icmpv6 type echo-request
 inet test-inet output 
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000003a ]
+  [ cmp eq reg 1 0x3a ]
   [ payload load 1b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000080 ]
+  [ cmp eq reg 1 0x80 ]
 
 # meta nfproto ipv6 icmp type echo-request
 inet test-inet output 
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
   [ payload load 1b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x08 ]
 
 # meta nfproto ipv6 icmpv6 type echo-request
 inet test-inet output 
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000003a ]
+  [ cmp eq reg 1 0x3a ]
   [ payload load 1b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000080 ]
-
+  [ cmp eq reg 1 0x80 ]

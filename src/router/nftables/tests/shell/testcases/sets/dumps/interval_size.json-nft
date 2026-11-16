@@ -29,6 +29,7 @@
         },
         "handle": 0,
         "size": 1,
+        "count": 1,
         "flags": [
           "interval"
         ],
@@ -58,6 +59,7 @@
         },
         "handle": 0,
         "size": 1,
+        "count": 1,
         "flags": [
           "interval"
         ],

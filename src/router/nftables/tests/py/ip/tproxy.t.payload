@@ -1,44 +1,43 @@
 # meta l4proto 17 tproxy to 192.0.2.1
 ip x y 
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
-  [ immediate reg 1 0x010200c0 ]
+  [ cmp eq reg 1 0x11 ]
+  [ immediate reg 1 0xc0000201 ]
   [ tproxy ip addr reg 1 ]
 
 # meta l4proto 6 tproxy to 192.0.2.1:50080
 ip x y 
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
-  [ immediate reg 1 0x010200c0 ]
-  [ immediate reg 2 0x0000a0c3 ]
+  [ cmp eq reg 1 0x06 ]
+  [ immediate reg 1 0xc0000201 ]
+  [ immediate reg 2 0xc3a0 ]
   [ tproxy ip addr reg 1 port reg 2 ]
 
 # ip protocol 6 tproxy to :50080
 ip x y 
   [ payload load 1b @ network header + 9 => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
-  [ immediate reg 1 0x0000a0c3 ]
+  [ cmp eq reg 1 0x06 ]
+  [ immediate reg 1 0xc3a0 ]
   [ tproxy ip port reg 1 ]
 
 # meta l4proto 17 tproxy ip to 192.0.2.1
 ip x y 
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
-  [ immediate reg 1 0x010200c0 ]
+  [ cmp eq reg 1 0x11 ]
+  [ immediate reg 1 0xc0000201 ]
   [ tproxy ip addr reg 1 ]
 
 # meta l4proto 6 tproxy ip to 192.0.2.1:50080
 ip x y 
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
-  [ immediate reg 1 0x010200c0 ]
-  [ immediate reg 2 0x0000a0c3 ]
+  [ cmp eq reg 1 0x06 ]
+  [ immediate reg 1 0xc0000201 ]
+  [ immediate reg 2 0xc3a0 ]
   [ tproxy ip addr reg 1 port reg 2 ]
 
 # ip protocol 6 tproxy ip to :50080
 ip x y 
   [ payload load 1b @ network header + 9 => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
-  [ immediate reg 1 0x0000a0c3 ]
+  [ cmp eq reg 1 0x06 ]
+  [ immediate reg 1 0xc3a0 ]
   [ tproxy ip port reg 1 ]
-

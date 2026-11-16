@@ -1,0 +1,127 @@
+table ip t {
+	set foo {
+		type ipv4_addr
+		size 65535
+		flags dynamic
+	}
+
+	flowtable ft {
+		hook ingress priority filter
+	}
+
+	chain c {
+		limit rate 1/second burst 5 packets accept
+		limit rate 1/second burst 5 packets drop
+		limit rate 1/second burst 5 packets continue
+		limit rate 1/second burst 5 packets jump c2
+		limit rate 1/second burst 5 packets goto c2
+		limit rate 1/second burst 5 packets return
+		limit rate 1/second burst 5 packets add @foo { ip saddr counter }
+		limit rate 1/second burst 5 packets counter packets 0 bytes 0
+		limit rate 1/second burst 5 packets limit rate 1/day burst 5 packets
+		limit rate 1/second burst 5 packets quota 1 bytes
+		limit rate 1/second burst 5 packets ct count 1
+		limit rate 1/second burst 5 packets notrack
+		limit rate 1/second burst 5 packets flow add @ft
+		limit rate 1/second burst 5 packets meta nftrace set 1
+		limit rate 1/second burst 5 packets log
+		limit rate 1/second burst 5 packets reject
+		limit rate 1/second burst 5 packets snat to 0.0.0.1
+		limit rate 1/second burst 5 packets dnat to 0.0.0.1
+		limit rate 1/second burst 5 packets queue to 1
+		limit rate 1/second burst 5 packets ct mark set 0x00000001
+		limit rate 1/second burst 5 packets masquerade
+		limit rate 1/second burst 5 packets redirect
+		limit rate 1/second burst 5 packets add @foo { ip saddr }
+		limit rate 1/second burst 5 packets add @foo { ip saddr }
+		limit rate 1/second burst 5 packets update @foo { ip saddr }
+		limit rate 1/second burst 5 packets delete @foo { ip saddr }
+		limit rate 1/second burst 5 packets synproxy
+		limit rate 1/second burst 5 packets reset tcp option timestamp
+		limit rate 1/second burst 5 packets ip version 0
+		limit rate 1/second burst 5 packets ether saddr 00:00:00:00:00:00
+		limit rate 1/second burst 5 packets vlan id 0
+		limit rate 1/second burst 5 packets ip saddr 0.0.0.0
+		limit rate 1/second burst 5 packets icmp type echo-reply
+		limit rate 1/second burst 5 packets igmp type 0
+		limit rate 1/second burst 5 packets icmpv6 type 0
+		limit rate 1/second burst 5 packets ah spi 0
+		limit rate 1/second burst 5 packets esp spi 0
+		limit rate 1/second burst 5 packets comp cpi 0
+		limit rate 1/second burst 5 packets udp sport 0
+		limit rate 1/second burst 5 packets udplite sport 0
+		limit rate 1/second burst 5 packets tcp sport 0
+		limit rate 1/second burst 5 packets dccp sport 0
+		limit rate 1/second burst 5 packets sctp sport 0
+		limit rate 1/second burst 5 packets th sport 0
+		limit rate 1/second burst 5 packets gre flags 0
+		limit rate 1/second burst 5 packets gretap ip saddr 0.0.0.0
+		limit rate 1/second burst 5 packets meta length 0
+		limit rate 1/second burst 5 packets meta mark 0x00000000
+		limit rate 1/second burst 5 packets iif 0
+		limit rate 1/second burst 5 packets iifname "foo"
+		limit rate 1/second burst 5 packets meta iiftype 0
+		limit rate 1/second burst 5 packets oif 0
+		limit rate 1/second burst 5 packets oifname "foo"
+		limit rate 1/second burst 5 packets meta oiftype 0
+		limit rate 1/second burst 5 packets meta skuid 0
+		limit rate 1/second burst 5 packets meta skgid 0
+		limit rate 1/second burst 5 packets meta rtclassid "cosmos"
+		limit rate 1/second burst 5 packets meta pkttype host
+		limit rate 1/second burst 5 packets meta cpu 0
+		limit rate 1/second burst 5 packets iifgroup "default"
+		limit rate 1/second burst 5 packets oifgroup "default"
+		limit rate 1/second burst 5 packets meta cgroup 0
+		limit rate 1/second burst 5 packets meta ipsec missing
+		limit rate 1/second burst 5 packets meta time "1970-01-01 02:00:00"
+		limit rate 1/second burst 5 packets meta day "Sunday"
+		limit rate 1/second burst 5 packets meta hour "02:00"
+		limit rate 1/second burst 5 packets socket mark 0x00000000
+		limit rate 1/second burst 5 packets numgen inc mod 3 0
+		limit rate 1/second burst 5 packets jhash ip saddr mod 3 seed 0x1 0
+		limit rate 1/second burst 5 packets symhash mod 3 0
+		limit rate 1/second burst 5 packets fib daddr . iif check exists
+		limit rate 1/second burst 5 packets osf name "foo"
+		limit rate 1/second burst 5 packets ipsec in spi 0
+		meta l4proto 6 limit rate 1/second burst 5 packets tproxy to 0.0.0.1
+		meta l4proto 17 limit rate 1/second burst 5 packets vxlan vni 0
+		meta l4proto 17 limit rate 1/second burst 5 packets geneve vni 0
+	}
+
+	chain c2 {
+	}
+}
+table ip6 t {
+	chain c {
+		meta l4proto 6 limit rate 1/second burst 5 packets ip6 saddr ::
+		meta l4proto 6 limit rate 1/second burst 5 packets hbh nexthdr 0
+		meta l4proto 6 limit rate 1/second burst 5 packets rt nexthdr 0
+		meta l4proto 6 limit rate 1/second burst 5 packets srh last-entry 0
+		meta l4proto 6 limit rate 1/second burst 5 packets srh sid[1] ::
+		meta l4proto 6 limit rate 1/second burst 5 packets srh tag 0
+		meta l4proto 6 limit rate 1/second burst 5 packets frag nexthdr 0
+		meta l4proto 6 limit rate 1/second burst 5 packets dst nexthdr 0
+		meta l4proto 6 limit rate 1/second burst 5 packets mh nexthdr 0
+		meta l4proto 6 limit rate 1/second burst 5 packets exthdr hbh missing
+	}
+}
+table arp t {
+	chain c {
+		meta l4proto 6 limit rate 1/second burst 5 packets arp htype 0
+	}
+}
+table bridge t {
+	chain c {
+		meta l4proto 6 limit rate 1/second burst 5 packets meta ibrname "foo"
+		meta l4proto 6 limit rate 1/second burst 5 packets meta ibrname "foo"
+		meta l4proto 6 limit rate 1/second burst 5 packets meta obrname "foo"
+		meta l4proto 6 limit rate 1/second burst 5 packets meta obrname "foo"
+	}
+}
+table netdev t {
+	chain c {
+		meta l4proto 6 limit rate 1/second burst 5 packets dup to "lo"
+		meta l4proto 6 limit rate 1/second burst 5 packets fwd to "lo"
+		meta l4proto 6 limit rate 1/second burst 5 packets tunnel id 0
+	}
+}

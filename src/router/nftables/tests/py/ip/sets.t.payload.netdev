@@ -1,7 +1,7 @@
 # ip saddr @set1 drop
 netdev test-netdev ingress 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ lookup reg 1 set set1 ]
   [ immediate reg 0 drop ]
@@ -9,7 +9,7 @@ netdev test-netdev ingress
 # ip saddr != @set1 drop
 netdev test-netdev ingress 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ lookup reg 1 set set1 0x1 ]
   [ immediate reg 0 drop ]
@@ -17,7 +17,7 @@ netdev test-netdev ingress
 # ip saddr @set2 drop
 netdev test-netdev ingress 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ lookup reg 1 set set2 ]
   [ immediate reg 0 drop ]
@@ -25,7 +25,7 @@ netdev test-netdev ingress
 # ip saddr != @set2 drop
 netdev test-netdev ingress 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ lookup reg 1 set set2 0x1 ]
   [ immediate reg 0 drop ]
@@ -33,7 +33,7 @@ netdev test-netdev ingress
 # ip saddr . ip daddr @set5 drop
 netdev test-netdev ingress
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ payload load 4b @ network header + 16 => reg 9 ]
   [ lookup reg 1 set set5 ]
@@ -42,7 +42,7 @@ netdev test-netdev ingress
 # add @set5 { ip saddr . ip daddr }
 netdev test-netdev ingress
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ payload load 4b @ network header + 16 => reg 9 ]
   [ dynset add reg_key 1 set set5 ]
@@ -50,27 +50,27 @@ netdev test-netdev ingress
 # ip saddr { { 1.1.1.0, 3.3.3.0 }, 2.2.2.0 }
 __set%d test-netdev 3
 __set%d test-netdev 0
-	element 00010101  : 0 [end]	element 00030303  : 0 [end]	element 00020202  : 0 [end]
+	element 01010100	element 03030300	element 02020200
 netdev test-netdev ingress
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # ip saddr { { 1.1.1.0/24, 3.3.3.0/24 }, 2.2.2.0/24 }
 __set%d test-netdev 7
 __set%d test-netdev 0
-	element 00000000  : 1 [end]	element 00010101  : 0 [end]	element 00020101  : 1 [end]	element 00020202  : 0 [end]	element 00030202  : 1 [end]	element 00030303  : 0 [end]	element 00040303  : 1 [end]
+	element 00000000 flags 1	element 01010100	element 01010200 flags 1	element 02020200	element 02020300 flags 1	element 03030300	element 03030400 flags 1
 netdev test-netdev ingress
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # ip saddr @set6 drop
 netdev
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ lookup reg 1 set set6 ]
   [ immediate reg 0 drop ]
@@ -78,20 +78,20 @@ netdev
 # ip saddr vmap { 1.1.1.1 : drop, * : accept }
 __map%d test-netdev b
 __map%d test-netdev 0
-        element 01010101  : drop 0 [end]        element  : accept 2 [end]
+	element 01010101 : drop	element  : accept flags 2
 netdev
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ lookup reg 1 set __map%d dreg 0 ]
 
 # meta mark set ip saddr map { 1.1.1.1 : 0x00000001, * : 0x00000002 }
 __map%d test-netdev b
 __map%d test-netdev 0
-        element 01010101  : 00000001 0 [end]    element  : 00000002 2 [end]
+	element 01010101 : 00000001	element  : 00000002 flags 2
 netdev
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ lookup reg 1 set __map%d dreg 1 ]
   [ meta set mark with reg 1 ]
@@ -99,7 +99,7 @@ netdev
 # add @map1 { ip saddr . ip daddr : meta mark }
 netdev test-netdev ingress
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ payload load 4b @ network header + 16 => reg 9 ]
   [ meta load mark => reg 10 ]
@@ -108,10 +108,10 @@ netdev test-netdev ingress
 # add @map2 { ip saddr . ip daddr . th dport : 10.0.0.1 . 80 }
 netdev test-netdev ingress
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ payload load 4b @ network header + 16 => reg 9 ]
   [ payload load 2b @ transport header + 2 => reg 10 ]
-  [ immediate reg 11 0x0100000a ]
-  [ immediate reg 2 0x00005000 ]
+  [ immediate reg 11 0x0a000001 ]
+  [ immediate reg 2 0x0050 ]
   [ dynset add reg_key 1 set map2 sreg_data 11 ]

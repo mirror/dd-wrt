@@ -12,31 +12,66 @@
 #include <gmputil.h>
 #include <list.h>
 
+static mpz_srcptr concat_expr_msort_value_one(const struct expr *expr,
+					      unsigned int *i_len)
+{
+	mpz_srcptr i_value;
+
+	switch (expr->etype) {
+	case EXPR_BINOP:
+	case EXPR_MAPPING:
+	case EXPR_RANGE:
+		i_value = expr->left->value;
+		*i_len = expr->left->len;
+		break;
+	case EXPR_VALUE:
+		i_value = expr->value;
+		*i_len = expr->len;
+		break;
+	case EXPR_RANGE_VALUE:
+		i_value = expr->range.low;
+		*i_len = expr->len;
+		break;
+	default:
+		BUG("Unknown expression %s", expr_name(expr));
+	}
+
+	*i_len = div_round_up(*i_len, BITS_PER_BYTE);
+
+	return i_value;
+}
+
 static void concat_expr_msort_value(const struct expr *expr, mpz_t value)
 {
-	unsigned int len = 0, ilen;
+	unsigned int len = 0, i_len;
 	const struct expr *i;
+	mpz_srcptr i_value;
 	char data[512];
 
 	list_for_each_entry(i, &expr_concat(expr)->expressions, list) {
-		ilen = div_round_up(i->len, BITS_PER_BYTE);
-		mpz_export_data(data + len, i->value, i->byteorder, ilen);
-		len += ilen;
+		i_value = concat_expr_msort_value_one(i, &i_len);
+		mpz_export_data(data + len, i_value, BYTEORDER_BIG_ENDIAN, i_len);
+		len += i_len;
 	}
 
-	mpz_import_data(value, data, BYTEORDER_HOST_ENDIAN, len);
+	mpz_import_data(value, data, BYTEORDER_BIG_ENDIAN, len);
 }
 
 static mpz_srcptr expr_msort_value(const struct expr *expr, mpz_t value)
 {
 	switch (expr->etype) {
-	case EXPR_SET_ELEM:
-		return expr_msort_value(expr->key, value);
 	case EXPR_BINOP:
 	case EXPR_MAPPING:
 	case EXPR_RANGE:
 		return expr_msort_value(expr->left, value);
 	case EXPR_VALUE:
+		if (expr_basetype(expr)->type == TYPE_STRING) {
+			char buf[expr->len];
+
+			mpz_export_data(buf, expr->value, BYTEORDER_HOST_ENDIAN, expr->len);
+			mpz_import_data(value, buf, BYTEORDER_BIG_ENDIAN, expr->len);
+			return value;
+		}
 		return expr->value;
 	case EXPR_RANGE_VALUE:
 		return expr->range.low;
@@ -61,10 +96,12 @@ static int expr_msort_cmp(const struct expr *e1, const struct expr *e2)
 	mpz_t value2_tmp;
 	int ret;
 
+	assert(e1->etype == EXPR_SET_ELEM && e2->etype == EXPR_SET_ELEM);
+
 	mpz_init(value1_tmp);
 	mpz_init(value2_tmp);
-	value1 = expr_msort_value(e1, value1_tmp);
-	value2 = expr_msort_value(e2, value2_tmp);
+	value1 = expr_msort_value(e1->key, value1_tmp);
+	value2 = expr_msort_value(e2->key, value2_tmp);
 	ret = mpz_cmp(value1, value2);
 	mpz_clear(value1_tmp);
 	mpz_clear(value2_tmp);

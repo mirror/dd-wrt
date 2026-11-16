@@ -253,7 +253,7 @@ total_rc=0
 for syntax in ${syntaxes:-standard json}; do
 	[ $syntax == json ] && test_json=true || test_json=false
 	for variant in ${variants:-echo monitor}; do
-		for testcase in ${testcases:-testcases/*.t}; do
+		for testcase in ${testcases:-$(dirname $0)/testcases/*.t}; do
 			run_testcase "$testcase"
 			let "total_rc += $?"
 		done

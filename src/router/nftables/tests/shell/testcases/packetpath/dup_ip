@@ -1,0 +1,149 @@
+#!/bin/bash
+
+# Test case for nftables 'dup to' in ip family.
+
+# ns1 tx to n3, ns4 via ns2 (routing)
+# if ok:
+#    add rules to ns2 to dup to ns3
+#    add ns4 ip to ns3
+#    send packet to ns3 and ns4 ip address
+#    check both arrived at ns3
+#    check no packet arrived at ns4
+#
+# Then repeat with ns2 having 'egress' ruleset.
+
+rnd=$(mktemp -u XXXXXXXX)
+ns1="nft1in-$rnd"	# tx
+ns2="nft2in-$rnd"	# dup (nft rules)
+ns3="nft3in-$rnd"	# rx
+ns4="nft4in-$rnd"	# rx
+
+cleanup() {
+	ip netns del "$ns1" 2>/dev/null
+	ip netns del "$ns2" 2>/dev/null
+	ip netns del "$ns3" 2>/dev/null
+	ip netns del "$ns4" 2>/dev/null
+}
+
+die() {
+	local n="$1"
+
+	ip netns exec "$n" $NFT list ruleset
+
+	echo "ns2 (router)"
+	ip netns exec "$ns2" $NFT list ruleset
+	exit 1
+}
+
+trap cleanup EXIT
+
+ping_and_check() {
+	ip netns exec "$ns1" ping -c 1 -W 1 10.0.4.1 >/dev/null
+
+	# Check that packets arrived in both ns3 and ns4
+	for n in "$ns3" "$ns4"; do
+		ip netns exec "$n" $NFT "list counter inet rxt rxc" | grep -q 'packets 1 '
+		if [ $? -ne 0 ]; then
+			echo "ERROR: counter not incremented in $n"
+			die "$n"
+		fi
+	done
+}
+
+set -e
+set -x
+
+for n in "$ns1" "$ns2" "$ns3" "$ns4"; do
+	ip netns add "$n"
+	ip -net "$n" link set lo up
+done
+
+
+# Create veth pairs: ns1(veth0) <-> (veth1)ns2
+#                    ns2(veth3) <-> (veth0)ns3
+#                    ns2(veth4) <-> (veth0)ns4
+ip link add veth0 netns "$ns1" type veth peer name veth1 netns "$ns2"
+ip link add veth3 netns "$ns2" type veth peer name veth0 netns "$ns3"
+ip link add veth4 netns "$ns2" type veth peer name veth0 netns "$ns4"
+
+# Set up addresses
+ip -net "$ns1" addr add 10.0.1.1/24 dev veth0
+
+ip -net "$ns2" addr add 10.0.1.2/24 dev veth1
+ip -net "$ns2" addr add 10.0.3.2/24 dev veth3
+ip -net "$ns2" addr add 10.0.4.2/24 dev veth4
+
+ip -net "$ns3" addr add 10.0.3.1/24 dev veth0
+ip -net "$ns4" addr add 10.0.4.1/24 dev veth0
+
+# Bring up interfaces
+ip -net "$ns1" link set veth0 up
+
+ip -net "$ns2" link set veth1 up
+ip -net "$ns2" link set veth3 up
+ip -net "$ns2" link set veth4 up
+
+ip -net "$ns3" link set veth0 up
+ip -net "$ns4" link set veth0 up
+
+ip netns exec "$ns2" sysctl -q net.ipv4.ip_forward=1
+
+ip -net "$ns1" route add default via 10.0.1.2
+
+ip -net "$ns3" route add default via 10.0.3.2 dev veth0
+ip -net "$ns4" route add default via 10.0.4.2 dev veth0
+
+# Validate setup:
+ip netns exec "$ns1" ping -q -c 1 10.0.3.1
+ip netns exec "$ns1" ping -q -c 1 10.0.4.1
+
+# Add nftables rule in ns2 to forward packets from veth1 to veth3
+# Packets arriving on veth1 (10.0.1.x) will be forwarded to veth3
+ip netns exec "$ns2" $NFT -f /dev/stdin <<"EOF"
+table ip dup_test {
+	chain pre {
+		type filter hook prerouting priority 0; policy accept;
+		# Forward ICMP packets to 10.0.3.1 via neigh
+		meta iifname veth1 ip protocol icmp counter dup to 10.0.3.1 device "veth3"
+	}
+}
+EOF
+[ $? -ne 0 ] && exit 1
+
+for n in "$ns3" "$ns4"; do
+ip netns exec "$n" $NFT -f /dev/stdin <<"EOF"
+table inet rxt {
+	counter rxc { }
+	counter rxc { }
+
+	chain in_veth0 {
+		type filter hook input priority 0; policy accept;
+		ip protocol icmp counter name "rxc"
+	}
+}
+EOF
+done
+
+# duplicate address so stack accepts .4.1 too
+ip -net "$ns3" addr add 10.0.4.1/32 dev veth0
+
+set +e
+ping_and_check
+
+ip netns exec "$ns2" $NFT -f /dev/stdin <<"EOF"
+delete chain ip dup_test pre
+table ip dup_test {
+	chain post {
+		type filter hook postrouting priority 0; policy accept;
+		meta oifname "veth4" ip protocol icmp counter dup to 10.0.3.1 device "veth3"
+	}
+}
+EOF
+[ $? -ne 0 ] && exit 1
+
+echo "Egress ruleset loaded"
+ip netns exec "$ns3" $NFT "reset counter inet rxt rxc"
+ip netns exec "$ns4" $NFT "reset counter inet rxt rxc"
+ping_and_check
+
+exit 0

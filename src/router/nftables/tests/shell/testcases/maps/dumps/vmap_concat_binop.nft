@@ -1,0 +1,13 @@
+table ip x {
+	map y {
+		typeof tcp flags . tcp dport : verdict
+		elements = { syn | ack . 80 : accept,
+			     rst . 100 : drop,
+			     ack . 90 : drop }
+	}
+
+	chain z {
+		tcp flags . tcp dport vmap @y
+		tcp flags . tcp dport vmap { syn | ack . 80 : accept, rst . 100 : drop, ack . 90 : drop }
+	}
+}

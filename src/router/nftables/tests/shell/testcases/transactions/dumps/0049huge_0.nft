@@ -98,7 +98,7 @@ table inet firewalld {
 		jump filter_IN_public_deny
 		jump filter_IN_public_allow
 		jump filter_IN_public_post
-		meta l4proto { icmp, ipv6-icmp } accept
+		meta l4proto { 1, 58 } accept
 	}
 
 	chain filter_IN_public_pre {
@@ -124,7 +124,7 @@ table inet firewalld {
 		jump filter_FWDI_public_deny
 		jump filter_FWDI_public_allow
 		jump filter_FWDI_public_post
-		meta l4proto { icmp, ipv6-icmp } accept
+		meta l4proto { 1, 58 } accept
 	}
 
 	chain filter_FWDI_public_pre {
@@ -335,7 +335,7 @@ table inet firewalld {
 		jump filter_IN_work_deny
 		jump filter_IN_work_allow
 		jump filter_IN_work_post
-		meta l4proto { icmp, ipv6-icmp } accept
+		meta l4proto { 1, 58 } accept
 	}
 
 	chain filter_IN_work_pre {
@@ -384,7 +384,7 @@ table inet firewalld {
 		jump filter_FWDI_work_deny
 		jump filter_FWDI_work_allow
 		jump filter_FWDI_work_post
-		meta l4proto { icmp, ipv6-icmp } accept
+		meta l4proto { 1, 58 } accept
 	}
 
 	chain filter_FWDI_work_pre {

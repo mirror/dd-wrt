@@ -360,3 +360,73 @@
         }
     }
 ]
+
+# limit rate over 1025bytes/second burst 512bytes
+[
+    {
+        "limit": {
+            "burst": 512,
+            "burst_unit": "bytes",
+            "inv": true,
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "bytes"
+        }
+    }
+]
+
+# limit rate over 1025bytes /second burst 512bytes
+[
+    {
+        "limit": {
+            "burst": 512,
+            "burst_unit": "bytes",
+            "inv": true,
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "bytes"
+        }
+    }
+]
+
+# limit rate over 1025bytes/ second burst 512bytes
+[
+    {
+        "limit": {
+            "burst": 512,
+            "burst_unit": "bytes",
+            "inv": true,
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "bytes"
+        }
+    }
+]
+
+# limit rate over 1025bytes / second burst 512bytes
+[
+    {
+        "limit": {
+            "burst": 512,
+            "burst_unit": "bytes",
+            "inv": true,
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "bytes"
+        }
+    }
+]
+
+# limit rate over 1025 bytes / second burst 512bytes
+[
+    {
+        "limit": {
+            "burst": 512,
+            "burst_unit": "bytes",
+            "inv": true,
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "bytes"
+        }
+    }
+]

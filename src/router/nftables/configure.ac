@@ -1,5 +1,5 @@
-AC_INIT([nftables], [1.1.6], [netfilter-devel@vger.kernel.org])
-AC_DEFINE([RELEASE_NAME], ["Commodore Bullmoose #7"], [Release name])
+AC_INIT([nftables], [1.1.7], [netfilter-devel@vger.kernel.org])
+AC_DEFINE([RELEASE_NAME], ["Commodore Bullmoose #8"], [Release name])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
@@ -32,7 +32,11 @@ AC_PROG_SED
 AC_PROG_LEX([noyywrap])
 AC_PROG_YACC
 
-if test -z "$ac_cv_prog_YACC" -a ! -f "${srcdir}/src/parser_bison.c"
+p_bison_pfx="${srcdir}/src/parser_bison"
+if test -f "${p_bison_pfx}.c" -a "${p_bison_pfx}.c" -nt "${p_bison_pfx}.y"
+then
+	have_prebuilt_bison="yes"
+elif test -z "$ac_cv_prog_YACC"
 then
         echo "*** Error: No suitable bison/yacc found. ***"
         echo "    Please install the 'bison' package."
@@ -44,6 +48,18 @@ then
         echo "    Please install the 'flex' package."
         exit 1
 fi
+
+AC_ARG_ENABLE([extended_parser_errors],
+	      AS_HELP_STRING([--disable-extended-parser-errors],
+			     [Disable use of parse.error=custom and LAC in Bison]),
+	      [], [
+			enable_extended_parser_errors=no
+			AC_SUBST([BISON], [$ac_cv_prog_YACC])
+			AX_PROG_BISON_VERSION([3.6],
+					      [enable_extended_parser_errors=yes])
+	      ])
+AM_CONDITIONAL([BISON_CUSTOM_ERROR],
+	       [test "x$enable_extended_parser_errors" != xno])
 
 AM_PROG_AR
 LT_INIT([disable-static])
@@ -57,7 +73,7 @@ AS_IF([test "x$enable_man_doc" = "xyes"], [
 ])
 
 PKG_CHECK_MODULES([LIBMNL], [libmnl >= 1.0.4])
-PKG_CHECK_MODULES([LIBNFTNL], [libnftnl >= 1.3.1])
+PKG_CHECK_MODULES([LIBNFTNL], [libnftnl >= 1.3.2])
 
 AC_ARG_WITH([mini-gmp], [AS_HELP_STRING([--with-mini-gmp],
             [Use builtin mini-gmp (for embedded builds)])],
@@ -147,34 +163,26 @@ AM_CONDITIONAL([BUILD_SERVICE], [test "x$unitdir" != x])
 AC_ARG_WITH([stable-release], [AS_HELP_STRING([--with-stable-release],
             [Stable release number])],
             [], [with_stable_release=0])
-AC_CONFIG_COMMANDS([stable_release],
-                   [STABLE_RELEASE=$stable_release],
-                   [stable_release=$with_stable_release])
-AC_CONFIG_COMMANDS([nftversion.h], [
-(
-	echo "static char nftversion[[]] = {"
-	echo "	${VERSION}," | tr '.' ','
-	echo "	${STABLE_RELEASE}"
-	echo "};"
-	echo "static char nftbuildstamp[[]] = {"
-	for ((i = 56; i >= 0; i-= 8)); do
-		echo "	((uint64_t)MAKE_STAMP >> $i) & 0xff,"
-	done
-	echo "};"
-) >nftversion.h
-])
-# Current date should be fetched exactly once per build,
-# so have 'make' call date and pass the value to every 'gcc' call
-AC_SUBST([MAKE_STAMP], ["\$(shell date +%s)"])
+AC_SUBST([STABLE_RELEASE],[$with_stable_release])
+AC_SUBST([NFT_VERSION], [$(echo "${VERSION}" | tr '.' ',')])
+AC_SUBST([BUILD_STAMP], [${SOURCE_DATE_EPOCH:-$(date +%s)}])
 
 AC_ARG_ENABLE([distcheck],
 	      AS_HELP_STRING([--enable-distcheck], [Build for distcheck]),
 	      [enable_distcheck=yes], [])
 AM_CONDITIONAL([BUILD_DISTCHECK], [test "x$enable_distcheck" = "xyes"])
 
+AC_ARG_ENABLE([profiling],
+	      AS_HELP_STRING([--enable-profiling], [build for use of gcov/gprof]),
+	      [enable_profiling="$enableval"], [enable_profiling="no"])
+AM_CONDITIONAL([BUILD_PROFILING], [test "x$enable_profiling" = xyes])
+AM_COND_IF([BUILD_PROFILING],
+	   [AC_DEFINE([BUILD_PROFILING], [1], [Define for profiling])])
+
 AC_CONFIG_FILES([					\
 		Makefile				\
 		libnftables.pc				\
+		nftversion.h                            \
 		])
 AC_OUTPUT
 
@@ -185,7 +193,12 @@ nft configuration:
   use mini-gmp:			${with_mini_gmp}
   enable man page:              ${enable_man_doc}
   libxtables support:		${with_xtables}
-  json output support:          ${with_json}"
+  json output support:          ${with_json}
+  collect profiling data:       ${enable_profiling}"
+
+if test "x$have_prebuilt_bison" != "xyes"; then
+echo "  extended parser errors:       ${enable_extended_parser_errors}"
+fi
 
 if test "x$unitdir" != "x"; then
 AC_SUBST([unitdir])

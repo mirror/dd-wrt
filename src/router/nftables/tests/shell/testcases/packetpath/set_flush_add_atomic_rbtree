@@ -13,6 +13,6 @@ trap cleanup EXIT
 
 set_flush_add_create_topo "rbtree"
 
-set_flush_add_atomic_run_test "$tmp" "ipv4_addr" "flags interval" "0.0.0.0-192.168.2.19, 192.168.2.21-255.255.255.255" "ip saddr" || exit 1
+set_flush_add_atomic_run_test "$tmp" "ipv4_addr" "flags interval" "10.0.0.0-192.168.2.19, 192.168.2.21-255.255.255.255" "ip saddr" || exit 1
 
 exit 0

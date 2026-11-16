@@ -1,0 +1,170 @@
+# osf name "Linux"
+[
+    {
+        "match": {
+            "left": {
+                "osf": {
+                    "key": "name"
+                }
+            },
+            "op": "==",
+            "right": "Linux"
+        }
+    }
+]
+
+# osf ttl loose name "Linux"
+[
+    {
+        "match": {
+            "left": {
+                "osf": {
+                    "key": "name",
+                    "ttl": "loose"
+                }
+            },
+            "op": "==",
+            "right": "Linux"
+        }
+    }
+]
+
+# osf ttl skip name "Linux"
+[
+    {
+        "match": {
+            "left": {
+                "osf": {
+                    "key": "name",
+                    "ttl": "skip"
+                }
+            },
+            "op": "==",
+            "right": "Linux"
+        }
+    }
+]
+
+# osf ttl skip version "Linux:3.0"
+[
+    {
+        "match": {
+            "left": {
+                "osf": {
+                    "key": "version",
+                    "ttl": "skip"
+                }
+            },
+            "op": "==",
+            "right": "Linux:3.0"
+        }
+    }
+]
+
+# osf name { "Windows", "MacOs" }
+[
+    {
+        "match": {
+            "left": {
+                "osf": {
+                    "key": "name"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "Windows",
+                    "MacOs"
+                ]
+            }
+        }
+    }
+]
+
+# osf version { "Windows:XP", "MacOs:Sierra" }
+[
+    {
+        "match": {
+            "left": {
+                "osf": {
+                    "key": "version"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "Windows:XP",
+                    "MacOs:Sierra"
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set osf name map { "Windows" : 0x00000001, "MacOs" : 0x00000002 }
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                "Windows",
+                                1
+                            ],
+                            [
+                                "MacOs",
+                                2
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "osf": {
+                            "key": "name"
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+# ct mark set osf version map { "Windows:XP" : 0x00000003, "MacOs:Sierra" : 0x00000004 }
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                "Windows:XP",
+                                3
+                            ],
+                            [
+                                "MacOs:Sierra",
+                                4
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "osf": {
+                            "key": "version"
+                        }
+                    }
+                }
+            }
+        }
+    }
+]

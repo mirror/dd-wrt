@@ -1,0 +1,23 @@
+table ip x {
+	map y {
+		typeof tcp flags : verdict
+		flags interval
+		elements = { rst : drop,
+			     ack : drop,
+			     syn | ack : accept,
+			     0x20-0xff : drop }
+	}
+
+	set s {
+		typeof tcp flags
+		flags interval
+		elements = { rst, ack, syn | ack, 0x20-0xff }
+	}
+
+	chain z {
+		tcp flags vmap @y
+		tcp flags vmap { rst : drop, ack : drop, syn | ack : accept, 0x20-0xff : drop }
+		tcp flags @s
+		tcp flags { rst, ack, syn | ack, 0x20-0xff }
+	}
+}

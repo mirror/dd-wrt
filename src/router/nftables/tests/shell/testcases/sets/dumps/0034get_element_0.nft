@@ -2,7 +2,7 @@ table ip t {
 	set s {
 		type inet_service
 		flags interval
-		elements = { 10, 20-30, 40, 50-60 }
+		elements = { 10, 20-30, 40, 50-60, 60000-65535 }
 	}
 
 	set ips {

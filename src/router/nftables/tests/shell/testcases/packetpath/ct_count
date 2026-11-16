@@ -1,0 +1,83 @@
+#!/bin/bash
+# Test nftables connlimit functionality using network namespaces and socat
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_socat)
+
+. $NFT_TEST_LIBRARY_FILE
+
+set -e
+
+rnd=$(mktemp -u XXXXXXXX)
+ns_client="connlimit-cln-$rnd"
+ns_server="connlimit-srv-$rnd"
+
+cleanup() {
+	ip netns del $ns_client
+	ip netns del $ns_server
+}
+trap cleanup EXIT
+
+# Create namespaces
+ip netns add $ns_client
+ip netns add $ns_server
+
+ip link add veth0 netns $ns_server type veth peer name veth0 netns $ns_client
+
+# Configure addresses
+ip netns exec $ns_server ip addr add 10.0.0.1/24 dev veth0
+ip netns exec $ns_client ip addr add 10.0.0.2/24 dev veth0
+
+for n in $ns_server $ns_client; do
+	ip -net $n link set lo up
+	ip -net $n link set veth0 up
+done
+
+# Setup nftables rules in $ns_server
+ip netns exec $ns_server $NFT -f - <<EOF
+table inet filter {
+	chain input {
+		type filter hook input priority 0; policy accept;
+		ct state established,related accept
+		ct state new ct count over 2 counter reject with tcp reset
+	}
+}
+EOF
+
+ip netns exec $ns_client ping -c 1 10.0.0.1
+assert_pass "connectivity ok"
+
+# Start socat server in $ns_server (TCP port 8080)
+timeout 10 ip netns exec $ns_server socat TCP-LISTEN:8080,reuseaddr,fork PIPE 2>/dev/null &
+
+wait_local_port_listen $ns_server 8080 tcp
+
+# Open two connections (should succeed)
+ip netns exec $ns_client sh -c 'sleep 5 | socat - TCP:10.0.0.1:8080' > /dev/null &
+ip netns exec $ns_client sh -c 'sleep 5 | socat - TCP:10.0.0.1:8080' > /dev/null &
+
+sleep 1
+
+# Check that we now have 2 established connections
+ESTAB_COUNT=$(ip netns exec $ns_server ss -t -n -o state established 'sport = 8080' | grep 8080 | wc -l )
+
+if [ "$ESTAB_COUNT" -ne 2 ]; then
+	echo "ERROR: Expected 2 established connections but found $ESTAB_COUNT" >&2
+	exit 1
+fi
+
+# Now try a third connection — should fail (timeout or refused)
+set +e
+sleep 1 | ip netns exec $ns_client socat - TCP:10.0.0.1:8080 > /dev/null
+assert_fail "connection 3 rejected"
+
+# Zap the clients
+kill $(ip netns pid $ns_client)
+
+ip netns exec $ns_server $NFT list chain inet filter input
+ip netns exec $ns_server $NFT list chain inet filter input |grep 'counter packets 0'
+assert_fail "counter must not be 0"
+
+echo "" | ip netns exec $ns_client socat - TCP:10.0.0.1:8080 > /dev/null
+assert_pass "reconnect ok"
+
+exit 0

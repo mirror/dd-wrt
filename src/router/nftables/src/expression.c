@@ -946,8 +946,9 @@ void relational_expr_pctx_update(struct proto_ctx *ctx,
 			ops->pctx_update(ctx, &expr->location, left, right);
 		else if (right->etype == EXPR_SET) {
 			list_for_each_entry(i, &expr_set(right)->expressions, list) {
-				if (i->etype == EXPR_SET_ELEM &&
-				    i->key->etype == EXPR_VALUE)
+				assert(i->etype == EXPR_SET_ELEM);
+
+				if (i->key->etype == EXPR_VALUE)
 					ops->pctx_update(ctx, &expr->location, left, i->key);
 			}
 		} else if (ops == &meta_expr_ops &&
@@ -1018,6 +1019,7 @@ struct expr *range_expr_alloc(const struct location *loc,
 			  BYTEORDER_INVALID, 0);
 	expr->left  = left;
 	expr->right = right;
+	expr->len = left->len;
 	return expr;
 }
 
@@ -1383,6 +1385,8 @@ static void set_expr_print(const struct expr *expr, struct output_ctx *octx)
 	nft_print(octx, "{ ");
 
 	list_for_each_entry(i, &expr_set(expr)->expressions, list) {
+		assert(i->etype == EXPR_SET_ELEM);
+
 		nft_print(octx, "%s", d);
 		expr_print(i, octx);
 		count++;
@@ -1405,8 +1409,10 @@ static void set_expr_destroy(struct expr *expr)
 {
 	struct expr *i, *next;
 
-	list_for_each_entry_safe(i, next, &expr_set(expr)->expressions, list)
+	list_for_each_entry_safe(i, next, &expr_set(expr)->expressions, list) {
+		assert(i->etype == EXPR_SET_ELEM);
 		expr_free(i);
+	}
 }
 
 static void set_expr_set_type(const struct expr *expr,
@@ -1415,8 +1421,11 @@ static void set_expr_set_type(const struct expr *expr,
 {
 	struct expr *i;
 
-	list_for_each_entry(i, &expr_set(expr)->expressions, list)
+	list_for_each_entry(i, &expr_set(expr)->expressions, list) {
+		assert(i->etype == EXPR_SET_ELEM);
+
 		expr_set_type(i, dtype, byteorder);
+	}
 }
 
 static const struct expr_ops set_expr_ops = {
@@ -1445,14 +1454,11 @@ struct expr *set_expr_alloc(const struct location *loc, const struct set *set)
 	return set_expr;
 }
 
-void __set_expr_add(struct expr *set, struct expr *elem)
-{
-	list_add_tail(&elem->list, &expr_set(set)->expressions);
-}
-
 void set_expr_add(struct expr *set, struct expr *elem)
 {
 	struct expr_set *expr_set = expr_set(set);
+
+	assert(elem->etype == EXPR_SET_ELEM);
 
 	list_add_tail(&elem->list, &expr_set->expressions);
 	expr_set->size++;
@@ -1460,6 +1466,8 @@ void set_expr_add(struct expr *set, struct expr *elem)
 
 void set_expr_remove(struct expr *set, struct expr *expr)
 {
+	assert(expr->etype == EXPR_SET_ELEM);
+
 	expr_set(set)->size--;
 	list_del(&expr->list);
 }
@@ -1514,14 +1522,16 @@ struct expr *mapping_expr_alloc(const struct location *loc,
 
 static bool __set_expr_is_vmap(const struct expr *mappings)
 {
-	const struct expr *mapping;
+	const struct expr *elem;
 
 	if (list_empty(&expr_set(mappings)->expressions))
 		return false;
 
-	mapping = list_first_entry(&expr_set(mappings)->expressions, struct expr, list);
-	if (mapping->etype == EXPR_MAPPING &&
-	    mapping->right->etype == EXPR_VERDICT)
+	elem = list_first_entry(&expr_set(mappings)->expressions, struct expr, list);
+	assert(elem->etype == EXPR_SET_ELEM);
+
+	if (elem->key->etype == EXPR_MAPPING &&
+	    elem->key->right->etype == EXPR_VERDICT)
 		return true;
 
 	return false;
@@ -1652,7 +1662,17 @@ static void set_elem_expr_print(const struct expr *expr,
 {
 	struct stmt *stmt;
 
-	expr_print(expr->key, octx);
+	/* The mapping output needs to print lhs first, then timeout, expires,
+	 * comment and list of statements and finally rhs.
+	 *
+	 * Because EXPR_SET_ELEM always comes before EXPR_MAPPING, add this
+	 * special handling to print the output accordingly.
+	 */
+	if (expr->key->etype == EXPR_MAPPING)
+		expr_print(expr->key->left, octx);
+	else
+		expr_print(expr->key, octx);
+
 	list_for_each_entry(stmt, &expr->stmt_list, list) {
 		nft_print(octx, " ");
 		stmt_print(stmt, octx);
@@ -1672,11 +1692,18 @@ static void set_elem_expr_print(const struct expr *expr,
 	}
 	if (expr->comment)
 		nft_print(octx, " comment \"%s\"", expr->comment);
+
+	if (expr->key->etype == EXPR_MAPPING) {
+		nft_print(octx, " : ");
+		expr_print(expr->key->right, octx);
+	}
 }
 
 static void set_elem_expr_destroy(struct expr *expr)
 {
 	struct stmt *stmt, *next;
+
+	assert(expr->flags == 0);
 
 	free_const(expr->comment);
 	expr_free(expr->key);
@@ -1771,8 +1798,6 @@ void range_expr_value_low(mpz_t rop, const struct expr *expr)
 		return range_expr_value_low(rop, expr->left);
 	case EXPR_MAPPING:
 		return range_expr_value_low(rop, expr->left);
-	case EXPR_SET_ELEM:
-		return range_expr_value_low(rop, expr->key);
 	default:
 		BUG("invalid range expression type %s", expr_name(expr));
 	}
@@ -1798,8 +1823,6 @@ void range_expr_value_high(mpz_t rop, const struct expr *expr)
 		return range_expr_value_high(rop, expr->right);
 	case EXPR_MAPPING:
 		return range_expr_value_high(rop, expr->left);
-	case EXPR_SET_ELEM:
-		return range_expr_value_high(rop, expr->key);
 	default:
 		BUG("invalid range expression type %s", expr_name(expr));
 	}

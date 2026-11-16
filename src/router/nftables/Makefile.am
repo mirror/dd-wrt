@@ -23,7 +23,8 @@ libnftables_LIBVERSION = 2:0:1
 ###############################################################################
 
 ACLOCAL_AMFLAGS = -I m4
-AM_DISTCHECK_CONFIGURE_FLAGS = --enable-distcheck
+AM_DISTCHECK_CONFIGURE_FLAGS = --enable-distcheck \
+			       PKG_CONFIG_PATH=$(PKG_CONFIG_PATH)
 
 EXTRA_DIST =
 BUILT_SOURCES =
@@ -96,6 +97,7 @@ noinst_HEADERS = \
 	include/owner.h \
 	include/parser.h \
 	include/payload.h \
+	include/profiling.h \
 	include/proto.h \
 	include/rt.h \
 	include/rule.h \
@@ -159,11 +161,18 @@ AM_CFLAGS = \
 	\
 	$(GCC_FVISIBILITY_HIDDEN) \
 	\
-	-DMAKE_STAMP=$(MAKE_STAMP) \
-	\
 	$(NULL)
 
 AM_YFLAGS = -d -Wno-yacc
+if BISON_CUSTOM_ERROR
+YACC += -D parse.error=custom -D parse.lac=full
+else
+YACC += -D parse.error=verbose
+endif
+
+if BUILD_PROFILING
+AM_CFLAGS += --coverage
+endif
 
 ###############################################################################
 
@@ -266,6 +275,10 @@ src_libnftables_la_SOURCES += \
 	$(NULL)
 endif
 
+if BUILD_PROFILING
+src_libnftables_la_SOURCES += src/profiling.c
+endif
+
 src_libnftables_la_LDFLAGS = \
 	-version-info "${libnftables_LIBVERSION}" \
 	-Wl,--version-script="$(srcdir)/src//libnftables.map" \
@@ -305,12 +318,10 @@ src_nft_LDADD = src/libnftables.la
 
 check_PROGRAMS += examples/nft-buffer
 
-examples_nft_buffer_AM_CPPFLAGS = -I$(srcdir)/include
 examples_nft_buffer_LDADD = src/libnftables.la
 
 check_PROGRAMS += examples/nft-json-file
 
-examples_nft_json_file_AM_CPPFLAGS = -I$(srcdir)/include
 examples_nft_json_file_LDADD = src/libnftables.la
 
 ###############################################################################
@@ -450,9 +461,22 @@ tools/nftables.service: tools/nftables.service.in ${top_builddir}/config.status
 endif
 
 if !BUILD_DISTCHECK
+AM_TESTS_ENVIRONMENT = PKG_CONFIG_PATH=$(PKG_CONFIG_PATH)
 TESTS = tests/build/run-tests.sh \
 	tests/json_echo/run-test.py \
 	tests/monitor/run-tests.sh \
 	tests/py/nft-test.py \
 	tests/shell/run-tests.sh
 endif
+
+all_c_sources = $(filter %.c,$(src_libnftables_la_SOURCES)) $(src_nft_SOURCES)
+if BUILD_MINIGMP
+all_c_sources += $(src_libminigmp_la_SOURCES)
+endif
+if BUILD_AFL
+all_c_sources += $(tools_nft_afl_SOURCES)
+endif
+CLEANFILES += src/libparser_la-parser_bison.gcno
+CLEANFILES += src/libparser_la-scanner.gcno
+CLEANFILES += $(all_c_sources:.c=.gcno)
+CLEANFILES += $(src_nft_SOURCES:.c=.gcda)

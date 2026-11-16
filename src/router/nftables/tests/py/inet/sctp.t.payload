@@ -1,347 +1,346 @@
 # sctp sport 23
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00001700 ]
+  [ cmp eq reg 1 0x0017 ]
 
 # sctp sport != 23
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ cmp neq reg 1 0x00001700 ]
+  [ cmp neq reg 1 0x0017 ]
 
 # sctp sport 23-44
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ range eq reg 1 0x00001700 0x00002c00 ]
+  [ range eq reg 1 0x0017 0x002c ]
 
 # sctp sport != 23-44
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ range neq reg 1 0x00001700 0x00002c00 ]
+  [ range neq reg 1 0x0017 0x002c ]
 
 # sctp sport { 23, 24, 25}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00001700  : 0 [end]	element 00001800  : 0 [end]	element 00001900  : 0 [end]
+	element 0017	element 0018	element 0019
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # sctp sport != { 23, 24, 25}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00001700  : 0 [end]	element 00001800  : 0 [end]	element 00001900  : 0 [end]
+	element 0017	element 0018	element 0019
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # sctp dport 23
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00001700 ]
+  [ cmp eq reg 1 0x0017 ]
 
 # sctp dport != 23
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp neq reg 1 0x00001700 ]
+  [ cmp neq reg 1 0x0017 ]
 
 # sctp dport 23-44
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ range eq reg 1 0x00001700 0x00002c00 ]
+  [ range eq reg 1 0x0017 0x002c ]
 
 # sctp dport != 23-44
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ range neq reg 1 0x00001700 0x00002c00 ]
+  [ range neq reg 1 0x0017 0x002c ]
 
 # sctp dport { 23, 24, 25}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00001700  : 0 [end]	element 00001800  : 0 [end]	element 00001900  : 0 [end]
+	element 0017	element 0018	element 0019
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # sctp dport != { 23, 24, 25}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00001700  : 0 [end]	element 00001800  : 0 [end]	element 00001900  : 0 [end]
+	element 0017	element 0018	element 0019
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # sctp checksum 1111
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ cmp eq reg 1 0x57040000 ]
+  [ cmp eq reg 1 0x00000457 ]
 
 # sctp checksum != 11
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ cmp neq reg 1 0x0b000000 ]
+  [ cmp neq reg 1 0x0000000b ]
 
 # sctp checksum 21-333
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ range eq reg 1 0x15000000 0x4d010000 ]
+  [ range eq reg 1 0x00000015 0x0000014d ]
 
 # sctp checksum != 32-111
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ range neq reg 1 0x20000000 0x6f000000 ]
+  [ range neq reg 1 0x00000020 0x0000006f ]
 
 # sctp checksum { 22, 33, 44}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 16000000  : 0 [end]	element 21000000  : 0 [end]	element 2c000000  : 0 [end]
+	element 00000016	element 00000021	element 0000002c
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # sctp checksum != { 22, 33, 44}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 16000000  : 0 [end]	element 21000000  : 0 [end]	element 2c000000  : 0 [end]
+	element 00000016	element 00000021	element 0000002c
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # sctp vtag 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ cmp eq reg 1 0x16000000 ]
+  [ cmp eq reg 1 0x00000016 ]
 
 # sctp vtag != 233
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ cmp neq reg 1 0xe9000000 ]
+  [ cmp neq reg 1 0x000000e9 ]
 
 # sctp vtag 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ range eq reg 1 0x21000000 0x2d000000 ]
+  [ range eq reg 1 0x00000021 0x0000002d ]
 
 # sctp vtag != 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ range neq reg 1 0x21000000 0x2d000000 ]
+  [ range neq reg 1 0x00000021 0x0000002d ]
 
 # sctp vtag {33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+	element 00000021	element 00000037	element 00000043	element 00000058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # sctp vtag != {33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+	element 00000021	element 00000037	element 00000043	element 00000058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000084 ]
+  [ cmp eq reg 1 0x84 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # sctp chunk data exists
 ip
   [ exthdr load 1b @ 0 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk init exists
 ip
   [ exthdr load 1b @ 1 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk init-ack exists
 ip
   [ exthdr load 1b @ 2 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk sack exists
 ip
   [ exthdr load 1b @ 3 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk heartbeat exists
 ip
   [ exthdr load 1b @ 4 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk heartbeat-ack exists
 ip
   [ exthdr load 1b @ 5 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk abort exists
 ip
   [ exthdr load 1b @ 6 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk shutdown exists
 ip
   [ exthdr load 1b @ 7 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk shutdown-ack exists
 ip
   [ exthdr load 1b @ 8 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk error exists
 ip
   [ exthdr load 1b @ 9 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk cookie-echo exists
 ip
   [ exthdr load 1b @ 10 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk cookie-ack exists
 ip
   [ exthdr load 1b @ 11 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk ecne exists
 ip
   [ exthdr load 1b @ 12 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk cwr exists
 ip
   [ exthdr load 1b @ 13 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk shutdown-complete exists
 ip
   [ exthdr load 1b @ 14 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk asconf-ack exists
 ip
   [ exthdr load 1b @ 128 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk forward-tsn exists
 ip
   [ exthdr load 1b @ 192 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk asconf exists
 ip
   [ exthdr load 1b @ 193 + 0 present => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # sctp chunk data type 0
 ip
   [ exthdr load 1b @ 0 + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ cmp eq reg 1 0x00 ]
 
 # sctp chunk init flags 23
 ip
   [ exthdr load 1b @ 1 + 1 => reg 1 ]
-  [ cmp eq reg 1 0x00000017 ]
+  [ cmp eq reg 1 0x17 ]
 
 # sctp chunk init-ack length 42
 ip
   [ exthdr load 2b @ 2 + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00002a00 ]
+  [ cmp eq reg 1 0x002a ]
 
 # sctp chunk data stream 1337
 ip
   [ exthdr load 2b @ 0 + 8 => reg 1 ]
-  [ cmp eq reg 1 0x00003905 ]
+  [ cmp eq reg 1 0x0539 ]
 
 # sctp chunk init initial-tsn 5
 ip
   [ exthdr load 4b @ 1 + 16 => reg 1 ]
-  [ cmp eq reg 1 0x05000000 ]
+  [ cmp eq reg 1 0x00000005 ]
 
 # sctp chunk init-ack num-outbound-streams 3
 ip
   [ exthdr load 2b @ 2 + 12 => reg 1 ]
-  [ cmp eq reg 1 0x00000300 ]
+  [ cmp eq reg 1 0x0003 ]
 
 # sctp chunk sack a-rwnd 1
 ip
   [ exthdr load 4b @ 3 + 8 => reg 1 ]
-  [ cmp eq reg 1 0x01000000 ]
+  [ cmp eq reg 1 0x00000001 ]
 
 # sctp chunk shutdown cum-tsn-ack 65535
 ip
   [ exthdr load 4b @ 7 + 4 => reg 1 ]
-  [ cmp eq reg 1 0xffff0000 ]
+  [ cmp eq reg 1 0x0000ffff ]
 
 # sctp chunk ecne lowest-tsn 5
 ip
   [ exthdr load 4b @ 12 + 4 => reg 1 ]
-  [ cmp eq reg 1 0x05000000 ]
+  [ cmp eq reg 1 0x00000005 ]
 
 # sctp chunk cwr lowest-tsn 8
 ip
   [ exthdr load 4b @ 13 + 4 => reg 1 ]
-  [ cmp eq reg 1 0x08000000 ]
+  [ cmp eq reg 1 0x00000008 ]
 
 # sctp chunk asconf-ack seqno 12345
 ip
   [ exthdr load 4b @ 128 + 4 => reg 1 ]
-  [ cmp eq reg 1 0x39300000 ]
+  [ cmp eq reg 1 0x00003039 ]
 
 # sctp chunk forward-tsn new-cum-tsn 31337
 ip
   [ exthdr load 4b @ 192 + 4 => reg 1 ]
-  [ cmp eq reg 1 0x697a0000 ]
+  [ cmp eq reg 1 0x00007a69 ]
 
 # sctp chunk asconf seqno 12345
 ip
   [ exthdr load 4b @ 193 + 4 => reg 1 ]
-  [ cmp eq reg 1 0x39300000 ]
-
+  [ cmp eq reg 1 0x00003039 ]

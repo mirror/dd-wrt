@@ -1,10 +1,10 @@
 # ip saddr . ip daddr . ether saddr { 1.1.1.1 . 2.2.2.2 . ca:fe:ca:fe:ca:fe }
 __set%d test-bridge 3
 __set%d test-bridge 0
-	element 01010101 02020202 fecafeca 0000feca  : 0 [end]
+	element 01010101 . 02020202 . cafecafe cafe
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ payload load 4b @ network header + 16 => reg 9 ]
   [ payload load 6b @ link header + 6 => reg 10 ]

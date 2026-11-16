@@ -203,6 +203,10 @@ static json_t *set_print_json(struct output_ctx *octx, const struct set *set)
 		if (set->desc.size) {
 			tmp = nft_json_pack("i", set->desc.size);
 			json_object_set_new(root, "size", tmp);
+			if (set->count) {
+				tmp = nft_json_pack("i", set->count);
+				json_object_set_new(root, "count", tmp);
+			}
 		}
 	}
 
@@ -232,8 +236,11 @@ static json_t *set_print_json(struct output_ctx *octx, const struct set *set)
 		json_t *array = json_array();
 		const struct expr *i;
 
-		list_for_each_entry(i, &expr_set(set->init)->expressions, list)
+		list_for_each_entry(i, &expr_set(set->init)->expressions, list) {
+			assert(i->etype == EXPR_SET_ELEM);
+
 			json_array_append_new(array, expr_print_json(i, octx));
+		}
 
 		json_object_set_new(root, "elem", array);
 	}
@@ -397,6 +404,67 @@ static json_t *tunnel_erspan_print_json(const struct obj *obj)
 	return tunnel;
 }
 
+static json_t *tunnel_obj_print_json(struct output_ctx *octx,
+				     const struct obj *obj)
+{
+	struct tunnel_geneve *geneve;
+	json_t *tmp, *opts;
+
+	tmp = json_pack("{s:i, s:o, s:o, s:i, s:i, s:i, s:i}",
+			"id", obj->tunnel.id,
+			obj->tunnel.src->dtype->type == TYPE_IPADDR ? "src-ipv4" : "src-ipv6",
+			expr_print_json(obj->tunnel.src, octx),
+			obj->tunnel.dst->dtype->type == TYPE_IPADDR ? "dst-ipv4" : "dst-ipv6",
+			expr_print_json(obj->tunnel.dst, octx),
+			"sport", obj->tunnel.sport,
+			"dport", obj->tunnel.dport,
+			"tos", obj->tunnel.tos,
+			"ttl", obj->tunnel.ttl);
+
+	switch (obj->tunnel.type) {
+	case TUNNEL_UNSPEC:
+		break;
+	case TUNNEL_ERSPAN:
+		json_object_set_new(tmp, "type", json_string("erspan"));
+		json_object_set_new(tmp, "tunnel",
+				    tunnel_erspan_print_json(obj));
+		break;
+	case TUNNEL_VXLAN:
+		json_object_set_new(tmp, "type", json_string("vxlan"));
+		json_object_set_new(tmp, "tunnel",
+				    json_pack("{s:i}",
+					      "gbp",
+					      obj->tunnel.vxlan.gbp));
+		break;
+	case TUNNEL_GENEVE:
+		opts = json_array();
+
+		list_for_each_entry(geneve, &obj->tunnel.geneve_opts, list) {
+			char data_str[256];
+			json_t *opt;
+			int offset;
+
+			data_str[0] = '0';
+			data_str[1] = 'x';
+			offset = 2;
+			for (uint32_t i = 0; i < geneve->data_len; i++)
+				offset += snprintf(data_str + offset,
+						   3, "%x", geneve->data[i]);
+
+			opt = json_pack("{s:i, s:i, s:s}",
+					"class", geneve->geneve_class,
+					"opt-type", geneve->type,
+					"data", data_str);
+			json_array_append_new(opts, opt);
+		}
+
+		json_object_set_new(tmp, "type", json_string("geneve"));
+		json_object_set_new(tmp, "tunnel", opts);
+		break;
+	}
+	return tmp;
+}
+
 static json_t *obj_print_json(struct output_ctx *octx, const struct obj *obj,
 			      bool delete)
 {
@@ -516,59 +584,16 @@ static json_t *obj_print_json(struct output_ctx *octx, const struct obj *obj,
 		json_decref(tmp);
 		break;
 	case NFT_OBJECT_TUNNEL:
-		tmp = json_pack("{s:i, s:o, s:o, s:i, s:i, s:i, s:i}",
-				"id", obj->tunnel.id,
-				obj->tunnel.src->dtype->type == TYPE_IPADDR ? "src-ipv4" : "src-ipv6",
-				expr_print_json(obj->tunnel.src, octx),
-				obj->tunnel.dst->dtype->type == TYPE_IPADDR ? "dst-ipv4" : "dst-ipv6",
-				expr_print_json(obj->tunnel.dst, octx),
-				"sport", obj->tunnel.sport,
-				"dport", obj->tunnel.dport,
-				"tos", obj->tunnel.tos,
-				"ttl", obj->tunnel.ttl);
+		tmp = tunnel_obj_print_json(octx, obj);
+		json_object_update(root, tmp);
+		json_decref(tmp);
+		break;
+	case NFT_OBJECT_CONNLIMIT:
+		tmp = json_pack("{s:i}", "val", obj->connlimit.count);
 
-		switch (obj->tunnel.type) {
-		case TUNNEL_UNSPEC:
-			break;
-		case TUNNEL_ERSPAN:
-			json_object_set_new(tmp, "type", json_string("erspan"));
-			json_object_set_new(tmp, "tunnel",
-					    tunnel_erspan_print_json(obj));
-			break;
-		case TUNNEL_VXLAN:
-			json_object_set_new(tmp, "type", json_string("vxlan"));
-			json_object_set_new(tmp, "tunnel",
-					    json_pack("{s:i}",
-						      "gbp",
-						      obj->tunnel.vxlan.gbp));
-			break;
-		case TUNNEL_GENEVE:
-			struct tunnel_geneve *geneve;
-			json_t *opts = json_array();
+		if (obj->connlimit.flags & NFT_CONNLIMIT_F_INV)
+			json_object_set_new(root, "inv", json_true());
 
-			list_for_each_entry(geneve, &obj->tunnel.geneve_opts, list) {
-				char data_str[256];
-				json_t *opt;
-				int offset;
-
-				data_str[0] = '0';
-				data_str[1] = 'x';
-				offset = 2;
-				for (uint32_t i = 0; i < geneve->data_len; i++)
-					offset += snprintf(data_str + offset,
-							   3, "%x", geneve->data[i]);
-
-				opt = json_pack("{s:i, s:i, s:s}",
-						"class", geneve->geneve_class,
-						"opt-type", geneve->type,
-						"data", data_str);
-				json_array_append_new(opts, opt);
-			}
-
-			json_object_set_new(tmp, "type", json_string("geneve"));
-			json_object_set_new(tmp, "tunnel", opts);
-			break;
-		}
 		json_object_update(root, tmp);
 		json_decref(tmp);
 		break;
@@ -768,8 +793,11 @@ json_t *set_expr_json(const struct expr *expr, struct output_ctx *octx)
 	json_t *array = json_array();
 	const struct expr *i;
 
-	list_for_each_entry(i, &expr_set(expr)->expressions, list)
+	list_for_each_entry(i, &expr_set(expr)->expressions, list) {
+		assert(i->etype == EXPR_SET_ELEM);
+
 		json_array_append_new(array, expr_print_json(i, octx));
+	}
 
 	return nft_json_pack("{s:o}", "set", array);
 }
@@ -783,18 +811,19 @@ json_t *set_ref_expr_json(const struct expr *expr, struct output_ctx *octx)
 	}
 }
 
-json_t *set_elem_expr_json(const struct expr *expr, struct output_ctx *octx)
+static json_t *__set_elem_expr_json(const struct expr *expr,
+				    const struct expr *val,
+				    struct output_ctx *octx)
 {
-	json_t *root = expr_print_json(expr->key, octx);
+	json_t *root = expr_print_json(val, octx);
 	struct stmt *stmt;
 	json_t *tmp;
-
-	if (!root)
-		return NULL;
 
 	/* these element attributes require formal set elem syntax */
 	if (expr->timeout || expr->expiration || expr->comment ||
 	    !list_empty(&expr->stmt_list)) {
+		assert(expr->etype == EXPR_SET_ELEM);
+
 		root = nft_json_pack("{s:o}", "val", root);
 
 		if (expr->timeout) {
@@ -814,13 +843,32 @@ json_t *set_elem_expr_json(const struct expr *expr, struct output_ctx *octx)
 			/* XXX: detect and complain about clashes? */
 			json_object_update_missing(root, tmp);
 			json_decref(tmp);
-			/* TODO: only one statement per element. */
-			break;
 		}
 		return nft_json_pack("{s:o}", "elem", root);
 	}
 
 	return root;
+}
+
+json_t *set_elem_expr_json(const struct expr *expr, struct output_ctx *octx)
+{
+	json_t *left, *right;
+
+	assert(expr->etype == EXPR_SET_ELEM);
+
+	/* Special handling to retain backwards compatibility: json exposes
+	 * EXPR_MAPPING { left: EXPR_SET_ELEM, right: EXPR_{VALUE,CONCAT,SYMBOL}.
+	 * Revisit this at some point to accept the following input:
+	 * EXPR_SET_ELEM -> EXPR_MAPPING { left, right }
+	 */
+	if (expr->key->etype == EXPR_MAPPING) {
+		left = __set_elem_expr_json(expr, expr->key->left, octx);
+		right = expr_print_json(expr->key->right, octx);
+
+		return nft_json_pack("[o, o]", left, right);
+	}
+
+	return __set_elem_expr_json(expr, expr->key, octx);
 }
 
 json_t *prefix_expr_json(const struct expr *expr, struct output_ctx *octx)
@@ -2131,6 +2179,10 @@ int do_command_list_json(struct netlink_ctx *ctx, struct cmd *cmd)
 	case CMD_OBJ_TUNNEL:
 	case CMD_OBJ_TUNNELS:
 		root = do_list_obj_json(ctx, cmd, NFT_OBJECT_TUNNEL);
+		break;
+	case CMD_OBJ_CONNLIMIT:
+	case CMD_OBJ_CONNLIMITS:
+		root = do_list_obj_json(ctx, cmd, NFT_OBJECT_CONNLIMIT);
 		break;
 	case CMD_OBJ_FLOWTABLE:
 		root = do_list_flowtable_json(ctx, cmd, table);

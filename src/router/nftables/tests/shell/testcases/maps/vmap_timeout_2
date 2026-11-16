@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Check rbtree timeout chain deletion before and after expiry when we do not have a commit phase.
+# Case 1: abort path (--check)
+# Case 2: identical re-insert (no transaction at all)
+
+die() {
+	echo "$@"
+	$NFT list ruleset
+	exit 1
+}
+
+# Create table with chain and interval verdict map
+$NFT -f - <<'EOF'
+table ip6 t {
+    chain c { }
+    map imap { type ipv6_addr : verdict; flags interval, timeout;
+    elements = { 2000::dead : accept }
+    }
+}
+EOF
+[ $? -ne 0 ] && die "initial ruleset"
+
+# Add element referencing chain (2s timeout)
+$NFT add element ip6 t imap '{ 2001:db8::100-2001:db8::1ff timeout 2s : jump c }' || die "add elem"
+
+# Verify chain is in use (MUST fail with "Device or resource busy")
+$NFT delete chain ip6 t c && die "del chain worked"
+
+# Wait for element to expire
+sleep 3
+
+# overlapping insert (triggers inline GC) + no commit
+$NFT --check "add element ip6 t imap { 2001:db8::150-2001:db8::1ff timeout 30s : jump c }" || die "expected to pass"
+
+# Chain can now be deleted.
+$NFT delete chain ip6 t c || die "chain delete failed"
+$NFT add chain ip6 t c || die "chain add failed"
+
+# Add element referencing c chain (2s timeout)
+$NFT add element ip6 t imap '{ 2001:db8::100-2001:db8::1ff timeout 2s : jump c }' || die "re-add elem"
+
+$NFT delete chain ip6 t c && die "del chain worked"
+sleep 3
+
+# identical insert (no transaction will be recorded!)
+$NFT "add element ip6 t imap { 2000::dead : accept }" || die "could not re-add existing elem"
+
+# Chain can now be deleted.
+$NFT delete chain ip6 t c || die "del chain fails"
+
+exit 0

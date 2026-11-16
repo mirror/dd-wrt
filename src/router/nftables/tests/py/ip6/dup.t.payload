@@ -1,21 +1,20 @@
 # dup to abcd::1
 ip6 test test 
-  [ immediate reg 1 0x0000cdab 0x00000000 0x00000000 0x01000000 ]
+  [ immediate reg 1 0xabcd0000 0x00000000 0x00000000 0x00000001 ]
   [ dup sreg_addr 1 ]
 
 # dup to abcd::1 device "lo"
 ip6 test test 
-  [ immediate reg 1 0x0000cdab 0x00000000 0x00000000 0x01000000 ]
+  [ immediate reg 1 0xabcd0000 0x00000000 0x00000000 0x00000001 ]
   [ immediate reg 2 0x00000001 ]
   [ dup sreg_addr 1 sreg_dev 2 ]
 
 # dup to ip6 saddr map { abcd::1 : cafe::cafe } device "lo"
 __map%d test-ip6 b
 __map%d test-ip6 0
-        element 0000cdab 00000000 00000000 01000000  : 0000feca 00000000 00000000 feca0000 0 [end]
+	element abcd0000 00000000 00000000 00000001 : cafe0000 00000000 00000000 0000cafe
 ip6 test-ip6 input 
   [ payload load 16b @ network header + 8 => reg 1 ]
   [ lookup reg 1 set __map%d dreg 1 ]
   [ immediate reg 2 0x00000001 ]
   [ dup sreg_addr 1 sreg_dev 2 ]
-

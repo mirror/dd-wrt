@@ -117,7 +117,8 @@ devgroup
 outgoing device group|
 devgroup
 |cgroup|
-control group net_cls.classid (for matching on cgroupv2, see *socket cgroupv2*)|
+control group net_cls.classid; reads zero on cgroupv2-only hosts without an
+active net_cls hierarchy (for matching on cgroupv2, see *socket cgroupv2*)|
 integer (32 bit)
 |random|
 pseudo-random number|
@@ -149,8 +150,6 @@ String value in the form HH:MM or HH:MM:SS. Values are expected to be less than
 Interface index (32 bit number). Can be specified numerically or as name of an existing interface.
 |ifname|
 Interface name (16 byte string). Does not have to exist.
-|iface_type|
-Interface type (16 bit number).
 |uid|
 User ID (32 bit number). Can be specified numerically or as user name.
 |gid|

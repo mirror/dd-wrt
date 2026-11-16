@@ -77,7 +77,7 @@ ip -net $S route add ${ip_rc}/64 via ${ip_rs} dev s_r
 ip netns exec $C ping -q -6 ${ip_sr} -c1 > /dev/null
 assert_pass "topo initialization"
 
-reload_ruleset()
+reload_ruleset_base()
 {
 	ip netns exec $R conntrack -F 2> /dev/null
 	ip netns exec $R $NFT -f - <<-EOF
@@ -85,12 +85,6 @@ reload_ruleset()
 	table ip6 ftp_helper_nat_test {
 		ct helper ftp-standard {
 			type "ftp" protocol tcp;
-		}
-
-		chain PRE-dnat {
-			type nat hook prerouting priority dstnat; policy accept;
-			# Dnat the control connection, data connection will be automaticly NATed.
-			ip6 daddr ${ip_rc} counter ip6 nexthdr tcp tcp dport 2121 counter dnat ip6 to [${ip_sr}]:21
 		}
 
 		chain PRE-aftnat {
@@ -111,14 +105,55 @@ reload_ruleset()
 			ip6 nexthdr tcp ct state established counter accept
 			ip6 nexthdr tcp ct state related     counter log accept
 		}
+	}
+	EOF
+	assert_pass "apply ftp helper base ruleset"
+}
 
+load_dnat()
+{
+	ip netns exec $R $NFT -f - <<-EOF
+	table ip6 ftp_helper_nat_test {
+		chain PRE-dnat {
+			type nat hook prerouting priority dstnat; policy accept;
+			# Dnat the control connection, data connection will be automaticly NATed.
+			ip6 daddr ${ip_rc} counter ip6 nexthdr tcp tcp dport 2121 counter dnat ip6 to [${ip_sr}]:21
+		}
+	}
+	EOF
+	assert_pass "apply ftp helper DNAT ruleset"
+}
+
+load_snat()
+{
+	ip netns exec $R $NFT -f - <<-EOF
+	table ip6 ftp_helper_nat_test {
 		chain POST-srcnat {
 			type nat hook postrouting priority srcnat; policy accept;
 			ip6 daddr ${ip_sr} ip6 nexthdr tcp tcp dport 21 counter snat ip6 to [${ip_rs}]:16500
 		}
 	}
 	EOF
-	assert_pass "apply ftp helper ruleset"
+	assert_pass "apply ftp helper SNAT ruleset"
+}
+
+reload_ruleset()
+{
+	reload_ruleset_base
+	load_dnat
+	load_snat
+}
+
+reload_ruleset_dnat_only()
+{
+	reload_ruleset_base
+	load_dnat
+}
+
+reload_ruleset_snat_only()
+{
+	reload_ruleset_base
+	load_snat
 }
 
 dd if=/dev/urandom of="$INFILE" bs=4096 count=1 2>/dev/null
@@ -141,38 +176,55 @@ wait_local_port_listen $S 21 tcp
 ip netns exec $S ss -6ltnp | grep -q '*:21'
 assert_pass "start vsftpd server"
 
+test_case()
+{
+	tag=$1
+	ftp_ip_and_port=$2
+	client_ip_to_check=$3
+	additional_curl_options=$4
+
+	ip netns exec $S tcpdump -q --immediate-mode -Ui s_r -w ${PCAP} 2> /dev/null &
+	pid=$!
+	sleep 0.5
+	ip netns exec $C curl ${additional_curl_options} --no-progress-meter --connect-timeout 5 ftp://${ftp_ip_and_port}/$(basename $INFILE) -o $OUTFILE
+	assert_pass "curl ftp "${tag}
+
+	cmp "$INFILE" "$OUTFILE"
+	assert_pass "FTP "${tag}": The input and output files remain the same when traffic passes through NAT."
+
+	kill $pid;
+	tcpdump -nnr ${PCAP} src ${client_ip_to_check} and dst ${ip_sr} 2>&1 |grep -q FTP
+	assert_pass "assert FTP traffic NATed"
+}
 
 # test passive mode
 reload_ruleset
-ip netns exec $S tcpdump -q --immediate-mode -Ui s_r -w ${PCAP} 2> /dev/null &
-pid=$!
-sleep 0.5
-ip netns exec $C curl --no-progress-meter --connect-timeout 5 ftp://[${ip_rc}]:2121/$(basename $INFILE) -o $OUTFILE
-assert_pass "curl ftp passive mode "
+test_case "Passive mode" "[${ip_rc}]:2121" ${ip_rs}
 
-cmp "$INFILE" "$OUTFILE"
-assert_pass "FTP Passive mode: The input and output files remain the same when traffic passes through NAT."
 
-kill $pid; sync
-tcpdump -nnr ${PCAP} src ${ip_rs} and dst ${ip_sr} 2>&1 |grep -q FTP
-assert_pass "assert FTP traffic NATed"
+# test passive mode DNAT only
+reload_ruleset_dnat_only
+test_case "Passive mode DNAT only" "[${ip_rc}]:2121" ${ip_cr}
+
+
+# test passive mode SNAT only
+reload_ruleset_snat_only
+test_case "Passive mode SNAT only" "[${ip_sr}]:21" ${ip_rs}
 
 
 # test active mode
 reload_ruleset
+test_case "Active mode" "[${ip_rc}]:2121" ${ip_rs} "-P -"
 
-ip netns exec $S tcpdump -q --immediate-mode -Ui s_r -w ${PCAP} 2> /dev/null &
-pid=$!
-sleep 0.5
-ip netns exec $C curl --no-progress-meter -P - --connect-timeout 5 ftp://[${ip_rc}]:2121/$(basename $INFILE) -o $OUTFILE
-assert_pass "curl ftp active mode "
 
-cmp "$INFILE" "$OUTFILE"
-assert_pass "FTP Active mode: in and output files remain the same when FTP traffic passes through NAT."
+# test active mode DNAT only
+reload_ruleset_dnat_only
+test_case "Active mode DNAT only" "[${ip_rc}]:2121" ${ip_cr} "-P -"
 
-kill $pid; sync
-tcpdump -nnr ${PCAP} src ${ip_rs} and dst ${ip_sr} 2>&1 |grep -q FTP
-assert_pass "assert FTP traffic NATed"
+
+# test active mode SNAT only
+reload_ruleset_snat_only
+test_case "Active mode SNAT only" "[${ip_sr}]:21" ${ip_rs} "-P -"
 
 # trap calls cleanup
 exit 0

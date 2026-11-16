@@ -83,6 +83,33 @@ filter input iifname eth0
 filter input iifname "(eth0)"
 ----------------------------
 
+INTERFACE TYPE TYPE
+~~~~~~~~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|Interface type |
+iface_type|
+16 bit |
+integer
+|===================
+
+The interface type type is used with *meta iiftype/oiftype* expression. Its values correspond with respective ARPHRD_* defines in <linux/if_arp.h>.
+
+.The following keywords will automatically resolve into an interface type type with given value
+
+[options="header"]
+|==================
+|Keyword | Value
+| ether | 1
+| ppp | 512
+| ipip | 768
+| ipip6 | 769
+| loopback | 772
+| sit | 776
+| ipgre | 778
+|===================
+
 LINK LAYER ADDRESS TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~
 [options="header"]

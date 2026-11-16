@@ -309,13 +309,6 @@ extern void time_print(uint64_t msec, struct output_ctx *octx);
 extern struct error_record *time_parse(const struct location *loc,
 				       const char *c, uint64_t *res);
 
-extern struct error_record *rate_parse(const struct location *loc,
-				       const char *str, uint64_t *rate,
-				       uint64_t *unit);
-
-extern struct error_record *data_unit_parse(const struct location *loc,
-					    const char *str, uint64_t *rate);
-
 struct limit_rate {
 	uint64_t rate, unit;
 };

@@ -2206,9 +2206,9 @@ static void payload_match_postprocess(struct rule_pp_ctx *ctx,
 				struct expr *elem;
 
 				elem = list_first_entry(&expr_set(set->init)->expressions, struct expr, list);
+				assert(elem->etype == EXPR_SET_ELEM);
 
-				if (elem->etype == EXPR_SET_ELEM &&
-				    elem->key->etype == EXPR_VALUE)
+				if (elem->key->etype == EXPR_VALUE)
 					payload_icmp_check(ctx, payload, elem->key);
 			}
 		}
@@ -2493,6 +2493,8 @@ static void binop_adjust(const struct expr *binop, struct expr *right,
 			break;
 
 		list_for_each_entry(i, &expr_set(right->set->init)->expressions, list) {
+			assert(i->etype == EXPR_SET_ELEM);
+
 			switch (i->key->etype) {
 			case EXPR_VALUE:
 				binop_adjust_one(binop, i->key, shift);
@@ -2501,8 +2503,11 @@ static void binop_adjust(const struct expr *binop, struct expr *right,
 				binop_adjust_one(binop, i->key->left, shift);
 				binop_adjust_one(binop, i->key->right, shift);
 				break;
-			case EXPR_SET_ELEM:
-				binop_adjust(binop, i->key->key, shift);
+			case EXPR_MAPPING:
+				if (i->key->left->etype == EXPR_RANGE)
+					binop_adjust(binop, i->key->left, shift);
+				else
+					binop_adjust_one(binop, i->key->left, shift);
 				break;
 			default:
 				BUG("unknown expression type %s",
@@ -2878,8 +2883,11 @@ static void expr_postprocess(struct rule_pp_ctx *ctx, struct expr **exprp)
 		expr_postprocess(ctx, &expr->right);
 		break;
 	case EXPR_SET:
-		list_for_each_entry(i, &expr_set(expr)->expressions, list)
+		list_for_each_entry(i, &expr_set(expr)->expressions, list) {
+			assert(i->etype == EXPR_SET_ELEM);
+
 			expr_postprocess(ctx, &i);
+		}
 		break;
 	case EXPR_CONCAT:
 		expr_postprocess_concat(ctx, exprp);

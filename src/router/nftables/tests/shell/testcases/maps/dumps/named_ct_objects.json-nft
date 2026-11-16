@@ -195,8 +195,8 @@
         },
         "handle": 0,
         "elem": [
-          "sip",
-          "ftp"
+          "ftp",
+          "sip"
         ]
       }
     },
@@ -318,8 +318,8 @@
                     [
                       {
                         "concat": [
-                          "feed::17",
-                          512
+                          "dead::beef",
+                          123
                         ]
                       },
                       "exp2"
@@ -327,8 +327,8 @@
                     [
                       {
                         "concat": [
-                          "dead::beef",
-                          123
+                          "feed::17",
+                          512
                         ]
                       },
                       "exp2"

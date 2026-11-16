@@ -1,27 +1,27 @@
 # dst nexthdr 22
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000016 ]
+  [ cmp eq reg 1 0x16 ]
 
 # dst nexthdr != 233
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 0 => reg 1 ]
-  [ cmp neq reg 1 0x000000e9 ]
+  [ cmp neq reg 1 0xe9 ]
 
 # dst nexthdr 33-45
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 0 => reg 1 ]
-  [ range eq reg 1 0x00000021 0x0000002d ]
+  [ range eq reg 1 0x21 0x2d ]
 
 # dst nexthdr != 33-45
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 0 => reg 1 ]
-  [ range neq reg 1 0x00000021 0x0000002d ]
+  [ range neq reg 1 0x21 0x2d ]
 
 # dst nexthdr { 33, 55, 67, 88}
 __set%d test-ip6 3
 __set%d test-ip6 0
-	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+	element 21	element 37	element 43	element 58
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 0 => reg 1 ]
   [ lookup reg 1 set __set%d ]
@@ -29,7 +29,7 @@ ip6 test-ip6 input
 # dst nexthdr != { 33, 55, 67, 88}
 __set%d test-ip6 3
 __set%d test-ip6 0
-	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+	element 21	element 37	element 43	element 58
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 0 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
@@ -37,7 +37,7 @@ ip6 test-ip6 input
 # dst nexthdr { udplite, ipcomp, udp, ah, sctp, esp, dccp, tcp, ipv6-icmp}
 __set%d test-ip6 3
 __set%d test-ip6 0
-	element 00000088  : 0 [end]	element 0000006c  : 0 [end]	element 00000011  : 0 [end]	element 00000033  : 0 [end]	element 00000084  : 0 [end]	element 00000032  : 0 [end]	element 00000021  : 0 [end]	element 00000006  : 0 [end]	element 0000003a  : 0 [end]
+	element 88	element 6c	element 11	element 33	element 84	element 32	element 21	element 06	element 3a
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 0 => reg 1 ]
   [ lookup reg 1 set __set%d ]
@@ -45,7 +45,7 @@ ip6 test-ip6 input
 # dst nexthdr != { udplite, ipcomp, udp, ah, sctp, esp, dccp, tcp, ipv6-icmp}
 __set%d test-ip6 3
 __set%d test-ip6 0
-	element 00000088  : 0 [end]	element 0000006c  : 0 [end]	element 00000011  : 0 [end]	element 00000033  : 0 [end]	element 00000084  : 0 [end]	element 00000032  : 0 [end]	element 00000021  : 0 [end]	element 00000006  : 0 [end]	element 0000003a  : 0 [end]
+	element 88	element 6c	element 11	element 33	element 84	element 32	element 21	element 06	element 3a
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 0 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
@@ -53,37 +53,37 @@ ip6 test-ip6 input
 # dst nexthdr icmp
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # dst nexthdr != icmp
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 0 => reg 1 ]
-  [ cmp neq reg 1 0x00000001 ]
+  [ cmp neq reg 1 0x01 ]
 
 # dst hdrlength 22
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 1 => reg 1 ]
-  [ cmp eq reg 1 0x00000016 ]
+  [ cmp eq reg 1 0x16 ]
 
 # dst hdrlength != 233
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 1 => reg 1 ]
-  [ cmp neq reg 1 0x000000e9 ]
+  [ cmp neq reg 1 0xe9 ]
 
 # dst hdrlength 33-45
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 1 => reg 1 ]
-  [ range eq reg 1 0x00000021 0x0000002d ]
+  [ range eq reg 1 0x21 0x2d ]
 
 # dst hdrlength != 33-45
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 1 => reg 1 ]
-  [ range neq reg 1 0x00000021 0x0000002d ]
+  [ range neq reg 1 0x21 0x2d ]
 
 # dst hdrlength { 33, 55, 67, 88}
 __set%d test-ip6 3
 __set%d test-ip6 0
-	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+	element 21	element 37	element 43	element 58
 ip6 test-ip6 input
   [ exthdr load ipv6 1b @ 60 + 1 => reg 1 ]
   [ lookup reg 1 set __set%d ]

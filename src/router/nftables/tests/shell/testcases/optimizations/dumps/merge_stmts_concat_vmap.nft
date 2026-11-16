@@ -1,6 +1,6 @@
 table ip x {
 	chain x {
-		meta pkttype . udp dport vmap { broadcast . 547 : accept, broadcast . 67 : accept, multicast . 1900 : drop }
+		meta pkttype . udp dport vmap { broadcast . 67 : accept, broadcast . 547 : accept, multicast . 1900 : drop }
 	}
 
 	chain y {

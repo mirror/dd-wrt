@@ -1,0 +1,173 @@
+#!/bin/bash
+
+if ! command -v arping >/dev/null 2>&1; then
+	echo "arping is not installed, skipping"
+	exit 77
+fi
+
+# Test case for nftables fwd expression with bridge
+# Tests that packets are forwarded to the correct device using "fwd to"
+# Setup: ns1 (sender) -> ns2 (bridge) -> ns3/ns4 (receivers)
+
+rnd=$(mktemp -u XXXXXXXX)
+ns1="nft1fwdbr-$rnd"
+ns2="nft2fwdbr-$rnd"
+ns3="nft3fwdbr-$rnd"
+ns4="nft4fwdbr-$rnd"
+
+cleanup() {
+	ip netns del "$ns1" 2>/dev/null
+	ip netns del "$ns2" 2>/dev/null
+	ip netns del "$ns3" 2>/dev/null
+	ip netns del "$ns4" 2>/dev/null
+}
+
+die() {
+	local n="$1"
+
+	ip netns exec "$n" $NFT list ruleset
+
+	echo "ns2 (router)"
+	ip netns exec "$ns2" $NFT list ruleset
+	exit 1
+}
+
+ping_and_check() {
+	ip netns exec "$ns1" ping -c 1 -W 1 10.0.1.3 >/dev/null
+	ip netns exec "$ns1" ping -c 1 -W 1 10.0.1.4 >/dev/null
+
+	# Check that packets arrived at ns3
+	ip netns exec "$ns3" $NFT "list counter netdev rxt rxc" | grep -q 'packets 2 '
+	if [ $? -ne 0 ]; then
+		echo "ERROR: counter not incremented in $ns3"
+		die "$ns3"
+	fi
+
+	ip netns exec "$ns4" $NFT "list counter netdev rxt rxc" | grep -q 'packets 0 '
+	if [ $? -ne 0 ]; then
+		echo "ERROR: counter incremented in $ns4"
+		die "$ns4"
+	fi
+}
+
+trap cleanup EXIT
+
+set -e
+
+# Create network namespaces
+for n in "$ns1" "$ns2" "$ns3" "$ns4"; do
+	ip netns add "$n"
+	ip -net "$n" link set lo up
+done
+
+# Create veth pairs:
+# ns1(veth0) <-> (veth1)ns2 bridge port
+# ns3(veth0) <-> (veth3)ns2 bridge port
+# ns4(veth0) <-> (veth4)ns2 bridge port
+ip link add veth0 netns "$ns1" type veth peer name veth1 netns "$ns2"
+ip link add veth0 netns "$ns3" type veth peer name veth3 netns "$ns2"
+ip link add veth0 netns "$ns4" type veth peer name veth4 netns "$ns2"
+
+# Create bridge in ns2
+ip -net "$ns2" link add br0 type bridge
+
+# Add veth devices to bridge in ns2
+ip -net "$ns2" link set veth1 master br0
+ip -net "$ns2" link set veth3 master br0
+ip -net "$ns2" link set veth4 master br0
+
+# Set up IP addresses
+ip -net "$ns1" addr add 10.0.1.1/24 dev veth0
+ip -net "$ns2" addr add 10.0.1.2/24 dev br0
+ip -net "$ns3" addr add 10.0.1.3/24 dev veth0
+ip -net "$ns4" addr add 10.0.1.4/24 dev veth0
+
+# Bring up interfaces
+ip -net "$ns1" link set veth0 up
+ip -net "$ns3" link set veth0 up
+ip -net "$ns4" link set veth0 up
+
+ip -net "$ns2" link set veth1 up
+ip -net "$ns2" link set veth3 up
+ip -net "$ns2" link set veth4 up
+ip -net "$ns2" link set br0 up
+
+# Validate setup:
+ip netns exec "$ns1" ping -q -c 1 10.0.1.3
+ip netns exec "$ns1" ping -q -c 1 10.0.1.4
+
+# Add nftables rule in ns2 to forward packets from veth1 to veth4
+ip netns exec "$ns2" $NFT -f /dev/stdin <<"EOF"
+table netdev fwd_bridge_test {
+	chain ingress_veth1 {
+		type filter hook ingress device veth1 priority 0; policy accept;
+
+		# Forward ICMP packets destined for ns4 to veth3 (ns3) instead
+		ip daddr 10.0.1.4 ip protocol icmp counter fwd to "veth3"
+	}
+}
+EOF
+
+[ $? -ne 0 ] && exit 1
+
+# so ingress hook in ns3 picks up packet for ns4 mac
+ip -net "$ns3" link set veth0 promisc on
+
+for n in "$ns3" "$ns4"; do
+ip netns exec "$n" $NFT -f /dev/stdin <<"EOF"
+table netdev rxt {
+	counter rxc { }
+
+	chain in_veth0 {
+		type filter hook ingress device veth0 priority 0; policy accept;
+		ip protocol icmp counter name "rxc"
+	}
+}
+EOF
+done
+
+# Verify normal bridge forwarding still works for non-ICMP traffic
+# Test that ns3/ns4 are reachable from ns1 without fwd interference.
+ip netns exec "$ns1" arping -c 1 -I veth0 10.0.1.3 >/dev/null
+ip netns exec "$ns1" arping -c 1 -I veth0 10.0.1.4 >/dev/null
+
+set +e
+ping_and_check
+
+# again, but use egress hook.
+ip netns exec "$ns2" $NFT -f /dev/stdin <<"EOF"
+flush ruleset
+table netdev fwd_test {
+	chain egress_veth4 {
+		type filter hook egress device veth4 priority 0; policy accept;
+		ip protocol icmp counter fwd to "veth3"
+	}
+}
+EOF
+[ $? -ne 0 ] && exit 1
+
+echo "Egress ruleset loaded"
+ip netns exec "$ns3" $NFT "reset counter netdev rxt rxc"
+ping_and_check
+
+ip netns exec "$ns3" $NFT "reset counter netdev rxt rxc"
+ip netns exec "$ns2" $NFT -f /dev/stdin <<"EOF"
+flush ruleset
+table netdev fwd_test {
+	chain egress_veth4 {
+		type filter hook egress device veth4 priority 0; policy accept;
+		ip protocol icmp counter fwd to "veth4"
+	}
+}
+EOF
+[ $? -ne 0 ] && exit 1
+
+# assert this doesn't crash.
+ip netns exec "$ns1" ping -c 1 -W 1 10.0.1.4
+
+set -e
+ip netns exec "$ns2" $NFT list ruleset | grep counter
+ip netns exec "$ns3" $NFT "list counter netdev rxt rxc" | grep -q 'packets 0 '
+ip netns exec "$ns4" $NFT "list counter netdev rxt rxc" | grep -q 'packets 0 '
+
+exit 0

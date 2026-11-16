@@ -537,7 +537,6 @@ struct expr *list_expr_to_binop(struct expr *expr);
 
 extern struct expr *set_expr_alloc(const struct location *loc,
 				   const struct set *set);
-void __set_expr_add(struct expr *set, struct expr *elem);
 void set_expr_add(struct expr *set, struct expr *elem);
 void set_expr_remove(struct expr *expr, struct expr *item);
 
@@ -563,7 +562,9 @@ extern struct expr *set_elem_expr_alloc(const struct location *loc,
 struct expr *set_elem_catchall_expr_alloc(const struct location *loc);
 
 #define expr_type_catchall(__expr)			\
-	((__expr)->etype == EXPR_SET_ELEM_CATCHALL)
+	((__expr)->etype == EXPR_SET_ELEM_CATCHALL ||	\
+	 ((__expr)->etype == EXPR_MAPPING &&		\
+	  (__expr)->left->etype == EXPR_SET_ELEM_CATCHALL))
 
 extern void range_expr_value_low(mpz_t rop, const struct expr *expr);
 extern void range_expr_value_high(mpz_t rop, const struct expr *expr);

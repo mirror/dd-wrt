@@ -676,25 +676,6 @@ struct symbol *symbol_lookup_fuzzy(const struct scope *scope,
 	return st.obj;
 }
 
-static const char * const chain_type_str_array[] = {
-	"filter",
-	"nat",
-	"route",
-	NULL,
-};
-
-const char *chain_type_name_lookup(const char *name)
-{
-	int i;
-
-	for (i = 0; chain_type_str_array[i]; i++) {
-		if (!strcmp(name, chain_type_str_array[i]))
-			return chain_type_str_array[i];
-	}
-
-	return NULL;
-}
-
 static const char * const chain_hookname_str_array[] = {
 	"prerouting",
 	"input",
@@ -1389,7 +1370,8 @@ void markup_free(struct markup *m)
 	free(m);
 }
 
-struct monitor *monitor_alloc(uint32_t format, uint32_t type, const char *event)
+struct monitor *monitor_alloc(uint32_t format, uint32_t type,
+			      enum cmd_monitor_event event)
 {
 	struct monitor *mon;
 
@@ -1404,7 +1386,6 @@ struct monitor *monitor_alloc(uint32_t format, uint32_t type, const char *event)
 
 void monitor_free(struct monitor *m)
 {
-	free_const(m->event);
 	free(m);
 }
 
@@ -1454,6 +1435,7 @@ void cmd_free(struct cmd *cmd)
 		case CMD_OBJ_SECMARK:
 		case CMD_OBJ_SYNPROXY:
 		case CMD_OBJ_TUNNEL:
+		case CMD_OBJ_CONNLIMIT:
 			obj_free(cmd->object);
 			break;
 		case CMD_OBJ_FLOWTABLE:
@@ -1558,6 +1540,7 @@ static int do_command_add(struct netlink_ctx *ctx, struct cmd *cmd, bool excl)
 	case CMD_OBJ_SECMARK:
 	case CMD_OBJ_SYNPROXY:
 	case CMD_OBJ_TUNNEL:
+	case CMD_OBJ_CONNLIMIT:
 		return mnl_nft_obj_add(ctx, cmd, flags);
 	case CMD_OBJ_FLOWTABLE:
 		return mnl_nft_flowtable_add(ctx, cmd, flags);
@@ -1640,6 +1623,8 @@ static int do_command_delete(struct netlink_ctx *ctx, struct cmd *cmd)
 		return mnl_nft_obj_del(ctx, cmd, NFT_OBJECT_SYNPROXY);
 	case CMD_OBJ_TUNNEL:
 		return mnl_nft_obj_del(ctx, cmd, NFT_OBJECT_TUNNEL);
+	case CMD_OBJ_CONNLIMIT:
+		return mnl_nft_obj_del(ctx, cmd, NFT_OBJECT_CONNLIMIT);
 	case CMD_OBJ_FLOWTABLE:
 		return mnl_nft_flowtable_del(ctx, cmd);
 	default:
@@ -1852,14 +1837,123 @@ int tunnel_geneve_data_str2array(const char *hexstr,
 	return 0;
 }
 
-static void obj_print_comment(const struct obj *obj,
-			      struct print_fmt_options *opts,
-			      struct output_ctx *octx)
+static void obj_print_header(const struct obj *obj,
+			     struct print_fmt_options *opts,
+			     struct output_ctx *octx)
 {
+	nft_print(octx, " %s {", obj->handle.obj.name);
+	if (nft_output_handle(octx))
+		nft_print(octx, " # handle %" PRIu64, obj->handle.handle.id);
+
 	if (obj->comment)
 		nft_print(octx, "%s%s%scomment \"%s\"",
 			  opts->nl, opts->tab, opts->tab,
 			  obj->comment);
+}
+
+static void tunnel_obj_print_data(const struct obj *obj,
+				  struct print_fmt_options *opts,
+				  struct output_ctx *octx)
+{
+	struct tunnel_geneve *geneve;
+
+	obj_print_header(obj, opts, octx);
+
+	nft_print(octx, "%s%s%sid %u",
+		  opts->nl, opts->tab, opts->tab, obj->tunnel.id);
+
+	if (obj->tunnel.src) {
+		if (obj->tunnel.src->len == 32) {
+			nft_print(octx, "%s%s%sip saddr ",
+				  opts->nl, opts->tab, opts->tab);
+			expr_print(obj->tunnel.src, octx);
+		} else if (obj->tunnel.src->len == 128) {
+			nft_print(octx, "%s%s%sip6 saddr ",
+				  opts->nl, opts->tab, opts->tab);
+			expr_print(obj->tunnel.src, octx);
+		}
+	}
+	if (obj->tunnel.dst) {
+		if (obj->tunnel.dst->len == 32) {
+			nft_print(octx, "%s%s%sip daddr ",
+				  opts->nl, opts->tab, opts->tab);
+			expr_print(obj->tunnel.dst, octx);
+		} else if (obj->tunnel.dst->len == 128) {
+			nft_print(octx, "%s%s%sip6 daddr ",
+				  opts->nl, opts->tab, opts->tab);
+			expr_print(obj->tunnel.dst, octx);
+		}
+	}
+	if (obj->tunnel.sport) {
+		nft_print(octx, "%s%s%ssport %u",
+			  opts->nl, opts->tab, opts->tab,
+			  obj->tunnel.sport);
+	}
+	if (obj->tunnel.dport) {
+		nft_print(octx, "%s%s%sdport %u",
+			  opts->nl, opts->tab, opts->tab,
+			  obj->tunnel.dport);
+	}
+	if (obj->tunnel.tos) {
+		nft_print(octx, "%s%s%stos %u",
+			  opts->nl, opts->tab, opts->tab,
+			  obj->tunnel.tos);
+	}
+	if (obj->tunnel.ttl) {
+		nft_print(octx, "%s%s%sttl %u",
+			  opts->nl, opts->tab, opts->tab,
+			  obj->tunnel.ttl);
+	}
+	switch (obj->tunnel.type) {
+	case TUNNEL_ERSPAN:
+		nft_print(octx, "%s%s%serspan {",
+			  opts->nl, opts->tab, opts->tab);
+		nft_print(octx, "%s%s%s%sversion %u",
+			  opts->nl, opts->tab, opts->tab, opts->tab,
+			  obj->tunnel.erspan.version);
+		if (obj->tunnel.erspan.version == 1) {
+			nft_print(octx, "%s%s%s%sindex %u",
+				  opts->nl, opts->tab, opts->tab, opts->tab,
+				  obj->tunnel.erspan.v1.index);
+		} else {
+			nft_print(octx, "%s%s%s%sdirection %s",
+				  opts->nl, opts->tab, opts->tab, opts->tab,
+				  obj->tunnel.erspan.v2.direction ? "egress"
+								  : "ingress");
+			nft_print(octx, "%s%s%s%sid %u",
+				  opts->nl, opts->tab, opts->tab, opts->tab,
+				  obj->tunnel.erspan.v2.hwid);
+		}
+		break;
+	case TUNNEL_VXLAN:
+		nft_print(octx, "%s%s%svxlan {",
+			  opts->nl, opts->tab, opts->tab);
+		nft_print(octx, "%s%s%s%sgbp %u",
+			  opts->nl, opts->tab, opts->tab, opts->tab,
+			  obj->tunnel.vxlan.gbp);
+		break;
+	case TUNNEL_GENEVE:
+		nft_print(octx, "%s%s%sgeneve {", opts->nl, opts->tab, opts->tab);
+		list_for_each_entry(geneve, &obj->tunnel.geneve_opts, list) {
+			char data_str[256];
+			int offset = 0;
+
+			for (uint32_t i = 0; i < geneve->data_len; i++) {
+				offset += snprintf(data_str + offset,
+						   geneve->data_len,
+						   "%x",
+						   geneve->data[i]);
+			}
+			nft_print(octx, "%s%s%s%sclass 0x%x opt-type 0x%x data \"0x%s\"",
+				  opts->nl, opts->tab, opts->tab, opts->tab,
+				  geneve->geneve_class, geneve->type, data_str);
+
+		}
+		break;
+	default:
+		break;
+	}
+	nft_print(octx, "%s%s%s}", opts->nl, opts->tab, opts->tab);
 }
 
 static void obj_print_data(const struct obj *obj,
@@ -1868,11 +1962,7 @@ static void obj_print_data(const struct obj *obj,
 {
 	switch (obj->type) {
 	case NFT_OBJECT_COUNTER:
-		nft_print(octx, " %s {", obj->handle.obj.name);
-		if (nft_output_handle(octx))
-			nft_print(octx, " # handle %" PRIu64, obj->handle.handle.id);
-
-		obj_print_comment(obj, opts, octx);
+		obj_print_header(obj, opts, octx);
 		if (nft_output_stateless(octx))
 			nft_print(octx, "%s", opts->nl);
 		else
@@ -1884,11 +1974,7 @@ static void obj_print_data(const struct obj *obj,
 		const char *data_unit;
 		uint64_t bytes;
 
-		nft_print(octx, " %s {", obj->handle.obj.name);
-		if (nft_output_handle(octx))
-			nft_print(octx, " # handle %" PRIu64, obj->handle.handle.id);
-
-		obj_print_comment(obj, opts, octx);
+		obj_print_header(obj, opts, octx);
 		nft_print(octx, "%s%s%s", opts->nl, opts->tab, opts->tab);
 		data_unit = get_rate(obj->quota.bytes, &bytes);
 		nft_print(octx, "%s%" PRIu64 " %s",
@@ -1903,20 +1989,12 @@ static void obj_print_data(const struct obj *obj,
 		}
 		break;
 	case NFT_OBJECT_SECMARK:
-		nft_print(octx, " %s {", obj->handle.obj.name);
-		if (nft_output_handle(octx))
-			nft_print(octx, " # handle %" PRIu64, obj->handle.handle.id);
-
-		obj_print_comment(obj, opts, octx);
+		obj_print_header(obj, opts, octx);
 		nft_print(octx, "%s%s%s", opts->nl, opts->tab, opts->tab);
 		nft_print(octx, "\"%s\"%s", obj->secmark.ctx, opts->nl);
 		break;
 	case NFT_OBJECT_CT_HELPER:
-		nft_print(octx, " %s {", obj->handle.obj.name);
-		if (nft_output_handle(octx))
-			nft_print(octx, " # handle %" PRIu64, obj->handle.handle.id);
-
-		obj_print_comment(obj, opts, octx);
+		obj_print_header(obj, opts, octx);
 		nft_print(octx, "%s", opts->nl);
 		nft_print(octx, "%s%stype \"%s\" protocol ",
 			  opts->tab, opts->tab, obj->ct_helper.name);
@@ -1928,11 +2006,7 @@ static void obj_print_data(const struct obj *obj,
 			  opts->stmt_separator);
 		break;
 	case NFT_OBJECT_CT_TIMEOUT:
-		nft_print(octx, " %s {", obj->handle.obj.name);
-		if (nft_output_handle(octx))
-			nft_print(octx, " # handle %" PRIu64, obj->handle.handle.id);
-
-		obj_print_comment(obj, opts, octx);
+		obj_print_header(obj, opts, octx);
 		nft_print(octx, "%s", opts->nl);
 		nft_print(octx, "%s%sprotocol ", opts->tab, opts->tab);
 		print_proto_name_proto(obj->ct_timeout.l4proto, octx);
@@ -1945,11 +2019,7 @@ static void obj_print_data(const struct obj *obj,
 					   obj->ct_timeout.timeout, opts, octx);
 		break;
 	case NFT_OBJECT_CT_EXPECT:
-		nft_print(octx, " %s {", obj->handle.obj.name);
-		if (nft_output_handle(octx))
-			nft_print(octx, " # handle %" PRIu64, obj->handle.handle.id);
-
-		obj_print_comment(obj, opts, octx);
+		obj_print_header(obj, opts, octx);
 		nft_print(octx, "%s", opts->nl);
 		nft_print(octx, "%s%sprotocol ", opts->tab, opts->tab);
 		print_proto_name_proto(obj->ct_expect.l4proto, octx);
@@ -1975,11 +2045,7 @@ static void obj_print_data(const struct obj *obj,
 		const char *data_unit;
 		uint64_t rate;
 
-		nft_print(octx, " %s {", obj->handle.obj.name);
-		if (nft_output_handle(octx))
-			nft_print(octx, " # handle %" PRIu64, obj->handle.handle.id);
-
-		obj_print_comment(obj, opts, octx);
+		obj_print_header(obj, opts, octx);
 		nft_print(octx, "%s%s%s", opts->nl, opts->tab, opts->tab);
 		switch (obj->limit.type) {
 		case NFT_LIMIT_PKTS:
@@ -2013,11 +2079,7 @@ static void obj_print_data(const struct obj *obj,
 		const char *sack_str = synproxy_sack_to_str(flags);
 		const char *ts_str = synproxy_timestamp_to_str(flags);
 
-		nft_print(octx, " %s {", obj->handle.obj.name);
-		if (nft_output_handle(octx))
-			nft_print(octx, " # handle %" PRIu64, obj->handle.handle.id);
-
-		obj_print_comment(obj, opts, octx);
+		obj_print_header(obj, opts, octx);
 
 		if (flags & NF_SYNPROXY_OPT_MSS) {
 			nft_print(octx, "%s%s%s", opts->nl, opts->tab, opts->tab);
@@ -2035,113 +2097,16 @@ static void obj_print_data(const struct obj *obj,
 		}
 		break;
 	case NFT_OBJECT_TUNNEL:
-		nft_print(octx, " %s {", obj->handle.obj.name);
-		if (nft_output_handle(octx))
-			nft_print(octx, " # handle %" PRIu64, obj->handle.handle.id);
-
-		obj_print_comment(obj, opts, octx);
-
-		nft_print(octx, "%s%s%sid %u",
-			  opts->nl, opts->tab, opts->tab, obj->tunnel.id);
-
-		if (obj->tunnel.src) {
-			if (obj->tunnel.src->len == 32) {
-				nft_print(octx, "%s%s%sip saddr ",
-					  opts->nl, opts->tab, opts->tab);
-				expr_print(obj->tunnel.src, octx);
-			} else if (obj->tunnel.src->len == 128) {
-				nft_print(octx, "%s%s%sip6 saddr ",
-					  opts->nl, opts->tab, opts->tab);
-				expr_print(obj->tunnel.src, octx);
-			}
-		}
-		if (obj->tunnel.dst) {
-			if (obj->tunnel.dst->len == 32) {
-				nft_print(octx, "%s%s%sip daddr ",
-					  opts->nl, opts->tab, opts->tab);
-				expr_print(obj->tunnel.dst, octx);
-			} else if (obj->tunnel.dst->len == 128) {
-				nft_print(octx, "%s%s%sip6 daddr ",
-					  opts->nl, opts->tab, opts->tab);
-				expr_print(obj->tunnel.dst, octx);
-			}
-		}
-		if (obj->tunnel.sport) {
-			nft_print(octx, "%s%s%ssport %u",
-				  opts->nl, opts->tab, opts->tab,
-				  obj->tunnel.sport);
-		}
-		if (obj->tunnel.dport) {
-			nft_print(octx, "%s%s%sdport %u",
-				  opts->nl, opts->tab, opts->tab,
-				  obj->tunnel.dport);
-		}
-		if (obj->tunnel.tos) {
-			nft_print(octx, "%s%s%stos %u",
-				  opts->nl, opts->tab, opts->tab,
-				  obj->tunnel.tos);
-		}
-		if (obj->tunnel.ttl) {
-			nft_print(octx, "%s%s%sttl %u",
-				  opts->nl, opts->tab, opts->tab,
-				  obj->tunnel.ttl);
-		}
-		switch (obj->tunnel.type) {
-		case TUNNEL_ERSPAN:
-			nft_print(octx, "%s%s%serspan {",
-				  opts->nl, opts->tab, opts->tab);
-			nft_print(octx, "%s%s%s%sversion %u",
-				  opts->nl, opts->tab, opts->tab, opts->tab,
-				  obj->tunnel.erspan.version);
-			if (obj->tunnel.erspan.version == 1) {
-				nft_print(octx, "%s%s%s%sindex %u",
-					  opts->nl, opts->tab, opts->tab, opts->tab,
-					  obj->tunnel.erspan.v1.index);
-			} else {
-				nft_print(octx, "%s%s%s%sdirection %s",
-					  opts->nl, opts->tab, opts->tab, opts->tab,
-					  obj->tunnel.erspan.v2.direction ? "egress"
-									  : "ingress");
-				nft_print(octx, "%s%s%s%sid %u",
-					  opts->nl, opts->tab, opts->tab, opts->tab,
-					  obj->tunnel.erspan.v2.hwid);
-			}
-			nft_print(octx, "%s%s%s}",
-				  opts->nl, opts->tab, opts->tab);
-			break;
-		case TUNNEL_VXLAN:
-			nft_print(octx, "%s%s%svxlan {",
-				  opts->nl, opts->tab, opts->tab);
-			nft_print(octx, "%s%s%s%sgbp %u",
-				  opts->nl, opts->tab, opts->tab, opts->tab,
-				  obj->tunnel.vxlan.gbp);
-			nft_print(octx, "%s%s%s}",
-				  opts->nl, opts->tab, opts->tab);
-			break;
-		case TUNNEL_GENEVE:
-			struct tunnel_geneve *geneve;
-
-			nft_print(octx, "%s%s%sgeneve {", opts->nl, opts->tab, opts->tab);
-			list_for_each_entry(geneve, &obj->tunnel.geneve_opts, list) {
-				char data_str[256];
-				int offset = 0;
-
-				for (uint32_t i = 0; i < geneve->data_len; i++) {
-					offset += snprintf(data_str + offset,
-							   geneve->data_len,
-							   "%x",
-							   geneve->data[i]);
-				}
-				nft_print(octx, "%s%s%s%sclass 0x%x opt-type 0x%x data \"0x%s\"",
-					  opts->nl, opts->tab, opts->tab, opts->tab,
-					  geneve->geneve_class, geneve->type, data_str);
-
-			}
-			nft_print(octx, "%s%s%s}", opts->nl, opts->tab, opts->tab);
-			break;
-		default:
-			break;
-		}
+		tunnel_obj_print_data(obj, opts, octx);
+		nft_print(octx, "%s", opts->stmt_separator);
+		break;
+	case NFT_OBJECT_CONNLIMIT:
+		obj_print_header(obj, opts, octx);
+		nft_print(octx, "%s%s%s", opts->nl, opts->tab, opts->tab);
+		if (obj->connlimit.flags & NFT_CONNLIMIT_F_INV)
+			nft_print(octx, "over %u", obj->connlimit.count);
+		else
+			nft_print(octx, "until %u", obj->connlimit.count);
 
 		nft_print(octx, "%s", opts->stmt_separator);
 		break;
@@ -2161,6 +2126,7 @@ static const char * const obj_type_name_array[] = {
 	[NFT_OBJECT_SYNPROXY]	= "synproxy",
 	[NFT_OBJECT_CT_EXPECT]	= "ct expectation",
 	[NFT_OBJECT_TUNNEL]	= "tunnel",
+	[NFT_OBJECT_CONNLIMIT]	= "ct count"
 };
 
 const char *obj_type_name(unsigned int type)
@@ -2180,6 +2146,7 @@ static uint32_t obj_type_cmd_array[NFT_OBJECT_MAX + 1] = {
 	[NFT_OBJECT_SYNPROXY]	= CMD_OBJ_SYNPROXY,
 	[NFT_OBJECT_CT_EXPECT]	= CMD_OBJ_CT_EXPECT,
 	[NFT_OBJECT_TUNNEL]	= CMD_OBJ_TUNNEL,
+	[NFT_OBJECT_CONNLIMIT]	= CMD_OBJ_CONNLIMIT,
 };
 
 enum cmd_obj obj_type_to_cmd(uint32_t type)
@@ -2654,6 +2621,9 @@ static int do_command_list(struct netlink_ctx *ctx, struct cmd *cmd)
 	case CMD_OBJ_TUNNEL:
 	case CMD_OBJ_TUNNELS:
 		return do_list_obj(ctx, cmd, NFT_OBJECT_TUNNEL);
+	case CMD_OBJ_CONNLIMIT:
+	case CMD_OBJ_CONNLIMITS:
+		return do_list_obj(ctx, cmd, NFT_OBJECT_CONNLIMIT);
 	case CMD_OBJ_FLOWTABLE:
 		return do_list_flowtable(ctx, cmd, table);
 	case CMD_OBJ_FLOWTABLES:

@@ -1,7 +1,7 @@
 table inet nat {
 	chain prerouting {
 		oif "lo" accept
-		dnat ip to iifname . ip daddr . tcp dport map { "enp2s0" . 72.2.3.70 . 80 : 10.1.1.52 . 80, "enp2s0" . 72.2.3.66 . 53122 : 10.1.1.10 . 22, "enp2s0" . 72.2.3.66 . 443 : 10.1.1.52 . 443 }
+		dnat ip to iifname . ip daddr . tcp dport map { "enp2s0" . 72.2.3.66 . 443 : 10.1.1.52 . 443, "enp2s0" . 72.2.3.66 . 53122 : 10.1.1.10 . 22, "enp2s0" . 72.2.3.70 . 80 : 10.1.1.52 . 80 }
 	}
 
 	chain postrouting {

@@ -156,11 +156,11 @@ back_n_forth "$STD_SYNPROXY_2" "$JSON_SYNPROXY_2"
 STD_SYNPROXY_OBJ_1="table ip t {
 	synproxy s {
 		mss 1280
-		wscale 64
+		wscale 14
 		 sack-perm
 	}
 }"
-JSON_SYNPROXY_OBJ_1='{"nftables": [{"table": {"family": "ip", "name": "t", "handle": 0}}, {"synproxy": {"family": "ip", "name": "s", "table": "t", "handle": 0, "mss": 1280, "wscale": 64, "flags": "sack-perm"}}]}'
+JSON_SYNPROXY_OBJ_1='{"nftables": [{"table": {"family": "ip", "name": "t", "handle": 0}}, {"synproxy": {"family": "ip", "name": "s", "table": "t", "handle": 0, "mss": 1280, "wscale": 14, "flags": "sack-perm"}}]}'
 JSON_SYNPROXY_OBJ_1_EQUIV=$(sed 's/\("flags":\) \([^}]*\)/\1 [\2]/' <<< "$JSON_SYNPROXY_OBJ_1")
 
 STD_SYNPROXY_OBJ_2=$(sed 's/ \(sack-perm\)/timestamp \1/' <<< "$STD_SYNPROXY_OBJ_1")

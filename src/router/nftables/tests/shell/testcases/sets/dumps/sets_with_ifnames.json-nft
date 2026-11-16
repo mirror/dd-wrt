@@ -260,8 +260,8 @@
               },
               "right": {
                 "set": [
-                  "eth0",
-                  "abcdef0"
+                  "abcdef0",
+                  "eth0"
                 ]
               }
             }
@@ -509,7 +509,7 @@
                   "field": "protocol"
                 }
               },
-              "right": "icmp"
+              "right": 1
             }
           },
           {
@@ -536,7 +536,7 @@
                   "field": "protocol"
                 }
               },
-              "right": "icmp"
+              "right": 1
             }
           },
           {

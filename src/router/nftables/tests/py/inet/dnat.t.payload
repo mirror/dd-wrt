@@ -1,41 +1,41 @@
 # iifname "foo" tcp dport 80 redirect to :8080
 inet test-inet prerouting
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x006f6f66 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x666f6f00 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00005000 ]
-  [ immediate reg 1 0x0000901f ]
+  [ cmp eq reg 1 0x0050 ]
+  [ immediate reg 1 0x1f90 ]
   [ redir proto_min reg 1 flags 0x2 ]
 
 # iifname "eth0" tcp dport 443 dnat ip to 192.168.3.2
 inet test-inet prerouting
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000bb01 ]
-  [ immediate reg 1 0x0203a8c0 ]
+  [ cmp eq reg 1 0x01bb ]
+  [ immediate reg 1 0xc0a80302 ]
   [ nat dnat ip addr_min reg 1 ]
 
 # iifname "eth0" tcp dport 443 dnat ip6 to [dead::beef]:4443
 inet test-inet prerouting
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000bb01 ]
-  [ immediate reg 1 0x0000adde 0x00000000 0x00000000 0xefbe0000 ]
-  [ immediate reg 2 0x00005b11 ]
+  [ cmp eq reg 1 0x01bb ]
+  [ immediate reg 1 0xdead0000 0x00000000 0x00000000 0x0000beef ]
+  [ immediate reg 2 0x115b ]
   [ nat dnat ip6 addr_min reg 1 proto_min reg 2 flags 0x2 ]
 
 # dnat ip to ct mark map { 0x00000014 : 1.2.3.4}
 __map%d test-inet b size 1
 __map%d test-inet 0
-        element 00000014  : 04030201 0 [end]
+	element 00000014 : 01020304
 inet test-inet prerouting
   [ ct load mark => reg 1 ]
   [ lookup reg 1 set __map%d dreg 1 ]
@@ -44,10 +44,10 @@ inet test-inet prerouting
 # dnat ip to ct mark . ip daddr map { 0x00000014 . 1.1.1.1 : 1.2.3.4}
 __map%d test-inet b size 1
 __map%d test-inet 0
-        element 00000014 01010101  : 04030201 0 [end]
+	element 00000014 . 01010101 : 01020304
 inet test-inet prerouting
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ ct load mark => reg 1 ]
   [ payload load 4b @ network header + 16 => reg 9 ]
   [ lookup reg 1 set __map%d dreg 1 ]
@@ -56,31 +56,30 @@ inet test-inet prerouting
 # meta l4proto { tcp, udp } dnat ip to 1.1.1.1:80
 __set%d test-inet 3
 __set%d test-inet 0
-        element 00000006  : 0 [end]     element 00000011  : 0 [end]
+	element 06	element 11
 inet
   [ meta load l4proto => reg 1 ]
   [ lookup reg 1 set __set%d ]
   [ immediate reg 1 0x01010101 ]
-  [ immediate reg 2 0x00005000 ]
+  [ immediate reg 2 0x0050 ]
   [ nat dnat ip addr_min reg 1 proto_min reg 2 flags 0x2 ]
 
 # ip protocol { tcp, udp } dnat ip to 1.1.1.1:80
 __set%d test-inet 3
 __set%d test-inet 0
-        element 00000006  : 0 [end]     element 00000011  : 0 [end]
+	element 06	element 11
 inet
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ payload load 1b @ network header + 9 => reg 1 ]
   [ lookup reg 1 set __set%d ]
   [ immediate reg 1 0x01010101 ]
-  [ immediate reg 2 0x00005000 ]
+  [ immediate reg 2 0x0050 ]
   [ nat dnat ip addr_min reg 1 proto_min reg 2 flags 0x2 ]
 
 # meta l4proto tcp dnat to :80
 inet
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
-  [ immediate reg 1 0x00005000 ]
+  [ cmp eq reg 1 0x06 ]
+  [ immediate reg 1 0x0050 ]
   [ nat dnat inet proto_min reg 1 flags 0x2 ]
-

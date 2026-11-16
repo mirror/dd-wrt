@@ -41,6 +41,6 @@ ip6 test-ip6 input
   [ payload load 16b @ network header + 8 => reg 1 ]
   [ payload load 16b @ network header + 24 => reg 2 ]
   [ payload load 2b @ transport header + 2 => reg 3 ]
-  [ immediate reg 17 0x00003412 0x00000000 0x00000000 0x01000000 ]
-  [ immediate reg 21 0x00005000 ]
+  [ immediate reg 17 0x12340000 0x00000000 0x00000000 0x00000001 ]
+  [ immediate reg 21 0x0050 ]
   [ dynset add reg_key 1 set map2 sreg_data 17 ]

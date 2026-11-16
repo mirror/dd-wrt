@@ -8,6 +8,6 @@ table ip nat {
 
 	chain prerouting {
 		type nat hook prerouting priority dstnat; policy accept;
-		ip protocol tcp dnat ip to ip saddr map @ipportmap
+		ip protocol 6 dnat ip to ip saddr map @ipportmap
 	}
 }

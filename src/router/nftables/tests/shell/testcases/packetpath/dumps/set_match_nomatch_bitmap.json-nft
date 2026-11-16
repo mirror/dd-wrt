@@ -1,0 +1,113 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "test",
+        "name": "c",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "counter": {
+        "family": "ip",
+        "name": "match",
+        "table": "test",
+        "handle": 0,
+        "packets": 8,
+        "bytes": 672
+      }
+    },
+    {
+      "counter": {
+        "family": "ip",
+        "name": "nomatch",
+        "table": "test",
+        "handle": 0,
+        "packets": 6,
+        "bytes": 504
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "s",
+        "table": "test",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip",
+              "field": "dscp"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          "lephb",
+          2,
+          4,
+          7
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "dscp"
+                }
+              },
+              "right": "@s"
+            }
+          },
+          {
+            "counter": "match"
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "counter": "nomatch"
+          }
+        ]
+      }
+    }
+  ]
+}

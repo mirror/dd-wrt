@@ -255,6 +255,7 @@ usage() {
 	echo "                 Supported <FEATURE>s are: ${_HAVE_OPTS[@]}."
 	echo " NFT_TEST_SKIP_<OPTION>=*|y: if set, certain tests are skipped."
 	echo "                 Supported <OPTION>s are: ${_SKIP_OPTS[@]}."
+	echo " NFT_TEST_EXCLUDES=\"TEST1 TEST2 ...\": Specify tests to be excluded from running"
 }
 
 NFT_TEST_BASEDIR="$(dirname "$0")"
@@ -454,6 +455,11 @@ for t in "${TESTSOLD[@]}" ; do
 done
 
 NFT_TEST_SHUFFLE_TESTS="$(bool_y "$NFT_TEST_SHUFFLE_TESTS")"
+
+if [ -n "$NFT_TEST_EXCLUDES" ]; then
+	TESTS=( $(printf '%s\n' "${TESTS[@]}" |
+		grep -vE "$(printf '%s|' $NFT_TEST_EXCLUDES | sed 's/|$//')") )
+fi
 
 if [ "$DO_LIST_TESTS" = y ] ; then
 	printf '%s\n' "${TESTS[@]}"

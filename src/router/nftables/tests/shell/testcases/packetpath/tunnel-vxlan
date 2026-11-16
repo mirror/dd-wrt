@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_tcpdump)
+
+# OVERLAY (The Virtual Network)
+# =============================
+#
+# [ ns0: 10.0.0.1 ]     [ ns1: 10.0.0.2 ]     [ ns2: 10.0.0.3 ]
+#     |                      |                     |
+#    (vxlan0)             (vxlan0)            (vxlan0)
+#     |                      |                     |
+#     |~~~~~~~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~~~~~~|
+#     |                 nftables                   |
+#     |         (attaches the Underlay IP)         |
+#     |~~~~~~~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~~~~~~|
+#     |                      |                     |
+#     [ 192.168.1.1 ]   [ 192.168.1.2 ]   [ 192.168.1.3 ]
+#     |                      |                     |
+#     +------------------[ Bridge ]----------------+
+#UNDERLAY (The Physical Network)
+
+tmpfile=""
+cleanup() {
+	rm -f "$tmpfile"
+	for i in "${ns[@]}"; do
+		ip netns del "$i"
+	done
+}
+trap cleanup EXIT
+
+set -e
+set -x
+
+rnd=$(mktemp -u XXXXXXXX)
+ns=("sw-$rnd" "vxlan-ns1-$rnd" "vxlan-ns2-$rnd" "vxlan-ns3-$rnd")
+tmpfile=$(mktemp)
+
+for i in $(seq 0 3); do
+	ip netns add "${ns[$i]}"
+done
+
+ip -n "${ns[0]}" link add br0 type bridge
+ip -n "${ns[0]}" link set br0 up
+
+for i in 1 2 3; do
+	# create the link and move ends to appropriate namespaces
+	ip link add veth$i type veth peer name veth${i}_sw netns "${ns[0]}"
+	ip link set veth$i netns "${ns[$i]}"
+
+	# linux bridge (switch)
+	ip -n "${ns[0]}" link set veth${i}_sw master br0 up
+
+	# configure the node side
+	ip -n "${ns[$i]}" addr add 192.168.1.$i/24 dev veth$i
+	ip -n "${ns[$i]}" link set veth$i up
+	ip -n "${ns[$i]}" link set lo up
+
+	# create the Overlay VXLAN interface
+	ip -n "${ns[$i]}" link add vxlan0 type vxlan dstport 4789 external
+	ip -n "${ns[$i]}" addr add 10.0.0.$i/24 dev vxlan0
+	ip -n "${ns[$i]}" link set vxlan0 up
+
+	# route the ENTIRE overlay subnet into the single VXLAN device
+# ip -n "${ns[$i]}" route add 10.0.0.0/24 dev vxlan0
+done
+
+# check we cannot reach the peer via the overlay network as-is
+ip netns exec ${ns[1]} ping -c 1 10.0.0.2 && exit 1
+ip netns exec ${ns[1]} ping -c 2 10.0.0.3 && exit 1
+
+for i in 1 2 3; do
+	echo "table netdev t {" > "$tmpfile"
+
+	for j in 1 2 3 ; do
+		[ $j -eq $i ] && continue
+		echo "tunnel tun_to_ns$j { id 100; ip saddr 192.168.1.$i; ip daddr 192.168.1.$j; }" >> "$tmpfile"
+	done
+cat - >> "$tmpfile" <<EOF
+chain egress_filter {
+         type filter hook egress device "vxlan0" priority 0; policy accept;
+EOF
+	for j in 1 2 3 ; do
+		[ $j -eq $i ] && continue
+		echo ip daddr 10.0.0.$j tunnel name "tun_to_ns$j" >> "$tmpfile"
+		echo arp daddr ip 10.0.0.$j tunnel name "tun_to_ns$j" >> "$tmpfile"
+	done
+cat - >> "$tmpfile" <<EOF
+     }
+}
+EOF
+ip netns exec ${ns[$i]} $NFT -f $tmpfile
+done
+
+timeout 3 ip netns exec ${ns[0]} tcpdump --immediate-mode -nni br0 -w "$tmpfile" &
+tpid=$!
+sleep 1
+
+ip netns exec ${ns[1]} ping -c 1 10.0.0.2
+ip netns exec ${ns[1]} ping -c 2 10.0.0.3
+
+kill "$tpid"
+wait
+tcpdump -n -r "$tmpfile" | grep -q VXLAN

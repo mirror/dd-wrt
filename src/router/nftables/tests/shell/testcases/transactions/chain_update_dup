@@ -1,0 +1,22 @@
+#!/bin/bash
+
+ip link add dummy0 type dummy
+
+$NFT -f /dev/stdin <<EOF
+table netdev t {
+	chain c {
+		type filter hook ingress priority 0;
+	}
+}
+EOF
+
+$NFT -f /dev/stdin <<EOF
+add chain netdev t c { devices = { dummy0 }; }
+add chain netdev t c { devices = { dummy0 }; }
+EOF
+
+ip link del dummy0
+
+sleep 4
+
+$NFT flush ruleset

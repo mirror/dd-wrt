@@ -1,15 +1,14 @@
 # tunnel path exists
 netdev test-netdev tunnelchain
   [ tunnel load path => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # tunnel path missing
 netdev test-netdev tunnelchain
   [ tunnel load path => reg 1 ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ cmp eq reg 1 0x00 ]
 
 # tunnel id 10
 netdev test-netdev tunnelchain
   [ tunnel load id => reg 1 ]
   [ cmp eq reg 1 0x0000000a ]
-

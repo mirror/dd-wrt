@@ -50,15 +50,15 @@ table inet t {
 
 	set helpname {
 		typeof ct helper
-		elements = { "sip",
-			     "ftp" }
+		elements = { "ftp",
+			     "sip" }
 	}
 
 	chain y {
 		ct expectation set ip saddr map @exp
 		ct expectation set ip6 saddr map { dead::beef : "exp2" }
 		ct expectation set ip6 daddr map { dead::beef : "exp2", feed::17 : "exp2" }
-		ct expectation set ip6 daddr . tcp dport map { feed::17 . 512 : "exp2", dead::beef . 123 : "exp2" }
+		ct expectation set ip6 daddr . tcp dport map { dead::beef . 123 : "exp2", feed::17 . 512 : "exp2" }
 		ct helper set ip6 saddr map { 1c3::c01d : "myftp", dead::beef : "myftp" }
 		ct helper set ip6 saddr map @helpobj
 		ct timeout set ip daddr map @timeoutmap

@@ -1,4 +1,4 @@
 # meta broute set 1
 bridge test-bridge prerouting
-  [ immediate reg 1 0x00000001 ]
+  [ immediate reg 1 0x01 ]
   [ meta set broute with reg 1 ]

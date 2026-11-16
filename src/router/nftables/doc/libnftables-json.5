@@ -2,12 +2,12 @@
 .\"     Title: libnftables-json
 .\"    Author: Phil Sutter <phil@nwl.cc>
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 12/05/2025
+.\"      Date: 09/01/2026
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "LIBNFTABLES\-JSON" "5" "12/05/2025" "\ \&" "\ \&"
+.TH "LIBNFTABLES\-JSON" "5" "09/01/2026" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -148,7 +148,7 @@ translates into JSON as such:
 .RE
 .\}
 .sp
-Add a new ruleset element to the kernel\&.
+Add a new ruleset element to the kernel\&. For rules, this appends the rule to the end of the chain by default\&. If the rule contains a \fBhandle\fR or \fBindex\fR property, it is inserted \fBafter\fR the rule identified by those properties\&.
 .SS "REPLACE"
 .sp
 .if n \{\
@@ -187,7 +187,23 @@ Identical to \fBadd\fR command, but returns an error if the object already exist
 .RE
 .\}
 .sp
-This command is identical to \fBadd\fR for rules, but instead of appending the rule to the chain by default, it inserts at first position\&. If a \fBhandle\fR or \fBindex\fR property is given, the rule is inserted before the rule identified by those properties\&.
+This command is identical to \fBadd\fR for rules, but instead of appending the rule to the chain by default, it inserts at first position\&. If a \fBhandle\fR or \fBindex\fR property is given, the rule is inserted \fBbefore\fR the rule identified by those properties\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+In explicit commands (\fBadd\fR, \fBinsert\fR, \fBcreate\fR with command wrapper), the \fBhandle\fR field is used for positioning\&. In implicit commands (bare \fBrule\fR objects without command wrapper, as used in export/import), the \fBhandle\fR field is ignored to ensure portability across systems\&.
+.sp .5v
+.RE
 .SS "DELETE"
 .sp
 .if n \{\
@@ -459,8 +475,18 @@ commands only\&.
 The rule\(cqs handle\&. In
 \fBdelete\fR/\fBreplace\fR
 commands, it serves as an identifier of the rule to delete/replace\&. In
-\fBadd\fR/\fBinsert\fR
-commands, it serves as an identifier of an existing rule to append/prepend the rule to\&.
+\fBadd\fR/\fBinsert\fR/\fBcreate\fR
+commands, when present, it specifies positioning relative to an existing rule:
+\fBadd\fR
+inserts the new rule
+\fBafter\fR
+the specified handle,
+\fBinsert\fR
+inserts
+\fBbefore\fR
+it\&. When multiple rules are added at the same handle position, they are positioned relative to the original rule, not to previously inserted rules\&. In implicit rule objects (without command wrapper, as used in
+\fBnft \-j list\fR
+output), the handle field is present but ignored on input to ensure export/import portability\&.
 .RE
 .PP
 \fBindex\fR
@@ -494,6 +520,7 @@ Optional rule comment\&.
         "timeout":\fR \fINUMBER\fR\fB,
         "gc\-interval":\fR \fINUMBER\fR\fB,
         "size":\fR \fINUMBER\fR\fB,
+        "count":\fR \fINUMBER\fR\fB,
         "auto\-merge":\fR \fIBOOLEAN\fR
 \fB}}\fR
 
@@ -510,6 +537,7 @@ Optional rule comment\&.
         "timeout":\fR \fINUMBER\fR\fB,
         "gc\-interval":\fR \fINUMBER\fR\fB,
         "size":\fR \fINUMBER\fR\fB,
+        "count":\fR \fINUMBER\fR\fB,
         "auto\-merge":\fR \fIBOOLEAN\fR
 \fB}}\fR
 
@@ -588,6 +616,11 @@ Garbage collector interval in seconds\&.
 \fBsize\fR
 .RS 4
 Maximum number of elements supported\&.
+.RE
+.PP
+\fBcount\fR
+.RS 4
+Current number of elements\&. Not used in input\&.
 .RE
 .PP
 \fBauto\-merge\fR
@@ -2181,7 +2214,7 @@ The expression is to be used as a DCCP option existence check in a \fBmatch\fR s
 \fIMETA_KEY\fR := \fB"length"\fR | \fB"protocol"\fR | \fB"priority"\fR | \fB"random"\fR | \fB"mark"\fR |
               \fB"iif"\fR | \fB"iifname"\fR | \fB"iiftype"\fR | \fB"oif"\fR | \fB"oifname"\fR |
               \fB"oiftype"\fR | \fB"skuid"\fR | \fB"skgid"\fR | \fB"nftrace"\fR |
-              \fB"rtclassid"\fR | \fB"ibriport"\fR | \fB"obriport"\fR | \fB"ibridgename"\fR |
+              \fB"rtclassid"\fR | \fB"ibrname"\fR | \fB"obrname"\fR | \fB"ibridgename"\fR |
               \fB"obridgename"\fR | \fB"pkttype"\fR | \fB"cpu"\fR | \fB"iifgroup"\fR |
               \fB"oifgroup"\fR | \fB"cgroup"\fR | \fB"nfproto"\fR | \fB"l4proto"\fR |
               \fB"secpath"\fR

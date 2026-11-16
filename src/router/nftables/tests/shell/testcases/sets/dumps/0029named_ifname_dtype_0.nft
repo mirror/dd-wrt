@@ -12,8 +12,8 @@ table inet t {
 		type inet_service . ifname
 		elements = { 22 . "eth0",
 			     80 . "eth0",
-			     81 . "eth0",
-			     80 . "eth1" }
+			     80 . "eth1",
+			     81 . "eth0" }
 	}
 
 	set nv {

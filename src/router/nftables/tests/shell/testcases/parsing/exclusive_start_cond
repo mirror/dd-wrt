@@ -1,0 +1,176 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_reset_tcp_options)
+
+stmts=()
+tcp_stmts=()
+udp_stmts=()
+ip6_stmts=()
+arp_stmts=()
+br_stmts=()
+netdev_stmts=()
+
+# verdict_stmt
+stmts+=(accept drop continue "jump c2" "goto c2" return)
+# verdict_map_stmt starts with concat_expr which eventually starts with primary_expr which starts with expr
+# match_stmt starts with relational_expr
+# meter_stmt
+stmts+=("meter foo { ip saddr counter }")
+# payload_stmt starts with payload_expr
+# stateful_stmt
+stmts+=(counter "limit rate 1/day" "quota 1bytes" "ct count 1" "last used 1d")
+# meta_stmt, defer to meta_expr with meta_key and meta_key_unqualified
+stmts+=(notrack "flow offload @ft" "nftrace set 1")
+# log_stmt
+stmts+=(log)
+# reject_stmt
+stmts+=(reject)
+# nat_stmt
+stmts+=("snat to 1" "dnat to 1")
+# tproxy_stmt
+tcp_stmts+=("tproxy to 1")
+# queue_stmt
+stmts+=("queue to 1")
+# ct_stmt
+stmts+=("ct mark set 1")
+# masq_stmt
+stmts+=(masquerade)
+# redir_stmt
+stmts+=(redirect)
+# dup_stmt
+netdev_stmts+=('dup to "lo"')
+# fwd_stmt
+netdev_stmts+=('fwd to "lo"')
+# set_stmt / map_stmt
+stmts+=("set add ip saddr @foo" "add @foo { ip saddr }" "update @foo { ip saddr }" "delete @foo { ip saddr }")
+# synproxy_stmt
+stmts+=(synproxy)
+# chain_stmt starts with jump/goto, covered by verdict_stmt above
+# optstrip_stmt
+stmts+=("reset tcp option echo")
+# XXX: xt_stmt is special, have to expect failure
+#stmts+=("xt foo bar")
+# objref_stmt is mostly covered by stateful_stmt above
+netdev_stmts+=("tunnel id 0")
+
+# primary_expr
+# XXX: parser_bison.y formally accepts string, integer_expr and variable_expr
+#      (via primary_expr/symbol_expr) on LHS, but it is relevant for map
+#      elements (data part) only it seems
+
+# selector_expr:
+# payload_expr
+stmts+=("@nh,0,4 0" "ether saddr 0" "vlan id 0")
+arp_stmts+=("arp htype 0")
+stmts+=("ip saddr 0" "icmp type 0" "igmp type 0")
+ip6_stmts+=("ip6 saddr ::")
+stmts+=("icmpv6 type 0" "ah spi 0" "esp spi 0" "comp cpi 0")
+stmts+=("udp sport 0" "udplite sport 0" "tcp sport 0" "dccp sport 0")
+stmts+=("sctp sport 0" "th sport 0")
+udp_stmts+=("vxlan vni 0" "geneve vni 0")
+stmts+=("gre flags 0" "gretap ip saddr 0")
+# exthdr_expr
+ip6_stmts+=("hbh nexthdr 0" "rt nexthdr 0" "rt0 addr[0] 0")
+ip6_stmts+=("rt2 addr ::" "srh tag 0" "frag nexthdr 0")
+ip6_stmts+=("dst nexthdr 0" "mh nexthdr 0" "exthdr hbh 0")
+# meta_expr
+stmts+=("meta length 0" "mark 0" "iif 0" "iifname foo" "iiftype 0")
+stmts+=("oif 0" "oifname foo" "oiftype 0" "skuid 0" "skgid 0" "rtclassid 0")
+stmts+=("pkttype 0" "cpu 0" "iifgroup 0" "oifgroup 0" "cgroup 0" "ipsec 0")
+stmts+=("time 0" "day 0" "hour 0")
+br_stmts+=("ibriport foo" "ibrname foo" "obriport foo" "obrname foo")
+# tunnel_expr covered by objref_stmt above
+# socket_expr
+stmts+=("socket mark 0")
+# rt_expr covered by exthdr_expr above
+# ct_expr covered by ct_stmt above
+# numgen_expr
+stmts+=("numgen inc mod 3 0")
+# hash_expr
+stmts+=("jhash ip saddr mod 3 seed 1 0" "symhash mod 3 0")
+# fib_expr
+stmts+=("fib daddr . iif check exists")
+# osf_expr
+stmts+=("osf name foo")
+# xfrm_expr
+stmts+=("ipsec in spi 0")
+
+$NFT -f - <<EOF
+table t {
+	flowtable ft {
+		hook ingress priority 0;
+	}
+	chain c {
+	}
+	chain c2 {
+	}
+}
+table ip6 t {
+	chain c {
+	}
+}
+table arp t {
+	chain c {
+	}
+}
+table bridge t {
+	chain c {
+	}
+}
+table netdev t {
+	chain c {
+	}
+}
+EOF
+
+RC=0
+for stmt in "${stmts[@]}"; do
+	$NFT add rule t c "limit rate 1/second $stmt" || {
+		echo "appending $stmt failed"
+		RC=1
+	}
+done
+for stmt in "${tcp_stmts[@]}"; do
+	$NFT add rule t c "meta l4proto tcp limit rate 1/second $stmt" || {
+		echo "appending $stmt failed"
+		RC=1
+	}
+done
+for stmt in "${udp_stmts[@]}"; do
+	$NFT add rule t c "meta l4proto udp limit rate 1/second $stmt" || {
+		echo "appending $stmt failed"
+		RC=1
+	}
+done
+for stmt in "${ip6_stmts[@]}"; do
+	$NFT add rule ip6 t c "meta l4proto tcp limit rate 1/second $stmt" || {
+		echo "appending $stmt failed"
+		RC=1
+	}
+done
+for stmt in "${arp_stmts[@]}"; do
+	$NFT add rule arp t c "meta l4proto tcp limit rate 1/second $stmt" || {
+		echo "appending $stmt failed"
+		RC=1
+	}
+done
+for stmt in "${br_stmts[@]}"; do
+	$NFT add rule bridge t c "meta l4proto tcp limit rate 1/second $stmt" || {
+		echo "appending $stmt failed"
+		RC=1
+	}
+done
+for stmt in "${netdev_stmts[@]}"; do
+	$NFT add rule netdev t c "meta l4proto tcp limit rate 1/second $stmt" || {
+		echo "appending $stmt failed"
+		RC=1
+	}
+done
+
+# Delete the 'last' rule, because it has variable output ('last used 997ms') that breaks
+# dump-compare.
+HANDLE=$($NFT --handle list table ip t | grep last | cut -d \# -f 2)
+$NFT "delete rule ip t c $HANDLE" || RC=2
+
+exit $RC
+

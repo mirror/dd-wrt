@@ -8,8 +8,8 @@ table inet t {
 
 	map m2 {
 		typeof udp length . @ih,32,32 : verdict
-		elements = { 30 . 0x1e : drop,
-			     20 . 0x24 : accept }
+		elements = { 20 . 0x24 : accept,
+			     30 . 0x1e : drop }
 	}
 
 	chain c {

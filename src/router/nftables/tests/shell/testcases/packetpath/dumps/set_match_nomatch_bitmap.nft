@@ -1,0 +1,23 @@
+table ip test {
+	counter match {
+		packets 8 bytes 672
+	}
+
+	counter nomatch {
+		packets 6 bytes 504
+	}
+
+	set s {
+		typeof ip dscp
+		elements = { lephb,
+			     0x02,
+			     0x04,
+			     0x07 }
+	}
+
+	chain c {
+		type filter hook output priority filter; policy accept;
+		ip dscp @s counter name "match" accept
+		counter name "nomatch"
+	}
+}

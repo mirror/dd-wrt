@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -e
+
+fail() {
+	echo "$*"
+	exit 1
+}
+
+$NFT -f - <<EOF
+table ip ip_t {
+	flowtable ip_t_ft {
+		hook ingress priority 0
+	}
+	set ip_t_s {
+		type inet_service
+		elements = { 22, 80, 443 }
+	}
+	chain ip_t_c {
+		tcp dport 22 accept
+	}
+	chain ip_t_c2 {
+	}
+}
+table ip ip_t2 {
+}
+EOF
+
+$NFT --debug=netlink list ruleset | \
+	grep -q 'payload load' || fail "broken list ruleset"
+$NFT --debug=netlink list ruleset ip6 | \
+	grep -q 'payload load' && fail "broken list ruleset family filter"
+
+$NFT --debug=netlink list chains | \
+	grep -q 'ip ip_t ip_t_c' || fail "broken list chains"
+$NFT --debug=netlink list chains ip6 | \
+	grep -q 'ip ip_t ip_t_c' && fail "broken list chains family filter"
+
+$NFT --debug=netlink list sets | \
+	grep -q 'family 2 ip_t_s ip_t' || fail "broken list sets"
+$NFT --debug=netlink list sets ip6 | \
+	grep -q 'family 2 ip_t_s ip_t' && fail "broken list sets family filter"
+$NFT --debug=netlink list sets ip ip_t2 | \
+	grep -q 'family 2 ip_t_s ip_t' && fail "broken list sets table filter"
+
+$NFT --debug=netlink list flowtables | \
+	grep -q 'flow table ip_t ip_t_ft' || fail "broken list flowtables"
+$NFT --debug=netlink list flowtables ip6 | \
+	grep -q 'flow table ip_t ip_t_ft' && fail "broken list flowtables family filter"
+$NFT --debug=netlink list flowtables ip ip_t2 | \
+	grep -q 'flow table ip_t ip_t_ft' && fail "broken list flowtables table filter"
+
+exit 0

@@ -33,6 +33,7 @@
         ],
         "handle": 0,
         "size": 65536,
+        "count": 1,
         "flags": [
           "timeout",
           "dynamic"

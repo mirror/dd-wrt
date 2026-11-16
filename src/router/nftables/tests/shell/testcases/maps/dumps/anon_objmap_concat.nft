@@ -11,6 +11,6 @@ table inet filter {
 
 	chain input {
 		type filter hook input priority filter; policy accept;
-		ct helper set ip protocol . th dport map { udp . 10000-20000 : "sip-5060u", tcp . 10000-20000 : "sip-5060t" }
+		ct helper set ip protocol . th dport map { 17 . 10000-20000 : "sip-5060u", 6 . 10000-20000 : "sip-5060t" }
 	}
 }

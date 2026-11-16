@@ -18,9 +18,22 @@ table ip t {
 	chain c2 {
 	}
 
+	chain n2 {
+		masquerade
+	}
+
+	chain n1 {
+		ip saddr 192.168.0.0/16 jump n2
+		goto n2
+	}
+
+	chain n0 {
+		type nat hook postrouting priority filter; policy accept;
+		jump n1
+		goto n1
+	}
+
 	chain c1 {
-		jump c2
-		ip saddr vmap @m
 	}
 
 	chain c0 {

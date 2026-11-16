@@ -1,0 +1,437 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "m1",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "osf": {
+              "key": "name"
+            }
+          }
+        },
+        "handle": 0,
+        "map": "mark",
+        "elem": [
+          [
+            "Linux",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "m2",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "vlan",
+              "field": "id"
+            }
+          }
+        },
+        "handle": 0,
+        "map": "mark",
+        "elem": [
+          [
+            1,
+            1
+          ],
+          [
+            4095,
+            16533
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "m3",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "map": "mark",
+        "elem": [
+          [
+            {
+              "concat": [
+                "1.2.3.4",
+                "5.6.7.8"
+              ]
+            },
+            1
+          ],
+          [
+            {
+              "concat": [
+                "2.3.4.5",
+                "6.7.8.9"
+              ]
+            },
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "m4",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "protocol"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "th",
+                  "field": "dport"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "map": "verdict",
+        "elem": [
+          [
+            {
+              "concat": [
+                "eth0",
+                6,
+                22
+              ]
+            },
+            {
+              "accept": null
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "m5",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "ipsec": {
+                  "key": "reqid",
+                  "dir": "in",
+                  "spnum": 0
+                }
+              },
+              {
+                "meta": {
+                  "key": "iifname"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "map": "verdict",
+        "elem": [
+          [
+            {
+              "concat": [
+                23,
+                "eth0"
+              ]
+            },
+            {
+              "accept": null
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "mangle": {
+              "key": {
+                "ct": {
+                  "key": "mark"
+                }
+              },
+              "value": {
+                "map": {
+                  "key": {
+                    "osf": {
+                      "key": "name"
+                    }
+                  },
+                  "data": "@m1"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "mangle": {
+              "key": {
+                "meta": {
+                  "key": "mark"
+                }
+              },
+              "value": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "vlan",
+                      "field": "id"
+                    }
+                  },
+                  "data": "@m2"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "mangle": {
+              "key": {
+                "meta": {
+                  "key": "mark"
+                }
+              },
+              "value": {
+                "map": {
+                  "key": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ip",
+                          "field": "saddr"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "ip",
+                          "field": "daddr"
+                        }
+                      }
+                    ]
+                  },
+                  "data": "@m3"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "concat": [
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "protocol"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "th",
+                      "field": "dport"
+                    }
+                  }
+                ]
+              },
+              "data": "@m4"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "concat": [
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "protocol"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "th",
+                      "field": "dport"
+                    }
+                  }
+                ]
+              },
+              "data": {
+                "set": [
+                  [
+                    {
+                      "concat": [
+                        "eth0",
+                        6,
+                        22
+                      ]
+                    },
+                    {
+                      "accept": null
+                    }
+                  ],
+                  [
+                    {
+                      "concat": [
+                        "eth1",
+                        17,
+                        67
+                      ]
+                    },
+                    {
+                      "drop": null
+                    }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "concat": [
+                  {
+                    "ipsec": {
+                      "key": "reqid",
+                      "dir": "in",
+                      "spnum": 0
+                    }
+                  },
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  }
+                ]
+              },
+              "data": "@m5"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

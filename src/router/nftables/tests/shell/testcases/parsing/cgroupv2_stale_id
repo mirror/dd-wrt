@@ -1,0 +1,129 @@
+#!/bin/bash
+
+# A cgroupsv2 element has to stay addressable once its cgroup is gone: the
+# listing prints the raw id, so that id has to be accepted back.
+
+CGROUP="/sys/fs/cgroup/nft-stale-$$"
+# numeric on purpose: a cgroup named as a number must still resolve as a path
+CGNUM="/sys/fs/cgroup/$$"
+
+cleanup()
+{
+	$NFT delete table t 2>/dev/null
+	rmdir "$CGROUP" 2>/dev/null
+	rmdir "$CGNUM" 2>/dev/null
+}
+trap cleanup EXIT
+
+if [ ! -w /sys/fs/cgroup ]; then
+	echo "cgroup filesystem not writable"
+	exit 77
+fi
+
+# -w alone passes on a v1 or hybrid layout, where everything below tests nothing
+if [ "$(stat -f --printf=%T /sys/fs/cgroup)" != "cgroup2fs" ]; then
+	echo "not a cgroupv2 mount"
+	exit 77
+fi
+
+if ! mkdir "$CGROUP" 2>/dev/null; then
+	# unprivileged and left over from a dead run are different facts
+	[ -d "$CGROUP" ] && {
+		echo "E: $CGROUP already exists" >&2
+		exit 1
+	}
+	echo "cannot create a cgroup"
+	exit 77
+fi
+name="${CGROUP##*/}"
+id=$(stat --printf=%i "$CGROUP")
+
+$NFT add table t || exit 1
+$NFT add set t s '{ type cgroupsv2; }' || exit 1
+$NFT add element t s "{ \"$name\" }" || exit 1
+
+rmdir "$CGROUP" || exit 1
+
+# Another cgroup can take this inode between the rmdir and the listing, which
+# resolves it back to a name. Narrow, and not closable from here.
+$NFT list set t s | grep -qw "$id" || {
+	echo "E: listing does not show the stale cgroup id $id" >&2
+	$NFT list set t s >&2
+	exit 1
+}
+
+$NFT delete element t s "{ $id }" || {
+	echo "E: cannot delete a cgroupsv2 element by the id that was listed" >&2
+	exit 1
+}
+
+out=$($NFT list set t s) || exit 1
+grep -qw "$id" <<< "$out" && {
+	echo "E: element still present after delete" >&2
+	exit 1
+}
+
+$NFT add element t s "{ $id }" || exit 1
+
+# json serialises the id as a string, so it reaches the same parser. The harness
+# round trip at exit sees an empty ruleset here, so do it inline, scoped to this
+# table.
+if [ "$NFT_TEST_HAVE_json" != n ] && $NFT -j list tables >/dev/null 2>&1; then
+	out=$($NFT -j list table t) || exit 1
+	$NFT delete table t || exit 1
+	$NFT -j -f - <<< "$out" || {
+		echo "E: a json dump holding a stale cgroupsv2 id does not reload" >&2
+		exit 1
+	}
+	$NFT list set t s | grep -qw "$id" || {
+		echo "E: the id did not survive the json round trip" >&2
+		exit 1
+	}
+else
+	echo "I: no json support, skipping the json reload check"
+fi
+
+$NFT flush set t s || exit 1
+
+# a name that is neither a path nor an integer must still fail, and a value
+# wider than the 64-bit key must be rejected by evaluation
+for bogus in "nft-does-not-exist" "12abc" "18446744073709551616"; do
+	$NFT add element t s "{ \"$bogus\" }" 2>/dev/null && {
+		echo "E: accepted \"$bogus\" as a cgroupsv2 id" >&2
+		$NFT list set t s >&2
+		exit 1
+	}
+done
+
+# each add above also "passes" if it fails for an unrelated reason, so check
+# nothing was stored, without a pipeline that goes vacuous when list fails
+out=$($NFT list set t s) || exit 1
+case "$out" in
+*elements*)
+	echo "E: something was stored despite every add failing" >&2
+	echo "$out" >&2
+	exit 1
+	;;
+esac
+
+# The path has to win for a cgroup named as a number. While the directory
+# exists both readings print the same, so remove it before asserting.
+mkdir "$CGNUM" || exit 1
+numino=$(stat --printf=%i "$CGNUM")
+$NFT add element t s "{ \"$$\" }" || {
+	echo "E: cannot add a cgroup whose name is a number" >&2
+	exit 1
+}
+rmdir "$CGNUM" || exit 1
+if [ "$numino" = "$$" ]; then
+	echo "I: cgroup $$ happens to have inode $$, cannot tell the two apart"
+else
+	$NFT list set t s | grep -qw "$numino" || {
+		echo "E: \"$$\" was taken as an id, not resolved as a path" >&2
+		$NFT list set t s >&2
+		exit 1
+	}
+fi
+$NFT flush set t s || exit 1
+
+exit 0

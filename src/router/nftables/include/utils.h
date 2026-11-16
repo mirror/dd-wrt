@@ -27,6 +27,15 @@
 #define pr_gmp_debug(fmt, arg...) ({ if (false) {}; 0; })
 #endif
 
+#define expr_print_debug(expr)					\
+{								\
+	struct output_ctx octx = { .output_fp = stdout };	\
+	printf("%s:%d: ", __FILE__, __LINE__);			\
+	printf("'" #expr "' type %s: ", expr_name(expr));	\
+	expr_print((expr), &octx);				\
+	printf("\n");						\
+}
+
 #define __fmtstring(x, y)	__attribute__((format(printf, x, y)))
 
 #define __must_check		__attribute__((warn_unused_result))

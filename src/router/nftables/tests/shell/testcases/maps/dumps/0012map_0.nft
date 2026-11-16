@@ -1,12 +1,12 @@
 table ip x {
 	map z {
 		type ifname : verdict
-		elements = { "lo" : accept,
-			     "eth0" : drop,
-			     "eth1" : drop }
+		elements = { "eth0" : drop,
+			     "eth1" : drop,
+			     "lo" : accept }
 	}
 
 	chain y {
-		iifname vmap { "lo" : accept, "eth0" : drop, "eth1" : drop }
+		iifname vmap { "eth0" : drop, "eth1" : drop, "lo" : accept }
 	}
 }

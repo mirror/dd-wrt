@@ -1,308 +1,308 @@
 # ip dscp cs1
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 1 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000020 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
+  [ cmp eq reg 1 0x20 ]
 
 # ip dscp != cs1
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 1 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000020 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
+  [ cmp neq reg 1 0x20 ]
 
 # ip dscp 0x38
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 1 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x000000e0 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
+  [ cmp eq reg 1 0xe0 ]
 
 # ip dscp != 0x20
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 1 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000080 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
+  [ cmp neq reg 1 0x80 ]
 
 # ip dscp {cs0, cs1, cs2, cs3, cs4, cs5, cs6, cs7, af11, af12, af13, af21, af22, af23, af31, af32, af33, af41, af42, af43, ef}
 __set%d test-bridge 3 size 21
 __set%d test-bridge 0
-	element 00000000  : 0 [end]	element 00000020  : 0 [end]	element 00000040  : 0 [end]	element 00000060  : 0 [end]	element 00000080  : 0 [end]	element 000000a0  : 0 [end]	element 000000c0  : 0 [end]	element 000000e0  : 0 [end]	element 00000028  : 0 [end]	element 00000030  : 0 [end]	element 00000038  : 0 [end]	element 00000048  : 0 [end]	element 00000050  : 0 [end]	element 00000058  : 0 [end]	element 00000068  : 0 [end]	element 00000070  : 0 [end]	element 00000078  : 0 [end]	element 00000088  : 0 [end]	element 00000090  : 0 [end]	element 00000098  : 0 [end]	element 000000b8  : 0 [end]
+	element 00	element 20	element 40	element 60	element 80	element a0	element c0	element e0	element 28	element 30	element 38	element 48	element 50	element 58	element 68	element 70	element 78	element 88	element 90	element 98	element b8
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 1 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
   [ lookup reg 1 set __set%d ]
 
 # ip dscp != {cs0, cs3}
 __set%d test-bridge 3 size 2
 __set%d test-bridge 0
-	element 00000000  : 0 [end]	element 00000060  : 0 [end]
+	element 00	element 60
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 1 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # ip dscp vmap { cs1 : continue , cs4 : accept } counter
 __map%d test-bridge b size 2
 __map%d test-bridge 0
-	element 00000020  : continue 0 [end]	element 00000080  : accept 0 [end]
+	element 20 : continue	element 80 : accept
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 1 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
   [ lookup reg 1 set __map%d dreg 0 ]
   [ counter pkts 0 bytes 0 ]
 
 # ip length 232
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000e800 ]
+  [ cmp eq reg 1 0x00e8 ]
 
 # ip length != 233
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 2 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # ip length 333-435
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 2 => reg 1 ]
-  [ range eq reg 1 0x00004d01 0x0000b301 ]
+  [ range eq reg 1 0x014d 0x01b3 ]
 
 # ip length != 333-453
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 2 => reg 1 ]
-  [ range neq reg 1 0x00004d01 0x0000c501 ]
+  [ range neq reg 1 0x014d 0x01c5 ]
 
 # ip length { 333, 553, 673, 838}
 __set%d test-bridge 3 size 4
 __set%d test-bridge 0
-	element 00004d01  : 0 [end]	element 00002902  : 0 [end]	element 0000a102  : 0 [end]	element 00004603  : 0 [end]
+	element 014d	element 0229	element 02a1	element 0346
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # ip length != { 333, 553, 673, 838}
 __set%d test-bridge 3 size 4
 __set%d test-bridge 0
-	element 00004d01  : 0 [end]	element 00002902  : 0 [end]	element 0000a102  : 0 [end]	element 00004603  : 0 [end]
+	element 014d	element 0229	element 02a1	element 0346
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # ip id 22
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 4 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # ip id != 233
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 4 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # ip id 33-45
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 4 => reg 1 ]
-  [ range eq reg 1 0x00002100 0x00002d00 ]
+  [ range eq reg 1 0x0021 0x002d ]
 
 # ip id != 33-45
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 4 => reg 1 ]
-  [ range neq reg 1 0x00002100 0x00002d00 ]
+  [ range neq reg 1 0x0021 0x002d ]
 
 # ip id { 33, 55, 67, 88}
 __set%d test-bridge 3 size 4
 __set%d test-bridge 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # ip id != { 33, 55, 67, 88}
 __set%d test-bridge 3 size 4
 __set%d test-bridge 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # ip frag-off 0xde accept
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp eq reg 1 0x0000de00 ]
+  [ cmp eq reg 1 0x00de ]
   [ immediate reg 0 accept ]
 
 # ip frag-off != 0xe9
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # ip frag-off 0x21-0x2d
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ range eq reg 1 0x00002100 0x00002d00 ]
+  [ range eq reg 1 0x0021 0x002d ]
 
 # ip frag-off != 0x21-0x2d
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ range neq reg 1 0x00002100 0x00002d00 ]
+  [ range neq reg 1 0x0021 0x002d ]
 
 # ip frag-off { 0x21, 0x37, 0x43, 0x58}
 __set%d test-bridge 3 size 4
 __set%d test-bridge 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 6 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # ip frag-off != { 0x21, 0x37, 0x43, 0x58}
 __set%d test-bridge 3 size 4
 __set%d test-bridge 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 6 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # ip frag-off & 0x1fff != 0x0
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000ff1f ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x1fff ) ^ 0x0000 ]
+  [ cmp neq reg 1 0x0000 ]
 
 # ip frag-off & 0x2000 != 0x0
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000020 ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x2000 ) ^ 0x0000 ]
+  [ cmp neq reg 1 0x0000 ]
 
 # ip frag-off & 0x4000 != 0x0
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000040 ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x4000 ) ^ 0x0000 ]
+  [ cmp neq reg 1 0x0000 ]
 
 # ip ttl 0 drop
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 8 => reg 1 ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ cmp eq reg 1 0x00 ]
   [ immediate reg 0 drop ]
 
 # ip ttl 233
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 8 => reg 1 ]
-  [ cmp eq reg 1 0x000000e9 ]
+  [ cmp eq reg 1 0xe9 ]
 
 # ip ttl 33-55
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 8 => reg 1 ]
-  [ range eq reg 1 0x00000021 0x00000037 ]
+  [ range eq reg 1 0x21 0x37 ]
 
 # ip ttl != 45-50
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 8 => reg 1 ]
-  [ range neq reg 1 0x0000002d 0x00000032 ]
+  [ range neq reg 1 0x2d 0x32 ]
 
 # ip ttl {43, 53, 45 }
 __set%d test-bridge 3 size 3
 __set%d test-bridge 0
-	element 0000002b  : 0 [end]	element 00000035  : 0 [end]	element 0000002d  : 0 [end]
+	element 2b	element 35	element 2d
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 8 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # ip ttl != {43, 53, 45 }
 __set%d test-bridge 3 size 3
 __set%d test-bridge 0
-	element 0000002b  : 0 [end]	element 00000035  : 0 [end]	element 0000002d  : 0 [end]
+	element 2b	element 35	element 2d
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 8 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # ip protocol tcp
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 9 => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
 
 # ip protocol != tcp
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 9 => reg 1 ]
-  [ cmp neq reg 1 0x00000006 ]
+  [ cmp neq reg 1 0x06 ]
 
 # ip protocol { icmp, esp, ah, comp, udp, udplite, tcp, dccp, sctp} accept
 __set%d test-bridge 3 size 9
 __set%d test-bridge 0
-	element 00000001  : 0 [end]	element 00000032  : 0 [end]	element 00000033  : 0 [end]	element 0000006c  : 0 [end]	element 00000011  : 0 [end]	element 00000088  : 0 [end]	element 00000006  : 0 [end]	element 00000021  : 0 [end]	element 00000084  : 0 [end]
+	element 01	element 32	element 33	element 6c	element 11	element 88	element 06	element 21	element 84
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 9 => reg 1 ]
   [ lookup reg 1 set __set%d ]
   [ immediate reg 0 accept ]
@@ -310,10 +310,10 @@ bridge test-bridge input
 # ip protocol != { icmp, esp, ah, comp, udp, udplite, tcp, dccp, sctp} accept
 __set%d test-bridge 3 size 9
 __set%d test-bridge 0
-	element 00000001  : 0 [end]	element 00000032  : 0 [end]	element 00000033  : 0 [end]	element 0000006c  : 0 [end]	element 00000011  : 0 [end]	element 00000088  : 0 [end]	element 00000006  : 0 [end]	element 00000021  : 0 [end]	element 00000084  : 0 [end]
+	element 01	element 32	element 33	element 6c	element 11	element 88	element 06	element 21	element 84
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 9 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
   [ immediate reg 0 accept ]
@@ -321,145 +321,145 @@ bridge test-bridge input
 # ip protocol 255
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 9 => reg 1 ]
-  [ cmp eq reg 1 0x000000ff ]
+  [ cmp eq reg 1 0xff ]
 
 # ip checksum 13172 drop
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 10 => reg 1 ]
-  [ cmp eq reg 1 0x00007433 ]
+  [ cmp eq reg 1 0x3374 ]
   [ immediate reg 0 drop ]
 
 # ip checksum 22
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 10 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # ip checksum != 233
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 10 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # ip checksum 33-45
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 10 => reg 1 ]
-  [ range eq reg 1 0x00002100 0x00002d00 ]
+  [ range eq reg 1 0x0021 0x002d ]
 
 # ip checksum != 33-45
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 10 => reg 1 ]
-  [ range neq reg 1 0x00002100 0x00002d00 ]
+  [ range neq reg 1 0x0021 0x002d ]
 
 # ip checksum { 33, 55, 67, 88}
 __set%d test-bridge 3 size 4
 __set%d test-bridge 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 10 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # ip checksum != { 33, 55, 67, 88}
 __set%d test-bridge 3 size 4
 __set%d test-bridge 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 10 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # ip saddr 192.168.2.0/24
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 3b @ network header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x0002a8c0 ]
+  [ cmp eq reg 1 0xc0a802 ]
 
 # ip saddr != 192.168.2.0/24
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 3b @ network header + 12 => reg 1 ]
-  [ cmp neq reg 1 0x0002a8c0 ]
+  [ cmp neq reg 1 0xc0a802 ]
 
 # ip saddr 192.168.3.1 ip daddr 192.168.3.100
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x0103a8c0 ]
+  [ cmp eq reg 1 0xc0a80301 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ cmp eq reg 1 0x6403a8c0 ]
+  [ cmp eq reg 1 0xc0a80364 ]
 
 # ip saddr != 1.1.1.1
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ cmp neq reg 1 0x01010101 ]
 
 # ip saddr 1.1.1.1
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ cmp eq reg 1 0x01010101 ]
 
 # ip daddr 192.168.0.1-192.168.0.250
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ range eq reg 1 0x0100a8c0 0xfa00a8c0 ]
+  [ range eq reg 1 0xc0a80001 0xc0a800fa ]
 
 # ip daddr 10.0.0.0-10.255.255.255
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ range eq reg 1 0x0000000a 0xffffff0a ]
+  [ range eq reg 1 0x0a000000 0x0affffff ]
 
 # ip daddr 172.16.0.0-172.31.255.255
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ range eq reg 1 0x000010ac 0xffff1fac ]
+  [ range eq reg 1 0xac100000 0xac1fffff ]
 
 # ip daddr 192.168.3.1-192.168.4.250
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ range eq reg 1 0x0103a8c0 0xfa04a8c0 ]
+  [ range eq reg 1 0xc0a80301 0xc0a804fa ]
 
 # ip daddr != 192.168.0.1-192.168.0.250
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ range neq reg 1 0x0100a8c0 0xfa00a8c0 ]
+  [ range neq reg 1 0xc0a80001 0xc0a800fa ]
 
 # ip daddr { 192.168.5.1, 192.168.5.2, 192.168.5.3 } accept
 __set%d test-bridge 3 size 3
 __set%d test-bridge 0
-	element 0105a8c0  : 0 [end]	element 0205a8c0  : 0 [end]	element 0305a8c0  : 0 [end]
+	element c0a80501	element c0a80502	element c0a80503
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
   [ lookup reg 1 set __set%d ]
   [ immediate reg 0 accept ]
@@ -467,10 +467,10 @@ bridge test-bridge input
 # ip daddr != { 192.168.5.1, 192.168.5.2, 192.168.5.3 } accept
 __set%d test-bridge 3 size 3
 __set%d test-bridge 0
-	element 0105a8c0  : 0 [end]	element 0205a8c0  : 0 [end]	element 0305a8c0  : 0 [end]
+	element c0a80501	element c0a80502	element c0a80503
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
   [ immediate reg 0 accept ]
@@ -478,113 +478,113 @@ bridge test-bridge input
 # ip daddr 192.168.1.2-192.168.1.55
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ range eq reg 1 0x0201a8c0 0x3701a8c0 ]
+  [ range eq reg 1 0xc0a80102 0xc0a80137 ]
 
 # ip daddr != 192.168.1.2-192.168.1.55
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ range neq reg 1 0x0201a8c0 0x3701a8c0 ]
+  [ range neq reg 1 0xc0a80102 0xc0a80137 ]
 
 # ip saddr 192.168.1.3-192.168.33.55
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
-  [ range eq reg 1 0x0301a8c0 0x3721a8c0 ]
+  [ range eq reg 1 0xc0a80103 0xc0a82137 ]
 
 # ip saddr != 192.168.1.3-192.168.33.55
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
-  [ range neq reg 1 0x0301a8c0 0x3721a8c0 ]
+  [ range neq reg 1 0xc0a80103 0xc0a82137 ]
 
 # ip daddr 192.168.0.1
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ cmp eq reg 1 0x0100a8c0 ]
+  [ cmp eq reg 1 0xc0a80001 ]
 
 # ip daddr 192.168.0.1 drop
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ cmp eq reg 1 0x0100a8c0 ]
+  [ cmp eq reg 1 0xc0a80001 ]
   [ immediate reg 0 drop ]
 
 # ip daddr 192.168.0.2
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ cmp eq reg 1 0x0200a8c0 ]
+  [ cmp eq reg 1 0xc0a80002 ]
 
 # ip saddr & 0xff == 1
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0xff000000 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x01000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x000000ff ) ^ 0x00000000 ]
+  [ cmp eq reg 1 0x00000001 ]
 
 # ip saddr & 0.0.0.255 < 0.0.0.127
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0xff000000 ) ^ 0x00000000 ]
-  [ cmp lt reg 1 0x7f000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x000000ff ) ^ 0x00000000 ]
+  [ cmp lt reg 1 0x0000007f ]
 
 # ip saddr & 0xffff0000 == 0xffff0000
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000ffff ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x0000ffff ]
+  [ bitwise reg 1 = ( reg 1 & 0xffff0000 ) ^ 0x00000000 ]
+  [ cmp eq reg 1 0xffff0000 ]
 
 # ip version 4 ip hdrlength 5
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000f0 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000040 ]
+  [ bitwise reg 1 = ( reg 1 & 0xf0 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x40 ]
   [ payload load 1b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000000f ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000005 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0f ) ^ 0x00 ]
+  [ cmp eq reg 1 0x05 ]
 
 # ip hdrlength 0
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000000f ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0f ) ^ 0x00 ]
+  [ cmp eq reg 1 0x00 ]
 
 # ip hdrlength 15
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000000f ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x0000000f ]
+  [ bitwise reg 1 = ( reg 1 & 0x0f ) ^ 0x00 ]
+  [ cmp eq reg 1 0x0f ]
 
 # ip hdrlength vmap { 0-4 : drop, 5 : accept, 6 : continue } counter
 __map%d test-bridge f size 4
 __map%d test-bridge 0
-	element 00000000  : drop 0 [end]	element 00000005  : accept 0 [end]	element 00000006  : continue 0 [end]	element 00000007  : 1 [end]
+	element 00 : drop	element 05 : accept	element 06 : continue	element 07 flags 1
 bridge test-bridge input 
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000000f ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0f ) ^ 0x00 ]
   [ lookup reg 1 set __map%d dreg 0 ]
   [ counter pkts 0 bytes 0 ]
 
@@ -593,8 +593,8 @@ bridge test-bridge input
   [ meta load iif => reg 1 ]
   [ cmp eq reg 1 0x00000001 ]
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
-  [ immediate reg 1 0x0100007f ]
+  [ cmp eq reg 1 0x0800 ]
+  [ immediate reg 1 0x7f000001 ]
   [ payload write reg 1 => 4b @ network header + 16 csum_type 1 csum_off 10 csum_flags 0x1 ]
 
 # iif "lo" ip checksum set 0
@@ -602,8 +602,8 @@ bridge test-bridge input
   [ meta load iif => reg 1 ]
   [ cmp eq reg 1 0x00000001 ]
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
-  [ immediate reg 1 0x00000000 ]
+  [ cmp eq reg 1 0x0800 ]
+  [ immediate reg 1 0x0000 ]
   [ payload write reg 1 => 2b @ network header + 10 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # iif "lo" ip id set 0
@@ -611,8 +611,8 @@ bridge test-bridge input
   [ meta load iif => reg 1 ]
   [ cmp eq reg 1 0x00000001 ]
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
-  [ immediate reg 1 0x00000000 ]
+  [ cmp eq reg 1 0x0800 ]
+  [ immediate reg 1 0x0000 ]
   [ payload write reg 1 => 2b @ network header + 4 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # iif "lo" ip ecn set 1
@@ -620,9 +620,9 @@ bridge test-bridge input
   [ meta load iif => reg 1 ]
   [ cmp eq reg 1 0x00000001 ]
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000fcff ) ^ 0x00000100 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffc ) ^ 0x0001 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # iif "lo" ip ecn set ce
@@ -630,9 +630,9 @@ bridge test-bridge input
   [ meta load iif => reg 1 ]
   [ cmp eq reg 1 0x00000001 ]
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000fcff ) ^ 0x00000300 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffc ) ^ 0x0003 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # iif "lo" ip ttl set 23
@@ -640,9 +640,9 @@ bridge test-bridge input
   [ meta load iif => reg 1 ]
   [ cmp eq reg 1 0x00000001 ]
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 8 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000ff00 ) ^ 0x00000017 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00ff ) ^ 0x1700 ]
   [ payload write reg 1 => 2b @ network header + 8 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # iif "lo" ip protocol set 1
@@ -650,9 +650,9 @@ bridge test-bridge input
   [ meta load iif => reg 1 ]
   [ cmp eq reg 1 0x00000001 ]
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 8 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000ff ) ^ 0x00000100 ]
+  [ bitwise reg 1 = ( reg 1 & 0xff00 ) ^ 0x0001 ]
   [ payload write reg 1 => 2b @ network header + 8 csum_type 1 csum_off 10 csum_flags 0x1 ]
 
 # iif "lo" ip dscp set af23
@@ -660,9 +660,9 @@ bridge test-bridge input
   [ meta load iif => reg 1 ]
   [ cmp eq reg 1 0x00000001 ]
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000003ff ) ^ 0x00005800 ]
+  [ bitwise reg 1 = ( reg 1 & 0xff03 ) ^ 0x0058 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # iif "lo" ip dscp set cs0
@@ -670,18 +670,18 @@ bridge test-bridge input
   [ meta load iif => reg 1 ]
   [ cmp eq reg 1 0x00000001 ]
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000003ff ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xff03 ) ^ 0x0000 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # ip saddr . ip daddr { 192.0.2.1 . 10.0.0.1-10.0.0.2 }
 __set%d test-bridge 87 size 1
 __set%d test-bridge 0
-        element 010200c0 0100000a  - 010200c0 0200000a  : 0 [end]
+	element c0000201 . 0a000001 - c0000201 . 0a000002
 bridge
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ payload load 4b @ network header + 16 => reg 9 ]
   [ lookup reg 1 set __set%d ]
@@ -689,10 +689,10 @@ bridge
 # ip saddr . ip daddr vmap { 192.168.5.1-192.168.5.128 . 192.168.6.1-192.168.6.128 : accept }
 __map%d test-bridge 8f size 1
 __map%d test-bridge 0
-        element 0105a8c0 0106a8c0  - 8005a8c0 8006a8c0  : accept 0 [end]
+	element c0a80501 . c0a80601 - c0a80580 . c0a80680 : accept
 bridge
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ payload load 4b @ network header + 16 => reg 9 ]
   [ lookup reg 1 set __map%d dreg 0 ]
@@ -700,132 +700,132 @@ bridge
 # ip saddr 1.2.3.4 ip daddr 3.4.5.6
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x04030201 ]
+  [ cmp eq reg 1 0x01020304 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ cmp eq reg 1 0x06050403 ]
+  [ cmp eq reg 1 0x03040506 ]
 
 # ip saddr 1.2.3.4 counter ip daddr 3.4.5.6
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x04030201 ]
+  [ cmp eq reg 1 0x01020304 ]
   [ counter pkts 0 bytes 0 ]
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ cmp eq reg 1 0x06050403 ]
+  [ cmp eq reg 1 0x03040506 ]
 
 # ip dscp 1/6
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 1 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
   [ bitwise reg 1 = ( reg 1 >> 0x00000002 ) ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000003f ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ bitwise reg 1 = ( reg 1 & 0x3f ) ^ 0x00 ]
+  [ cmp eq reg 1 0x01 ]
 
 # ip ecn set ip ecn | ect0
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000fdff ) ^ 0x00000200 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffd ) ^ 0x0002 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # ip ecn set ip ecn | ect1
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000feff ) ^ 0x00000100 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffe ) ^ 0x0001 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # ip ecn set ip ecn & ect0
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000feff ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffe ) ^ 0x0000 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # ip ecn set ip ecn & ect1
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000fdff ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffd ) ^ 0x0000 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # tcp flags set tcp flags & (fin | syn | rst | psh | ack | urg)
 bridge test-bridge input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 12 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00003fff ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xff3f ) ^ 0x0000 ]
   [ payload write reg 1 => 2b @ transport header + 12 csum_type 1 csum_off 16 csum_flags 0x0 ]
 
 # tcp flags set tcp flags | ecn | cwr
 bridge test-bridge input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 12 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00003fff ) ^ 0x0000c000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xff3f ) ^ 0x00c0 ]
   [ payload write reg 1 => 2b @ transport header + 12 csum_type 1 csum_off 16 csum_flags 0x0 ]
 
 # ip dscp set ip dscp | lephb
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000fbff ) ^ 0x00000400 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffb ) ^ 0x0004 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # ip dscp set ip dscp & lephb
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000007ff ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xff07 ) ^ 0x0000 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # ip dscp set ip dscp & 0x1f
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00007fff ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xff7f ) ^ 0x0000 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # ip version set ip version | 1
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000ffef ) ^ 0x00000010 ]
+  [ bitwise reg 1 = ( reg 1 & 0xefff ) ^ 0x1000 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # ip version set ip version & 1
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000ff1f ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x1fff ) ^ 0x0000 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # ip hdrlength set ip hdrlength | 1
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000fffe ) ^ 0x00000001 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfeff ) ^ 0x0100 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]
 
 # ip hdrlength set ip hdrlength & 1
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000fff1 ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xf1ff ) ^ 0x0000 ]
   [ payload write reg 1 => 2b @ network header + 0 csum_type 1 csum_off 10 csum_flags 0x0 ]

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_catchall_element)
+
+# testcase for kernel commit
+# 7cb9a23d7ae4 ("netfilter: nf_tables: always walk all pending catchall elements")
+
+set -e
+$NFT -f - <<EOF
+table inet t {
+        map s {
+                type ipv4_addr : verdict
+                elements = { * : accept }
+        }
+
+        chain c {
+        }
+}
+EOF
+
+$NFT --check -f - <<EOF
+delete element inet t s { * }
+add element inet t s  { * : jump c }
+delete map inet t s
+EOF

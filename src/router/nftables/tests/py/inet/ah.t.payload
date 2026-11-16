@@ -1,178 +1,177 @@
 # ah hdrlength 11-23
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 1b @ transport header + 1 => reg 1 ]
-  [ range eq reg 1 0x0000000b 0x00000017 ]
+  [ range eq reg 1 0x0b 0x17 ]
 
 # ah hdrlength != 11-23
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 1b @ transport header + 1 => reg 1 ]
-  [ range neq reg 1 0x0000000b 0x00000017 ]
+  [ range neq reg 1 0x0b 0x17 ]
 
 # ah hdrlength {11, 23, 44 }
 __set%d test-inet 3
 __set%d test-inet 0
-	element 0000000b  : 0 [end]	element 00000017  : 0 [end]	element 0000002c  : 0 [end]
+	element 0b	element 17	element 2c
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 1b @ transport header + 1 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # ah hdrlength != {11, 23, 44 }
 __set%d test-inet 3
 __set%d test-inet 0
-	element 0000000b  : 0 [end]	element 00000017  : 0 [end]	element 0000002c  : 0 [end]
+	element 0b	element 17	element 2c
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 1b @ transport header + 1 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # ah reserved 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # ah reserved != 233
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # ah reserved 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ range eq reg 1 0x00002100 0x00002d00 ]
+  [ range eq reg 1 0x0021 0x002d ]
 
 # ah reserved != 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ range neq reg 1 0x00002100 0x00002d00 ]
+  [ range neq reg 1 0x0021 0x002d ]
 
 # ah reserved {23, 100}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00001700  : 0 [end]	element 00006400  : 0 [end]
+	element 0017	element 0064
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # ah reserved != {23, 100}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00001700  : 0 [end]	element 00006400  : 0 [end]
+	element 0017	element 0064
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # ah spi 111
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ cmp eq reg 1 0x6f000000 ]
+  [ cmp eq reg 1 0x0000006f ]
 
 # ah spi != 111
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ cmp neq reg 1 0x6f000000 ]
+  [ cmp neq reg 1 0x0000006f ]
 
 # ah spi 111-222
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ range eq reg 1 0x6f000000 0xde000000 ]
+  [ range eq reg 1 0x0000006f 0x000000de ]
 
 # ah spi != 111-222
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ range neq reg 1 0x6f000000 0xde000000 ]
+  [ range neq reg 1 0x0000006f 0x000000de ]
 
 # ah spi {111, 122}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 6f000000  : 0 [end]	element 7a000000  : 0 [end]
+	element 0000006f	element 0000007a
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # ah spi != {111, 122}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 6f000000  : 0 [end]	element 7a000000  : 0 [end]
+	element 0000006f	element 0000007a
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # ah sequence 123
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ cmp eq reg 1 0x7b000000 ]
+  [ cmp eq reg 1 0x0000007b ]
 
 # ah sequence != 123
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ cmp neq reg 1 0x7b000000 ]
+  [ cmp neq reg 1 0x0000007b ]
 
 # ah sequence {23, 25, 33}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 17000000  : 0 [end]	element 19000000  : 0 [end]	element 21000000  : 0 [end]
+	element 00000017	element 00000019	element 00000021
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # ah sequence != {23, 25, 33}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 17000000  : 0 [end]	element 19000000  : 0 [end]	element 21000000  : 0 [end]
+	element 00000017	element 00000019	element 00000021
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # ah sequence 23-33
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ range eq reg 1 0x17000000 0x21000000 ]
+  [ range eq reg 1 0x00000017 0x00000021 ]
 
 # ah sequence != 23-33
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ range neq reg 1 0x17000000 0x21000000 ]
-
+  [ range neq reg 1 0x00000017 0x00000021 ]

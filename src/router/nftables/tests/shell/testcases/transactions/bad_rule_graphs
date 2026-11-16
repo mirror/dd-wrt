@@ -259,4 +259,72 @@ $NFT "add rule t c9 tcp dport 80 tproxy to :20000 meta mark set 1 accept"
 good_ruleset $? "add tproxy expression to c9"
 check_bad_expr
 
+$NFT -f - <<EOF
+table t {
+	chain n2 {
+		meta oifname "ppp*" masquerade
+	}
+
+	chain n1 {
+		ip saddr 192.168.0.0/16 jump n2
+	}
+
+	chain n0 { type nat hook postrouting priority 0;
+		jump n1
+	}
+}
+EOF
+good_ruleset $? "add nat skeleton"
+
+$NFT -f - <<EOF
+table t {
+	chain c2 {
+		jump n2
+	}
+}
+EOF
+bad_ruleset $? "jump from filter type to masquerade"
+
+$NFT flush chain t n2
+$NFT -f - <<EOF
+table t {
+	chain c2 {
+		jump n2
+	}
+
+	chain n2 { meta oifname "ppp0" masquerade; }
+}
+EOF
+bad_ruleset $? "jump from filter type to masquerade (2)"
+
+$NFT -f - <<EOF
+delete chain t c0
+delete chain t c1
+EOF
+good_ruleset $? "delete c1/c0"
+
+$NFT -f - <<EOF
+table t {
+	chain c1 { }
+
+	chain n2 { masquerade; }
+	chain n1 { goto n2; }
+
+	chain n0 { type nat hook postrouting priority 0;
+		goto n1
+	}
+
+	chain c0 { type filter hook input priority 0;
+		jump c1
+	}
+}
+EOF
+good_ruleset $? "add nat skeleton (2)"
+
+$NFT add rule t c1 goto n2
+bad_ruleset $? "jump from filter type to masquerade (3)"
+
+$NFT add chain 't invalid { type nat hook prerouting priority 0; goto n2; }'
+bad_ruleset $? "jump from prerouting to masquerade"
+
 exit $?

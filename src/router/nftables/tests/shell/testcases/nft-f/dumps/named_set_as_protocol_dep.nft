@@ -1,7 +1,7 @@
 table inet test {
 	set protos {
 		typeof meta l4proto
-		elements = { tcp, udp }
+		elements = { 6, 17 }
 	}
 
 	chain prerouting {

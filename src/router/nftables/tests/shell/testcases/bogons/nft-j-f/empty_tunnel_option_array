@@ -1,0 +1,5 @@
+{ "nftables": [
+ { "add": { "table": { "family": "netdev", "name": "x" } } },
+ { "add": { "tunnel": { "family": "netdev", "name": "t", "table": "y",
+   "src-ipv4": "192.168.2.10", "dst-ipv4": "",
+   "type": "geneve", "tunnel": [] } } } ] }

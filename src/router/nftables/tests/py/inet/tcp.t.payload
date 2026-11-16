@@ -1,58 +1,58 @@
 # tcp dport 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # tcp dport != 233
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # tcp dport 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ range eq reg 1 0x00002100 0x00002d00 ]
+  [ range eq reg 1 0x0021 0x002d ]
 
 # tcp dport != 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ range neq reg 1 0x00002100 0x00002d00 ]
+  [ range neq reg 1 0x0021 0x002d ]
 
 # tcp dport { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # tcp dport != { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # tcp dport {telnet, http, https} accept
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00001700  : 0 [end]	element 00005000  : 0 [end]	element 0000bb01  : 0 [end]
+	element 0017	element 0050	element 01bb
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d ]
   [ immediate reg 0 accept ]
@@ -60,259 +60,259 @@ inet test-inet input
 # tcp dport vmap { 22 : accept, 23 : drop }
 __map%d test-inet b
 __map%d test-inet 0
-	element 00001600  : accept 0 [end]	element 00001700  : drop 0 [end]
+	element 0016 : accept	element 0017 : drop
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __map%d dreg 0 ]
 
 # tcp dport vmap { 25:accept, 28:drop }
 __map%d test-inet b
 __map%d test-inet 0
-	element 00001900  : accept 0 [end]	element 00001c00  : drop 0 [end]
+	element 0019 : accept	element 001c : drop
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __map%d dreg 0 ]
 
 # tcp dport { 22, 53, 80, 110 }
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00001600  : 0 [end]	element 00003500  : 0 [end]	element 00005000  : 0 [end]	element 00006e00  : 0 [end]
+	element 0016	element 0035	element 0050	element 006e
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # tcp dport != { 22, 53, 80, 110 }
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00001600  : 0 [end]	element 00003500  : 0 [end]	element 00005000  : 0 [end]	element 00006e00  : 0 [end]
+	element 0016	element 0035	element 0050	element 006e
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # tcp sport 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # tcp sport != 233
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # tcp sport 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ range eq reg 1 0x00002100 0x00002d00 ]
+  [ range eq reg 1 0x0021 0x002d ]
 
 # tcp sport != 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ range neq reg 1 0x00002100 0x00002d00 ]
+  [ range neq reg 1 0x0021 0x002d ]
 
 # tcp sport { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # tcp sport != { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # tcp sport vmap { 25:accept, 28:drop }
 __map%d test-inet b
 __map%d test-inet 0
-	element 00001900  : accept 0 [end]	element 00001c00  : drop 0 [end]
+	element 0019 : accept	element 001c : drop
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
   [ lookup reg 1 set __map%d dreg 0 ]
 
 # tcp sport 8080 drop
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x0000901f ]
+  [ cmp eq reg 1 0x1f90 ]
   [ immediate reg 0 drop ]
 
 # tcp sport 1024 tcp dport 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x16000004 ]
+  [ cmp eq reg 1 0x04000016 ]
 
 # tcp sport 1024 tcp dport 22 tcp sequence 0
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x16000004 ]
+  [ cmp eq reg 1 0x04000016 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
   [ cmp eq reg 1 0x00000000 ]
 
 # tcp sequence 0 tcp sport 1024 tcp dport 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
   [ cmp eq reg 1 0x00000000 ]
   [ payload load 4b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x16000004 ]
+  [ cmp eq reg 1 0x04000016 ]
 
 # tcp sequence 0 tcp sport { 1024, 1022} tcp dport 22
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00000004  : 0 [end]	element 0000fe03  : 0 [end]
+	element 0400	element 03fe
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
   [ cmp eq reg 1 0x00000000 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
   [ lookup reg 1 set __set%d ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # tcp sequence 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ cmp eq reg 1 0x16000000 ]
+  [ cmp eq reg 1 0x00000016 ]
 
 # tcp sequence != 233
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ cmp neq reg 1 0xe9000000 ]
+  [ cmp neq reg 1 0x000000e9 ]
 
 # tcp sequence 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ range eq reg 1 0x21000000 0x2d000000 ]
+  [ range eq reg 1 0x00000021 0x0000002d ]
 
 # tcp sequence != 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ range neq reg 1 0x21000000 0x2d000000 ]
+  [ range neq reg 1 0x00000021 0x0000002d ]
 
 # tcp sequence { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+	element 00000021	element 00000037	element 00000043	element 00000058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # tcp sequence != { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+	element 00000021	element 00000037	element 00000043	element 00000058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # tcp ackseq 42949672 drop
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ cmp eq reg 1 0x285c8f02 ]
+  [ cmp eq reg 1 0x028f5c28 ]
   [ immediate reg 0 drop ]
 
 # tcp ackseq 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ cmp eq reg 1 0x16000000 ]
+  [ cmp eq reg 1 0x00000016 ]
 
 # tcp ackseq != 233
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ cmp neq reg 1 0xe9000000 ]
+  [ cmp neq reg 1 0x000000e9 ]
 
 # tcp ackseq 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ range eq reg 1 0x21000000 0x2d000000 ]
+  [ range eq reg 1 0x00000021 0x0000002d ]
 
 # tcp ackseq != 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
-  [ range neq reg 1 0x21000000 0x2d000000 ]
+  [ range neq reg 1 0x00000021 0x0000002d ]
 
 # tcp ackseq { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+	element 00000021	element 00000037	element 00000043	element 00000058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # tcp ackseq != { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+	element 00000021	element 00000037	element 00000043	element 00000058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 8 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # tcp flags { fin, syn, rst, psh, ack, urg, ecn, cwr} drop
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00000001  : 0 [end]	element 00000002  : 0 [end]	element 00000004  : 0 [end]	element 00000008  : 0 [end]	element 00000010  : 0 [end]	element 00000020  : 0 [end]	element 00000040  : 0 [end]	element 00000080  : 0 [end]
+	element 01	element 02	element 04	element 08	element 10	element 20	element 40	element 80
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
   [ lookup reg 1 set __set%d ]
   [ immediate reg 0 drop ]
@@ -320,10 +320,10 @@ inet test-inet input
 # tcp flags != { fin, urg, ecn, cwr} drop
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00000001  : 0 [end]	element 00000020  : 0 [end]	element 00000040  : 0 [end]	element 00000080  : 0 [end]
+	element 01	element 20	element 40	element 80
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
   [ immediate reg 0 drop ]
@@ -331,337 +331,337 @@ inet test-inet input
 # tcp flags cwr
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000080 ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x80 ) ^ 0x00 ]
+  [ cmp neq reg 1 0x00 ]
 
 # tcp flags != cwr
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ cmp neq reg 1 0x00000080 ]
+  [ cmp neq reg 1 0x80 ]
 
 # tcp flags == syn
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
 
 # tcp flags fin,syn / fin,syn
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000003 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000003 ]
+  [ bitwise reg 1 = ( reg 1 & 0x03 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x03 ]
 
 # tcp flags != syn / fin,syn
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000003 ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000002 ]
+  [ bitwise reg 1 = ( reg 1 & 0x03 ) ^ 0x00 ]
+  [ cmp neq reg 1 0x02 ]
 
 # tcp flags & syn != 0
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000002 ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x02 ) ^ 0x00 ]
+  [ cmp neq reg 1 0x00 ]
 
 # tcp flags & syn == 0
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000002 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x02 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x00 ]
 
 # tcp flags & (syn | ack) != 0
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000012 ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x12 ) ^ 0x00 ]
+  [ cmp neq reg 1 0x00 ]
 
 # tcp flags & (syn | ack) == 0
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000012 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x12 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x00 ]
 
 # tcp flags & syn == syn
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000002 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ bitwise reg 1 = ( reg 1 & 0x02 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x02 ]
 
 # tcp flags & syn != syn
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000002 ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000002 ]
+  [ bitwise reg 1 = ( reg 1 & 0x02 ) ^ 0x00 ]
+  [ cmp neq reg 1 0x02 ]
 
 # tcp flags & (fin | syn | rst | ack) syn
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000017 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ bitwise reg 1 = ( reg 1 & 0x17 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x02 ]
 
 # tcp flags & (fin | syn | rst | ack) == syn
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000017 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ bitwise reg 1 = ( reg 1 & 0x17 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x02 ]
 
 # tcp flags & (fin | syn | rst | ack) != syn
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000017 ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000002 ]
+  [ bitwise reg 1 = ( reg 1 & 0x17 ) ^ 0x00 ]
+  [ cmp neq reg 1 0x02 ]
 
 # tcp flags & (fin | syn | rst | ack) == syn | ack
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000017 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000012 ]
+  [ bitwise reg 1 = ( reg 1 & 0x17 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x12 ]
 
 # tcp flags & (fin | syn | rst | ack) != syn | ack
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000017 ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00000012 ]
+  [ bitwise reg 1 = ( reg 1 & 0x17 ) ^ 0x00 ]
+  [ cmp neq reg 1 0x12 ]
 
 # tcp flags & (syn | ack) == syn | ack
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000012 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000012 ]
+  [ bitwise reg 1 = ( reg 1 & 0x12 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x12 ]
 
 # tcp flags & (fin | syn | rst | psh | ack | urg | ecn | cwr) == fin | syn | rst | psh | ack | urg | ecn | cwr
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000ff ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x000000ff ]
+  [ bitwise reg 1 = ( reg 1 & 0xff ) ^ 0x00 ]
+  [ cmp eq reg 1 0xff ]
 
 # tcp window 22222
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 14 => reg 1 ]
-  [ cmp eq reg 1 0x0000ce56 ]
+  [ cmp eq reg 1 0x56ce ]
 
 # tcp window 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 14 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # tcp window != 233
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 14 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # tcp window 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 14 => reg 1 ]
-  [ range eq reg 1 0x00002100 0x00002d00 ]
+  [ range eq reg 1 0x0021 0x002d ]
 
 # tcp window != 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 14 => reg 1 ]
-  [ range neq reg 1 0x00002100 0x00002d00 ]
+  [ range neq reg 1 0x0021 0x002d ]
 
 # tcp window { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 14 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # tcp window != { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 14 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # tcp checksum 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 16 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # tcp checksum != 233
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 16 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # tcp checksum 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 16 => reg 1 ]
-  [ range eq reg 1 0x00002100 0x00002d00 ]
+  [ range eq reg 1 0x0021 0x002d ]
 
 # tcp checksum != 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 16 => reg 1 ]
-  [ range neq reg 1 0x00002100 0x00002d00 ]
+  [ range neq reg 1 0x0021 0x002d ]
 
 # tcp checksum { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 16 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # tcp checksum != { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 16 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # tcp urgptr 1234 accept
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 18 => reg 1 ]
-  [ cmp eq reg 1 0x0000d204 ]
+  [ cmp eq reg 1 0x04d2 ]
   [ immediate reg 0 accept ]
 
 # tcp urgptr 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 18 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # tcp urgptr != 233
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 18 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # tcp urgptr 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 18 => reg 1 ]
-  [ range eq reg 1 0x00002100 0x00002d00 ]
+  [ range eq reg 1 0x0021 0x002d ]
 
 # tcp urgptr != 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 18 => reg 1 ]
-  [ range neq reg 1 0x00002100 0x00002d00 ]
+  [ range neq reg 1 0x0021 0x002d ]
 
 # tcp urgptr { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 18 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # tcp urgptr != { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 18 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # tcp doff 8
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 12 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000f0 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000080 ]
+  [ bitwise reg 1 = ( reg 1 & 0xf0 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x80 ]
 
 # tcp flags & (fin | syn | rst | psh | ack | urg) == { fin, ack, psh | ack, fin | psh | ack }
 __set%d test-inet 3
 __set%d test-inet 0
-        element 00000001  : 0 [end]     element 00000010  : 0 [end]     element 00000018  : 0 [end]     element 00000019  : 0 [end]
+	element 01	element 10	element 18	element 19
 ip
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000003f ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x3f ) ^ 0x00 ]
   [ lookup reg 1 set __set%d ]
 
 # tcp flags { syn, syn | ack }
 __set%d test-inet 3
 __set%d test-inet 0
-        element 00000002  : 0 [end]     element 00000012  : 0 [end]
+	element 02	element 12
 inet
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # tcp flags ! fin,rst
 inet
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 1b @ transport header + 13 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000005 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x05 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x00 ]

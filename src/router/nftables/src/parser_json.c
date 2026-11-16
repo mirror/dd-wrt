@@ -51,6 +51,10 @@
 #define CTX_F_MAP	(1 << 7)	/* LHS of map_expr */
 #define CTX_F_CONCAT	(1 << 8)	/* inside concat_expr */
 #define CTX_F_COLLAPSED	(1 << 9)
+#define CTX_F_IMPLICIT	(1 << 10)	/* implicit add (export/import format) */
+
+/* Mask for flags that affect expression parsing context (all except command-level flags) */
+#define CTX_F_EXPR_MASK	(UINT32_MAX & ~(CTX_F_COLLAPSED | CTX_F_IMPLICIT))
 
 struct json_ctx {
 	struct nft_ctx *nft;
@@ -1476,7 +1480,7 @@ static struct expr *json_parse_set_expr(struct json_ctx *ctx,
 	}
 
 	json_array_foreach(root, index, value) {
-		struct expr *expr;
+		struct expr *expr, *elem;
 		json_t *jleft, *jright;
 
 		if (!json_unpack(value, "[o, o!]", &jleft, &jright)) {
@@ -1488,8 +1492,13 @@ static struct expr *json_parse_set_expr(struct json_ctx *ctx,
 				expr_free(set_expr);
 				return NULL;
 			}
-			if (expr->etype != EXPR_SET_ELEM)
-				expr = set_elem_expr_alloc(int_loc, expr);
+
+			if (expr->etype != EXPR_SET_ELEM) {
+				elem = set_elem_expr_alloc(int_loc, expr);
+			} else {
+				elem = expr;
+				expr = expr->key;
+			}
 
 			expr2 = json_parse_set_rhs_expr(ctx, jright);
 			if (!expr2) {
@@ -1499,7 +1508,8 @@ static struct expr *json_parse_set_expr(struct json_ctx *ctx,
 				return NULL;
 			}
 			expr2 = mapping_expr_alloc(int_loc, expr, expr2);
-			expr = expr2;
+			elem->key = expr2;
+			expr = elem;
 		} else {
 			expr = json_parse_rhs_expr(ctx, value);
 
@@ -1725,10 +1735,14 @@ static struct expr *json_parse_expr(struct json_ctx *ctx, json_t *root)
 		return NULL;
 
 	for (i = 0; i < array_size(cb_tbl); i++) {
+		uint32_t expr_flags;
+
 		if (strcmp(type, cb_tbl[i].name))
 			continue;
 
-		if ((cb_tbl[i].flags & ctx->flags) != ctx->flags) {
+		/* Only check expression context flags, not command-level flags */
+		expr_flags = ctx->flags & CTX_F_EXPR_MASK;
+		if ((cb_tbl[i].flags & expr_flags) != expr_flags) {
 			json_error(ctx, "Expression type %s not allowed in context (%s).",
 				   type, ctx_flags_to_string(ctx));
 			return NULL;
@@ -2567,7 +2581,7 @@ static struct stmt *json_parse_map_stmt(struct json_ctx *ctx,
 	stmt->map.set = expr2;
 
 	if (!json_unpack(value, "{s:o}", "stmt", &stmt_json) &&
-	    json_parse_set_stmt_list(ctx, &stmt->set.stmt_list, stmt_json) < 0) {
+	    json_parse_set_stmt_list(ctx, &stmt->map.stmt_list, stmt_json) < 0) {
 		stmt_free(stmt);
 		return NULL;
 	}
@@ -2834,17 +2848,26 @@ static struct stmt *json_parse_queue_stmt(struct json_ctx *ctx,
 static struct stmt *json_parse_connlimit_stmt(struct json_ctx *ctx,
 					      const char *key, json_t *value)
 {
-	struct stmt *stmt = connlimit_stmt_alloc(int_loc);
+	struct stmt *stmt;
+	uint32_t tmp;
 
-	if (json_unpack_err(ctx, value, "{s:i}",
-			    "val", &stmt->connlimit.count)) {
+	if (!json_unpack(value, "{s:i}", "val", &tmp)) {
+		stmt = connlimit_stmt_alloc(int_loc);
+		stmt->connlimit.count = tmp;
+		json_unpack(value, "{s:b}", "inv", &stmt->connlimit.flags);
+		if (stmt->connlimit.flags)
+			stmt->connlimit.flags = NFT_CONNLIMIT_F_INV;
+		return stmt;
+	}
+
+	stmt = objref_stmt_alloc(int_loc);
+	stmt->objref.type = NFT_OBJECT_CONNLIMIT;
+	stmt->objref.expr = json_parse_stmt_expr(ctx, value);
+	if (!stmt->objref.expr) {
+		json_error(ctx, "Invalid connlimit reference.");
 		stmt_free(stmt);
 		return NULL;
 	}
-
-	json_unpack(value, "{s:b}", "inv", &stmt->connlimit.flags);
-	if (stmt->connlimit.flags)
-		stmt->connlimit.flags = NFT_CONNLIMIT_F_INV;
 
 	return stmt;
 }
@@ -3201,6 +3224,17 @@ static struct cmd *json_parse_cmd_add_rule(struct json_ctx *ctx, json_t *root,
 		h.index.id++;
 	}
 
+	/* For explicit add/insert/create commands, handle is used for positioning.
+	 * Convert handle to position for proper rule placement.
+	 * Skip this for implicit adds (export/import format).
+	 */
+	if (!(ctx->flags & CTX_F_IMPLICIT) &&
+	    (op == CMD_INSERT || op == CMD_ADD || op == CMD_CREATE) &&
+	    !json_unpack(root, "{s:I}", "handle", &h.handle.id)) {
+		h.position.id = h.handle.id;
+		h.handle.id = 0;
+	}
+
 	rule = rule_alloc(int_loc, NULL);
 
 	json_unpack(root, "{s:s}", "comment", &comment);
@@ -3249,6 +3283,7 @@ static int string_to_nft_object(const char *str)
 		[NFT_OBJECT_CT_EXPECT]	= "ct expectation",
 		[NFT_OBJECT_SYNPROXY]	= "synproxy",
 		[NFT_OBJECT_TUNNEL]	= "tunnel",
+		[NFT_OBJECT_CONNLIMIT]	= "ct count",
 	};
 	unsigned int i;
 
@@ -3678,6 +3713,80 @@ static int json_parse_tunnel_src_and_dst(struct json_ctx *ctx,
 	return 0;
 }
 
+static int json_parse_tunnel(struct json_ctx *ctx,
+			     json_t *root, struct obj *obj)
+{
+	struct tunnel_geneve *geneve;
+	json_t *tmp_json;
+	const char *tmp;
+	json_t *value;
+	size_t index;
+	int i, j;
+
+	if (json_parse_tunnel_src_and_dst(ctx, root, obj))
+		return 1;
+
+	json_unpack(root, "{s:i}", "id", &obj->tunnel.id);
+	json_unpack(root, "{s:i}", "sport", &i);
+	obj->tunnel.sport = i;
+	json_unpack(root, "{s:i}", "dport", &i);
+	obj->tunnel.sport = i;
+	json_unpack(root, "{s:i}", "ttl", &i);
+	obj->tunnel.ttl = i;
+	json_unpack(root, "{s:i}", "tos", &i);
+	obj->tunnel.tos = i;
+	json_unpack(root, "{s:s}", "type", &tmp);
+
+	obj->tunnel.type = json_parse_tunnel_type(ctx, tmp);
+	switch (obj->tunnel.type) {
+	case TUNNEL_UNSPEC:
+		break;
+	case TUNNEL_ERSPAN:
+		return json_parse_tunnel_erspan(ctx, root, obj);
+	case TUNNEL_VXLAN:
+		if (json_unpack_err(ctx, root,
+				    "{s:o}", "tunnel", &tmp_json))
+			return 1;
+
+		json_unpack(tmp_json, "{s:i}",
+			    "gbp", &obj->tunnel.vxlan.gbp);
+		break;
+	case TUNNEL_GENEVE:
+		if (json_unpack_err(ctx, root,
+				    "{s:o}", "tunnel", &tmp_json))
+			return 1;
+
+		init_list_head(&obj->tunnel.geneve_opts);
+
+		json_array_foreach(tmp_json, index, value) {
+			geneve = xmalloc(sizeof(struct tunnel_geneve));
+			if (!geneve)
+				memory_allocation_error();
+
+			if (json_unpack_err(ctx, value, "{s:i, s:i, s:s}",
+					    "class", &i,
+					    "opt-type", &j,
+					    "data", &tmp)) {
+				free(geneve);
+				return 1;
+			}
+			geneve->geneve_class = i;
+			geneve->type = j;
+
+			if (tunnel_geneve_data_str2array(tmp,
+							 geneve->data,
+							 &geneve->data_len)) {
+				free(geneve);
+				return 1;
+			}
+
+			list_add_tail(&geneve->list, &obj->tunnel.geneve_opts);
+		}
+		break;
+	}
+	return 0;
+}
+
 static struct cmd *json_parse_cmd_add_object(struct json_ctx *ctx,
 					     json_t *root, enum cmd_ops op,
 					     enum cmd_obj cmd_obj)
@@ -3686,7 +3795,6 @@ static struct cmd *json_parse_cmd_add_object(struct json_ctx *ctx,
 	uint32_t l3proto = NFPROTO_UNSPEC;
 	int inv = 0, flags = 0, i, j;
 	struct handle h = { 0 };
-	json_t *tmp_json;
 	struct obj *obj;
 
 	if (json_unpack_err(ctx, root, "{s:s, s:s}",
@@ -3877,74 +3985,17 @@ static struct cmd *json_parse_cmd_add_object(struct json_ctx *ctx,
 	case NFT_OBJECT_TUNNEL:
 		cmd_obj = CMD_OBJ_TUNNEL;
 		obj->type = NFT_OBJECT_TUNNEL;
-
-		if (json_parse_tunnel_src_and_dst(ctx, root, obj))
+		if (json_parse_tunnel(ctx, root, obj))
+			goto err_free_obj;
+		break;
+	case CMD_OBJ_CONNLIMIT:
+		obj->type = NFT_OBJECT_CONNLIMIT;
+		if (json_unpack_err(ctx, root, "{s:i}", "val", &obj->connlimit.count))
 			goto err_free_obj;
 
-		json_unpack(root, "{s:i}", "id", &obj->tunnel.id);
-		json_unpack(root, "{s:i}", "sport", &i);
-		obj->tunnel.sport = i;
-		json_unpack(root, "{s:i}", "dport", &i);
-		obj->tunnel.sport = i;
-		json_unpack(root, "{s:i}", "ttl", &i);
-		obj->tunnel.ttl = i;
-		json_unpack(root, "{s:i}", "tos", &i);
-		obj->tunnel.tos = i;
-		json_unpack(root, "{s:s}", "type", &tmp);
-
-		obj->tunnel.type = json_parse_tunnel_type(ctx, tmp);
-		switch (obj->tunnel.type) {
-		case TUNNEL_UNSPEC:
-			break;
-		case TUNNEL_ERSPAN:
-			if (json_parse_tunnel_erspan(ctx, root, obj))
-				goto err_free_obj;
-			break;
-		case TUNNEL_VXLAN:
-			if (json_unpack_err(ctx, root,
-					    "{s:o}", "tunnel", &tmp_json))
-				goto err_free_obj;
-
-			json_unpack(tmp_json, "{s:i}",
-				    "gbp", &obj->tunnel.vxlan.gbp);
-			break;
-		case TUNNEL_GENEVE:
-			json_t *value;
-			size_t index;
-
-			if (json_unpack_err(ctx, root,
-					    "{s:o}", "tunnel", &tmp_json))
-				goto err_free_obj;
-
-			json_array_foreach(tmp_json, index, value) {
-				struct tunnel_geneve *geneve = xmalloc(sizeof(struct tunnel_geneve));
-				if (!geneve)
-					memory_allocation_error();
-
-				if (json_unpack_err(ctx, value, "{s:i, s:i, s:s}",
-						    "class", &i,
-						    "opt-type", &j,
-						    "data", &tmp)) {
-					free(geneve);
-					goto err_free_obj;
-				}
-				geneve->geneve_class = i;
-				geneve->type = j;
-
-				if (tunnel_geneve_data_str2array(tmp,
-								 geneve->data,
-								 &geneve->data_len)) {
-					free(geneve);
-					goto err_free_obj;
-				}
-
-				if (index == 0)
-					init_list_head(&obj->tunnel.geneve_opts);
-
-				list_add_tail(&geneve->list, &obj->tunnel.geneve_opts);
-			}
-			break;
-		}
+		json_unpack(root, "{s:b}", "inv", &obj->connlimit.flags);
+		if (obj->connlimit.flags)
+			obj->connlimit.flags = NFT_CONNLIMIT_F_INV;
 		break;
 	default:
 		BUG("Invalid CMD '%d'", cmd_obj);
@@ -3985,7 +4036,8 @@ static struct cmd *json_parse_cmd_add(struct json_ctx *ctx,
 		{ "tunnel", NFT_OBJECT_TUNNEL, json_parse_cmd_add_object },
 		{ "limit", CMD_OBJ_LIMIT, json_parse_cmd_add_object },
 		{ "secmark", CMD_OBJ_SECMARK, json_parse_cmd_add_object },
-		{ "synproxy", CMD_OBJ_SYNPROXY, json_parse_cmd_add_object }
+		{ "synproxy", CMD_OBJ_SYNPROXY, json_parse_cmd_add_object },
+		{ "ct count", CMD_OBJ_CONNLIMIT, json_parse_cmd_add_object },
 	};
 	unsigned int i;
 	json_t *tmp;
@@ -4115,6 +4167,7 @@ static struct cmd *json_parse_cmd_list_multiple(struct json_ctx *ctx,
 		}
 	}
 	switch (obj) {
+	case CMD_OBJ_CHAINS:
 	case CMD_OBJ_SETS:
 	case CMD_OBJ_COUNTERS:
 	case CMD_OBJ_CT_HELPERS:
@@ -4342,6 +4395,8 @@ static struct cmd *json_parse_cmd(struct json_ctx *ctx, json_t *root)
 		//{ "monitor", CMD_MONITOR, json_parse_cmd_monitor },
 		//{ "describe", CMD_DESCRIBE, json_parse_cmd_describe }
 	};
+	uint32_t old_flags;
+	struct cmd *cmd;
 	unsigned int i;
 	json_t *tmp;
 
@@ -4352,8 +4407,17 @@ static struct cmd *json_parse_cmd(struct json_ctx *ctx, json_t *root)
 
 		return parse_cb_table[i].cb(ctx, tmp, parse_cb_table[i].op);
 	}
-	/* to accept 'list ruleset' output 1:1, try add command */
-	return json_parse_cmd_add(ctx, root, CMD_ADD);
+	/* to accept 'list ruleset' output 1:1, try add command
+	 * Mark as implicit to distinguish from explicit add commands.
+	 * This allows explicit {"add": {"rule": ...}} to use handle for positioning
+	 * while implicit {"rule": ...} (export format) ignores handles.
+	 */
+	old_flags = ctx->flags;
+	ctx->flags |= CTX_F_IMPLICIT;
+	cmd = json_parse_cmd_add(ctx, root, CMD_ADD);
+	ctx->flags = old_flags;
+
+	return cmd;
 }
 
 static int json_verify_metainfo(struct json_ctx *ctx, json_t *root)

@@ -1,229 +1,228 @@
 # frag nexthdr tcp
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
 
 # frag nexthdr != icmp
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 0 => reg 1 ]
-  [ cmp neq reg 1 0x00000001 ]
+  [ cmp neq reg 1 0x01 ]
 
 # frag nexthdr {esp, ah, comp, udp, udplite, tcp, dccp, sctp}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00000032  : 0 [end]	element 00000033  : 0 [end]	element 0000006c  : 0 [end]	element 00000011  : 0 [end]	element 00000088  : 0 [end]	element 00000006  : 0 [end]	element 00000021  : 0 [end]	element 00000084  : 0 [end]
+	element 32	element 33	element 6c	element 11	element 88	element 06	element 21	element 84
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 0 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # frag nexthdr != {esp, ah, comp, udp, udplite, tcp, dccp, sctp}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00000032  : 0 [end]	element 00000033  : 0 [end]	element 0000006c  : 0 [end]	element 00000011  : 0 [end]	element 00000088  : 0 [end]	element 00000006  : 0 [end]	element 00000021  : 0 [end]	element 00000084  : 0 [end]
+	element 32	element 33	element 6c	element 11	element 88	element 06	element 21	element 84
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 0 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # frag nexthdr esp
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
 
 # frag nexthdr ah
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000033 ]
+  [ cmp eq reg 1 0x33 ]
 
 # frag reserved 22
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 1 => reg 1 ]
-  [ cmp eq reg 1 0x00000016 ]
+  [ cmp eq reg 1 0x16 ]
 
 # frag reserved != 233
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 1 => reg 1 ]
-  [ cmp neq reg 1 0x000000e9 ]
+  [ cmp neq reg 1 0xe9 ]
 
 # frag reserved 33-45
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 1 => reg 1 ]
-  [ range eq reg 1 0x00000021 0x0000002d ]
+  [ range eq reg 1 0x21 0x2d ]
 
 # frag reserved != 33-45
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 1 => reg 1 ]
-  [ range neq reg 1 0x00000021 0x0000002d ]
+  [ range neq reg 1 0x21 0x2d ]
 
 # frag reserved { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+	element 21	element 37	element 43	element 58
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 1 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # frag reserved != { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+	element 21	element 37	element 43	element 58
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 1 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # frag frag-off 22
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 2b @ 44 + 2 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000f8ff ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x0000b000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfff8 ) ^ 0x0000 ]
+  [ cmp eq reg 1 0x00b0 ]
 
 # frag frag-off != 233
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 2b @ 44 + 2 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000f8ff ) ^ 0x00000000 ]
-  [ cmp neq reg 1 0x00004807 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfff8 ) ^ 0x0000 ]
+  [ cmp neq reg 1 0x0748 ]
 
 # frag frag-off 33-45
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 2b @ 44 + 2 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000f8ff ) ^ 0x00000000 ]
-  [ range eq reg 1 0x00000801 0x00006801 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfff8 ) ^ 0x0000 ]
+  [ range eq reg 1 0x0108 0x0168 ]
 
 # frag frag-off != 33-45
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 2b @ 44 + 2 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000f8ff ) ^ 0x00000000 ]
-  [ range neq reg 1 0x00000801 0x00006801 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfff8 ) ^ 0x0000 ]
+  [ range neq reg 1 0x0108 0x0168 ]
 
 # frag frag-off { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00000801  : 0 [end]	element 0000b801  : 0 [end]	element 00001802  : 0 [end]	element 0000c002  : 0 [end]
+	element 0108	element 01b8	element 0218	element 02c0
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 2b @ 44 + 2 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000f8ff ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfff8 ) ^ 0x0000 ]
   [ lookup reg 1 set __set%d ]
 
 # frag frag-off != { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00000801  : 0 [end]	element 0000b801  : 0 [end]	element 00001802  : 0 [end]	element 0000c002  : 0 [end]
+	element 0108	element 01b8	element 0218	element 02c0
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 2b @ 44 + 2 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000f8ff ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfff8 ) ^ 0x0000 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # frag id 1
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 4b @ 44 + 4 => reg 1 ]
-  [ cmp eq reg 1 0x01000000 ]
+  [ cmp eq reg 1 0x00000001 ]
 
 # frag id 22
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 4b @ 44 + 4 => reg 1 ]
-  [ cmp eq reg 1 0x16000000 ]
+  [ cmp eq reg 1 0x00000016 ]
 
 # frag id != 33
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 4b @ 44 + 4 => reg 1 ]
-  [ cmp neq reg 1 0x21000000 ]
+  [ cmp neq reg 1 0x00000021 ]
 
 # frag id 33-45
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 4b @ 44 + 4 => reg 1 ]
-  [ range eq reg 1 0x21000000 0x2d000000 ]
+  [ range eq reg 1 0x00000021 0x0000002d ]
 
 # frag id != 33-45
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 4b @ 44 + 4 => reg 1 ]
-  [ range neq reg 1 0x21000000 0x2d000000 ]
+  [ range neq reg 1 0x00000021 0x0000002d ]
 
 # frag id { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+	element 00000021	element 00000037	element 00000043	element 00000058
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 4b @ 44 + 4 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # frag id != { 33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+	element 00000021	element 00000037	element 00000043	element 00000058
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 4b @ 44 + 4 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # frag reserved2 1
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 3 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000006 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ bitwise reg 1 = ( reg 1 & 0x06 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x02 ]
 
 # frag more-fragments 0
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 3 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000001 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x01 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x00 ]
 
 # frag more-fragments 1
 inet test-inet output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ exthdr load ipv6 1b @ 44 + 3 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x00000001 ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000001 ]
-
+  [ bitwise reg 1 = ( reg 1 & 0x01 ) ^ 0x00 ]
+  [ cmp eq reg 1 0x01 ]

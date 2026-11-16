@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define for profiling */
+#undef BUILD_PROFILING
+
 /* Define to 1 if you have the declaration of 'getprotobyname_r', and to 0 if
    you don't. */
 #undef HAVE_DECL_GETPROTOBYNAME_R

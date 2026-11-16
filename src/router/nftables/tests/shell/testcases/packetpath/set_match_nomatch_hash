@@ -1,0 +1,14 @@
+#!/bin/bash
+
+. $NFT_TEST_BASEDIR/helpers/set_match_nomatch_helpers
+
+cleanup()
+{
+	set_match_nomatch_cleanup
+}
+
+trap cleanup EXIT
+
+set_match_nomatch_run_test "hash" "ifname . ipv4_addr" "size 16536" "meta iifname . ip daddr" || exit 1
+
+exit 0

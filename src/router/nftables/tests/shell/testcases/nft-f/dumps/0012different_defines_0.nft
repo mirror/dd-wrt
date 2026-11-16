@@ -8,7 +8,7 @@ table inet t {
 		ip6 daddr fe0::1 ip6 saddr fe0::2
 		ip saddr vmap { 10.0.0.0 : drop, 10.0.0.2 : accept }
 		ip6 daddr vmap { fe0::1 : drop, fe0::2 : accept }
-		ip6 saddr . ip6 nexthdr { fe0::2 . tcp, fe0::1 . udp }
+		ip6 saddr . ip6 nexthdr { fe0::1 . 17, fe0::2 . 6 }
 		ip daddr . iif vmap { 10.0.0.0 . "lo" : accept }
 		tcp dport 100-222
 		udp dport vmap { 100-222 : accept }

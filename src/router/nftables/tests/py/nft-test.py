@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # (C) 2014 by Ana Rey Botello <anarey@gmail.com>
 #
@@ -30,7 +30,6 @@ os.environ['TZ'] = 'UTC-2'
 from nftables import Nftables
 
 TESTS_DIRECTORY = ["any", "arp", "bridge", "inet", "ip", "ip6", "netdev"]
-LOGFILE = "/tmp/nftables-test.log"
 log_file = None
 table_list = []
 chain_list = []
@@ -1254,6 +1253,10 @@ def obj_process(obj_line, filename, lineno):
        obj_type = "ct expectation"
        tokens[3] = ""
 
+    if obj_type == "ct" and tokens[3] == "count":
+       obj_type = "ct count"
+       tokens[3] = ""
+
     if len(tokens) > 3:
         obj_spcf = " ".join(tokens[3:])
 
@@ -1523,6 +1526,9 @@ def main():
     parser.add_argument('-l', '--library', default=None,
                         help='path to libntables.so.1, overrides --host')
 
+    parser.add_argument('-k', '--keep', action='store_true',
+                        help='keep log file around after tests')
+
     parser.add_argument('-N', '--no-netns', action='store_true',
                         dest='no_netns',
                         help='Do not run in own network namespace')
@@ -1585,10 +1591,13 @@ def main():
     tests = passed = warnings = errors = 0
     global log_file
     try:
-        log_file = open(LOGFILE, 'w')
-        print_info("Log will be available at %s" % LOGFILE)
+        log_file = tempfile.NamedTemporaryFile(prefix="nftables-test-py-", suffix=".log", mode='w', delete = not args.keep)
+        if not args.keep:
+            print_info("Log file %s will not be retained.  Pass -k to keep it." % log_file.name)
+        else:
+            print_info("Log will be available at %s" % log_file.name)
     except IOError:
-        print_error("Cannot open log file %s" % LOGFILE)
+        print_error("Cannot create a temporary log file")
         return 99
 
     file_list = []

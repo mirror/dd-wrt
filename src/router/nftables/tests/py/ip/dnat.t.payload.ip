@@ -1,80 +1,80 @@
 # iifname "eth0" tcp dport 80-90 dnat to 192.168.3.2
 ip test-ip4 prerouting
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ range eq reg 1 0x00005000 0x00005a00 ]
-  [ immediate reg 1 0x0203a8c0 ]
+  [ range eq reg 1 0x0050 0x005a ]
+  [ immediate reg 1 0xc0a80302 ]
   [ nat dnat ip addr_min reg 1 ]
 
 # iifname "eth0" tcp dport != 80-90 dnat to 192.168.3.2
 ip test-ip4 prerouting
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ range neq reg 1 0x00005000 0x00005a00 ]
-  [ immediate reg 1 0x0203a8c0 ]
+  [ range neq reg 1 0x0050 0x005a ]
+  [ immediate reg 1 0xc0a80302 ]
   [ nat dnat ip addr_min reg 1 ]
 
 # iifname "eth0" tcp dport {80, 90, 23} dnat to 192.168.3.2
 __set%d test-ip4 3
 __set%d test-ip4 0
-	element 00005000  : 0 [end]	element 00005a00  : 0 [end]	element 00001700  : 0 [end]
+	element 0050	element 005a	element 0017
 ip test-ip4 prerouting
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d ]
-  [ immediate reg 1 0x0203a8c0 ]
+  [ immediate reg 1 0xc0a80302 ]
   [ nat dnat ip addr_min reg 1 ]
 
 # iifname "eth0" tcp dport != {80, 90, 23} dnat to 192.168.3.2
 __set%d test-ip4 3
 __set%d test-ip4 0
-	element 00005000  : 0 [end]	element 00005a00  : 0 [end]	element 00001700  : 0 [end]
+	element 0050	element 005a	element 0017
 ip test-ip4 prerouting
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
-  [ immediate reg 1 0x0203a8c0 ]
+  [ immediate reg 1 0xc0a80302 ]
   [ nat dnat ip addr_min reg 1 ]
 
 # iifname "eth0" tcp dport != 23-34 dnat to 192.168.3.2
 ip test-ip4 prerouting
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ range neq reg 1 0x00001700 0x00002200 ]
-  [ immediate reg 1 0x0203a8c0 ]
+  [ range neq reg 1 0x0017 0x0022 ]
+  [ immediate reg 1 0xc0a80302 ]
   [ nat dnat ip addr_min reg 1 ]
 
 # iifname "eth0" tcp dport 81 dnat to 192.168.3.2:8080
 ip test-ip4 prerouting
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00005100 ]
-  [ immediate reg 1 0x0203a8c0 ]
-  [ immediate reg 2 0x0000901f ]
+  [ cmp eq reg 1 0x0051 ]
+  [ immediate reg 1 0xc0a80302 ]
+  [ immediate reg 2 0x1f90 ]
   [ nat dnat ip addr_min reg 1 proto_min reg 2 flags 0x2 ]
 
 # dnat to ct mark map { 0x00000014 : 1.2.3.4}
 __map%d test-ip4 b
 __map%d test-ip4 0
-	element 00000014  : 04030201 0 [end]
+	element 00000014 : 01020304
 ip test-ip4 prerouting
   [ ct load mark => reg 1 ]
   [ lookup reg 1 set __map%d dreg 1 ]
@@ -83,7 +83,7 @@ ip test-ip4 prerouting
 # dnat to ct mark . ip daddr map { 0x00000014 . 1.1.1.1 : 1.2.3.4}
 __map%d test-ip4 b
 __map%d test-ip4 0
-	element 00000014 01010101  : 04030201 0 [end]
+	element 00000014 . 01010101 : 01020304
 ip test-ip4 output
   [ ct load mark => reg 1 ]
   [ payload load 4b @ network header + 16 => reg 9 ]
@@ -93,10 +93,10 @@ ip test-ip4 output
 # dnat ip to ip saddr . tcp dport map { 192.168.1.2 . 80 : 10.141.10.0/24  . 8888 - 8999 }
 __map%d test-ip4 b size 1
 __map%d test-ip4 0
-        element 0201a8c0 00005000  : 000a8d0a 0000b822 ff0a8d0a 00002723 0 [end]
+	element c0a80102 . 0050 : 0a8d0a00 . 22b8 . 0a8d0aff . 2327
 ip
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ payload load 2b @ transport header + 2 => reg 9 ]
   [ lookup reg 1 set __map%d dreg 1 ]
@@ -105,10 +105,10 @@ ip
 # dnat ip to ip saddr . tcp dport map { 192.168.1.2 . 80 : 10.141.10.0/24  . 80 }
 __map%d test-ip4 b size 1
 __map%d test-ip4 0
-        element 0201a8c0 00005000  : 000a8d0a 00005000 ff0a8d0a 00005000 0 [end]
+	element c0a80102 . 0050 : 0a8d0a00 . 0050 . 0a8d0aff . 0050
 ip
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ payload load 2b @ transport header + 2 => reg 9 ]
   [ lookup reg 1 set __map%d dreg 1 ]
@@ -117,10 +117,10 @@ ip
 # dnat ip to ip saddr . tcp dport map { 192.168.1.2 . 80 : 10.141.10.2 . 8888 - 8999 }
 __map%d test-ip4 b size 1
 __map%d test-ip4 0
-        element 0201a8c0 00005000  : 020a8d0a 0000b822 020a8d0a 00002723 0 [end]
+	element c0a80102 . 0050 : 0a8d0a02 . 22b8 . 0a8d0a02 . 2327
 ip
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ payload load 2b @ transport header + 2 => reg 9 ]
   [ lookup reg 1 set __map%d dreg 1 ]
@@ -129,52 +129,52 @@ ip
 # iifname "eth0" tcp dport 81 dnat to 192.168.3.2:8080-8999
 ip
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00005100 ]
-  [ immediate reg 1 0x0203a8c0 ]
-  [ immediate reg 2 0x0000901f ]
-  [ immediate reg 3 0x00002723 ]
+  [ cmp eq reg 1 0x0051 ]
+  [ immediate reg 1 0xc0a80302 ]
+  [ immediate reg 2 0x1f90 ]
+  [ immediate reg 3 0x2327 ]
   [ nat dnat ip addr_min reg 1 proto_min reg 2 proto_max reg 3 flags 0x2 ]
 
 # iifname "eth0" tcp dport 81 dnat to 192.168.3.2-192.168.3.4:8080
 ip
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00005100 ]
-  [ immediate reg 1 0x0203a8c0 ]
-  [ immediate reg 2 0x0403a8c0 ]
-  [ immediate reg 3 0x0000901f ]
+  [ cmp eq reg 1 0x0051 ]
+  [ immediate reg 1 0xc0a80302 ]
+  [ immediate reg 2 0xc0a80304 ]
+  [ immediate reg 3 0x1f90 ]
   [ nat dnat ip addr_min reg 1 addr_max reg 2 proto_min reg 3 flags 0x2 ]
 
 # iifname "eth0" tcp dport 81 dnat to 192.168.3.2-192.168.3.4:8080-8999
 ip
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00005100 ]
-  [ immediate reg 1 0x0203a8c0 ]
-  [ immediate reg 2 0x0403a8c0 ]
-  [ immediate reg 3 0x0000901f ]
-  [ immediate reg 4 0x00002723 ]
+  [ cmp eq reg 1 0x0051 ]
+  [ immediate reg 1 0xc0a80302 ]
+  [ immediate reg 2 0xc0a80304 ]
+  [ immediate reg 3 0x1f90 ]
+  [ immediate reg 4 0x2327 ]
   [ nat dnat ip addr_min reg 1 addr_max reg 2 proto_min reg 3 proto_max reg 4 flags 0x2 ]
 
 # ip daddr 192.168.0.1 dnat ip to tcp dport map { 443 : 10.141.10.4 . 8443, 80 : 10.141.10.4 . 8080 }
 __map%d test-ip4 b size 2
 __map%d test-ip4 0
-        element 0000bb01  : 040a8d0a 0000fb20 0 [end]   element 00005000  : 040a8d0a 0000901f 0 [end]
+	element 01bb : 0a8d0a04 . 20fb	element 0050 : 0a8d0a04 . 1f90
 ip
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ cmp eq reg 1 0x0100a8c0 ]
+  [ cmp eq reg 1 0xc0a80001 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __map%d dreg 1 ]
   [ nat dnat ip addr_min reg 1 proto_min reg 9 ]
@@ -182,10 +182,10 @@ ip
 # meta l4proto 6 dnat ip to iifname . ip saddr map { "enp2s0" . 10.1.1.136 : 1.1.2.69 . 22, "enp2s0" . 10.1.1.1-10.1.1.135 : 1.1.2.66-1.84.236.78 . 22 }
 __map%d test-ip4 8f size 2
 __map%d test-ip4 0
-        element 32706e65 00003073 00000000 00000000 8801010a  - 32706e65 00003073 00000000 00000000 8801010a  : 45020101 00001600 45020101 00001600 0 [end]     element 32706e65 00003073 00000000 00000000 0101010a  - 32706e65 00003073 00000000 00000000 8701010a  : 42020101 00001600 4eec5401 00001600 0 [end]
+	element 656e7032 73300000 00000000 00000000 . 0a010188 - 656e7032 73300000 00000000 00000000 . 0a010188 : 01010245 . 0016 . 01010245 . 0016	element 656e7032 73300000 00000000 00000000 . 0a010101 - 656e7032 73300000 00000000 00000000 . 0a010187 : 01010242 . 0016 . 0154ec4e . 0016
 ip test-ip4 prerouting
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ meta load iifname => reg 1 ]
   [ payload load 4b @ network header + 12 => reg 2 ]
   [ lookup reg 1 set __map%d dreg 1 ]
@@ -194,10 +194,9 @@ ip test-ip4 prerouting
 # dnat ip to iifname . ip saddr map { "enp2s0" . 10.1.1.136 : 1.1.2.69/32, "enp2s0" . 10.1.1.1-10.1.1.135 : 1.1.2.66-1.84.236.78 }
 __map%d test-ip4 8f size 2
 __map%d test-ip4 0
-        element 32706e65 00003073 00000000 00000000 8801010a  - 32706e65 00003073 00000000 00000000 8801010a  : 45020101 45020101 0 [end]       element 32706e65 00003073 00000000 00000000 0101010a  - 32706e65 00003073 00000000 00000000 8701010a  : 42020101 4eec5401 0 [end]
+	element 656e7032 73300000 00000000 00000000 . 0a010188 - 656e7032 73300000 00000000 00000000 . 0a010188 : 01010245 . 01010245	element 656e7032 73300000 00000000 00000000 . 0a010101 - 656e7032 73300000 00000000 00000000 . 0a010187 : 01010242 . 0154ec4e
 ip test-ip4 prerouting
   [ meta load iifname => reg 1 ]
   [ payload load 4b @ network header + 12 => reg 2 ]
   [ lookup reg 1 set __map%d dreg 1 ]
   [ nat dnat ip addr_min reg 1 addr_max reg 9 ]
-

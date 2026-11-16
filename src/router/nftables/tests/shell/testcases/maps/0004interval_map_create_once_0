@@ -43,7 +43,7 @@ generate_test() {
 
 echo "add table x
 add map x y { type ipv4_addr : ipv4_addr; flags interval; }
-add element x y $(generate_add)" > $tmpfile
+create element x y $(generate_add)" > $tmpfile
 
 set -e
 $NFT -f $tmpfile
@@ -55,6 +55,24 @@ EXPECTED="table ip x {
 		elements = { "$(generate_test)" }
 	}
 }"
+GET=$($NFT list ruleset)
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi
+
+$NFT flush ruleset
+
+# now try with add element command
+echo "add table x
+add map x y { type ipv4_addr : ipv4_addr; flags interval; }
+add element x y $(generate_add)" > $tmpfile
+
+set -e
+$NFT -f $tmpfile
+
+# same listing output is EXPECTED, no need to generate it again.
+
 GET=$($NFT list ruleset)
 if [ "$EXPECTED" != "$GET" ] ; then
 	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")

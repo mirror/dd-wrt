@@ -227,3 +227,38 @@
         }
     }
 ]
+
+# ct count name tcp dport map {22 : "connlimit1", 80 : "connlimit2"}
+[
+    {
+        "ct count": {
+            "map": {
+                "data": {
+                    "set": [
+                        [
+                            22,
+                            "connlimit1"
+                        ],
+                        [
+                            80,
+                            "connlimit2"
+                        ]
+                    ]
+                },
+                "key": {
+                    "payload": {
+                        "field": "dport",
+                        "protocol": "tcp"
+                    }
+                }
+            }
+        }
+    }
+]
+
+# ct count name "connlimit1"
+[
+    {
+        "ct count": "connlimit1"
+    }
+]

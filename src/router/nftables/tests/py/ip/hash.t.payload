@@ -36,7 +36,7 @@ ip test-ip4 pre
 # dnat to jhash ip saddr mod 2 seed 0xdeadbeef map { 0 : 192.168.20.100, 1 : 192.168.30.100 }
 __map%d test-ip4 b
 __map%d test-ip4 0
-	element 00000000  : 6414a8c0 0 [end]	element 00000001  : 641ea8c0 0 [end]
+	element 00000000 : c0a81464	element 00000001 : c0a81e64
 ip test-ip4 pre 
   [ payload load 4b @ network header + 12 => reg 2 ]
   [ hash reg 1 = jhash(reg 2, 4, 0xdeadbeef) % mod 2 ]

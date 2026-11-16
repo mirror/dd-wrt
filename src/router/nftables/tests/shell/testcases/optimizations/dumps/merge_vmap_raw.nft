@@ -1,26 +1,26 @@
 table inet x {
 	chain nat_dns_dnstc {
-		meta l4proto udp redirect to :5300
+		meta l4proto 17 redirect to :5300
 		drop
 	}
 
 	chain nat_dns_this_5301 {
-		meta l4proto udp redirect to :5301
+		meta l4proto 17 redirect to :5301
 		drop
 	}
 
 	chain nat_dns_saturn_5301 {
-		meta nfproto ipv4 meta l4proto udp dnat ip to 240.0.1.2:5301
+		meta nfproto ipv4 meta l4proto 17 dnat ip to 240.0.1.2:5301
 		drop
 	}
 
 	chain nat_dns_saturn_5302 {
-		meta nfproto ipv4 meta l4proto udp dnat ip to 240.0.1.2:5302
+		meta nfproto ipv4 meta l4proto 17 dnat ip to 240.0.1.2:5302
 		drop
 	}
 
 	chain nat_dns_saturn_5303 {
-		meta nfproto ipv4 meta l4proto udp dnat ip to 240.0.1.2:5303
+		meta nfproto ipv4 meta l4proto 17 dnat ip to 240.0.1.2:5303
 		drop
 	}
 

@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 exec_pretty() {
-	# The output of this command must be stable (and `jq` and python
+	# The output of this command must be stable (and `jq` and python3
 	# fallback must generate the same output.
 
 	if command -v jq &>/dev/null ; then
@@ -9,7 +9,7 @@ exec_pretty() {
 		exec jq
 	fi
 
-	# Fallback to python.
+	# Fallback to python3.
 	exec python3 -c '
 import json
 import sys

@@ -1,7 +1,7 @@
 # ip6 saddr @set2 drop
 inet test-inet input 
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ payload load 16b @ network header + 8 => reg 1 ]
   [ lookup reg 1 set set2 ]
   [ immediate reg 0 drop ]
@@ -9,7 +9,7 @@ inet test-inet input
 # ip6 saddr != @set2 drop
 inet test-inet input 
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ payload load 16b @ network header + 8 => reg 1 ]
   [ lookup reg 1 set set2 0x1 ]
   [ immediate reg 0 drop ]
@@ -17,7 +17,7 @@ inet test-inet input
 # ip6 saddr . ip6 daddr @set5 drop
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ payload load 16b @ network header + 8 => reg 1 ]
   [ payload load 16b @ network header + 24 => reg 2 ]
   [ lookup reg 1 set set5 ]
@@ -26,7 +26,7 @@ inet test-inet input
 # add @set5 { ip6 saddr . ip6 daddr }
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ payload load 16b @ network header + 8 => reg 1 ]
   [ payload load 16b @ network header + 24 => reg 2 ]
   [ dynset add reg_key 1 set set5 ]
@@ -34,7 +34,7 @@ inet test-inet input
 # add @map1 { ip6 saddr . ip6 daddr : meta mark }
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ payload load 16b @ network header + 8 => reg 1 ]
   [ payload load 16b @ network header + 24 => reg 2 ]
   [ meta load mark => reg 3 ]
@@ -43,7 +43,7 @@ inet test-inet input
 # delete @set5 { ip6 saddr . ip6 daddr }
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ payload load 16b @ network header + 8 => reg 1 ]
   [ payload load 16b @ network header + 24 => reg 2 ]
   [ dynset delete reg_key 1 set set5 ]
@@ -51,10 +51,10 @@ inet test-inet input
 # add @map2 { ip6 saddr . ip6 daddr . th dport : 1234::1 . 80 }
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ payload load 16b @ network header + 8 => reg 1 ]
   [ payload load 16b @ network header + 24 => reg 2 ]
   [ payload load 2b @ transport header + 2 => reg 3 ]
-  [ immediate reg 17 0x00003412 0x00000000 0x00000000 0x01000000 ]
-  [ immediate reg 21 0x00005000 ]
+  [ immediate reg 17 0x12340000 0x00000000 0x00000000 0x00000001 ]
+  [ immediate reg 21 0x0050 ]
   [ dynset add reg_key 1 set map2 sreg_data 17 ]

@@ -134,3 +134,19 @@ assert_fail result "tcp connection limit rate 1/sec burst 1 reject"
 sleep 1
 ip netns exec $C socat -u - TCP:${ip_sc}:80,reuseport,connect-timeout=1 <<< 'AAA'
 assert_pass result "tcp connection limit rate 1/sec burst 1 accept"
+
+ip netns exec $S $NFT flush chain filter in_tcp
+assert_pass "flush chain"
+
+ip netns exec $S $NFT add rule filter in_tcp iifname s_c tcp dport 80 limit rate over 1 mbytes/second drop
+assert_pass "limit rate"
+
+s=(date +%s)
+dd if=/dev/zero bs=1M count=4 | ip netns exec $C socat -u - TCP:${ip_sc}:80,reuseport,connect-timeout=1
+e=(date +%s)
+d=$((e-s))
+if [ $d -ge 4 ] && [ $d -le 5 ];then
+	echo "FAIL: limit not effective (xfer took $d s)"; exit 1
+else
+	echo "PASS: socat xfer took $d seconds"
+fi

@@ -32,12 +32,6 @@
         "map": "verdict",
         "elem": [
           [
-            "lo",
-            {
-              "accept": null
-            }
-          ],
-          [
             "eth0",
             {
               "drop": null
@@ -47,6 +41,12 @@
             "eth1",
             {
               "drop": null
+            }
+          ],
+          [
+            "lo",
+            {
+              "accept": null
             }
           ]
         ]
@@ -69,12 +69,6 @@
               "data": {
                 "set": [
                   [
-                    "lo",
-                    {
-                      "accept": null
-                    }
-                  ],
-                  [
                     "eth0",
                     {
                       "drop": null
@@ -84,6 +78,12 @@
                     "eth1",
                     {
                       "drop": null
+                    }
+                  ],
+                  [
+                    "lo",
+                    {
+                      "accept": null
                     }
                   ]
                 ]

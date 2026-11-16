@@ -1,0 +1,7 @@
+table ip6 t {
+	map imap {
+		type ipv6_addr : verdict
+		flags interval,timeout
+		elements = { 2000::dead : accept }
+	}
+}

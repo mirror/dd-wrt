@@ -6,36 +6,48 @@ dumpfile=$(dirname $0)/dumps/$(basename $0).nft
 
 $NFT -f "$dumpfile" || exit 1
 
+die_err() {
+	echo "FAIL: Command $@ failed"
+	$NFT list ruleset
+	exit 1
+}
+
+die_ok_err() {
+	echo "FAIL: Command $@ worked but should have failed"
+	$NFT list ruleset
+	exit 1
+}
+
 add_add_then_create()
 {
 	cmd="$@"
 
-	$NFT "add element inet filter $cmd" || exit 2
+	$NFT "add element inet filter $cmd" || die_err "add $cmd"
 
 	# again, kernel should suppress -EEXIST
-	$NFT "add element inet filter $cmd" || exit 3
+	$NFT "add element inet filter $cmd" || die_err "re-add $cmd"
 
 	# AGAIN, kernel should report -EEXIST
-	$NFT "create element inet filter $cmd" && echo "$cmd worked" 1>&2 && exit 4
+	$NFT "create element inet filter $cmd" && die_ok_err "create $cmd"
 }
 
 add_create_dupe()
 {
 	cmd="$@"
 
-	$NFT "add element inet filter $cmd" && echo "$cmd worked" 1>&2 && exit 10
-	$NFT "create element inet filter $cmd" && echo "$cmd worked" 1>&2 && exit 11
+	$NFT "add element inet filter $cmd" && die_ok_err "add $cmd (dupe)"
+	$NFT "create element inet filter $cmd" && die_ok_err "create $cmd (dupe)"
 }
 
 delete()
 {
 	cmd="$@"
 
-	$NFT "delete element inet filter $cmd" || exit 30
-	$NFT "delete element inet filter $cmd" && echo "$cmd worked" 1>&2 && exit 31
+	$NFT "delete element inet filter $cmd" || die_err "delete $cmd"
+	$NFT "delete element inet filter $cmd" && die_ok_err "delete $cmd"
 
 	# destroy should NOT report an error
-#	$NFT "destroy element inet filter $cmd" || exit 40
+#	$NFT "destroy element inet filter $cmd" || die_err "destroy $cmd"
 }
 
 add_add_then_create 'saddr6limit { fee1::dead : "tarpit-pps" }'

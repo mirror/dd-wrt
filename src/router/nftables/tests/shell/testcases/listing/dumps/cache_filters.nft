@@ -1,0 +1,19 @@
+table ip ip_t {
+	set ip_t_s {
+		type inet_service
+		elements = { 22, 80, 443 }
+	}
+
+	flowtable ip_t_ft {
+		hook ingress priority filter
+	}
+
+	chain ip_t_c {
+		tcp dport 22 accept
+	}
+
+	chain ip_t_c2 {
+	}
+}
+table ip ip_t2 {
+}

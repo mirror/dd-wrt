@@ -41,6 +41,10 @@
                 "rate": 1,
                 "burst": 5,
                 "per": "second"
+              },
+              "counter": {
+                "packets": 0,
+                "bytes": 0
               }
             }
           },
@@ -51,6 +55,10 @@
                 "rate": 1,
                 "burst": 5,
                 "per": "second"
+              },
+              "counter": {
+                "packets": 0,
+                "bytes": 0
               }
             }
           },
@@ -61,6 +69,10 @@
                 "rate": 1,
                 "burst": 5,
                 "per": "second"
+              },
+              "counter": {
+                "packets": 0,
+                "bytes": 0
               }
             }
           }

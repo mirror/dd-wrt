@@ -1,0 +1,24 @@
+table ip x {
+	map y {
+		typeof tcp flags . tcp dport : verdict
+		flags interval
+		elements = { syn | ack . 80 : accept,
+			     ack . 90 : drop,
+			     rst . 100-110 : drop }
+	}
+
+	set s {
+		typeof tcp flags . tcp dport
+		flags interval
+		elements = { syn | ack . 80,
+			     ack . 90,
+			     rst . 100-110 }
+	}
+
+	chain z {
+		tcp flags . tcp dport vmap @y
+		tcp flags . tcp dport vmap { syn | ack . 80 : accept, ack . 90 : drop, rst . 100-110 : drop }
+		tcp flags . tcp dport @s
+		tcp flags . tcp dport { syn | ack . 80, ack . 90, rst . 100-110 }
+	}
+}

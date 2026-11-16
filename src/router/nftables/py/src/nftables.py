@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright(C) 2018 Phil Sutter <phil@nwl.cc>
 
 # This program is free software; you can redistribute it and/or modify

@@ -122,7 +122,9 @@ ____
 		'CT_TIMEOUT' | 'CT_EXPECTATION'
 ____
 
-Add a new ruleset element to the kernel.
+Add a new ruleset element to the kernel. For rules, this appends the rule to the
+end of the chain by default. If the rule contains a *handle* or *index* property,
+it is inserted *after* the rule identified by those properties.
 
 === REPLACE
 [verse]
@@ -143,8 +145,13 @@ Identical to *add* command, but returns an error if the object already exists.
 
 This command is identical to *add* for rules, but instead of appending the rule
 to the chain by default, it inserts at first position. If a *handle* or *index*
-property is given, the rule is inserted before the rule identified by those
+property is given, the rule is inserted *before* the rule identified by those
 properties.
+
+NOTE: In explicit commands (*add*, *insert*, *create* with command wrapper), the
+*handle* field is used for positioning. In implicit commands (bare *rule* objects
+without command wrapper, as used in export/import), the *handle* field is ignored
+to ensure portability across systems.
 
 === DELETE
 [verse]
@@ -311,8 +318,13 @@ Each rule consists of at least one.
 	*add*/*insert*/*replace* commands only.
 *handle*::
 	The rule's handle. In *delete*/*replace* commands, it serves as an identifier
-	of the rule to delete/replace. In *add*/*insert* commands, it serves as
-	an identifier of an existing rule to append/prepend the rule to.
+	of the rule to delete/replace. In *add*/*insert*/*create* commands, when
+	present, it specifies positioning relative to an existing rule: *add* inserts
+	the new rule *after* the specified handle, *insert* inserts *before* it. When
+	multiple rules are added at the same handle position, they are positioned
+	relative to the original rule, not to previously inserted rules. In implicit
+	rule objects (without command wrapper, as used in *nft -j list* output), the
+	handle field is present but ignored on input to ensure export/import portability.
 *index*::
 	The rule's position for *add*/*insert* commands. It is used as an alternative to
 	*handle* then.
@@ -334,6 +346,7 @@ ____
 	"timeout":* 'NUMBER'*,
 	"gc-interval":* 'NUMBER'*,
 	"size":* 'NUMBER'*,
+	"count":* 'NUMBER'*,
 	"auto-merge":* 'BOOLEAN'
 *}}*
 
@@ -350,6 +363,7 @@ ____
 	"timeout":* 'NUMBER'*,
 	"gc-interval":* 'NUMBER'*,
 	"size":* 'NUMBER'*,
+	"count":* 'NUMBER'*,
 	"auto-merge":* 'BOOLEAN'
 *}}*
 
@@ -390,6 +404,8 @@ that they translate a unique key to a value.
 	Garbage collector interval in seconds.
 *size*::
 	Maximum number of elements supported.
+*count*::
+	Current number of elements. Not used in input.
 *auto-merge*::
 	Automatic merging of adjacent/overlapping set elements in interval sets.
 
@@ -1269,7 +1285,7 @@ ____
 'META_KEY' := *"length"* | *"protocol"* | *"priority"* | *"random"* | *"mark"* |
               *"iif"* | *"iifname"* | *"iiftype"* | *"oif"* | *"oifname"* |
 	      *"oiftype"* | *"skuid"* | *"skgid"* | *"nftrace"* |
-	      *"rtclassid"* | *"ibriport"* | *"obriport"* | *"ibridgename"* |
+	      *"rtclassid"* | *"ibrname"* | *"obrname"* | *"ibridgename"* |
 	      *"obridgename"* | *"pkttype"* | *"cpu"* | *"iifgroup"* |
 	      *"oifgroup"* | *"cgroup"* | *"nfproto"* | *"l4proto"* |
 	      *"secpath"*

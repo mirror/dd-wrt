@@ -27,10 +27,11 @@ table ip ipfoo {
 		dnat to ip daddr map @x
 		ip saddr 10.1.1.1 dnat to 10.2.3.4
 		ip saddr 10.1.1.2 tcp dport 42 dnat to 10.2.3.4:4242
-		meta l4proto tcp dnat ip to ip saddr map @y
+		meta l4proto 6 dnat ip to ip saddr map @y
 		dnat ip to ip saddr . tcp dport map @z
+		meta l4proto 6 dnat to 10.2.3.4:4242
 		dnat to numgen inc mod 2 map @t1
-		meta l4proto tcp dnat ip to numgen inc mod 2 map @t2
+		meta l4proto 6 dnat ip to numgen inc mod 2 map @t2
 	}
 }
 table ip6 ip6foo {
@@ -60,10 +61,11 @@ table ip6 ip6foo {
 		dnat to ip6 daddr map @x
 		ip6 saddr dead::1 dnat to feed::1
 		ip6 saddr dead::2 tcp dport 42 dnat to [c0::1a]:4242
-		meta l4proto tcp dnat ip6 to ip6 saddr map @y
+		meta l4proto 6 dnat ip6 to ip6 saddr map @y
 		dnat ip6 to ip6 saddr . tcp dport map @z
+		meta l4proto 6 dnat to [fd00:10:244::4]:6443
 		dnat to numgen inc mod 2 map @t1
-		meta l4proto tcp dnat ip6 to numgen inc mod 2 map @t2
+		meta l4proto 6 dnat ip6 to numgen inc mod 2 map @t2
 	}
 }
 table inet inetfoo {
@@ -114,16 +116,16 @@ table inet inetfoo {
 		dnat ip to ip daddr map @x4
 		ip saddr 10.1.1.1 dnat ip to 10.2.3.4
 		ip saddr 10.1.1.2 tcp dport 42 dnat ip to 10.2.3.4:4242
-		meta l4proto tcp dnat ip to ip saddr map @y4
+		meta l4proto 6 dnat ip to ip saddr map @y4
 		dnat ip to ip saddr . tcp dport map @z4
 		dnat ip to numgen inc mod 2 map @t1v4
-		meta l4proto tcp dnat ip to numgen inc mod 2 map @t2v4
+		meta l4proto 6 dnat ip to numgen inc mod 2 map @t2v4
 		dnat ip6 to ip6 daddr map @x6
 		ip6 saddr dead::1 dnat ip6 to feed::1
 		ip6 saddr dead::2 tcp dport 42 dnat ip6 to [c0::1a]:4242
-		meta l4proto tcp dnat ip6 to ip6 saddr map @y6
+		meta l4proto 6 dnat ip6 to ip6 saddr map @y6
 		dnat ip6 to ip6 saddr . tcp dport map @z6
 		dnat ip6 to numgen inc mod 2 map @t1v6
-		meta l4proto tcp dnat ip6 to numgen inc mod 2 map @t2v6
+		meta l4proto 6 dnat ip6 to numgen inc mod 2 map @t2v6
 	}
 }

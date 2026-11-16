@@ -1,0 +1,13 @@
+table ip t {
+	map m {
+		typeof ip daddr : verdict
+		elements = { * : goto t }
+	}
+
+	chain t {
+	}
+
+	chain c {
+		ip daddr vmap @m
+	}
+}

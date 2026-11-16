@@ -390,7 +390,7 @@ CHAINS
 ____
 {*add* | *create*} *chain* ['family'] 'table' 'chain' [*{ type* 'type' *hook* 'hook' ['DEVICE'] *priority* 'priority' *;* [*policy* 'policy' *;*] [*comment* 'comment' *;*] *}*]
 {*delete* | *destroy* | *list* | *flush*} *chain* ['family'] 'table' 'chain'
-*list chains* ['family']
+*list chains* ['family'] ['table']
 *delete chain* ['family'] 'table' *handle* 'handle'
 *destroy chain* ['family'] 'table' *handle* 'handle'
 *rename chain* ['family'] 'table' 'chain' 'newname'
@@ -592,7 +592,7 @@ This is a summary of how the ruleset is evaluated.
 * For each hook, the attached chains are evaluated in order of their priorities.
   Chains with lower priority values are evaluated before those with higher ones.
   The order of chains with the same priority value is undefined.
-* An *accept* verdict (including an implict one via the base chain’s policy)
+* An *accept* verdict (including an implicit one via the base chain’s policy)
   ends the evaluation of the current base chain.
   It is not relevant if the *accept* verdict is issued in the base chain itself
   or a regular chain called from the base chain.
@@ -601,7 +601,7 @@ This is a summary of how the ruleset is evaluated.
   chain policy issues a *drop* verdict.
   All this applies to verdict-like statements that imply *accept*,
   for example the NAT statements.
-* A *drop* verdict (including an implict one via the base chain’s policy)
+* A *drop* verdict (including an implicit one via the base chain’s policy)
   immediately ends the evaluation of the whole ruleset.
   No further chains of any hook are consulted.
   It is therefore not possible to have a *drop*
@@ -611,7 +611,7 @@ This is a summary of how the ruleset is evaluated.
   Thus, if any base chain uses drop as its policy, the same base chain (or a
   regular chain directly or indirectly called by it) must contain at least one
   matching *accept* rule or the packet will be dropped.
-* Given the semantics of *accept*/*drop* and only with respect to the utlimate
+* Given the semantics of *accept*/*drop* and only with respect to the ultimate
   decision of whether a packet is accepted or dropped, the ordering of the
   various base chains per hook via their priorities matters only in so far, as
   any of them modifies the packet or its meta data and that has an influence on
@@ -767,7 +767,7 @@ Without this flag, *1.2.3.2* can not be added and *1.2.3.5* is inserted as a new
 Equality of a value with a set is given if the value matches exactly one value
 in the set (which for intervals means that it’s contained in any of them).
 See <<BITMASK_TYPE>> for the subtle differences between syntactically similarly
-looking equiality checks of sets and bitmasks.
+looking equality checks of sets and bitmasks.
 
 MAPS
 -----

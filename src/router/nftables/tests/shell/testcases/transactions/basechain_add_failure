@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# Test for kernel commit
+# 71e99ee20fc3 ("netfilter: nf_tables: fix use-after-free in nf_tables_addchain()")
+
+duration=10
+p=$(nproc)
+
+[ $p -gt 1 ] && p=$((p-1))
+
+ip link set lo up
+
+$NFT -f - <<EOF
+table inet test {
+	chain test {
+
+	}
+}
+EOF
+[ $? -ne 0 ] && exit 1
+
+( echo 'table ip6 t {' ; for i in $(seq 1 1000); do echo "chain c$i { type filter hook input priority 0; }"; done ; echo "}" ) | $NFT -f -
+[ $? -ne 0 ] && exit 1
+
+for i in $(seq 1000 3000); do
+	$NFT add chain ip6 t c$i "{ type filter hook input priority 0; }" || break
+done
+
+for i in $(seq 1 $p); do
+	timeout $duration ping -q -f 127.0.0.1 > /dev/null 2>&1 &
+done
+
+end=$(date +%s)
+end=$((end + duration))
+
+cnt=0
+while : ; do
+	for i in $(seq 1 $p);do
+		( $NFT -n --terse list table inet test > /dev/null || exit 1 ) &
+	done
+
+	cnt=$((cnt+1))
+	cnt=$((cnt % 100))
+	if [ $cnt -eq 0 ] ;then
+		wait
+		[ $? -ne 0 ] && exit 1
+
+		now=$(date +%s)
+		[ "$now" -ge "$end" ] && exit 0
+	fi
+done &
+
+cnt=0
+while : ; do
+	# expected to fail due to 1k ip6 hooks.
+	if $NFT add chain inet test c "{ type filter hook input priority 0; }" 2>/dev/null ; then
+		echo "Expected add chain to fail"
+		exit 1
+	fi
+
+	cnt=$((cnt+1))
+	if [ $((cnt % 100)) -eq 0 ] ;then
+		now=$(date +%s)
+		[ "$now" -ge "$end" ] && break
+	fi
+done
+
+wait
+echo "Done, looped $cnt times."

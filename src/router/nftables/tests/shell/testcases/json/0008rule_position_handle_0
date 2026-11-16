@@ -1,0 +1,162 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_json)
+
+# Test JSON handle-based rule positioning
+# Verifies explicit format uses handle for positioning while implicit format ignores it
+
+set -e
+
+$NFT flush ruleset
+
+echo "Test 1: ADD with handle positions AFTER"
+$NFT -f - <<EOF
+table inet test {
+	chain c {
+		tcp dport 22 accept
+		tcp dport 80 accept
+	}
+}
+EOF
+
+# Get handle of first rule (tcp dport 22)
+HANDLE=$($NFT -a list chain inet test c | sed -n 's/.*tcp dport 22 .* handle \([0-9]\+\)/\1/p')
+
+# Add after handle (should be between 22 and 80)
+$NFT -j -f - <<EOF
+{"nftables": [{"add": {"rule": {"family": "inet", "table": "test", "chain": "c", "handle": $HANDLE, "expr": [{"match": {"op": "==", "left": {"payload": {"protocol": "tcp", "field": "dport"}}, "right": 443}}, {"accept": null}]}}}]}
+EOF
+
+# Verify order: 22, 443, 80
+RULES=$($NFT list chain inet test c | grep -o "tcp dport [0-9]*")
+EXPECTED="tcp dport 22
+tcp dport 443
+tcp dport 80"
+
+if [ "$RULES" = "$EXPECTED" ]; then
+	echo "PASS: Rule added after handle"
+else
+	echo "FAIL: Expected order 22,443,80, got:"
+	echo "$RULES"
+	exit 1
+fi
+
+echo "Test 2: INSERT with handle positions BEFORE"
+$NFT flush ruleset
+$NFT -f - <<EOF
+table inet test {
+	chain c {
+		tcp dport 22 accept
+		tcp dport 80 accept
+	}
+}
+EOF
+
+# Get handle of second rule (tcp dport 80)
+HANDLE=$($NFT -a list chain inet test c | sed -n 's/.*tcp dport 80 .* handle \([0-9]\+\)/\1/p')
+
+# Insert before handle
+$NFT -j -f - <<EOF
+{"nftables": [{"insert": {"rule": {"family": "inet", "table": "test", "chain": "c", "handle": $HANDLE, "expr": [{"match": {"op": "==", "left": {"payload": {"protocol": "tcp", "field": "dport"}}, "right": 443}}, {"accept": null}]}}}]}
+EOF
+
+# Verify order: 22, 443, 80
+RULES=$($NFT list chain inet test c | grep -o "tcp dport [0-9]*")
+if [ "$RULES" = "$EXPECTED" ]; then
+	echo "PASS: Rule inserted before handle"
+else
+	echo "FAIL: Expected order 22,443,80, got:"
+	echo "$RULES"
+	exit 1
+fi
+
+echo "Test 3: INSERT without handle positions at beginning"
+$NFT flush ruleset
+$NFT -f - <<EOF
+table inet test {
+	chain c {
+		tcp dport 22 accept
+		tcp dport 80 accept
+	}
+}
+EOF
+
+# Insert without handle (should go to beginning)
+$NFT -j -f - <<EOF
+{"nftables": [{"insert": {"rule": {"family": "inet", "table": "test", "chain": "c", "expr": [{"match": {"op": "==", "left": {"payload": {"protocol": "tcp", "field": "dport"}}, "right": 443}}, {"accept": null}]}}}]}
+EOF
+
+# Verify order: 443, 22, 80
+RULES=$($NFT list chain inet test c | grep -o "tcp dport [0-9]*")
+EXPECTED_INSERT="tcp dport 443
+tcp dport 22
+tcp dport 80"
+
+if [ "$RULES" = "$EXPECTED_INSERT" ]; then
+	echo "PASS: Rule inserted at beginning without handle"
+else
+	echo "FAIL: Expected order 443,22,80, got:"
+	echo "$RULES"
+	exit 1
+fi
+
+echo "Test 4: Multiple commands in single transaction"
+$NFT flush ruleset
+$NFT -f - <<EOF
+table inet test {
+	chain c {
+		tcp dport 22 accept
+	}
+}
+EOF
+
+# Get handle
+HANDLE=$($NFT -a list chain inet test c | sed -n 's/.*tcp dport 22 .* handle \([0-9]\+\)/\1/p')
+
+# Add two rules after same handle in single transaction
+$NFT -j -f - <<EOF
+{"nftables": [
+	{"add": {"rule": {"family": "inet", "table": "test", "chain": "c", "handle": $HANDLE, "expr": [{"match": {"op": "==", "left": {"payload": {"protocol": "tcp", "field": "dport"}}, "right": 80}}, {"accept": null}]}}},
+	{"add": {"rule": {"family": "inet", "table": "test", "chain": "c", "handle": $HANDLE, "expr": [{"match": {"op": "==", "left": {"payload": {"protocol": "tcp", "field": "dport"}}, "right": 443}}, {"accept": null}]}}}
+]}
+EOF
+
+# Verify: Both should be after handle 22
+# In a transaction, both position to same handle, so added in reverse order
+# Order should be: 22, then 443, then 80 (last add goes immediately after position)
+RULES=$($NFT list chain inet test c | grep -o "tcp dport [0-9]*")
+EXPECTED_MULTI="tcp dport 22
+tcp dport 443
+tcp dport 80"
+
+if [ "$RULES" = "$EXPECTED_MULTI" ]; then
+	echo "PASS: Multiple rules in transaction positioned correctly"
+else
+	echo "FAIL: Expected order 22,443,80, got:"
+	echo "$RULES"
+	exit 1
+fi
+
+echo "Test 5: Implicit format ignores handle"
+$NFT flush ruleset
+$NFT -f - <<EOF
+table inet test {
+	chain c {
+		tcp dport 22 accept
+	}
+}
+EOF
+
+# Implicit format with non-existent handle should succeed (handle ignored)
+$NFT -j -f - <<EOF
+{"nftables": [{"rule": {"family": "inet", "table": "test", "chain": "c", "handle": 9999, "expr": [{"match": {"op": "==", "left": {"payload": {"protocol": "tcp", "field": "dport"}}, "right": 80}}, {"accept": null}]}}]}
+EOF
+
+if $NFT list chain inet test c | grep -q "tcp dport 80"; then
+	echo "PASS: Implicit format ignores handle"
+else
+	echo "FAIL: Implicit format should have added rule despite non-existent handle"
+	exit 1
+fi
+
+echo "All positioning tests passed!"

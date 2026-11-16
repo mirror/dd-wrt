@@ -1,18 +1,17 @@
 # ip protocol tcp tcp dport ssh accept
 ip test-ip input
   [ payload load 1b @ network header + 9 => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
   [ immediate reg 0 accept ]
 
 # ip protocol ne tcp udp dport ssh accept
 ip test-ip input
   [ payload load 1b @ network header + 9 => reg 1 ]
-  [ cmp neq reg 1 0x00000006 ]
+  [ cmp neq reg 1 0x06 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
   [ immediate reg 0 accept ]
-

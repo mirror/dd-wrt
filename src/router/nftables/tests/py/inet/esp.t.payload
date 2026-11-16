@@ -1,89 +1,88 @@
 # esp spi 100
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
   [ payload load 4b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x64000000 ]
+  [ cmp eq reg 1 0x00000064 ]
 
 # esp spi != 100
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
   [ payload load 4b @ transport header + 0 => reg 1 ]
-  [ cmp neq reg 1 0x64000000 ]
+  [ cmp neq reg 1 0x00000064 ]
 
 # esp spi 111-222
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
   [ payload load 4b @ transport header + 0 => reg 1 ]
-  [ range eq reg 1 0x6f000000 0xde000000 ]
+  [ range eq reg 1 0x0000006f 0x000000de ]
 
 # esp spi != 111-222
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
   [ payload load 4b @ transport header + 0 => reg 1 ]
-  [ range neq reg 1 0x6f000000 0xde000000 ]
+  [ range neq reg 1 0x0000006f 0x000000de ]
 
 # esp spi { 100, 102}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 64000000  : 0 [end]	element 66000000  : 0 [end]
+	element 00000064	element 00000066
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
   [ payload load 4b @ transport header + 0 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # esp spi != { 100, 102}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 64000000  : 0 [end]	element 66000000  : 0 [end]
+	element 00000064	element 00000066
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
   [ payload load 4b @ transport header + 0 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # esp sequence 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ cmp eq reg 1 0x16000000 ]
+  [ cmp eq reg 1 0x00000016 ]
 
 # esp sequence 22-24
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ range eq reg 1 0x16000000 0x18000000 ]
+  [ range eq reg 1 0x00000016 0x00000018 ]
 
 # esp sequence != 22-24
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
-  [ range neq reg 1 0x16000000 0x18000000 ]
+  [ range neq reg 1 0x00000016 0x00000018 ]
 
 # esp sequence { 22, 24}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 16000000  : 0 [end]	element 18000000  : 0 [end]
+	element 00000016	element 00000018
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # esp sequence != { 22, 24}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 16000000  : 0 [end]	element 18000000  : 0 [end]
+	element 00000016	element 00000018
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000032 ]
+  [ cmp eq reg 1 0x32 ]
   [ payload load 4b @ transport header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
-

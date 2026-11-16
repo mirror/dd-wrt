@@ -6,6 +6,6 @@ table ip nat {
 
 	chain prerouting {
 		type nat hook prerouting priority dstnat; policy accept;
-		meta l4proto { tcp, udp } th dport 443 dnat to 10.0.0.1
+		meta l4proto { 6, 17 } th dport 443 dnat to 10.0.0.1
 	}
 }

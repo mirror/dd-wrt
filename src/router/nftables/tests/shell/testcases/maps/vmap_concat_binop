@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip x {
+        map y {
+                typeof tcp flags . tcp dport : verdict
+                elements = { syn | ack . 80 : accept,
+                             ack . 90 : drop,
+			     rst . 100 : drop }
+        }
+
+        chain z {
+                tcp flags . tcp dport vmap @y
+                tcp flags . tcp dport vmap { syn | ack . 80 : accept, ack . 90 : drop, rst . 100 : drop }
+        }
+}"
+
+$NFT -f - <<< $RULESET

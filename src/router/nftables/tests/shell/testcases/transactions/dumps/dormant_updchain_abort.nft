@@ -1,0 +1,7 @@
+table netdev t {
+	flags dormant
+
+	chain c {
+		type filter hook ingress priority filter; policy accept;
+	}
+}

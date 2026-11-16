@@ -1,0 +1,22 @@
+table ip t {
+	chain c {
+		type filter hook output priority raw; policy accept;
+		ct zone set 1
+		ct original ip saddr 0.0.0.0 counter packets 0 bytes 0 accept
+	}
+}
+table ip6 t {
+	chain c {
+		type filter hook output priority raw; policy accept;
+		ct zone set 1
+		ct original ip6 saddr :: counter packets 0 bytes 0 accept
+	}
+}
+table inet t {
+	chain c {
+		type filter hook output priority raw; policy accept;
+		ct zone set 1
+		ct original ip saddr 0.0.0.0 counter packets 0 bytes 0 accept
+		ct original ip6 saddr :: counter packets 0 bytes 0 accept
+	}
+}

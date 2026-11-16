@@ -1,31 +1,31 @@
 # meta nfproto ipv4 ct original saddr 1.2.3.4
 ip test-ip4 output
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ ct load src => reg 1 , dir original ]
-  [ cmp eq reg 1 0x04030201 ]
+  [ cmp eq reg 1 0x01020304 ]
 
 # ct original ip6 saddr ::1
 inet test-inet input
   [ ct load src_ip6 => reg 1 , dir original ]
-  [ cmp eq reg 1 0x00000000 0x00000000 0x00000000 0x01000000 ]
+  [ cmp eq reg 1 0x00000000 0x00000000 0x00000000 0x00000001 ]
 
 # ct original ip daddr 1.2.3.4 accept
 inet test-inet input
   [ ct load dst_ip => reg 1 , dir original ]
-  [ cmp eq reg 1 0x04030201 ]
+  [ cmp eq reg 1 0x01020304 ]
   [ immediate reg 0 accept ]
 
 # meta nfproto ipv4 ct mark 0x00000001
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ ct load mark => reg 1 ]
   [ cmp eq reg 1 0x00000001 ]
 
 # meta nfproto ipv6 ct protocol 6
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ ct load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]

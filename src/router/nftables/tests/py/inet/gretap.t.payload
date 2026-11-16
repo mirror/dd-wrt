@@ -1,87 +1,86 @@
 # gretap ip saddr 10.141.11.2
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000002f ]
+  [ cmp eq reg 1 0x2f ]
   [ inner type 4 hdrsize 4 flags e [ meta load protocol => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 4 hdrsize 4 flags e [ payload load 4b @ network header + 12 => reg 1 ] ]
-  [ cmp eq reg 1 0x020b8d0a ]
+  [ cmp eq reg 1 0x0a8d0b02 ]
 
 # gretap ip saddr 10.141.11.0/24
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000002f ]
+  [ cmp eq reg 1 0x2f ]
   [ inner type 4 hdrsize 4 flags e [ meta load protocol => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 4 hdrsize 4 flags e [ payload load 3b @ network header + 12 => reg 1 ] ]
-  [ cmp eq reg 1 0x000b8d0a ]
+  [ cmp eq reg 1 0x0a8d0b ]
 
 # gretap ip protocol 1
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000002f ]
+  [ cmp eq reg 1 0x2f ]
   [ inner type 4 hdrsize 4 flags e [ meta load protocol => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 4 hdrsize 4 flags e [ payload load 1b @ network header + 9 => reg 1 ] ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # gretap udp sport 8888
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000002f ]
+  [ cmp eq reg 1 0x2f ]
   [ inner type 4 hdrsize 4 flags e [ meta load l4proto => reg 1 ] ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ inner type 4 hdrsize 4 flags e [ payload load 2b @ transport header + 0 => reg 1 ] ]
-  [ cmp eq reg 1 0x0000b822 ]
+  [ cmp eq reg 1 0x22b8 ]
 
 # gretap icmp type echo-reply
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000002f ]
+  [ cmp eq reg 1 0x2f ]
   [ inner type 4 hdrsize 4 flags e [ payload load 2b @ link header + 12 => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 4 hdrsize 4 flags e [ meta load l4proto => reg 1 ] ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
   [ inner type 4 hdrsize 4 flags e [ payload load 1b @ transport header + 0 => reg 1 ] ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ cmp eq reg 1 0x00 ]
 
 # gretap ether saddr 62:87:4d:d6:19:05
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000002f ]
+  [ cmp eq reg 1 0x2f ]
   [ inner type 4 hdrsize 4 flags e [ payload load 6b @ link header + 6 => reg 1 ] ]
-  [ cmp eq reg 1 0xd64d8762 0x00000519 ]
+  [ cmp eq reg 1 0x62874dd6 0x1905 ]
 
 # gretap vlan id 10
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000002f ]
+  [ cmp eq reg 1 0x2f ]
   [ inner type 4 hdrsize 4 flags e [ payload load 2b @ link header + 12 => reg 1 ] ]
-  [ cmp eq reg 1 0x00000081 ]
+  [ cmp eq reg 1 0x8100 ]
   [ inner type 4 hdrsize 4 flags e [ payload load 2b @ link header + 14 => reg 1 ] ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000ff0f ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000a00 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0fff ) ^ 0x0000 ]
+  [ cmp eq reg 1 0x000a ]
 
 # gretap ip dscp 0x02
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000002f ]
+  [ cmp eq reg 1 0x2f ]
   [ inner type 4 hdrsize 4 flags e [ meta load protocol => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 4 hdrsize 4 flags e [ payload load 1b @ network header + 1 => reg 1 ] ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
+  [ cmp eq reg 1 0x08 ]
 
 # gretap ip saddr . gretap ip daddr { 1.2.3.4 . 4.3.2.1 }
 __set%d test-ip4 3 size 1
 __set%d test-ip4 0
-	element 04030201 01020304  : 0 [end]
+	element 01020304 . 04030201
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000002f ]
+  [ cmp eq reg 1 0x2f ]
   [ inner type 4 hdrsize 4 flags e [ meta load protocol => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 4 hdrsize 4 flags e [ payload load 4b @ network header + 12 => reg 1 ] ]
   [ inner type 4 hdrsize 4 flags e [ payload load 4b @ network header + 16 => reg 9 ] ]
   [ lookup reg 1 set __set%d ]
-

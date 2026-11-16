@@ -260,7 +260,6 @@ struct chain {
 
 #define STD_PRIO_BUFSIZE 100
 extern int std_prio_lookup(const char *std_prio_name, int family, int hook);
-extern const char *chain_type_name_lookup(const char *name);
 extern const char *chain_hookname_lookup(const char *name);
 extern struct chain *chain_alloc(void);
 extern struct chain *chain_get(struct chain *chain);
@@ -489,6 +488,11 @@ struct synproxy {
 	uint32_t	flags;
 };
 
+struct connlimit {
+	uint32_t	count;
+	uint32_t	flags;
+};
+
 struct secmark {
 	char		ctx[NFT_SECMARK_CTX_MAXLEN];
 };
@@ -566,6 +570,7 @@ struct obj {
 		struct ct_expect	ct_expect;
 		struct synproxy		synproxy;
 		struct tunnel		tunnel;
+		struct connlimit	connlimit;
 	};
 };
 
@@ -677,6 +682,8 @@ enum cmd_ops {
  * @CMD_OBJ_TUNNEL:	tunnel
  * @CMD_OBJ_TUNNELS:	multiple tunnels
  * @CMD_OBJ_HOOKS:	hooks, used only for dumping
+ * @CMD_OBJ_CONNLIMIT:	connlimit
+ * @CMD_OBJ_CONNLIMITS: connlimits
  */
 enum cmd_obj {
 	CMD_OBJ_INVALID,
@@ -718,6 +725,8 @@ enum cmd_obj {
 	CMD_OBJ_TUNNEL,
 	CMD_OBJ_TUNNELS,
 	CMD_OBJ_HOOKS,
+	CMD_OBJ_CONNLIMIT,
+	CMD_OBJ_CONNLIMITS
 };
 
 struct markup {
@@ -739,15 +748,23 @@ enum {
 	CMD_MONITOR_OBJ_MAX
 };
 
+enum cmd_monitor_event {
+	CMD_MONITOR_EVENT_ANY,
+	CMD_MONITOR_EVENT_NEW,
+	CMD_MONITOR_EVENT_DEL
+};
+#define CMD_MONITOR_EVENT_MAX	(CMD_MONITOR_EVENT_DEL + 1)
+
 struct monitor {
-	struct location	location;
-	uint32_t	format;
-	uint32_t	flags;
-	uint32_t	type;
-	const char	*event;
+	struct location		location;
+	uint32_t		format;
+	uint32_t		flags;
+	uint32_t		type;
+	enum cmd_monitor_event	event;
 };
 
-struct monitor *monitor_alloc(uint32_t format, uint32_t type, const char *event);
+struct monitor *monitor_alloc(uint32_t format, uint32_t type,
+			      enum cmd_monitor_event event);
 void monitor_free(struct monitor *m);
 
 #define NFT_NLATTR_LOC_MAX 32

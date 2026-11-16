@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_catchall_element)
+
+# Test for kernel commit f41c5d151078
+# ("netfilter: nf_tables: fix inverted genmask check in nft_map_catchall_activate()")
+
+set -e
+
+$NFT -f - <<EOF
+table t {
+	map m {
+		typeof ip daddr : verdict
+		elements = { * : goto t }
+	}
+
+	chain t {
+	}
+
+	chain c {
+		ip daddr vmap @m
+	}
+}
+EOF
+
+# delete MUST fail: 't' is reachable via catchall element in @m.
+assert_delete()
+{
+	if $NFT delete chain t t; then
+		echo "FAIL: delete chain t after $@ abort should not have failed"
+		exit 111
+	else
+		echo "PASS: delete chain t after $@ abort fails"
+	fi
+}
+
+# exercise abort path, kernel must undo chain use count decrement for
+# chain t.
+$NFT --check -f - <<EOF
+delete chain t c
+delete map t m
+EOF
+
+assert_delete "delete map"
+
+# This is similar to above, but only deactivate the wildcard element.
+$NFT --check 'delete element t m { * }'
+assert_delete "delete element"
+
+# Both at the same time.
+# chain t.
+$NFT --check -f - <<EOF
+delete element t m { * }
+delete chain t c
+delete map t m
+EOF
+
+assert_delete "delete element and delete map"
+
+exit 0

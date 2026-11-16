@@ -1,180 +1,180 @@
 # udp dport 53 redirect
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ redir ]
 
 # udp dport 53 redirect random
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ redir flags 0x4 ]
 
 # udp dport 53 redirect random,persistent
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ redir flags 0xc ]
 
 # udp dport 53 redirect random,persistent,fully-random
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ redir flags 0x1c ]
 
 # udp dport 53 redirect random,fully-random
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ redir flags 0x14 ]
 
 # udp dport 53 redirect random,fully-random,persistent
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ redir flags 0x1c ]
 
 # udp dport 53 redirect persistent
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ redir flags 0x8 ]
 
 # udp dport 53 redirect persistent,random
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ redir flags 0xc ]
 
 # udp dport 53 redirect persistent,random,fully-random
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ redir flags 0x1c ]
 
 # udp dport 53 redirect persistent,fully-random
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ redir flags 0x18 ]
 
 # udp dport 53 redirect persistent,fully-random,random
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ redir flags 0x1c ]
 
 # tcp dport 22 redirect to :22
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
-  [ immediate reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
+  [ immediate reg 1 0x0016 ]
   [ redir proto_min reg 1 flags 0x2 ]
 
 # udp dport 1234 redirect to :4321
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000d204 ]
-  [ immediate reg 1 0x0000e110 ]
+  [ cmp eq reg 1 0x04d2 ]
+  [ immediate reg 1 0x10e1 ]
   [ redir proto_min reg 1 flags 0x2 ]
 
 # ip daddr 172.16.0.1 udp dport 9998 redirect to :6515
 ip test-ip4 output
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ cmp eq reg 1 0x010010ac ]
+  [ cmp eq reg 1 0xac100001 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00000e27 ]
-  [ immediate reg 1 0x00007319 ]
+  [ cmp eq reg 1 0x270e ]
+  [ immediate reg 1 0x1973 ]
   [ redir proto_min reg 1 flags 0x2 ]
 
 # tcp dport 39128 redirect to :993
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000d898 ]
-  [ immediate reg 1 0x0000e103 ]
+  [ cmp eq reg 1 0x98d8 ]
+  [ immediate reg 1 0x03e1 ]
   [ redir proto_min reg 1 flags 0x2 ]
 
 # ip protocol tcp redirect to :100-200
 ip test-ip4 output
   [ payload load 1b @ network header + 9 => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
-  [ immediate reg 1 0x00006400 ]
-  [ immediate reg 2 0x0000c800 ]
+  [ cmp eq reg 1 0x06 ]
+  [ immediate reg 1 0x0064 ]
+  [ immediate reg 2 0x00c8 ]
   [ redir proto_min reg 1 proto_max reg 2 flags 0x2 ]
 
 # tcp dport 9128 redirect to :993 random
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000a823 ]
-  [ immediate reg 1 0x0000e103 ]
+  [ cmp eq reg 1 0x23a8 ]
+  [ immediate reg 1 0x03e1 ]
   [ redir proto_min reg 1 flags 0x6 ]
 
 # tcp dport 9128 redirect to :993 fully-random
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000a823 ]
-  [ immediate reg 1 0x0000e103 ]
+  [ cmp eq reg 1 0x23a8 ]
+  [ immediate reg 1 0x03e1 ]
   [ redir proto_min reg 1 flags 0x12 ]
 
 # tcp dport 9128 redirect to :123 persistent
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000a823 ]
-  [ immediate reg 1 0x00007b00 ]
+  [ cmp eq reg 1 0x23a8 ]
+  [ immediate reg 1 0x007b ]
   [ redir proto_min reg 1 flags 0xa ]
 
 # tcp dport 9128 redirect to :123 random,persistent
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000a823 ]
-  [ immediate reg 1 0x00007b00 ]
+  [ cmp eq reg 1 0x23a8 ]
+  [ immediate reg 1 0x007b ]
   [ redir proto_min reg 1 flags 0xe ]
 
 # tcp dport { 1, 2, 3, 4, 5, 6, 7, 8, 101, 202, 303, 1001, 2002, 3003} redirect
 __set%d test-ip4 3
 __set%d test-ip4 0
-	element 00000100  : 0 [end]	element 00000200  : 0 [end]	element 00000300  : 0 [end]	element 00000400  : 0 [end]	element 00000500  : 0 [end]	element 00000600  : 0 [end]	element 00000700  : 0 [end]	element 00000800  : 0 [end]	element 00006500  : 0 [end]	element 0000ca00  : 0 [end]	element 00002f01  : 0 [end]	element 0000e903  : 0 [end]	element 0000d207  : 0 [end]	element 0000bb0b  : 0 [end]
+	element 0001	element 0002	element 0003	element 0004	element 0005	element 0006	element 0007	element 0008	element 0065	element 00ca	element 012f	element 03e9	element 07d2	element 0bbb
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d ]
   [ redir ]
@@ -182,26 +182,26 @@ ip test-ip4 output
 # ip daddr 10.0.0.0-10.2.3.4 udp dport 53 counter redirect
 ip test-ip4 output
   [ payload load 4b @ network header + 16 => reg 1 ]
-  [ range eq reg 1 0x0000000a 0x0403020a ]
+  [ range eq reg 1 0x0a000000 0x0a020304 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00003500 ]
+  [ cmp eq reg 1 0x0035 ]
   [ counter pkts 0 bytes 0 ]
   [ redir ]
 
 # iifname "eth0" ct state established,new tcp dport vmap {22 : drop, 222 : drop } redirect
 __map%d test-ip4 b
 __map%d test-ip4 0
-	element 00001600  : drop 0 [end]	element 0000de00  : drop 0 [end]
+	element 0016 : drop	element 00de : drop
 ip test-ip4 output
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x65746830 0x00000000 0x00000000 0x00000000 ]
   [ ct load state => reg 1 ]
   [ bitwise reg 1 = ( reg 1 & 0x0000000a ) ^ 0x00000000 ]
   [ cmp neq reg 1 0x00000000 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __map%d dreg 0 ]
   [ redir ]
@@ -209,11 +209,10 @@ ip test-ip4 output
 # redirect to :tcp dport map { 22 : 8000, 80 : 8080}
 __map%d test-ip4 b
 __map%d test-ip4 0
-        element 00001600  : 0000401f 0 [end]    element 00005000  : 0000901f 0 [end]
+	element 0016 : 1f40	element 0050 : 1f90
 ip test-ip4 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __map%d dreg 1 ]
   [ redir proto_min reg 1 flags 0x2 ]
-

@@ -50,6 +50,34 @@
       "chain": {
         "family": "ip",
         "table": "t",
+        "name": "n2",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "t",
+        "name": "n1",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "t",
+        "name": "n0",
+        "handle": 0,
+        "type": "nat",
+        "hook": "postrouting",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "t",
         "name": "c1",
         "handle": 0
       }
@@ -150,12 +178,42 @@
       "rule": {
         "family": "ip",
         "table": "t",
-        "chain": "c1",
+        "chain": "n2",
         "handle": 0,
         "expr": [
           {
+            "masquerade": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "n1",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": {
+                "prefix": {
+                  "addr": "192.168.0.0",
+                  "len": 16
+                }
+              }
+            }
+          },
+          {
             "jump": {
-              "target": "c2"
+              "target": "n2"
             }
           }
         ]
@@ -165,18 +223,42 @@
       "rule": {
         "family": "ip",
         "table": "t",
-        "chain": "c1",
+        "chain": "n1",
         "handle": 0,
         "expr": [
           {
-            "vmap": {
-              "key": {
-                "payload": {
-                  "protocol": "ip",
-                  "field": "saddr"
-                }
-              },
-              "data": "@m"
+            "goto": {
+              "target": "n2"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "n0",
+        "handle": 0,
+        "expr": [
+          {
+            "jump": {
+              "target": "n1"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "n0",
+        "handle": 0,
+        "expr": [
+          {
+            "goto": {
+              "target": "n1"
             }
           }
         ]

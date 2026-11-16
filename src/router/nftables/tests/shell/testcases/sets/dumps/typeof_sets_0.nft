@@ -67,8 +67,8 @@ table inet t {
 
 	set s14 {
 		typeof tcp option mptcp subtype . ip daddr
-		elements = { remove-addr . 10.1.1.1,
-			     mp-join . 10.1.1.2 }
+		elements = { mp-join . 10.1.1.2,
+			     remove-addr . 10.1.1.1 }
 	}
 
 	chain c1 {

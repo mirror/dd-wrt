@@ -150,21 +150,27 @@ static void nft_exit(struct nft_ctx *ctx)
 EXPORT_SYMBOL(nft_ctx_add_var);
 int nft_ctx_add_var(struct nft_ctx *ctx, const char *var)
 {
-	char *separator = strchr(var, '=');
+	const char *separator = strchr(var, '=');
 	int pcount = ctx->num_vars;
 	struct nft_vars *tmp;
 	const char *value;
+	size_t len;
+	char *key;
 
 	if (!separator)
 		return -1;
 
 	tmp = xrealloc(ctx->vars, (pcount + 1) * sizeof(struct nft_vars));
 
-	*separator = '\0';
 	value = separator + 1;
+	len = separator - var;
+
+	key = xmalloc(len + 1);
+	memcpy(key, var, len);
+	key[len] = '\0';
 
 	ctx->vars = tmp;
-	ctx->vars[pcount].key = xstrdup(var);
+	ctx->vars[pcount].key = key;
 	ctx->vars[pcount].value = xstrdup(value);
 	ctx->num_vars++;
 
@@ -630,13 +636,8 @@ int nft_run_cmd_from_buffer(struct nft_ctx *nft, const char *buf)
 	parser_rc = rc;
 
 	rc = nft_evaluate(nft, &msgs, &cmds);
-	if (rc < 0) {
-		if (errno == EPERM) {
-			fprintf(stderr, "%s (you must be root)\n",
-				strerror(errno));
-		}
+	if (rc < 0)
 		goto err;
-	}
 
 	if (parser_rc) {
 		rc = parser_rc;

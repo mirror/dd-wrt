@@ -22,6 +22,7 @@
         "type": "ipv4_addr",
         "handle": 0,
         "size": 65535,
+        "count": 1,
         "elem": [
           "1.1.1.1"
         ]

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# test for kernel commit 3027ecbdb5fd ("netfilter: nft_ct: bail out on template ct in get eval")
+
+set -e
+
+$NFT -f - <<EOF
+table ip t {
+	chain c {
+		type filter hook output priority -300; policy accept;
+		ct zone set 1
+		ct original saddr 0.0.0.0 counter accept
+	}
+}
+
+table ip6 t {
+	chain c {
+		type filter hook output priority -300; policy accept;
+		ct zone set 1
+		ct original saddr :: counter accept
+	}
+}
+
+table inet t {
+	chain c {
+		type filter hook output priority -300; policy accept;
+		ct zone set 1
+		ct original ip saddr 0.0.0.0 counter accept
+		ct original ip6 saddr :: counter accept
+	}
+}
+EOF
+
+ip link set lo up
+ping -c 1 127.0.0.1
+ping -c 1 ::1
+
+# counter validation via dump file.

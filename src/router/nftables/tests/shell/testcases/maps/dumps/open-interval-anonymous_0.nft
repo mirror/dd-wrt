@@ -1,0 +1,10 @@
+table ip x {
+	chain y {
+		type filter hook output priority filter; policy accept;
+		meta mark set ip saddr map { 255.255.255.0/24 : 0x00000001 }
+		meta mark set ip saddr map { 255.255.255.0-255.255.255.254 : 0x00000002 }
+		meta mark set ip saddr map { 255.255.255.0/31 : 0x00000001, 255.255.255.2-255.255.255.254 : 0x00000002 }
+		meta mark set ip saddr map { 255.255.255.0/31 : 0x00000001, 255.255.255.2-255.255.255.255 : 0x00000002 }
+		meta mark set ip saddr map { 255.255.255.0/31 : 0x00000002, 255.255.255.2-255.255.255.255 : 0x00000001 }
+	}
+}

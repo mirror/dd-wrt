@@ -6,7 +6,7 @@ netdev test-netdev ingress
 # fwd to meta mark map { 0x00000001 : "lo", 0x00000002 : "lo"}
 __map%d test-netdev b
 __map%d test-netdev 0
-	element 00000001  : 00000001 0 [end]	element 00000002  : 00000001 0 [end]
+	element 00000001 : 00000001	element 00000002 : 00000001
 netdev test-netdev ingress 
   [ meta load mark => reg 1 ]
   [ lookup reg 1 set __map%d dreg 1 ]
@@ -15,6 +15,5 @@ netdev test-netdev ingress
 # fwd ip to 192.168.2.200 device "lo"
 netdev test-netdev ingress 
   [ immediate reg 1 0x00000001 ]
-  [ immediate reg 2 0xc802a8c0 ]
+  [ immediate reg 2 0xc0a802c8 ]
   [ fwd sreg_dev 1 sreg_addr 2 nfproto 2 ]
-

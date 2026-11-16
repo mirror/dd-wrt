@@ -1,0 +1,135 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_xtables_xlate)
+
+set -e
+
+IPTABLES_RULESET='*filter
+-A FORWARD -m comment --comment "this is a comment"
+-A FORWARD -m iprange --src-range 10.0.0.1-10.0.0.23 --dst-range 10.1.0.5-10.2.0.1
+-A FORWARD -p tcp -j TCPMSS --clamp-mss-to-pmtu
+-A FORWARD -p udp --dport 1
+-A FORWARD -p sctp --dport 3
+-A FORWARD -p dccp --dport 4
+-A FORWARD -p esp
+-A FORWARD -p ah
+COMMIT'
+IPTABLES_EXPECT='# Warning: table ip filter is managed by iptables-nft, do not touch!
+table ip filter {
+	chain FORWARD {
+		type filter hook forward priority filter; policy accept;
+		comment "this is a comment" counter packets 0 bytes 0
+		ip saddr 10.0.0.1-10.0.0.23 ip daddr 10.1.0.5-10.2.0.1 counter packets 0 bytes 0
+		ip protocol tcp counter packets 0 bytes 0 tcp option maxseg size set rt mtu
+		udp dport 1 counter packets 0 bytes 0
+		ip protocol sctp sctp dport 3 counter packets 0 bytes 0
+		ip protocol dccp dccp dport 4 counter packets 0 bytes 0
+		ip protocol esp counter packets 0 bytes 0
+		ip protocol ah counter packets 0 bytes 0
+	}
+}'
+
+IP6TABLES_RULESET='*filter
+-A FORWARD -m comment --comment "this is a comment"
+-A FORWARD -m iprange --src-range fec0::1-fec0::23 --dst-range fec0:1::5-fec0:2::1
+-A FORWARD -p tcp -j TCPMSS --clamp-mss-to-pmtu
+COMMIT'
+IP6TABLES_EXPECT='
+# Warning: table ip6 filter is managed by iptables-nft, do not touch!
+table ip6 filter {
+	chain FORWARD {
+		type filter hook forward priority filter; policy accept;
+		comment "this is a comment" counter packets 0 bytes 0
+		ip6 saddr fec0::1-fec0::23 ip6 daddr fec0:1::5-fec0:2::1 counter packets 0 bytes 0
+		meta l4proto tcp counter packets 0 bytes 0 tcp option maxseg size set rt mtu
+	}
+}'
+
+ARPTABLES_RULESET='*filter
+-A INPUT -s 10.0.0.0/8 -j ACCEPT
+-A INPUT -d 192.168.123.1 -j ACCEPT
+-A INPUT --source-mac fe:ed:ba:be:00:01 -j ACCEPT
+-A INPUT --destination-mac fe:ed:ba:be:00:01 -j ACCEPT
+-N foo
+-A foo -i lo -j ACCEPT
+-A foo -l 6 -j ACCEPT
+-A foo -j MARK --set-mark 12345
+-A foo --opcode Request -j ACCEPT
+-A foo --h-type 1 --proto-type 0x800 -j ACCEPT
+-A foo -l 6 --h-type 1 --proto-type 0x800 -i lo --opcode Request -j ACCEPT
+-A INPUT -j foo
+-A INPUT
+-A OUTPUT -o lo -j ACCEPT
+-A OUTPUT -o eth134 -j mangle --mangle-ip-s 10.0.0.1
+-A OUTPUT -o eth432 -j CLASSIFY --set-class feed:babe
+-A OUTPUT -o eth432 --opcode Request -j CLASSIFY --set-class feed:babe
+-P OUTPUT DROP
+COMMIT'
+ARPTABLES_EXPECT='
+# Warning: table arp filter is managed by iptables-nft, do not touch!
+table arp filter {
+	chain INPUT {
+		type filter hook input priority filter; policy accept;
+		arp htype 1 arp hlen 6 arp plen 4 arp saddr ip 10.0.0.0/8 counter packets 0 bytes 0 accept
+		arp htype 1 arp hlen 6 arp plen 4 arp daddr ip 192.168.123.1 counter packets 0 bytes 0 accept
+		arp htype 1 arp hlen 6 arp plen 4 arp saddr ether fe:ed:ba:be:00:01 counter packets 0 bytes 0 accept
+		arp htype 1 arp hlen 6 arp plen 4 arp daddr ether fe:ed:ba:be:00:01 counter packets 0 bytes 0 accept
+		arp htype 1 arp hlen 6 arp plen 4 counter packets 0 bytes 0 jump foo
+		arp htype 1 arp hlen 6 arp plen 4 counter packets 0 bytes 0
+	}
+
+	chain foo {
+		iifname "lo" arp htype 1 arp hlen 6 arp plen 4 counter packets 0 bytes 0 accept
+		arp htype 1 arp hlen 6 arp plen 4 counter packets 0 bytes 0 accept
+		arp htype 1 arp hlen 6 arp plen 4 counter packets 0 bytes 0 meta mark set 0x12345
+		arp htype 1 arp hlen 6 arp plen 4 arp operation request counter packets 0 bytes 0 accept
+		arp htype 1 arp ptype ip arp hlen 6 arp plen 4 counter packets 0 bytes 0 accept
+		iifname "lo" arp htype 1 arp ptype ip arp hlen 6 arp plen 4 arp operation request counter packets 0 bytes 0 accept
+	}
+
+	chain OUTPUT {
+		type filter hook output priority filter; policy drop;
+		oifname "lo" arp htype 1 arp hlen 6 arp plen 4 counter packets 0 bytes 0 accept
+		oifname "eth134" arp htype 1 arp hlen 6 arp plen 4 counter packets 0 bytes 0 arp saddr ip set 10.0.0.1 accept
+		oifname "eth432" arp htype 1 arp hlen 6 arp plen 4 counter packets 0 bytes 0 meta priority set feed:babe
+		oifname "eth432" arp htype 1 arp hlen 6 arp plen 4 arp operation request counter packets 0 bytes 0 meta priority set feed:babe
+	}
+}'
+
+EBTABLES_RULESET='*filter
+-A FORWARD -p IPv4 -j mark --mark-set 1
+-A FORWARD -p IPv6 -j mark --mark-set 2
+COMMIT'
+EBTABLES_EXPECT='
+# Warning: table bridge filter is managed by iptables-nft, do not touch!
+table bridge filter {
+	chain FORWARD {
+		type filter hook forward priority filter; policy accept;
+		ether type ip counter packets 0 bytes 0 meta mark set 0x1 accept
+		ether type ip6 counter packets 0 bytes 0 meta mark set 0x2 accept
+	}
+}'
+
+iptables-nft-restore <<< "$IPTABLES_RULESET"
+EXPECT="$IPTABLES_EXPECT"
+
+if ip6tables-nft --version | grep -q 'nf_tables'; then
+	echo "testing ip6tables, too"
+	ip6tables-nft-restore <<< "$IP6TABLES_RULESET"
+	EXPECT+="$IP6TABLES_EXPECT"
+fi
+if arptables-nft --version | grep -q 'nf_tables'; then
+	echo "testing arptables, too"
+	arptables-nft-restore <<< "$ARPTABLES_RULESET"
+	EXPECT+="$ARPTABLES_EXPECT"
+fi
+if ebtables-nft --version | grep -q 'nf_tables'; then
+	echo "testing ebtables, too"
+	ebtables-nft-restore <<< "$EBTABLES_RULESET"
+	EXPECT+="$EBTABLES_EXPECT"
+fi
+
+$DIFF -u <(echo "$EXPECT") <($NFT list ruleset 2>&1)
+
+# avoid attempts at replaying the ruleset
+$NFT flush ruleset

@@ -1,0 +1,21 @@
+#ifndef NFTABLES_NFTVERSION_H
+#define NFTABLES_NFTVERSION_H
+
+#define BUILD_STAMP @BUILD_STAMP@
+
+static char nftversion[] = {
+	@NFT_VERSION@,
+	@STABLE_RELEASE@
+};
+static char nftbuildstamp[] = {
+	((uint64_t)BUILD_STAMP >> 56) & 0xff,
+	((uint64_t)BUILD_STAMP >> 48) & 0xff,
+	((uint64_t)BUILD_STAMP >> 40) & 0xff,
+	((uint64_t)BUILD_STAMP >> 32) & 0xff,
+	((uint64_t)BUILD_STAMP >> 24) & 0xff,
+	((uint64_t)BUILD_STAMP >> 16) & 0xff,
+	((uint64_t)BUILD_STAMP >> 8) & 0xff,
+	((uint64_t)BUILD_STAMP >> 0) & 0xff,
+};
+
+#endif /* !defined(NFTABLES_NFTVERSION_H) */

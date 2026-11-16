@@ -1,67 +1,67 @@
 # reject with icmp host-unreachable
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ reject type 0 code 1 ]
 
 # reject with icmp net-unreachable
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ reject type 0 code 0 ]
 
 # reject with icmp prot-unreachable
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ reject type 0 code 2 ]
 
 # reject with icmp port-unreachable
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ reject type 0 code 3 ]
 
 # reject with icmp net-prohibited
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ reject type 0 code 9 ]
 
 # reject with icmp host-prohibited
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ reject type 0 code 10 ]
 
 # reject with icmp admin-prohibited
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ reject type 0 code 13 ]
 
 # reject with icmpv6 no-route
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x0000dd86 ]
+  [ cmp eq reg 1 0x86dd ]
   [ reject type 0 code 0 ]
 
 # reject with icmpv6 admin-prohibited
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x0000dd86 ]
+  [ cmp eq reg 1 0x86dd ]
   [ reject type 0 code 1 ]
 
 # reject with icmpv6 addr-unreachable
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x0000dd86 ]
+  [ cmp eq reg 1 0x86dd ]
   [ reject type 0 code 3 ]
 
 # reject with icmpv6 port-unreachable
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x0000dd86 ]
+  [ cmp eq reg 1 0x86dd ]
   [ reject type 0 code 4 ]
 
 # mark 12345 ip protocol tcp reject with tcp reset
@@ -69,9 +69,9 @@ bridge test-bridge input
   [ meta load mark => reg 1 ]
   [ cmp eq reg 1 0x00003039 ]
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 9 => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ reject type 1 code 0 ]
 
 # reject
@@ -81,13 +81,13 @@ bridge test-bridge input
 # ether type ip reject
 bridge test-bridge input
   [ payload load 2b @ link header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ reject type 0 code 3 ]
 
 # ether type ip6 reject
 bridge test-bridge input
   [ payload load 2b @ link header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x0000dd86 ]
+  [ cmp eq reg 1 0x86dd ]
   [ reject type 0 code 4 ]
 
 # reject with icmpx host-unreachable
@@ -109,32 +109,31 @@ bridge test-bridge input
 # ether type ip reject with icmpx admin-prohibited
 bridge test-bridge input
   [ payload load 2b @ link header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ reject type 2 code 3 ]
 
 # ether type ip6 reject with icmpx admin-prohibited
 bridge test-bridge input
   [ payload load 2b @ link header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x0000dd86 ]
+  [ cmp eq reg 1 0x86dd ]
   [ reject type 2 code 3 ]
 
 # ether type vlan reject
 bridge
   [ payload load 2b @ link header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x00000081 ]
+  [ cmp eq reg 1 0x8100 ]
   [ reject type 2 code 1 ]
 
 # ether type vlan reject with tcp reset
 bridge
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ link header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x00000081 ]
+  [ cmp eq reg 1 0x8100 ]
   [ reject type 1 code 0 ]
 
 # ether type 8021q reject with icmpx admin-prohibited
 bridge
   [ payload load 2b @ link header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x00000081 ]
+  [ cmp eq reg 1 0x8100 ]
   [ reject type 2 code 3 ]
-

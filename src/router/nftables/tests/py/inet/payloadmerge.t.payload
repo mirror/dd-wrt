@@ -1,66 +1,65 @@
 # tcp sport 1 tcp dport 2
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 4b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x02000100 ]
+  [ cmp eq reg 1 0x00010002 ]
 
 # tcp sport != 1 tcp dport != 2
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ cmp neq reg 1 0x00000100 ]
+  [ cmp neq reg 1 0x0001 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp neq reg 1 0x00000200 ]
+  [ cmp neq reg 1 0x0002 ]
 
 # tcp sport 1 tcp dport != 2
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000100 ]
+  [ cmp eq reg 1 0x0001 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp neq reg 1 0x00000200 ]
+  [ cmp neq reg 1 0x0002 ]
 
 # tcp sport != 1 tcp dport 2
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ cmp neq reg 1 0x00000100 ]
+  [ cmp neq reg 1 0x0001 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00000200 ]
+  [ cmp eq reg 1 0x0002 ]
 
 # meta l4proto != 6 th dport 2
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp neq reg 1 0x00000006 ]
+  [ cmp neq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00000200 ]
+  [ cmp eq reg 1 0x0002 ]
 
 # meta l4proto 6 tcp dport 22
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # tcp sport > 1 tcp dport > 2
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ cmp gt reg 1 0x00000100 ]
+  [ cmp gt reg 1 0x0001 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp gt reg 1 0x00000200 ]
+  [ cmp gt reg 1 0x0002 ]
 
 # tcp sport 1 tcp dport > 2
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000100 ]
+  [ cmp eq reg 1 0x0001 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp gt reg 1 0x00000200 ]
-
+  [ cmp gt reg 1 0x0002 ]

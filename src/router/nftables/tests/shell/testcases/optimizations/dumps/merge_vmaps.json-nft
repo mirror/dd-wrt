@@ -166,7 +166,7 @@
               "data": {
                 "set": [
                   [
-                    "tcp",
+                    6,
                     {
                       "goto": {
                         "target": "filter_in_tcp"
@@ -174,7 +174,7 @@
                     }
                   ],
                   [
-                    "udp",
+                    17,
                     {
                       "goto": {
                         "target": "filter_in_udp"

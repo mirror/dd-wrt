@@ -27,9 +27,9 @@ table ip nat {
 
 	chain prerouting {
 		type nat hook prerouting priority dstnat; policy accept;
-		ip protocol tcp dnat ip to ip saddr . ip daddr map @ipportmap2
-		meta l4proto { tcp, udp } dnat ip to ip daddr . th dport map @fwdtoip_th
+		ip protocol 6 dnat ip to ip saddr . ip daddr map @ipportmap2
+		meta l4proto { 6, 17 } dnat ip to ip daddr . th dport map @fwdtoip_th
 		dnat ip to iifname . ip saddr map @ipportmap4
-		meta l4proto tcp dnat ip to iifname . ip saddr map @ipportmap5
+		meta l4proto 6 dnat ip to iifname . ip saddr map @ipportmap5
 	}
 }

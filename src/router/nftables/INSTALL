@@ -93,11 +93,11 @@ Installation instructions for nftables
  CPython bindings are available for nftables under the py/ folder.  They can be
  installed using pip:
 
-	python -m pip install py/
+	python3 -m pip install py/
 
  A legacy setup.py script can also be used:
 
-	( cd py && python setup.py install )
+	( cd py && python3 setup.py install )
 
  However, this method is deprecated.
 

@@ -594,7 +594,7 @@ GENEVE HEADER EXPRESSION
 *geneve* *udp* {*sport* | *dport* | *length* | *checksum*}
 
 The geneve expression is used to match on the geneve header fields. The geneve
-header encapsulates a ethernet frame within a *udp* packet. This expression
+header encapsulates an ethernet frame within a *udp* packet. This expression
 requires that you restrict the matching to *udp* packets (usually at
 port 6081 according to IANA-assigned ports).
 
@@ -647,7 +647,7 @@ VXLAN HEADER EXPRESSION
 *vxlan* *udp* {*sport* | *dport* | *length* | *checksum*}
 
 The vxlan expression is used to match on the vxlan header fields. The vxlan
-header encapsulates a ethernet frame within a *udp* packet. This expression
+header encapsulates an ethernet frame within a *udp* packet. This expression
 requires that you restrict the matching to *udp* packets (usually at
 port 4789 according to IANA-assigned ports).
 
@@ -707,7 +707,7 @@ inet filter input meta l4proto {tcp, udp} th dport { 53, 80 }
 it is more convenient, but like the raw expression notation no
 dependencies are created or checked. It is the users responsibility
 to restrict matching to those header types that have a notion of ports.
-Otherwise, rules using raw expressions will errnously match unrelated
+Otherwise, rules using raw expressions will erroneously match unrelated
 packets, e.g. mis-interpreting ESP packets SPI field as a port.
 
 .Rewrite arp packet target hardware address if target protocol address matches a given address
@@ -934,5 +934,5 @@ ct_id|
 .restrict the number of parallel connections to a server
 --------------------
 nft add set filter ssh_flood '{ type ipv4_addr; flags dynamic; }'
-nft add rule filter input tcp dport 22 add @ssh_flood '{ ip saddr ct count over 2 }' reject
+nft add rule filter input ct state new tcp dport 22 add @ssh_flood '{ ip saddr ct count over 2 }' reject
 --------------------

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+RULESET="table ip x {
+	chain y {
+		type filter hook output priority 0;
+	}
+}"
+
+$NFT -f - <<< $RULESET
+
+$NFT add rule ip x y meta mark set ip saddr map { 255.255.255.0-255.255.255.255 : 1}
+[ $? -ne 0 ] && echo "failed to add rule with open interval" && exit 1
+$NFT add rule ip x y meta mark set ip saddr map { 255.255.255.0-255.255.255.254 : 2}
+[ $? -ne 0 ] && echo "failed to add rule without open interval" && exit 1
+$NFT add rule ip x y meta mark set ip saddr map { 255.255.255.0-255.255.255.1 : 1, 255.255.255.2-255.255.255.254 : 2}
+[ $? -ne 0 ] && echo "failed to add adjacent intervals" && exit 1
+$NFT add rule ip x y meta mark set ip saddr map { 255.255.255.0-255.255.255.1 : 1, 255.255.255.2-255.255.255.255 : 2}
+[ $? -ne 0 ] && echo "failed to add adjacent intervals with open interval" && exit 1
+$NFT add rule ip x y meta mark set ip saddr map { 255.255.255.2-255.255.255.255 : 1, 255.255.255.0-255.255.255.1 : 2}
+[ $? -ne 0 ] && echo "failed to add adjacent intervals with open interval (different order)" && exit 1
+$NFT add rule ip x y meta mark set ip saddr map { 255.255.255.0-255.255.255.255 : 1, 255.255.255.0-255.255.255.254 : 2}
+[ $? -eq 0 ] && echo "unexpected open interval overlap with multiple intervals" && exit 1
+$NFT add rule ip x y meta mark set ip saddr map { 255.255.255.0-255.255.255.254 : 1, 255.255.255.0-255.255.255.255 : 2}
+[ $? -eq 0 ] && echo "unexpected open interval overlap with multiple intervals (different order)" && exit 1
+$NFT add rule ip x y meta mark set ip saddr map { 255.255.255.0-255.255.255.3 : 1, 255.255.255.0-255.255.255.2 : 2}
+[ $? -eq 0 ] && echo "unexpected overlapping interval on start" && exit 1
+$NFT add rule ip x y meta mark set ip saddr map { 255.255.255.0-255.255.255.3 : 1, 255.255.255.1-255.255.255.3 : 2}
+[ $? -eq 0 ] && echo "unexpected overlapping interval on end" && exit 1
+$NFT add rule ip x y meta mark set ip saddr map { 255.255.255.1-255.255.255.3 : 1, 255.255.255.0-255.255.255.4 : 2}
+[ $? -eq 0 ] && echo "unexpected overlapping interval" && exit 1
+$NFT add rule ip x y meta mark set ip saddr map { 255.255.255.1-255.255.255.5 : 1, 255.255.255.2-255.255.255.3 : 2}
+[ $? -eq 0 ] && echo "unexpected overlapping interval again" && exit 1
+exit 0

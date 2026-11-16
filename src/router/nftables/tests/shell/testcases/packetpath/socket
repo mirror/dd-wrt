@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_socat)
+
+ip link set up lo
+
+set -e
+
+$NFT -f - <<EOF
+table inet filter {
+	chain prerouting {
+		type filter hook prerouting priority filter; policy accept;
+		tcp flags & (syn|ack) == syn socket transparent 0 counter
+	}
+
+	chain input {
+		type filter hook input priority filter; policy accept;
+		tcp flags & (syn|ack) == syn socket transparent 0 counter
+	}
+
+	chain output {
+		type filter hook output priority filter; policy accept;
+		tcp flags & (syn|ack) == syn socket transparent 0 counter
+	}
+}
+EOF
+
+# Start a TCP listener on a random port
+PORT=$((1024 + $$ % 64511))
+timeout 5 socat TCP-LISTEN:$PORT,fork EXEC:/bin/false &
+SOCAT_PID=$!
+
+sleep 1
+
+# Connect once to the listener (from loopback to ensure loopback rules are exercised)
+echo -n "foo" | timeout 5 socat -u STDIN TCP-CONNECT:127.0.0.1:$PORT
+
+sleep 1
+# Kill socat
+kill $SOCAT_PID 2>/dev/null
+
+# No need to check anything.  Validation via dump file.

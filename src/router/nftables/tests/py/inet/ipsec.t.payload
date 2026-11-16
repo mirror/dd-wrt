@@ -16,12 +16,12 @@ ip ipsec-ip4 ipsec-input
 # ipsec out spi 1-561
 inet ipsec-inet ipsec-post
   [ xfrm load out 0 spi => reg 1 ]
-  [ range eq reg 1 0x01000000 0x31020000 ]
+  [ range eq reg 1 0x00000001 0x00000231 ]
 
 # ipsec in spnum 2 ip saddr { 1.2.3.4, 10.6.0.0/16 }
 __set%d ipsec-ip4 7 size 5
 __set%d ipsec-ip4 0
-        element 00000000  : 1 [end]     element 04030201  : 0 [end]     element 05030201  : 1 [end]     element 0000060a  : 0 [end]     element 0000070a  : 1 [end]
+	element 00000000 flags 1	element 01020304	element 01020305 flags 1	element 0a060000	element 0a070000 flags 1
 ip ipsec-ip4 ipsec-input
   [ xfrm load in 2 saddr4 => reg 1 ]
   [ lookup reg 1 set __set%d ]
@@ -29,16 +29,15 @@ ip ipsec-ip4 ipsec-input
 # ipsec in ip6 daddr dead::beef
 ip ipsec-ip4 ipsec-forw
   [ xfrm load in 0 daddr6 => reg 1 ]
-  [ cmp eq reg 1 0x0000adde 0x00000000 0x00000000 0xefbe0000 ]
+  [ cmp eq reg 1 0xdead0000 0x00000000 0x00000000 0x0000beef ]
 
 # ipsec out ip6 saddr dead::feed
 ip ipsec-ip4 ipsec-forw
   [ xfrm load out 0 saddr6 => reg 1 ]
-  [ cmp eq reg 1 0x0000adde 0x00000000 0x00000000 0xedfe0000 ]
+  [ cmp eq reg 1 0xdead0000 0x00000000 0x00000000 0x0000feed ]
 
 # counter ipsec out ip daddr 192.168.1.2
 ip ipsec-ip4 ipsec-forw
   [ counter pkts 0 bytes 0 ]
   [ xfrm load out 0 daddr4 => reg 1 ]
-  [ cmp eq reg 1 0x0201a8c0 ]
-
+  [ cmp eq reg 1 0xc0a80102 ]

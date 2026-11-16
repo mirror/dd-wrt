@@ -49,7 +49,7 @@ table inet filter {
 
 	chain PREROUTING_RAW {
 		type filter hook prerouting priority raw; policy accept;
-		meta l4proto != { icmp, tcp, udp, ipv6-icmp } counter packets 0 bytes 0 drop
+		meta l4proto != { 1, 6, 17, 58 } counter packets 0 bytes 0 drop
 		tcp flags syn jump {
 			tcp option maxseg size 1-500 counter packets 0 bytes 0 drop
 			tcp sport 0 counter packets 0 bytes 0 drop
@@ -119,7 +119,7 @@ table inet filter {
 		icmp type echo-request accept
 		icmpv6 type echo-request accept
 		tcp dport 22 iifname "eth1" accept
-		meta l4proto { tcp, udp } th dport 53 jump {
+		meta l4proto { 6, 17 } th dport 53 jump {
 			ip6 saddr != { fd00::/8, fe80::/64 } counter packets 0 bytes 0 reject with icmpv6 port-unreachable
 			accept
 		}

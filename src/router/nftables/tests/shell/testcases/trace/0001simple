@@ -1,0 +1,85 @@
+#!/bin/bash
+
+set -e
+
+ns1=$(mktemp -u ns1-XXXXXX)
+ns2=$(mktemp -u ns2-XXXXXX)
+tracelog=$(mktemp)
+tracepid=0
+cleanup() {
+	ip netns del $ns1
+	ip netns del $ns2
+	[ $tracepid -eq 0 ] || {
+		kill $tracepid
+		wait
+	}
+	rm -f $tracelog
+}
+trap "cleanup" EXIT
+ip netns add $ns1
+ip netns add $ns2
+ip -net $ns1 link add eth0 type veth peer name eth0 netns $ns2
+ip -net $ns1 link set eth0 up
+ip -net $ns1 addr add 10.23.42.1/24 dev eth0
+ip -net $ns2 link set eth0 up
+ip -net $ns2 addr add 10.23.42.2/24 dev eth0
+ns1mac=$(ip -net $ns1 link show dev eth0 | awk '/link\/ether/{ print $2 }')
+ns2mac=$(ip -net $ns2 link show dev eth0 | awk '/link\/ether/{ print $2 }')
+ip netns exec $ns1 ping -c 1 10.23.42.2
+ip netns exec $ns2 ping -c 1 10.23.42.1
+
+ip netns exec $ns1 $NFT -f - <<EOF
+table inet t {
+	chain pre {
+		type filter hook prerouting priority 0
+
+		icmp type { echo-request, echo-reply } meta mark set 0x42 ct state new,established meta nftrace set 1
+	}
+	chain foo {
+		tcp dport 456 accept
+		ct status != dying return
+		tcp dport 23 drop
+	}
+	chain input {
+		type filter hook input priority 0
+
+		meta mark 0x42 jump foo
+		meta mark 0x42 tcp dport 789 accept
+	}
+	chain output {
+		type filter hook output priority 0
+
+		icmp type echo-reply meta nftrace set 1
+	}
+}
+EOF
+
+ip netns exec $ns1 $NFT monitor trace >$tracelog &
+tracepid=$!
+sleep 0.5
+ip netns exec $ns2 ping -c 1 10.23.42.1
+sleep 0.5
+kill $tracepid
+wait
+tracepid=0
+
+EXPECT="trace id 0 inet t pre conntrack: ct direction original ct state new ct id 0 
+trace id 0 inet t pre packet: iif \"eth0\" ether saddr $ns2mac ether daddr $ns1mac ip saddr 10.23.42.2 ip daddr 10.23.42.1 ip dscp cs0 ip ecn not-ect ip ttl 64 ip id 0 ip protocol icmp ip length 84 icmp type echo-request icmp code 0 icmp id 0 icmp sequence 1 
+trace id 0 inet t pre rule icmp type { echo-reply, echo-request } meta mark set 0x00000042 ct state established,new meta nftrace set 1 (verdict continue)
+trace id 0 inet t pre policy accept meta mark 0x00000042 
+trace id 0 inet t input conntrack: ct direction original ct state new ct id 0 
+trace id 0 inet t input packet: iif \"eth0\" ether saddr $ns2mac ether daddr $ns1mac ip saddr 10.23.42.2 ip daddr 10.23.42.1 ip dscp cs0 ip ecn not-ect ip ttl 64 ip id 0 ip protocol icmp ip length 84 icmp type echo-request icmp code 0 icmp id 0 icmp sequence 1 
+trace id 0 inet t input rule meta mark 0x00000042 jump foo (verdict jump foo)
+trace id 0 inet t foo rule ct status != dying return (verdict return)
+trace id 0 inet t input policy accept meta mark 0x00000042 
+trace id 0 inet t output conntrack: ct direction reply ct state established ct status seen-reply,confirmed ct id 0 
+trace id 0 inet t output packet: oif \"eth0\" ip saddr 10.23.42.1 ip daddr 10.23.42.2 ip dscp cs0 ip ecn not-ect ip ttl 64 ip id 0 ip protocol icmp ip length 84 icmp type echo-reply icmp code 0 icmp id 0 icmp sequence 1 
+trace id 0 inet t output rule icmp type echo-reply meta nftrace set 1 (verdict continue)
+trace id 0 inet t output policy accept "
+
+
+tracefilter() {
+	sed -e 's/\(trace\|ip\|icmp\|ct\) id [^ ]\+/\1 id 0/g'
+}
+diff -u <(echo "$EXPECT") <(cat $tracelog | tracefilter)
+exit 0

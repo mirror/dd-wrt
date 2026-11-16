@@ -380,7 +380,7 @@ static bool set_elem_is_open_interval(struct expr *elem)
 {
 	switch (elem->etype) {
 	case EXPR_SET_ELEM:
-		return elem->flags & EXPR_F_INTERVAL_OPEN;
+		return elem->key->flags & EXPR_F_INTERVAL_OPEN;
 	case EXPR_MAPPING:
 		return set_elem_is_open_interval(elem->left);
 	default:
@@ -496,13 +496,7 @@ static int netlink_events_setelem_cb(const struct nlmsghdr *nlh, int type,
 		nft_mon_print(monh, "\n");
 		break;
 	case NFTNL_OUTPUT_JSON:
-		dummyset->handle.family = family;
-		dummyset->handle.set.name = setname;
-		dummyset->handle.table.name = table;
 		monitor_print_element_json(monh, cmd, dummyset);
-		/* prevent set_free() from trying to free those */
-		dummyset->handle.set.name = NULL;
-		dummyset->handle.table.name = NULL;
 		if (!nft_output_echo(&monh->ctx->nft->output))
 			nft_mon_print(monh, "\n");
 		break;

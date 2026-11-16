@@ -1,17 +1,17 @@
 # meta nfproto ipv4
 ip test-ip4 input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
 
 # meta nfproto ipv6
 ip test-ip4 input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
 
 # meta nfproto {ipv4, ipv6}
 __set%d test-ip4 3
 __set%d test-ip4 0
-	element 00000002  : 0 [end]	element 0000000a  : 0 [end]
+	element 02	element 0a
 ip test-ip4 input
   [ meta load nfproto => reg 1 ]
   [ lookup reg 1 set __set%d ]
@@ -19,7 +19,7 @@ ip test-ip4 input
 # meta nfproto != {ipv4, ipv6}
 __set%d test-ip4 3
 __set%d test-ip4 0
-	element 00000002  : 0 [end]	element 0000000a  : 0 [end]
+	element 02	element 0a
 ip test-ip4 input
   [ meta load nfproto => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
@@ -27,52 +27,52 @@ ip test-ip4 input
 # meta nfproto ipv6 tcp dport 22
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # meta nfproto ipv4 tcp dport 22
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # meta nfproto ipv4 ip saddr 1.2.3.4
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x04030201 ]
+  [ cmp eq reg 1 0x01020304 ]
 
 # meta nfproto ipv6 meta l4proto tcp
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
 
 # meta nfproto ipv4 counter ip saddr 1.2.3.4
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ counter pkts 0 bytes 0 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x04030201 ]
+  [ cmp eq reg 1 0x01020304 ]
 
 # meta ipsec exists
 inet test-inet input
   [ meta load secpath => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # meta secpath missing
 inet test-inet input
   [ meta load secpath => reg 1 ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ cmp eq reg 1 0x00 ]
 
 # meta mark set ct mark >> 8
 inet test-inet input
@@ -92,28 +92,28 @@ inet test-inet input
 # meta protocol ip udp dport 67
 inet test-inet input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00004300 ]
+  [ cmp eq reg 1 0x0043 ]
 
 # meta protocol ip6 udp dport 67
 inet test-inet input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x0000dd86 ]
+  [ cmp eq reg 1 0x86dd ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00004300 ]
+  [ cmp eq reg 1 0x0043 ]
 
 # meta mark . tcp dport { 0x0000000a-0x00000014 . 80-90, 0x00100000-0x00100123 . 100-120 }
 __set%d test-inet 87 size 1
 __set%d test-inet 0
-	element 0a000000 00005000  - 14000000 00005a00  : 0 [end]       element 00001000 00006400  - 23011000 00007800  : 0 [end]
+	element 0000000a . 0050 - 00000014 . 005a	element 00100000 . 0064 - 00100123 . 0078
 ip test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ meta load mark => reg 1 ]
   [ byteorder reg 1 = hton(reg 1, 4, 4) ]
   [ payload load 2b @ transport header + 2 => reg 9 ]
@@ -122,10 +122,10 @@ ip test-inet input
 # ip saddr . meta mark { 1.2.3.4 . 0x00000100 , 1.2.3.6-1.2.3.8 . 0x00000200-0x00000300 }
 __set%d test-inet 87 size 2
 __set%d test-inet 0
-        element 04030201 00010000  - 04030201 00010000  : 0 [end]       element 06030201 00020000  - 08030201 00030000  : 0 [end]
+	element 01020304 . 00000100 - 01020304 . 00000100	element 01020306 . 00000200 - 01020308 . 00000300
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ meta load mark => reg 9 ]
   [ byteorder reg 9 = hton(reg 9, 4, 4) ]
@@ -134,10 +134,10 @@ inet test-inet input
 # ip saddr . meta mark { 1.2.3.4 . 0x00000100 , 5.6.7.8 . 0x00000200 }
 __set%d test-inet 3 size 2
 __set%d test-inet 0
-        element 04030201 00000100  : 0 [end]    element 08070605 00000200  : 0 [end]
+	element 01020304 . 00000100	element 05060708 . 00000200
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ meta load mark => reg 9 ]
   [ lookup reg 1 set __set%d ]
@@ -145,18 +145,18 @@ inet test-inet input
 # meta mark set ip dscp
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ payload load 1b @ network header + 1 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
   [ bitwise reg 1 = ( reg 1 >> 0x00000002 ) ]
   [ meta set mark with reg 1 ]
 
 # meta mark set ip dscp | 0x40
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ payload load 1b @ network header + 1 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
   [ bitwise reg 1 = ( reg 1 >> 0x00000002 ) ]
   [ bitwise reg 1 = ( reg 1 & 0xffffffbf ) ^ 0x00000040 ]
   [ meta set mark with reg 1 ]
@@ -164,9 +164,9 @@ inet test-inet input
 # meta mark set ip6 dscp
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000c00f ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0fc0 ) ^ 0x0000 ]
   [ byteorder reg 1 = ntoh(reg 1, 2, 2) ]
   [ bitwise reg 1 = ( reg 1 >> 0x00000006 ) ]
   [ meta set mark with reg 1 ]
@@ -174,9 +174,9 @@ inet test-inet input
 # meta mark set ip6 dscp | 0x40
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x0000000a ]
+  [ cmp eq reg 1 0x0a ]
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000c00f ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0fc0 ) ^ 0x0000 ]
   [ byteorder reg 1 = ntoh(reg 1, 2, 2) ]
   [ bitwise reg 1 = ( reg 1 >> 0x00000006 ) ]
   [ bitwise reg 1 = ( reg 1 & 0xffffffbf ) ^ 0x00000040 ]
@@ -185,14 +185,13 @@ inet test-inet input
 # ip saddr . ether saddr . meta l4proto { 1.2.3.4 . aa:bb:cc:dd:ee:ff . 6 }
 __set%d test-inet 3 size 1
 __set%d test-inet 0
-	element 04030201 ddccbbaa 0000ffee 00000006  : 0 [end]
+	element 01020304 . aabbccdd eeff . 06
 inet test-inet input
   [ meta load nfproto => reg 1 ]
-  [ cmp eq reg 1 0x00000002 ]
+  [ cmp eq reg 1 0x02 ]
   [ meta load iiftype => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x0001 ]
   [ payload load 4b @ network header + 12 => reg 1 ]
   [ payload load 6b @ link header + 6 => reg 9 ]
   [ meta load l4proto => reg 11 ]
   [ lookup reg 1 set __set%d ]
-

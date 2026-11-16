@@ -1,0 +1,16 @@
+table inet filter {
+	chain prerouting {
+		type filter hook prerouting priority filter; policy accept;
+		tcp flags & (syn | ack) == syn socket transparent 0 counter packets 1 bytes 60
+	}
+
+	chain input {
+		type filter hook input priority filter; policy accept;
+		tcp flags & (syn | ack) == syn socket transparent 0 counter packets 1 bytes 60
+	}
+
+	chain output {
+		type filter hook output priority filter; policy accept;
+		tcp flags & (syn | ack) == syn socket transparent 0 counter packets 1 bytes 60
+	}
+}

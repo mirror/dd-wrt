@@ -1,0 +1,2882 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "t",
+        "name": "c2",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "foo",
+        "table": "t",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "size": 65535,
+        "flags": [
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "flowtable": {
+        "family": "ip",
+        "name": "ft",
+        "table": "t",
+        "handle": 0,
+        "hook": "ingress",
+        "prio": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "drop": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "continue": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "jump": {
+              "target": "c2"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "goto": {
+              "target": "c2"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "return": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "set": {
+              "op": "add",
+              "elem": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "set": "@foo",
+              "stmt": [
+                {
+                  "counter": null
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "day"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "quota": {
+              "val": 1,
+              "val_unit": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "ct count": {
+              "val": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "notrack": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "flow": {
+              "op": "add",
+              "flowtable": "@ft"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "mangle": {
+              "key": {
+                "meta": {
+                  "key": "nftrace"
+                }
+              },
+              "value": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "log": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "reject": {
+              "type": "icmp",
+              "expr": "port-unreachable"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "snat": {
+              "addr": "0.0.0.1"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "dnat": {
+              "addr": "0.0.0.1"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "queue": {
+              "num": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "mangle": {
+              "key": {
+                "ct": {
+                  "key": "mark"
+                }
+              },
+              "value": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "masquerade": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "redirect": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "set": {
+              "op": "add",
+              "elem": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "set": "@foo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "set": {
+              "op": "add",
+              "elem": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "set": "@foo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "set": {
+              "op": "update",
+              "elem": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "set": "@foo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "set": {
+              "op": "delete",
+              "elem": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "set": "@foo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "synproxy": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "reset": {
+              "tcp option": {
+                "name": "timestamp"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "version"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ether",
+                  "field": "saddr"
+                }
+              },
+              "right": "00:00:00:00:00:00"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "id"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "0.0.0.0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "icmp",
+                  "field": "type"
+                }
+              },
+              "right": "echo-reply"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "igmp",
+                  "field": "type"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "icmpv6",
+                  "field": "type"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ah",
+                  "field": "spi"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "esp",
+                  "field": "spi"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "comp",
+                  "field": "cpi"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "udp",
+                  "field": "sport"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "udplite",
+                  "field": "sport"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "sport"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "dccp",
+                  "field": "sport"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "sctp",
+                  "field": "sport"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "th",
+                  "field": "sport"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "gre",
+                  "field": "flags"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "tunnel": "gretap",
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "0.0.0.0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "length"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "mark"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "iif"
+                }
+              },
+              "right": "0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              "right": "foo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "iiftype"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "oif"
+                }
+              },
+              "right": "0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "oifname"
+                }
+              },
+              "right": "foo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "oiftype"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "skuid"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "skgid"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "rtclassid"
+                }
+              },
+              "right": "cosmos"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "pkttype"
+                }
+              },
+              "right": "host"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "cpu"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "iifgroup"
+                }
+              },
+              "right": "default"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "oifgroup"
+                }
+              },
+              "right": "default"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "cgroup"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "ipsec"
+                }
+              },
+              "right": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "time"
+                }
+              },
+              "right": "1970-01-01 02:00:00"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "day"
+                }
+              },
+              "right": "Sunday"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "hour"
+                }
+              },
+              "right": "02:00"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "socket": {
+                  "key": "mark"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "numgen": {
+                  "mode": "inc",
+                  "mod": 3,
+                  "offset": 0
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "jhash": {
+                  "mod": 3,
+                  "seed": 1,
+                  "expr": {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  }
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "symhash": {
+                  "mod": 3
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "fib": {
+                  "result": "oif",
+                  "flags": [
+                    "daddr",
+                    "iif"
+                  ]
+                }
+              },
+              "right": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "osf": {
+                  "key": "name"
+                }
+              },
+              "right": "foo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "ipsec": {
+                  "key": "spi",
+                  "dir": "in",
+                  "spnum": 0
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "tproxy": {
+              "addr": "0.0.0.1"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 17
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "tunnel": "vxlan",
+                  "protocol": "vxlan",
+                  "field": "vni"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 17
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "tunnel": "geneve",
+                  "protocol": "geneve",
+                  "field": "vni"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "table": {
+        "family": "ip6",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip6",
+                  "field": "saddr"
+                }
+              },
+              "right": "::"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "exthdr": {
+                  "name": "hbh",
+                  "field": "nexthdr"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "exthdr": {
+                  "name": "rt",
+                  "field": "nexthdr"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "exthdr": {
+                  "name": "srh",
+                  "field": "last-entry"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "exthdr": {
+                  "name": "srh",
+                  "field": "sid[1]"
+                }
+              },
+              "right": "::"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "exthdr": {
+                  "name": "srh",
+                  "field": "tag"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "exthdr": {
+                  "name": "frag",
+                  "field": "nexthdr"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "exthdr": {
+                  "name": "dst",
+                  "field": "nexthdr"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "exthdr": {
+                  "name": "mh",
+                  "field": "nexthdr"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "exthdr": {
+                  "name": "hbh"
+                }
+              },
+              "right": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "table": {
+        "family": "arp",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "arp",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "arp",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "arp",
+                  "field": "htype"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "table": {
+        "family": "bridge",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "bridge",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "ibrname"
+                }
+              },
+              "right": "foo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "bridge",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "ibrname"
+                }
+              },
+              "right": "foo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "bridge",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "obrname"
+                }
+              },
+              "right": "foo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "bridge",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "obrname"
+                }
+              },
+              "right": "foo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "dup": {
+              "addr": "lo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "fwd": {
+              "dev": "lo"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 5,
+              "per": "second"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "tunnel": {
+                  "key": "id"
+                }
+              },
+              "right": 0
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

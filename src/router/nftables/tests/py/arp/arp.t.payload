@@ -1,37 +1,37 @@
 # arp htype 1
 arp test-arp input
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000100 ]
+  [ cmp eq reg 1 0x0001 ]
 
 # arp htype != 1
 arp test-arp input
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ cmp neq reg 1 0x00000100 ]
+  [ cmp neq reg 1 0x0001 ]
 
 # arp htype 22
 arp test-arp input
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # arp htype != 233
 arp test-arp input
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # arp htype 33-45
 arp test-arp input
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ range eq reg 1 0x00002100 0x00002d00 ]
+  [ range eq reg 1 0x0021 0x002d ]
 
 # arp htype != 33-45
 arp test-arp input
   [ payload load 2b @ network header + 0 => reg 1 ]
-  [ range neq reg 1 0x00002100 0x00002d00 ]
+  [ range neq reg 1 0x0021 0x002d ]
 
 # arp htype { 33, 55, 67, 88}
 __set%d test-arp 3
 __set%d test-arp 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 arp test-arp input
   [ payload load 2b @ network header + 0 => reg 1 ]
   [ lookup reg 1 set __set%d ]
@@ -39,7 +39,7 @@ arp test-arp input
 # arp htype != { 33, 55, 67, 88}
 __set%d test-arp 3
 __set%d test-arp 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 arp test-arp input
   [ payload load 2b @ network header + 0 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
@@ -47,32 +47,32 @@ arp test-arp input
 # arp ptype 0x0800
 arp test-arp input
   [ payload load 2b @ network header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
 
 # arp hlen 22
 arp test-arp input
   [ payload load 1b @ network header + 4 => reg 1 ]
-  [ cmp eq reg 1 0x00000016 ]
+  [ cmp eq reg 1 0x16 ]
 
 # arp hlen != 233
 arp test-arp input
   [ payload load 1b @ network header + 4 => reg 1 ]
-  [ cmp neq reg 1 0x000000e9 ]
+  [ cmp neq reg 1 0xe9 ]
 
 # arp hlen 33-45
 arp test-arp input
   [ payload load 1b @ network header + 4 => reg 1 ]
-  [ range eq reg 1 0x00000021 0x0000002d ]
+  [ range eq reg 1 0x21 0x2d ]
 
 # arp hlen != 33-45
 arp test-arp input
   [ payload load 1b @ network header + 4 => reg 1 ]
-  [ range neq reg 1 0x00000021 0x0000002d ]
+  [ range neq reg 1 0x21 0x2d ]
 
 # arp hlen { 33, 55, 67, 88}
 __set%d test-arp 3
 __set%d test-arp 0
-	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+	element 21	element 37	element 43	element 58
 arp test-arp input
   [ payload load 1b @ network header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d ]
@@ -80,7 +80,7 @@ arp test-arp input
 # arp hlen != { 33, 55, 67, 88}
 __set%d test-arp 3
 __set%d test-arp 0
-	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+	element 21	element 37	element 43	element 58
 arp test-arp input
   [ payload load 1b @ network header + 4 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
@@ -88,27 +88,27 @@ arp test-arp input
 # arp plen 22
 arp test-arp input
   [ payload load 1b @ network header + 5 => reg 1 ]
-  [ cmp eq reg 1 0x00000016 ]
+  [ cmp eq reg 1 0x16 ]
 
 # arp plen != 233
 arp test-arp input
   [ payload load 1b @ network header + 5 => reg 1 ]
-  [ cmp neq reg 1 0x000000e9 ]
+  [ cmp neq reg 1 0xe9 ]
 
 # arp plen 33-45
 arp test-arp input
   [ payload load 1b @ network header + 5 => reg 1 ]
-  [ range eq reg 1 0x00000021 0x0000002d ]
+  [ range eq reg 1 0x21 0x2d ]
 
 # arp plen != 33-45
 arp test-arp input
   [ payload load 1b @ network header + 5 => reg 1 ]
-  [ range neq reg 1 0x00000021 0x0000002d ]
+  [ range neq reg 1 0x21 0x2d ]
 
 # arp plen { 33, 55, 67, 88}
 __set%d test-arp 3
 __set%d test-arp 0
-	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+	element 21	element 37	element 43	element 58
 arp test-arp input
   [ payload load 1b @ network header + 5 => reg 1 ]
   [ lookup reg 1 set __set%d ]
@@ -116,7 +116,7 @@ arp test-arp input
 # arp plen != { 33, 55, 67, 88}
 __set%d test-arp 3
 __set%d test-arp 0
-	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+	element 21	element 37	element 43	element 58
 arp test-arp input
   [ payload load 1b @ network header + 5 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
@@ -124,7 +124,7 @@ arp test-arp input
 # arp operation {nak, inreply, inrequest, rreply, rrequest, reply, request}
 __set%d test-arp 3
 __set%d test-arp 0
-	element 00000a00  : 0 [end]	element 00000900  : 0 [end]	element 00000800  : 0 [end]	element 00000400  : 0 [end]	element 00000300  : 0 [end]	element 00000200  : 0 [end]	element 00000100  : 0 [end]
+	element 000a	element 0009	element 0008	element 0004	element 0003	element 0002	element 0001
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
   [ lookup reg 1 set __set%d ]
@@ -132,7 +132,7 @@ arp test-arp input
 # arp operation != {nak, inreply, inrequest, rreply, rrequest, reply, request}
 __set%d test-arp 3
 __set%d test-arp 0
-	element 00000a00  : 0 [end]	element 00000900  : 0 [end]	element 00000800  : 0 [end]	element 00000400  : 0 [end]	element 00000300  : 0 [end]	element 00000200  : 0 [end]	element 00000100  : 0 [end]
+	element 000a	element 0009	element 0008	element 0004	element 0003	element 0002	element 0001
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
@@ -140,118 +140,117 @@ arp test-arp input
 # arp operation 1-2
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ range eq reg 1 0x00000100 0x00000200 ]
+  [ range eq reg 1 0x0001 0x0002 ]
 
 # arp operation request
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp eq reg 1 0x00000100 ]
+  [ cmp eq reg 1 0x0001 ]
 
 # arp operation reply
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp eq reg 1 0x00000200 ]
+  [ cmp eq reg 1 0x0002 ]
 
 # arp operation rrequest
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp eq reg 1 0x00000300 ]
+  [ cmp eq reg 1 0x0003 ]
 
 # arp operation rreply
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp eq reg 1 0x00000400 ]
+  [ cmp eq reg 1 0x0004 ]
 
 # arp operation inrequest
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp eq reg 1 0x00000800 ]
+  [ cmp eq reg 1 0x0008 ]
 
 # arp operation inreply
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp eq reg 1 0x00000900 ]
+  [ cmp eq reg 1 0x0009 ]
 
 # arp operation nak
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp eq reg 1 0x00000a00 ]
+  [ cmp eq reg 1 0x000a ]
 
 # arp operation != request
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp neq reg 1 0x00000100 ]
+  [ cmp neq reg 1 0x0001 ]
 
 # arp operation != reply
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp neq reg 1 0x00000200 ]
+  [ cmp neq reg 1 0x0002 ]
 
 # arp operation != rrequest
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp neq reg 1 0x00000300 ]
+  [ cmp neq reg 1 0x0003 ]
 
 # arp operation != rreply
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp neq reg 1 0x00000400 ]
+  [ cmp neq reg 1 0x0004 ]
 
 # arp operation != inrequest
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp neq reg 1 0x00000800 ]
+  [ cmp neq reg 1 0x0008 ]
 
 # arp operation != inreply
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp neq reg 1 0x00000900 ]
+  [ cmp neq reg 1 0x0009 ]
 
 # arp operation != nak
 arp test-arp input
   [ payload load 2b @ network header + 6 => reg 1 ]
-  [ cmp neq reg 1 0x00000a00 ]
+  [ cmp neq reg 1 0x000a ]
 
 # meta iifname "invalid" arp ptype 0x0800 arp htype 1 arp hlen 6 arp plen 4 @nh,192,32 0xc0a88f10 @nh,144,48 set 0x112233445566
 arp test-arp input
   [ meta load iifname => reg 1 ]
-  [ cmp eq reg 1 0x61766e69 0x0064696c 0x00000000 0x00000000 ]
+  [ cmp eq reg 1 0x696e7661 0x6c696400 0x00000000 0x00000000 ]
   [ payload load 4b @ network header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00080100 ]
+  [ cmp eq reg 1 0x00010800 ]
   [ payload load 2b @ network header + 4 => reg 1 ]
-  [ cmp eq reg 1 0x00000406 ]
+  [ cmp eq reg 1 0x0604 ]
   [ payload load 4b @ network header + 24 => reg 1 ]
-  [ cmp eq reg 1 0x108fa8c0 ]
-  [ immediate reg 1 0x44332211 0x00006655 ]
+  [ cmp eq reg 1 0xc0a88f10 ]
+  [ immediate reg 1 0x11223344 0x5566 ]
   [ payload write reg 1 => 6b @ network header + 18 csum_type 0 csum_off 0 csum_flags 0x0 ]
 
 # arp saddr ip 1.2.3.4
 arp test-arp input 
   [ payload load 4b @ network header + 14 => reg 1 ]
-  [ cmp eq reg 1 0x04030201 ]
+  [ cmp eq reg 1 0x01020304 ]
 
 # arp daddr ip 4.3.2.1
 arp test-arp input 
   [ payload load 4b @ network header + 24 => reg 1 ]
-  [ cmp eq reg 1 0x01020304 ]
+  [ cmp eq reg 1 0x04030201 ]
 
 # arp saddr ether aa:bb:cc:aa:bb:cc
 arp test-arp input 
   [ payload load 6b @ network header + 8 => reg 1 ]
-  [ cmp eq reg 1 0xaaccbbaa 0x0000ccbb ]
+  [ cmp eq reg 1 0xaabbccaa 0xbbcc ]
 
 # arp daddr ether aa:bb:cc:aa:bb:cc
 arp test-arp input 
   [ payload load 6b @ network header + 18 => reg 1 ]
-  [ cmp eq reg 1 0xaaccbbaa 0x0000ccbb ]
+  [ cmp eq reg 1 0xaabbccaa 0xbbcc ]
 
 # arp saddr ip 192.168.1.1 arp daddr ether fe:ed:00:c0:ff:ee
 arp 
   [ payload load 10b @ network header + 14 => reg 1 ]
-  [ cmp eq reg 1 0x0101a8c0 0xc000edfe 0x0000eeff ]
+  [ cmp eq reg 1 0xc0a80101 0xfeed00c0 0xffee ]
 
 # arp daddr ether fe:ed:00:c0:ff:ee arp saddr ip 192.168.1.1
 arp 
   [ payload load 10b @ network header + 14 => reg 1 ]
-  [ cmp eq reg 1 0x0101a8c0 0xc000edfe 0x0000eeff ]
-
+  [ cmp eq reg 1 0xc0a80101 0xfeed00c0 0xffee ]

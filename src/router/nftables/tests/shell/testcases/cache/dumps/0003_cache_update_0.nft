@@ -10,9 +10,9 @@ table ip t3 {
 }
 table ip t4 {
 	chain c {
-		meta l4proto icmp accept
+		meta l4proto 1 accept
 		drop
-		meta l4proto igmp accept
+		meta l4proto 2 accept
 		drop
 	}
 }

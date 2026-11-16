@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_netdev_chain_without_device)
+
+set -e
+
+$NFT -f - <<EOF
+table netdev t {
+	flags dormant
+
+	chain c {
+		type filter hook ingress priority 0
+	}
+}
+EOF
+
+# check abort path frees transaction
+$NFT --check -f - <<EOF
+table netdev t {
+	flags dormant
+	chain c {
+		type filter hook ingress device lo priority 0
+	}
+}
+EOF

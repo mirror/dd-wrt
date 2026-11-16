@@ -62,6 +62,7 @@ START_TIME="$(cut -d ' ' -f1 /proc/uptime)"
 
 export TMPDIR="$NFT_TEST_TESTTMPDIR"
 export NFT_TEST_LIBRARY_FILE="$NFT_TEST_BASEDIR/helpers/lib.sh"
+export TZ='UTC-2'
 
 CLEANUP_UMOUNT_VAR_RUN=n
 
@@ -151,21 +152,22 @@ fi
 
 rc_chkdump=0
 rc=0
-$NFT list ruleset > "$NFT_TEST_TESTTMPDIR/ruleset-after" 2> "$NFT_TEST_TESTTMPDIR/chkdump" || rc=$?
+chkdump_nft="$NFT --numeric-protocol"
+$chkdump_nft list ruleset > "$NFT_TEST_TESTTMPDIR/ruleset-after" 2> "$NFT_TEST_TESTTMPDIR/chkdump" || rc=$?
 if [ "$rc" -ne 0 -o -s "$NFT_TEST_TESTTMPDIR/chkdump" ] ; then
-	show_file "$NFT_TEST_TESTTMPDIR/chkdump" "Command \`$NFT list ruleset\` failed" >> "$NFT_TEST_TESTTMPDIR/rc-failed-chkdump"
+	show_file "$NFT_TEST_TESTTMPDIR/chkdump" "Command \`$chkdump_nft list ruleset\` failed" >> "$NFT_TEST_TESTTMPDIR/rc-failed-chkdump"
 	rc_chkdump=1
 fi
 if [ "$NFT_TEST_HAVE_json" != n ] ; then
 	rc=0
-	$NFT -j list ruleset > "$NFT_TEST_TESTTMPDIR/ruleset-after.json" 2> "$NFT_TEST_TESTTMPDIR/chkdump" || rc=$?
+	$chkdump_nft -j list ruleset > "$NFT_TEST_TESTTMPDIR/ruleset-after.json" 2> "$NFT_TEST_TESTTMPDIR/chkdump" || rc=$?
 
 	# Workaround known bug in stmt_print_json(), due to
 	# "chain_stmt_ops.json" being NULL. This spams stderr.
 	sed -i '/^warning: stmt ops chain have no json callback$/d' "$NFT_TEST_TESTTMPDIR/chkdump"
 
 	if [ "$rc" -ne 0 -o -s "$NFT_TEST_TESTTMPDIR/chkdump" ] ; then
-		show_file "$NFT_TEST_TESTTMPDIR/chkdump" "Command \`$NFT -j list ruleset\` failed" >> "$NFT_TEST_TESTTMPDIR/rc-failed-chkdump"
+		show_file "$NFT_TEST_TESTTMPDIR/chkdump" "Command \`$chkdump_nft -j list ruleset\` failed" >> "$NFT_TEST_TESTTMPDIR/rc-failed-chkdump"
 		rc_chkdump=1
 	fi
 	# JSON output needs normalization/sanitization, otherwise it's not stable.

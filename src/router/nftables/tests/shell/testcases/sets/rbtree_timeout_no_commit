@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# Test for bug added with kernel commit
+# 7e43e0a1141d ("netfilter: nft_set_rbtree: translate rbtree to array for binary search")
+# where the binary search blob gets out-of-sync with the rbtree, holding pointers
+# to elements that have been free'd by garbage collection.
+#
+# 1. add new element, transaction is later aborted.
+# Commit hook isn't called, so make sure ->abort refreshes the blob too.
+#
+# 2. re-add an existing element, transaction passes.
+# In this case, the commit hook isn't called because we don't have
+# any changes to the set from transaction point of view.
+# Transaction log can even be empty in this case.
+#
+# 3. create (F_EXCL) an existing element.
+# Also triggers abort, but set sets ->abort callback isn't invoked
+# as no element was added.
+
+$NFT -f - <<EOF
+table t {
+	set s {
+		type ipv4_addr
+		flags interval, timeout
+		elements = { 10.0.0.1, 10.0.1.2-10.1.2.4 timeout 100ms }
+	}
+}
+EOF
+
+sleep 1
+
+$NFT add element ip t s { 10.0.0.1 } || exit 1
+
+# The above insert triggered GC on the existing element,
+# and the 'add' suceeded (transaction successful).
+# 'get element' must fail and not encounter the removed
+# element.
+$NFT get element ip t s '{ 10.0.1.2 }' && exit 1
+echo "PASS: Did not find expired element after re-adding existing element"
+
+# Re-add an expiring element
+$NFT add element ip t s '{ 10.0.1.2 timeout 100ms }' || exit 1
+sleep 1
+
+$NFT -f - <<EOF
+add element ip t s { 10.0.0.3, 10.0.1.5-10.0.1.42 }
+add element inet t s { 10.0.0.3 }
+EOF
+[ $? -eq 0 ] && exit 1
+
+$NFT get element ip t s '{ 10.0.1.2 }' && exit 1
+echo "PASS: Did not find expired element after transaction abort"
+
+# Re-add an expiring element
+$NFT add element ip t s '{ 10.0.1.2 timeout 100ms }' || exit 1
+sleep 1
+
+# This create must fail, the transaction is aborted, abort callback
+# won't be executed as no changes happened in this set.
+$NFT create element ip t s { 10.0.0.1 } && exit 1
+
+$NFT get element ip t s '{ 10.0.1.2 }' && exit 1
+echo "PASS: Did not find expired element after create failure"

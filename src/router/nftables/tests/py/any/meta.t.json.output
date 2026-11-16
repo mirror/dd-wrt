@@ -233,60 +233,6 @@
     }
 ]
 
-# meta iifname {"dummy0", "lo"}
-[
-    {
-        "match": {
-            "left": {
-                "meta": { "key": "iifname" }
-            },
-	    "op": "==",
-            "right": {
-                "set": [
-                    "lo",
-                    "dummy0"
-                ]
-            }
-        }
-    }
-]
-
-# meta iifname != {"dummy0", "lo"}
-[
-    {
-        "match": {
-            "left": {
-                "meta": { "key": "iifname" }
-            },
-            "op": "!=",
-            "right": {
-                "set": [
-                    "lo",
-                    "dummy0"
-                ]
-            }
-        }
-    }
-]
-
-# meta oifname { "dummy0", "lo"}
-[
-    {
-        "match": {
-            "left": {
-                "meta": { "key": "oifname" }
-            },
-	    "op": "==",
-            "right": {
-                "set": [
-                    "lo",
-                    "dummy0"
-                ]
-            }
-        }
-    }
-]
-
 # meta skuid {"bin", "root", "daemon"} accept
 [
     {

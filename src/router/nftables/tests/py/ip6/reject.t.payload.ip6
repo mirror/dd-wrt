@@ -33,8 +33,7 @@ ip6 test-ip6 output
 # mark 0x80000000 reject with tcp reset
 ip6 test-ip6 output
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000006 ]
+  [ cmp eq reg 1 0x06 ]
   [ meta load mark => reg 1 ]
   [ cmp eq reg 1 0x80000000 ]
   [ reject type 1 code 0 ]
-

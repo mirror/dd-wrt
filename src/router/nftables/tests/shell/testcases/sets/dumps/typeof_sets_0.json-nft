@@ -1,0 +1,853 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c1",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c2",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c4",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c5",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c6",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c7",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c8",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c9",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c10",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c11",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c12",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c13",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c14",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s1",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "osf": {
+              "key": "name"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          "Linux"
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s2",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "vlan",
+              "field": "id"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          2,
+          3,
+          103
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s3",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "meta": {
+              "key": "ibrpvid"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          2,
+          3,
+          103
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s4",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "exthdr": {
+              "name": "frag",
+              "field": "frag-off"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          1,
+          1024
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s5",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "ip option": {
+              "name": "ra",
+              "field": "value"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          1,
+          1024
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s6",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "tcp option": {
+              "name": "maxseg",
+              "field": "size"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          1,
+          1024
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s7",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "sctp chunk": {
+              "name": "init",
+              "field": "num-inbound-streams"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s8",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip",
+              "field": "version"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          4,
+          6
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s9",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip",
+              "field": "hdrlength"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          15
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s10",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              {
+                "ipsec": {
+                  "key": "reqid",
+                  "dir": "in",
+                  "spnum": 0
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "elem": [
+          {
+            "concat": [
+              "eth0",
+              "10.1.1.2",
+              42
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s11",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "id"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "elem": [
+          {
+            "concat": [
+              3567,
+              "1.2.3.4"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s12",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              {
+                "meta": {
+                  "key": "ipsec"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "elem": [
+          {
+            "concat": [
+              "eth0",
+              "10.1.1.2",
+              true
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s13",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "tcp option": {
+              "name": "mptcp",
+              "field": "subtype"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          "mp-join",
+          "dss"
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s14",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "tcp option": {
+                  "name": "mptcp",
+                  "field": "subtype"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "elem": [
+          {
+            "concat": [
+              "mp-join",
+              "10.1.1.2"
+            ]
+          },
+          {
+            "concat": [
+              "remove-addr",
+              "10.1.1.1"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c1",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "osf": {
+                  "key": "name"
+                }
+              },
+              "right": "@s1"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c2",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "id"
+                }
+              },
+              "right": "@s2"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c4",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "exthdr": {
+                  "name": "frag",
+                  "field": "frag-off"
+                }
+              },
+              "right": "@s4"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c5",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "ip option": {
+                  "name": "ra",
+                  "field": "value"
+                }
+              },
+              "right": "@s5"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c6",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "tcp option": {
+                  "name": "maxseg",
+                  "field": "size"
+                }
+              },
+              "right": "@s6"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c7",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "sctp chunk": {
+                  "name": "init",
+                  "field": "num-inbound-streams"
+                }
+              },
+              "right": "@s7"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c8",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "version"
+                }
+              },
+              "right": "@s8"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c9",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "hdrlength"
+                }
+              },
+              "right": "@s9"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c10",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "ipsec": {
+                      "key": "reqid",
+                      "dir": "in",
+                      "spnum": 0
+                    }
+                  }
+                ]
+              },
+              "right": "@s10"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c11",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "vlan",
+                      "field": "id"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  }
+                ]
+              },
+              "right": "@s11"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c12",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "key": "ipsec"
+                    }
+                  }
+                ]
+              },
+              "right": "@s12"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c13",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "tcp option": {
+                  "name": "mptcp",
+                  "field": "subtype"
+                }
+              },
+              "right": "@s13"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c14",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "tcp option": {
+                      "name": "mptcp",
+                      "field": "subtype"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  }
+                ]
+              },
+              "right": "@s14"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    }
+  ]
+}

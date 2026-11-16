@@ -263,7 +263,7 @@
                   "key": "l4proto"
                 }
               },
-              "right": "icmp"
+              "right": 1
             }
           },
           {

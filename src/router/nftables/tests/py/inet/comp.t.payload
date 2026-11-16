@@ -1,103 +1,102 @@
 # comp nexthdr != esp
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 1b @ transport header + 0 => reg 1 ]
-  [ cmp neq reg 1 0x00000032 ]
+  [ cmp neq reg 1 0x32 ]
 
 # comp flags 0x0
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 1b @ transport header + 1 => reg 1 ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ cmp eq reg 1 0x00 ]
 
 # comp flags != 0x23
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 1b @ transport header + 1 => reg 1 ]
-  [ cmp neq reg 1 0x00000023 ]
+  [ cmp neq reg 1 0x23 ]
 
 # comp flags 0x33-0x45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 1b @ transport header + 1 => reg 1 ]
-  [ range eq reg 1 0x00000033 0x00000045 ]
+  [ range eq reg 1 0x33 0x45 ]
 
 # comp flags != 0x33-0x45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 1b @ transport header + 1 => reg 1 ]
-  [ range neq reg 1 0x00000033 0x00000045 ]
+  [ range neq reg 1 0x33 0x45 ]
 
 # comp flags {0x33, 0x55, 0x67, 0x88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00000033  : 0 [end]	element 00000055  : 0 [end]	element 00000067  : 0 [end]	element 00000088  : 0 [end]
+	element 33	element 55	element 67	element 88
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 1b @ transport header + 1 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # comp flags != {0x33, 0x55, 0x67, 0x88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00000033  : 0 [end]	element 00000055  : 0 [end]	element 00000067  : 0 [end]	element 00000088  : 0 [end]
+	element 33	element 55	element 67	element 88
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 1b @ transport header + 1 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
 
 # comp cpi 22
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x00001600 ]
+  [ cmp eq reg 1 0x0016 ]
 
 # comp cpi != 233
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp neq reg 1 0x0000e900 ]
+  [ cmp neq reg 1 0x00e9 ]
 
 # comp cpi 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ range eq reg 1 0x00002100 0x00002d00 ]
+  [ range eq reg 1 0x0021 0x002d ]
 
 # comp cpi != 33-45
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ range neq reg 1 0x00002100 0x00002d00 ]
+  [ range neq reg 1 0x0021 0x002d ]
 
 # comp cpi {33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d ]
 
 # comp cpi != {33, 55, 67, 88}
 __set%d test-inet 3
 __set%d test-inet 0
-	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+	element 0021	element 0037	element 0043	element 0058
 inet test-inet input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000006c ]
+  [ cmp eq reg 1 0x6c ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
   [ lookup reg 1 set __set%d 0x1 ]
-

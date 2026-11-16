@@ -1,36 +1,35 @@
 # ip protocol icmp icmp type echo-request
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ payload load 1b @ network header + 9 => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
   [ payload load 1b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x08 ]
 
 # icmp type echo-request
 bridge test-bridge input
   [ payload load 2b @ link header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
   [ payload load 1b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x08 ]
 
 # ip6 nexthdr icmpv6 icmpv6 type echo-request
 bridge test-bridge input
   [ meta load protocol => reg 1 ]
-  [ cmp eq reg 1 0x0000dd86 ]
+  [ cmp eq reg 1 0x86dd ]
   [ payload load 1b @ network header + 6 => reg 1 ]
-  [ cmp eq reg 1 0x0000003a ]
+  [ cmp eq reg 1 0x3a ]
   [ payload load 1b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000080 ]
+  [ cmp eq reg 1 0x80 ]
 
 # icmpv6 type echo-request
 bridge test-bridge input
   [ payload load 2b @ link header + 12 => reg 1 ]
-  [ cmp eq reg 1 0x0000dd86 ]
+  [ cmp eq reg 1 0x86dd ]
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x0000003a ]
+  [ cmp eq reg 1 0x3a ]
   [ payload load 1b @ transport header + 0 => reg 1 ]
-  [ cmp eq reg 1 0x00000080 ]
-
+  [ cmp eq reg 1 0x80 ]

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -e
+
+$NFT -f - <<EOF
+table ip test {
+  counter match { }
+  counter nomatch { }
+  set s {
+    typeof ip dscp
+  }
+
+  chain c {
+    type filter hook output priority filter; policy accept;
+    ip dscp @s counter name match accept
+    counter name nomatch
+  }
+}
+EOF
+
+ip link set lo up
+
+$NFT add element ip test s { 0x1, 0x2, 0x4, 0x7 }
+
+for q in $(seq 1 7);do
+	ping -q -c 1 127.0.0.1 -Q 0x$q
+done
+
+# dump validation checks counters as well.

@@ -50,7 +50,7 @@ ip
 # queue flags bypass to oifname map { "eth0" : 0, "ppp0" : 2, "eth1" : 2 }
 __map%d test-ip4 b size 3
 __map%d test-ip4 0
-	element 30687465 00000000 00000000 00000000  : 00000000 0 [end]	element 30707070 00000000 00000000 00000000  : 00000002 0 [end]	element 31687465 00000000 00000000 00000000  : 00000002 0 [end]
+	element 65746830 00000000 00000000 00000000 : 0000	element 70707030 00000000 00000000 00000000 : 0002	element 65746831 00000000 00000000 00000000 : 0002
 ip
   [ meta load oifname => reg 1 ]
   [ lookup reg 1 set __map%d dreg 1 ]

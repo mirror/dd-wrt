@@ -262,7 +262,7 @@
                   "key": "l4proto"
                 }
               },
-              "right": "tcp"
+              "right": 6
             }
           },
           {
@@ -328,6 +328,33 @@
         "handle": 0,
         "expr": [
           {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "dnat": {
+              "addr": "10.2.3.4",
+              "port": 4242
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "ipfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
             "dnat": {
               "addr": {
                 "map": {
@@ -361,7 +388,7 @@
                   "key": "l4proto"
                 }
               },
-              "right": "tcp"
+              "right": 6
             }
           },
           {
@@ -612,7 +639,7 @@
                   "key": "l4proto"
                 }
               },
-              "right": "tcp"
+              "right": 6
             }
           },
           {
@@ -678,6 +705,33 @@
         "handle": 0,
         "expr": [
           {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": 6
+            }
+          },
+          {
+            "dnat": {
+              "addr": "fd00:10:244::4",
+              "port": 6443
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "ip6foo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
             "dnat": {
               "addr": {
                 "map": {
@@ -711,7 +765,7 @@
                   "key": "l4proto"
                 }
               },
-              "right": "tcp"
+              "right": 6
             }
           },
           {
@@ -1059,7 +1113,7 @@
                   "key": "l4proto"
                 }
               },
-              "right": "tcp"
+              "right": 6
             }
           },
           {
@@ -1159,7 +1213,7 @@
                   "key": "l4proto"
                 }
               },
-              "right": "tcp"
+              "right": 6
             }
           },
           {
@@ -1292,7 +1346,7 @@
                   "key": "l4proto"
                 }
               },
-              "right": "tcp"
+              "right": 6
             }
           },
           {
@@ -1392,7 +1446,7 @@
                   "key": "l4proto"
                 }
               },
-              "right": "tcp"
+              "right": 6
             }
           },
           {

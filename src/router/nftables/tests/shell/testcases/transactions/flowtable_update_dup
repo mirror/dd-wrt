@@ -1,0 +1,22 @@
+#!/bin/bash
+
+ip link add dummy0 type dummy
+
+$NFT -f /dev/stdin <<EOF
+table inet t {
+	flowtable f {
+		hook ingress priority 0;
+	}
+}
+EOF
+
+$NFT -f /dev/stdin <<EOF
+add flowtable inet t f { devices = { dummy0 }; }
+add flowtable inet t f { devices = { dummy0 }; }
+EOF
+
+ip link del dummy0
+
+sleep 4
+
+$NFT flush ruleset

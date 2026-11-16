@@ -1,114 +1,113 @@
 # udp dport 6081 geneve vni 10
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000c117 ]
+  [ cmp eq reg 1 0x17c1 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 3b @ tunnel header + 4 => reg 1 ] ]
-  [ cmp eq reg 1 0x000a0000 ]
+  [ cmp eq reg 1 0x00000a ]
 
 # udp dport 6081 geneve ip saddr 10.141.11.2
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000c117 ]
+  [ cmp eq reg 1 0x17c1 ]
   [ inner type 2 hdrsize 8 flags f [ meta load protocol => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 4b @ network header + 12 => reg 1 ] ]
-  [ cmp eq reg 1 0x020b8d0a ]
+  [ cmp eq reg 1 0x0a8d0b02 ]
 
 # udp dport 6081 geneve ip saddr 10.141.11.0/24
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000c117 ]
+  [ cmp eq reg 1 0x17c1 ]
   [ inner type 2 hdrsize 8 flags f [ meta load protocol => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 3b @ network header + 12 => reg 1 ] ]
-  [ cmp eq reg 1 0x000b8d0a ]
+  [ cmp eq reg 1 0x0a8d0b ]
 
 # udp dport 6081 geneve ip protocol 1
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000c117 ]
+  [ cmp eq reg 1 0x17c1 ]
   [ inner type 2 hdrsize 8 flags f [ meta load protocol => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 1b @ network header + 9 => reg 1 ] ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
 
 # udp dport 6081 geneve udp sport 8888
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000c117 ]
+  [ cmp eq reg 1 0x17c1 ]
   [ inner type 2 hdrsize 8 flags f [ meta load l4proto => reg 1 ] ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 2b @ transport header + 0 => reg 1 ] ]
-  [ cmp eq reg 1 0x0000b822 ]
+  [ cmp eq reg 1 0x22b8 ]
 
 # udp dport 6081 geneve icmp type echo-reply
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000c117 ]
+  [ cmp eq reg 1 0x17c1 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 2b @ link header + 12 => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 2 hdrsize 8 flags f [ meta load l4proto => reg 1 ] ]
-  [ cmp eq reg 1 0x00000001 ]
+  [ cmp eq reg 1 0x01 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 1b @ transport header + 0 => reg 1 ] ]
-  [ cmp eq reg 1 0x00000000 ]
+  [ cmp eq reg 1 0x00 ]
 
 # udp dport 6081 geneve ether saddr 62:87:4d:d6:19:05
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000c117 ]
+  [ cmp eq reg 1 0x17c1 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 6b @ link header + 6 => reg 1 ] ]
-  [ cmp eq reg 1 0xd64d8762 0x00000519 ]
+  [ cmp eq reg 1 0x62874dd6 0x1905 ]
 
 # udp dport 6081 geneve vlan id 10
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000c117 ]
+  [ cmp eq reg 1 0x17c1 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 2b @ link header + 12 => reg 1 ] ]
-  [ cmp eq reg 1 0x00000081 ]
+  [ cmp eq reg 1 0x8100 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 2b @ link header + 14 => reg 1 ] ]
-  [ bitwise reg 1 = ( reg 1 & 0x0000ff0f ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000a00 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0fff ) ^ 0x0000 ]
+  [ cmp eq reg 1 0x000a ]
 
 # udp dport 6081 geneve ip dscp 0x02
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000c117 ]
+  [ cmp eq reg 1 0x17c1 ]
   [ inner type 2 hdrsize 8 flags f [ meta load protocol => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 1b @ network header + 1 => reg 1 ] ]
-  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfc ) ^ 0x00 ]
+  [ cmp eq reg 1 0x08 ]
 
 # udp dport 6081 geneve ip saddr . geneve ip daddr { 1.2.3.4 . 4.3.2.1 }
 __set%d test-ip4 3 size 1
 __set%d test-ip4 0
-	element 04030201 01020304  : 0 [end]
+	element 01020304 . 04030201
 ip test-ip4 input
   [ meta load l4proto => reg 1 ]
-  [ cmp eq reg 1 0x00000011 ]
+  [ cmp eq reg 1 0x11 ]
   [ payload load 2b @ transport header + 2 => reg 1 ]
-  [ cmp eq reg 1 0x0000c117 ]
+  [ cmp eq reg 1 0x17c1 ]
   [ inner type 2 hdrsize 8 flags f [ meta load protocol => reg 1 ] ]
-  [ cmp eq reg 1 0x00000008 ]
+  [ cmp eq reg 1 0x0800 ]
   [ inner type 2 hdrsize 8 flags f [ payload load 4b @ network header + 12 => reg 1 ] ]
   [ inner type 2 hdrsize 8 flags f [ payload load 4b @ network header + 16 => reg 9 ] ]
   [ lookup reg 1 set __set%d ]
-

@@ -31,6 +31,7 @@ table ip ipfoo {
 		ip saddr 10.1.1.2 tcp dport 42 dnat to 10.2.3.4:4242
 		meta l4proto tcp dnat ip addr . port to ip saddr map @y
 		meta l4proto tcp dnat ip addr . port to ip saddr . tcp dport map @z
+		meta l4proto tcp dnat ip addr . port to 10.2.3.4 . 4242
 		dnat ip to numgen inc mod 2 map @t1
 		meta l4proto tcp dnat ip addr . port to numgen inc mod 2 map @t2
 	}
@@ -72,6 +73,7 @@ table ip6 ip6foo {
 		ip6 saddr dead::2 tcp dport 42 dnat to [c0::1a]:4242
 		meta l4proto tcp dnat ip6 addr . port to ip6 saddr map @y
 		meta l4proto tcp dnat ip6 addr . port to ip6 saddr . tcp dport map @z
+		meta l4proto tcp dnat ip6 addr . port to fd00:10:244::4 . 6443
 		dnat ip6 to numgen inc mod 2 map @t1
 		meta l4proto tcp dnat ip6 addr . port to numgen inc mod 2 map @t2
 	}

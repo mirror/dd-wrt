@@ -203,7 +203,7 @@ ____
 ____
 
 A reject statement tries to send back an error packet in response to the matched
-packet and then interally issues a *drop* verdict.
+packet and then internally issues a *drop* verdict.
 It’s thus a terminating statement with all consequences of the latter (see
 <<OVERALL_EVALUATION_OF_THE_RULESET>> respectively <<VERDICT_STATEMENTS>>).
 This statement is only valid in base chains using the *prerouting*, *input*,
@@ -795,7 +795,7 @@ unsigned integer (16 bit)
 |==================
 |Flag | Description
 |bypass |
-Let packets go through if userspace application cannot back off. Before using
+Let packets go through if the userspace application cannot back off. Before using
 this flag, read libnetfilter_queue documentation for performance tuning recommendations.
 |fanout |
 Distribute packets between several queues.

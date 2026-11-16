@@ -1,0 +1,12 @@
+table ip t {
+	map m {
+		type ipv4_addr : mark
+		size 65535
+		flags dynamic,timeout
+		timeout 1m
+	}
+
+	chain c {
+		add @m { ip saddr limit rate 1/second burst 1 packets : meta mark }
+	}
+}

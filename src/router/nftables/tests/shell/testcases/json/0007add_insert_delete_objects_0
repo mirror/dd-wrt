@@ -1,0 +1,163 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_json)
+
+# Comprehensive test for JSON add/insert/delete/replace operations
+# Tests that all object types work correctly with JSON commands
+
+set -e
+
+$NFT flush ruleset
+
+# ===== ADD operations =====
+
+echo "Test 1: Add table"
+$NFT -j -f - << 'EOF'
+{"nftables": [{"add": {"table": {"family": "inet", "name": "test"}}}]}
+EOF
+
+echo "Test 2: Add chain"
+$NFT -j -f - << 'EOF'
+{"nftables": [{"add": {"chain": {"family": "inet", "table": "test", "name": "input_chain", "type": "filter", "hook": "input", "prio": 0, "policy": "accept"}}}]}
+EOF
+
+echo "Test 3: Add rule"
+$NFT -j -f - << 'EOF'
+{"nftables": [{"add": {"rule": {"family": "inet", "table": "test", "chain": "input_chain", "expr": [{"match": {"op": "==", "left": {"payload": {"protocol": "tcp", "field": "dport"}}, "right": 22}}, {"accept": null}]}}}]}
+EOF
+
+echo "Test 4: Add set"
+$NFT -j -f - << 'EOF'
+{"nftables": [{"add": {"set": {"family": "inet", "table": "test", "name": "test_set", "type": "ipv4_addr"}}}]}
+EOF
+
+echo "Test 5: Add counter"
+$NFT -j -f - << 'EOF'
+{"nftables": [{"add": {"counter": {"family": "inet", "table": "test", "name": "test_counter"}}}]}
+EOF
+
+echo "Test 6: Add quota"
+$NFT -j -f - << 'EOF'
+{"nftables": [{"add": {"quota": {"family": "inet", "table": "test", "name": "test_quota", "bytes": 1000000}}}]}
+EOF
+
+# Verify all objects were created
+EXPECT='table inet test {
+	counter test_counter {
+		packets 0 bytes 0
+	}
+
+	quota test_quota {
+		1000000 bytes
+	}
+
+	set test_set {
+		type ipv4_addr
+	}
+
+	chain input_chain {
+		type filter hook input priority filter; policy accept;
+		tcp dport 22 accept
+	}
+}'
+$DIFF -u <(echo "$EXPECT") <($NFT list ruleset) || { echo "Failed to verify ruleset after add operations"; exit 1; }
+
+# ===== REPLACE operations =====
+
+echo "Test 7: Replace rule"
+# Get handle of rule with dport 22
+HANDLE=$($NFT -a list chain inet test input_chain | sed -n 's/.*tcp dport 22 .* handle \([0-9]\+\)/\1/p')
+if [ -z "$HANDLE" ]; then
+	echo "Test 7 failed: could not find rule handle"
+	exit 1
+fi
+
+$NFT -j -f - << EOF
+{"nftables": [{"replace": {"rule": {"family": "inet", "table": "test", "chain": "input_chain", "handle": $HANDLE, "expr": [{"match": {"op": "==", "left": {"payload": {"protocol": "tcp", "field": "dport"}}, "right": 443}}, {"accept": null}]}}}]}
+EOF
+
+# Verify rule was replaced
+if ! $NFT list chain inet test input_chain | grep -q "tcp dport 443"; then
+	echo "Test 7 failed: rule not replaced correctly"
+	exit 1
+fi
+if $NFT list chain inet test input_chain | grep -q "tcp dport 22"; then
+	echo "Test 7 failed: old rule still exists"
+	exit 1
+fi
+
+# ===== CREATE operations =====
+
+echo "Test 8: Create table (should work like add)"
+$NFT -j -f - << 'EOF'
+{"nftables": [{"create": {"table": {"family": "ip", "name": "created_table"}}}]}
+EOF
+
+if ! $NFT list tables | grep -q "created_table"; then
+	echo "Test 8 failed: table not created"
+	exit 1
+fi
+
+echo "Test 9: Create table that exists (should fail)"
+if $NFT -j -f - 2>/dev/null << 'EOF'
+{"nftables": [{"create": {"table": {"family": "ip", "name": "created_table"}}}]}
+EOF
+then
+	echo "Test 9 failed: create should have failed for existing table"
+	exit 1
+fi
+
+# ===== DELETE operations =====
+
+echo "Test 10: Delete rule"
+HANDLE=$($NFT -a list chain inet test input_chain | sed -n 's/.*tcp dport 443 .* handle \([0-9]\+\)/\1/p')
+$NFT -j -f - << EOF
+{"nftables": [{"delete": {"rule": {"family": "inet", "table": "test", "chain": "input_chain", "handle": $HANDLE}}}]}
+EOF
+
+if $NFT list chain inet test input_chain | grep -q "tcp dport 443"; then
+	echo "Test 10 failed: rule not deleted"
+	exit 1
+fi
+
+echo "Test 11: Delete counter"
+$NFT -j -f - << 'EOF'
+{"nftables": [{"delete": {"counter": {"family": "inet", "table": "test", "name": "test_counter"}}}]}
+EOF
+
+if $NFT list counters | grep -q "test_counter"; then
+	echo "Test 11 failed: counter not deleted"
+	exit 1
+fi
+
+echo "Test 12: Delete set"
+$NFT -j -f - << 'EOF'
+{"nftables": [{"delete": {"set": {"family": "inet", "table": "test", "name": "test_set"}}}]}
+EOF
+
+if $NFT list sets | grep -q "test_set"; then
+	echo "Test 12 failed: set not deleted"
+	exit 1
+fi
+
+echo "Test 13: Delete chain"
+$NFT -j -f - << 'EOF'
+{"nftables": [{"delete": {"chain": {"family": "inet", "table": "test", "name": "input_chain"}}}]}
+EOF
+
+if $NFT list chains | grep -q "input_chain"; then
+	echo "Test 13 failed: chain not deleted"
+	exit 1
+fi
+
+echo "Test 14: Delete table"
+$NFT -j -f - << 'EOF'
+{"nftables": [{"delete": {"table": {"family": "inet", "name": "test"}}}]}
+EOF
+
+if $NFT list tables | grep -q "table inet test"; then
+	echo "Test 14 failed: table not deleted"
+	exit 1
+fi
+
+echo "All tests passed!"

@@ -49,3 +49,9 @@ limit rate over 10230 mbytes/second;ok
 limit rate over 1025 bytes/second burst 512 bytes;ok
 limit rate over 1025 kbytes/second burst 1023 kbytes;ok
 limit rate over 1025 mbytes/second burst 1025 kbytes;ok
+
+limit rate over 1025bytes/second burst 512bytes;ok;limit rate over 1025 bytes/second burst 512 bytes
+limit rate over 1025bytes /second burst 512bytes;ok;limit rate over 1025 bytes/second burst 512 bytes
+limit rate over 1025bytes/ second burst 512bytes;ok;limit rate over 1025 bytes/second burst 512 bytes
+limit rate over 1025bytes / second burst 512bytes;ok;limit rate over 1025 bytes/second burst 512 bytes
+limit rate over 1025 bytes / second burst 512bytes;ok;limit rate over 1025 bytes/second burst 512 bytes

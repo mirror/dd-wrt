@@ -47,6 +47,7 @@ static unsigned int evaluate_cache_add(struct cmd *cmd, unsigned int flags)
 	case CMD_OBJ_CT_EXPECT:
 	case CMD_OBJ_SYNPROXY:
 	case CMD_OBJ_FLOWTABLE:
+	case CMD_OBJ_CONNLIMIT:
 		flags |= NFT_CACHE_TABLE;
 		break;
 	case CMD_OBJ_ELEMENTS:
@@ -246,10 +247,13 @@ static unsigned int evaluate_cache_list(struct nft_ctx *nft, struct cmd *cmd,
 			flags |= NFT_CACHE_FULL;
 		break;
 	case CMD_OBJ_CHAINS:
+		filter->list.family = cmd->handle.family;
 		flags |= NFT_CACHE_TABLE | NFT_CACHE_CHAIN;
 		break;
 	case CMD_OBJ_SETS:
 	case CMD_OBJ_MAPS:
+		filter->list.family = cmd->handle.family;
+		filter->list.table = cmd->handle.table.name;
 		flags |= NFT_CACHE_TABLE | NFT_CACHE_SET;
 		if (!nft_output_terse(&nft->output))
 			flags |= NFT_CACHE_SETELEM;
@@ -257,12 +261,13 @@ static unsigned int evaluate_cache_list(struct nft_ctx *nft, struct cmd *cmd,
 	case CMD_OBJ_FLOWTABLE:
 		if (cmd->handle.table.name &&
 		    cmd->handle.flowtable.name) {
-			filter->list.family = cmd->handle.family;
 			filter->list.table = cmd->handle.table.name;
 			filter->list.ft = cmd->handle.flowtable.name;
 		}
 		/* fall through */
 	case CMD_OBJ_FLOWTABLES:
+		filter->list.family = cmd->handle.family;
+		filter->list.table = cmd->handle.table.name;
 		flags |= NFT_CACHE_TABLE | NFT_CACHE_FLOWTABLE;
 		break;
 	case CMD_OBJ_COUNTER:
@@ -299,8 +304,13 @@ static unsigned int evaluate_cache_list(struct nft_ctx *nft, struct cmd *cmd,
 	case CMD_OBJ_TUNNEL:
 	case CMD_OBJ_TUNNELS:
 		obj_filter_setup(cmd, &flags, filter, NFT_OBJECT_TUNNEL);
+	case CMD_OBJ_CONNLIMIT:
+	case CMD_OBJ_CONNLIMITS:
+		obj_filter_setup(cmd, &flags, filter, NFT_OBJECT_CONNLIMIT);
 		break;
 	case CMD_OBJ_RULESET:
+		filter->list.family = cmd->handle.family;
+		/* fall through */
 	default:
 		flags |= NFT_CACHE_FULL;
 		break;
@@ -449,6 +459,8 @@ static int nft_handle_validate(const struct cmd *cmd, struct list_head *msgs)
 	case CMD_OBJ_CT_EXPECTATIONS:
 	case CMD_OBJ_TUNNEL:
 	case CMD_OBJ_TUNNELS:
+	case CMD_OBJ_CONNLIMIT:
+	case CMD_OBJ_CONNLIMITS:
 		if (h->table.name &&
 		    strlen(h->table.name) > NFT_NAME_MAXLEN) {
 			loc = &h->table.location;
@@ -510,7 +522,10 @@ int nft_cache_evaluate(struct nft_ctx *nft, struct list_head *cmds,
 			flags = evaluate_cache_get(cmd, flags);
 			break;
 		case CMD_RESET:
-			flags = evaluate_cache_reset(cmd, flags, filter);
+			if (nft->check)
+				flags = evaluate_cache_list(nft, cmd, flags, filter);
+			else
+				flags = evaluate_cache_reset(cmd, flags, filter);
 			break;
 		case CMD_LIST:
 			flags = evaluate_cache_list(nft, cmd, flags, filter);
@@ -621,7 +636,7 @@ chain_cache_dump(struct netlink_ctx *ctx,
 	const char *chain = NULL;
 	int family = NFPROTO_UNSPEC;
 
-	if (filter && filter->list.table && filter->list.chain) {
+	if (filter) {
 		family = filter->list.family;
 		table = filter->list.table;
 		chain = filter->list.chain;
@@ -698,7 +713,6 @@ static int list_rule_cb(struct nftnl_rule *nlr, void *data)
 	    (h->chain.name && strcmp(chain, h->chain.name) != 0))
 		return 0;
 
-	netlink_dump_rule(nlr, ctx);
 	rule = netlink_delinearize_rule(ctx, nlr);
 	assert(rule);
 	list_add_tail(&rule->list, &ctx->list);
