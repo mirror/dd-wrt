@@ -428,7 +428,7 @@ static int aria_gcm_tls_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
         out += len;
         /* Finally write tag */
         CRYPTO_gcm128_tag(&gctx->gcm, out, EVP_GCM_TLS_TAG_LEN);
-        rv = (int)(len + EVP_GCM_TLS_EXPLICIT_IV_LEN + EVP_GCM_TLS_TAG_LEN);
+        rv = len + EVP_GCM_TLS_EXPLICIT_IV_LEN + EVP_GCM_TLS_TAG_LEN;
     } else {
         /* Decrypt */
         if (CRYPTO_gcm128_decrypt(&gctx->gcm, in, out, len))
@@ -442,7 +442,7 @@ static int aria_gcm_tls_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
             OPENSSL_cleanse(out, len);
             goto err;
         }
-        rv = (int)len;
+        rv = len;
     }
 
 err:
@@ -476,7 +476,7 @@ static int aria_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
             if (CRYPTO_gcm128_decrypt(&gctx->gcm, in, out, len))
                 return -1;
         }
-        return (int)len;
+        return len;
     }
     if (!EVP_CIPHER_CTX_is_encrypting(ctx)) {
         if (gctx->taglen < 0)
@@ -666,14 +666,14 @@ static int aria_ccm_tls_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
             return -1;
         if (!CRYPTO_ccm128_tag(ccm, out + len, cctx->M))
             return -1;
-        return (int)(len + EVP_CCM_TLS_EXPLICIT_IV_LEN + cctx->M);
+        return len + EVP_CCM_TLS_EXPLICIT_IV_LEN + cctx->M;
     } else {
         if (cctx->str ? !CRYPTO_ccm128_decrypt_ccm64(ccm, in, out, len, cctx->str)
                       : !CRYPTO_ccm128_decrypt(ccm, in, out, len)) {
             unsigned char tag[16];
             if (CRYPTO_ccm128_tag(ccm, tag, cctx->M)) {
                 if (!CRYPTO_memcmp(tag, in + len, cctx->M))
-                    return (int)len;
+                    return len;
             }
         }
         OPENSSL_cleanse(out, len);
@@ -706,13 +706,13 @@ static int aria_ccm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
             if (CRYPTO_ccm128_setiv(ccm, ctx->iv, 15 - cctx->L, len))
                 return -1;
             cctx->len_set = 1;
-            return (int)len;
+            return len;
         }
         /* If have AAD need message length */
         if (!cctx->len_set && len)
             return -1;
         CRYPTO_ccm128_aad(ccm, in, len);
-        return (int)len;
+        return len;
     }
 
     /* The tag must be set before actually decrypting data */
@@ -730,7 +730,7 @@ static int aria_ccm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
                       : CRYPTO_ccm128_encrypt(ccm, in, out, len))
             return -1;
         cctx->tag_set = 1;
-        return (int)len;
+        return len;
     } else {
         int rv = -1;
         if (cctx->str ? !CRYPTO_ccm128_decrypt_ccm64(ccm, in, out, len,
@@ -740,7 +740,7 @@ static int aria_ccm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
             if (CRYPTO_ccm128_tag(ccm, tag, cctx->M)) {
                 if (!CRYPTO_memcmp(tag, EVP_CIPHER_CTX_buf_noconst(ctx),
                         cctx->M))
-                    rv = (int)len;
+                    rv = len;
             }
         }
         if (rv == -1)

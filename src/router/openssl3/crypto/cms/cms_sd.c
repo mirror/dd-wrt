@@ -799,7 +799,7 @@ static int cms_SignerInfo_content_sign(CMS_ContentInfo *cms,
             OPENSSL_free(sig);
             goto err;
         }
-        ASN1_STRING_set0(si->signature, sig, (int)siglen);
+        ASN1_STRING_set0(si->signature, sig, siglen);
     } else {
         unsigned char *sig;
         unsigned int siglen;
@@ -912,7 +912,7 @@ int CMS_SignerInfo_sign(CMS_SignerInfo *si)
 
     EVP_MD_CTX_reset(mctx);
 
-    ASN1_STRING_set0(si->signature, abuf, (int)siglen);
+    ASN1_STRING_set0(si->signature, abuf, siglen);
 
     return 1;
 

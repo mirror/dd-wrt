@@ -4,10 +4,10 @@ Welcome to the OpenSSL Project
 [![openssl logo]][www.openssl.org]
 
 [![github actions ci badge]][github actions ci]
-[![Nightly OS Zoo ci badge](https://github.com/openssl/openssl/actions/workflows/os-zoo.yml/badge.svg)](https://github.com/openssl/openssl/actions/workflows/os-zoo.yml)
-[![Provider Compatibility](https://github.com/openssl/openssl/actions/workflows/provider-compatibility.yml/badge.svg)](https://github.com/openssl/openssl/actions/workflows/provider-compatibility.yml)
-[![Quic Interop](https://github.com/openssl/openssl/actions/workflows/run_quic_interop.yml/badge.svg)](https://github.com/openssl/openssl/actions/workflows/run_quic_interop.yml)
-[![Daily checks](https://github.com/openssl/openssl/actions/workflows/run-checker-daily.yml/badge.svg)](https://github.com/openssl/openssl/actions/workflows/run-checker-daily.yml)
+![Nightly OS Zoo ci badge](https://github.com/openssl/openssl/actions/workflows/os-zoo.yml/badge.svg)
+![Provider Compatibility](https://github.com/openssl/openssl/actions/workflows/provider-compatibility.yml/badge.svg)
+![Quic Interop](https://github.com/openssl/openssl/actions/workflows/run_quic_interop.yml/badge.svg)
+![Daily checks](https://github.com/openssl/openssl/actions/workflows/run-checker-daily.yml/badge.svg)
 
 OpenSSL is a robust, commercial-grade, full-featured Open Source Toolkit
 for the TLS (formerly SSL), DTLS and QUIC protocols.
@@ -149,13 +149,10 @@ Manual Pages
 The manual pages for the master branch and all current stable releases are
 available online.
 
-- [OpenSSL master](https://docs.openssl.org/master/)
-- [OpenSSL 3.6](https://docs.openssl.org/3.6/)
-- [OpenSSL 3.5](https://docs.openssl.org/3.5/)
-- [OpenSSL 3.4](https://docs.openssl.org/3.4/)
-- [OpenSSL 3.3](https://docs.openssl.org/3.3/)
-- [OpenSSL 3.2](https://docs.openssl.org/3.2/)
-- [OpenSSL 3.0](https://docs.openssl.org/3.0/)
+- [OpenSSL master](https://www.openssl.org/docs/manmaster)
+- [OpenSSL 3.0](https://www.openssl.org/docs/man3.0)
+- [OpenSSL 3.1](https://www.openssl.org/docs/man3.1)
+- [OpenSSL 3.2](https://www.openssl.org/docs/man3.2)
 
 Demos
 -----
@@ -220,7 +217,7 @@ All rights reserved.
     "OpenSSL Wiki"
 
 [ossl-guide-migration(7ossl)]:
-    <https://docs.openssl.org/master/man7/ossl-guide-migration>
+    <https://www.openssl.org/docs/manmaster/man7/ossl-guide-migration.html>
     "OpenSSL Migration Guide"
 
 [RFC 8446]:
@@ -237,7 +234,7 @@ All rights reserved.
     "List of third party OpenSSL binaries"
 
 [OpenSSL Guide]:
-    <https://docs.openssl.org/master/man7/ossl-guide-introduction>
+    <https://www.openssl.org/docs/manmaster/man7/ossl-guide-introduction.html>
     "An introduction to OpenSSL"
 
 <!-- Logos and Badges -->
@@ -251,7 +248,7 @@ All rights reserved.
     "GitHub Actions CI Status"
 
 [github actions ci]:
-    <https://github.com/openssl/openssl/actions/workflows/ci.yml>
+    <https://github.com/openssl/openssl/actions?query=workflow%3A%22GitHub+CI%22>
     "GitHub Actions CI"
 
 [appveyor badge]:

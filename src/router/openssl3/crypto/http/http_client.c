@@ -665,7 +665,7 @@ next_io:
             if (rctx->state == OHS_WRITE_HDR1)
                 rctx->state = OHS_WRITE_HDR;
             rctx->pos += sz;
-            rctx->len_to_send -= (long)sz;
+            rctx->len_to_send -= sz;
             goto next_io;
         }
         if (rctx->state == OHS_WRITE_HDR) {
@@ -1431,8 +1431,6 @@ static char *base64encode(const void *buf, size_t len)
     size_t outl;
     char *out;
 
-    if (len > INT_MAX)
-        return 0;
     /* Calculate size of encoded data */
     outl = (len / 3);
     if (len % 3 > 0)
@@ -1442,7 +1440,7 @@ static char *base64encode(const void *buf, size_t len)
     if (out == NULL)
         return 0;
 
-    i = EVP_EncodeBlock((unsigned char *)out, buf, (int)len);
+    i = EVP_EncodeBlock((unsigned char *)out, buf, len);
     if (!ossl_assert(0 <= i && (size_t)i <= outl)) {
         OPENSSL_free(out);
         return NULL;

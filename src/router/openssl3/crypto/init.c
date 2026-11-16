@@ -500,7 +500,7 @@ int OPENSSL_init_crypto(uint64_t opts, const OPENSSL_INIT_SETTINGS *settings)
     int aloaddone = 0;
 
     /* Applications depend on 0 being returned when cleanup was already done */
-    if (ossl_unlikely(stopped)) {
+    if (stopped) {
         if (!(opts & OPENSSL_INIT_BASE_ONLY))
             ERR_raise(ERR_LIB_CRYPTO, ERR_R_INIT_FAIL);
         return 0;
@@ -519,7 +519,7 @@ int OPENSSL_init_crypto(uint64_t opts, const OPENSSL_INIT_SETTINGS *settings)
      * unnecessarily - but all the critical code is contained in RUN_ONCE
      * functions anyway so we are safe.
      */
-    if (ossl_likely(CRYPTO_atomic_load(&optsdone, &tmp, NULL))) {
+    if (CRYPTO_atomic_load(&optsdone, &tmp, NULL)) {
         if ((tmp & opts) == opts)
             return 1;
         aloaddone = 1;
@@ -539,7 +539,7 @@ int OPENSSL_init_crypto(uint64_t opts, const OPENSSL_INIT_SETTINGS *settings)
      * If we remain the only caller of err_shelve_state() the recursion should
      * perhaps be removed, but if in doubt, it can be left in place.
      */
-    if (ossl_unlikely(!RUN_ONCE(&base, ossl_init_base)))
+    if (!RUN_ONCE(&base, ossl_init_base))
         return 0;
 
     if (opts & OPENSSL_INIT_BASE_ONLY)

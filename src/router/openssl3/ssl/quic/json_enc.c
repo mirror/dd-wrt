@@ -11,7 +11,6 @@
 #include "internal/nelem.h"
 #include "internal/numbers.h"
 #include <string.h>
-#include <stdbool.h>
 
 /*
  * wbuf
@@ -522,12 +521,12 @@ void ossl_json_null(OSSL_JSON_ENC *json)
     json_post_item(json);
 }
 
-void ossl_json_bool(OSSL_JSON_ENC *json, bool v)
+void ossl_json_bool(OSSL_JSON_ENC *json, int v)
 {
     if (!json_pre_item(json))
         return;
 
-    json_write_str(json, v ? "true" : "false");
+    json_write_str(json, v > 0 ? "true" : "false");
     json_post_item(json);
 }
 

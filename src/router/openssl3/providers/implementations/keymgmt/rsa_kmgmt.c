@@ -28,7 +28,6 @@
 #include "internal/fips.h"
 #include "internal/param_build_set.h"
 #include "fips/fipsindicator.h"
-#include "providers/implementations/keymgmt/keymgmtcommon.inc"
 
 static OSSL_FUNC_keymgmt_new_fn rsa_newdata;
 static OSSL_FUNC_keymgmt_new_fn rsapss_newdata;
@@ -343,9 +342,6 @@ static int rsa_get_params(void *key, OSSL_PARAM params[])
     if ((p = OSSL_PARAM_locate(params, OSSL_PKEY_PARAM_MAX_SIZE)) != NULL
         && (empty || !OSSL_PARAM_set_int(p, RSA_size(rsa))))
         return 0;
-    if ((p = OSSL_PARAM_locate(params, OSSL_PKEY_PARAM_SECURITY_CATEGORY)) != NULL)
-        if (!OSSL_PARAM_set_int(p, 0))
-            return 0;
 
     /*
      * For restricted RSA-PSS keys, we ignore the default digest request.
@@ -381,7 +377,6 @@ static const OSSL_PARAM rsa_params[] = {
     OSSL_PARAM_int(OSSL_PKEY_PARAM_BITS, NULL),
     OSSL_PARAM_int(OSSL_PKEY_PARAM_SECURITY_BITS, NULL),
     OSSL_PARAM_int(OSSL_PKEY_PARAM_MAX_SIZE, NULL),
-    OSSL_PARAM_int(OSSL_PKEY_PARAM_SECURITY_CATEGORY, NULL),
     OSSL_PARAM_utf8_string(OSSL_PKEY_PARAM_DEFAULT_DIGEST, NULL, 0),
     RSA_KEY_TYPES()
         OSSL_PARAM_END
@@ -581,17 +576,14 @@ static const OSSL_PARAM *rsapss_gen_settable_params(ossl_unused void *genctx,
 static int rsa_gen_get_params(void *genctx, OSSL_PARAM params[])
 {
     struct rsa_gen_ctx *gctx = genctx;
-    struct keymgmt_fips_gen_get_params_st p;
     int approved = 1;
 
-    if (gctx == NULL || !keymgmt_fips_gen_get_params_decoder(params, &p))
+    if (gctx == NULL)
         return 0;
 #ifndef OPENSSL_NO_ACVP_TESTS
     approved = gctx->acvp_test_params == NULL;
 #endif
-    if (!OSSL_FIPS_IND_GET_PARAM_CONDITIONAL(p.ind, approved))
-        return 0;
-    return 1;
+    return ossl_FIPS_IND_get_ctx_param_conditional(NULL, params, approved);
 }
 #endif
 
@@ -736,7 +728,9 @@ const OSSL_DISPATCH ossl_rsa_keymgmt_functions[] = {
     { OSSL_FUNC_KEYMGMT_EXPORT, (void (*)(void))rsa_export },
     { OSSL_FUNC_KEYMGMT_EXPORT_TYPES, (void (*)(void))rsa_export_types },
     { OSSL_FUNC_KEYMGMT_DUP, (void (*)(void))rsa_dup },
-    OSSL_KEYMGMT_FIPS_GEN_DISPATCH_END(rsa_gen_get_params)
+    OSSL_FIPS_IND_DISPATCH(OSSL_FUNC_KEYMGMT_GEN_GET_PARAMS,
+        OSSL_FUNC_KEYMGMT_GEN_GETTABLE_PARAMS, rsa_gen_get_params)
+        OSSL_DISPATCH_END
 };
 
 const OSSL_DISPATCH ossl_rsapss_keymgmt_functions[] = {
@@ -761,5 +755,7 @@ const OSSL_DISPATCH ossl_rsapss_keymgmt_functions[] = {
     { OSSL_FUNC_KEYMGMT_QUERY_OPERATION_NAME,
         (void (*)(void))rsa_query_operation_name },
     { OSSL_FUNC_KEYMGMT_DUP, (void (*)(void))rsa_dup },
-    OSSL_KEYMGMT_FIPS_GEN_DISPATCH_END(rsa_gen_get_params)
+    OSSL_FIPS_IND_DISPATCH(OSSL_FUNC_KEYMGMT_GEN_GET_PARAMS,
+        OSSL_FUNC_KEYMGMT_GEN_GETTABLE_PARAMS, rsa_gen_get_params)
+        OSSL_DISPATCH_END
 };

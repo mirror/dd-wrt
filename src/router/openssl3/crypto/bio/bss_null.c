@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -79,12 +79,7 @@ static int null_gets(BIO *bp, char *buf, int size)
 
 static int null_puts(BIO *bp, const char *str)
 {
-    size_t n;
-
     if (str == NULL)
         return 0;
-    n = strlen(str);
-    if (n > INT_MAX)
-        return -1;
-    return (int)n;
+    return strlen(str);
 }

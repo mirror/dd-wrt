@@ -134,15 +134,14 @@ static int linebuffer_write(BIO *b, const char *in, int inl)
         while ((foundnl || p - in > ctx->obuf_size - ctx->obuf_len)
             && ctx->obuf_len > 0) {
             int orig_olen = ctx->obuf_len;
-            int llen = (int)(p - in);
 
             i = ctx->obuf_size - ctx->obuf_len;
-            if (llen > 0) {
-                if (i >= llen) {
-                    memcpy(&(ctx->obuf[ctx->obuf_len]), in, llen);
-                    ctx->obuf_len += llen;
-                    inl -= llen;
-                    num += llen;
+            if (p - in > 0) {
+                if (i >= p - in) {
+                    memcpy(&(ctx->obuf[ctx->obuf_len]), in, p - in);
+                    ctx->obuf_len += p - in;
+                    inl -= p - in;
+                    num += p - in;
                     in = p;
                 } else {
                     memcpy(&(ctx->obuf[ctx->obuf_len]), in, i);
@@ -172,7 +171,7 @@ static int linebuffer_write(BIO *b, const char *in, int inl)
          * if a NL was found and there is anything to write.
          */
         if ((foundnl || p - in > ctx->obuf_size) && p - in > 0) {
-            i = BIO_write(b->next_bio, in, (int)(p - in));
+            i = BIO_write(b->next_bio, in, p - in);
             if (i <= 0) {
                 BIO_copy_next_retry(b);
                 if (i < 0)
@@ -332,9 +331,5 @@ static int linebuffer_gets(BIO *b, char *buf, int size)
 
 static int linebuffer_puts(BIO *b, const char *str)
 {
-    size_t len = strlen(str);
-
-    if (len > INT_MAX)
-        return -1;
-    return linebuffer_write(b, str, (int)len);
+    return linebuffer_write(b, str, strlen(str));
 }

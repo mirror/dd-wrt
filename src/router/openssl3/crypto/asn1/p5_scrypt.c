@@ -30,7 +30,7 @@ ASN1_SEQUENCE(SCRYPT_PARAMS) = {
 
 IMPLEMENT_ASN1_FUNCTIONS(SCRYPT_PARAMS)
 
-static X509_ALGOR *pkcs5_scrypt_set(const unsigned char *salt, int saltlen,
+static X509_ALGOR *pkcs5_scrypt_set(const unsigned char *salt, size_t saltlen,
     size_t keylen, uint64_t N, uint64_t r,
     uint64_t p);
 
@@ -155,7 +155,7 @@ err:
     return NULL;
 }
 
-static X509_ALGOR *pkcs5_scrypt_set(const unsigned char *salt, int saltlen,
+static X509_ALGOR *pkcs5_scrypt_set(const unsigned char *salt, size_t saltlen,
     size_t keylen, uint64_t N, uint64_t r,
     uint64_t p)
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2021-2024 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -129,7 +129,7 @@ static int test_object_group_attr(int idx)
 
     p = test->data;
 
-    ias = d2i_OSSL_IETF_ATTR_SYNTAX(NULL, &p, (long)test->len);
+    ias = d2i_OSSL_IETF_ATTR_SYNTAX(NULL, &p, test->len);
 
     if ((test->valid && !TEST_ptr(ias))
         || (!test->valid && !TEST_ptr_null(ias)))
@@ -152,7 +152,7 @@ done:
 OPT_TEST_DECLARE_USAGE("[<attribute certs (PEM)>...]\n")
 int setup_tests(void)
 {
-    size_t cnt;
+    int cnt;
 
     if (!test_skip_common_options()) {
         TEST_error("Error parsing test options\n");
@@ -165,7 +165,7 @@ int setup_tests(void)
         return 0;
     }
 
-    ADD_ALL_TESTS(test_print_acert, (int)cnt);
+    ADD_ALL_TESTS(test_print_acert, cnt);
     ADD_TEST(test_acert_sign);
     ADD_ALL_TESTS(test_object_group_attr, OSSL_NELEM(ietf_syntax_tests));
 

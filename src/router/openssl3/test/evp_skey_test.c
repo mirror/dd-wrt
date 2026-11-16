@@ -93,68 +93,6 @@ end:
     return ret;
 }
 
-static int test_skey_skeymgmt(void)
-{
-    int ret = 0;
-    EVP_SKEYMGMT *skeymgmt = NULL;
-    EVP_SKEY *key = NULL;
-    const unsigned char import_key[KEY_SIZE] = {
-        0x53, 0x4B, 0x45, 0x59, 0x53, 0x4B, 0x45, 0x59, 0x53, 0x4B,
-        0x45, 0x59, 0x53, 0x4B, 0x45, 0x59
-    };
-    OSSL_PARAM params[2];
-    const OSSL_PARAM *imp_params;
-    const OSSL_PARAM *p;
-    OSSL_PARAM *exp_params = NULL;
-    const void *export_key = NULL;
-    size_t export_len;
-
-    deflprov = OSSL_PROVIDER_load(libctx, "default");
-    if (!TEST_ptr(deflprov))
-        return 0;
-
-    /* Fetch our SKYMGMT for Generic Secrets */
-    if (!TEST_ptr(skeymgmt = EVP_SKEYMGMT_fetch(libctx, OSSL_SKEY_TYPE_GENERIC,
-                      NULL)))
-        goto end;
-
-    /* Check the parameter we need is available */
-    if (!TEST_ptr(imp_params = EVP_SKEYMGMT_get0_imp_settable_params(skeymgmt))
-        || !TEST_ptr(p = OSSL_PARAM_locate_const(imp_params,
-                         OSSL_SKEY_PARAM_RAW_BYTES)))
-        goto end;
-
-    /* Import EVP_SKEY */
-    params[0] = OSSL_PARAM_construct_octet_string(OSSL_SKEY_PARAM_RAW_BYTES,
-        (void *)import_key, KEY_SIZE);
-    params[1] = OSSL_PARAM_construct_end();
-
-    if (!TEST_ptr(key = EVP_SKEY_import(libctx,
-                      EVP_SKEYMGMT_get0_name(skeymgmt), NULL,
-                      OSSL_SKEYMGMT_SELECT_ALL, params)))
-        goto end;
-
-    /* Export EVP_SKEY */
-    if (!TEST_int_gt(EVP_SKEY_export(key, OSSL_SKEYMGMT_SELECT_SECRET_KEY,
-                         ossl_pkey_todata_cb, &exp_params),
-            0)
-        || !TEST_ptr(p = OSSL_PARAM_locate_const(exp_params,
-                         OSSL_SKEY_PARAM_RAW_BYTES))
-        || !TEST_int_gt(OSSL_PARAM_get_octet_string_ptr(p, &export_key,
-                            &export_len),
-            0)
-        || !TEST_mem_eq(import_key, KEY_SIZE, export_key, export_len))
-        goto end;
-
-    ret = 1;
-end:
-    OSSL_PARAM_free(exp_params);
-    EVP_SKEYMGMT_free(skeymgmt);
-    EVP_SKEY_free(key);
-
-    return ret;
-}
-
 #define IV_SIZE 16
 #define DATA_SIZE 32
 static int test_aes_raw_skey(void)
@@ -308,91 +246,6 @@ end:
 }
 #endif
 
-static int test_skey_to_same_provider(void)
-{
-    OSSL_PROVIDER *fake_prov = NULL;
-    EVP_SKEY *key = NULL, *key2 = NULL;
-    OSSL_PARAM params[3];
-    unsigned char import_key[KEY_SIZE] = {
-        0x53, 0x4B, 0x45, 0x59, 0x53, 0x4B, 0x45, 0x59, 0x53, 0x4B,
-        0x45, 0x59, 0x53, 0x4B, 0x45, 0x59
-    };
-    int ret = 0;
-
-    if (!TEST_ptr(fake_prov = fake_cipher_start(libctx)))
-        goto end;
-
-    params[0] = OSSL_PARAM_construct_utf8_string(FAKE_CIPHER_PARAM_KEY_NAME,
-        "fake key name", 0);
-    params[1] = OSSL_PARAM_construct_octet_string(OSSL_SKEY_PARAM_RAW_BYTES,
-        import_key, sizeof(import_key));
-    params[2] = OSSL_PARAM_construct_end();
-
-    if (!TEST_ptr(key = EVP_SKEY_import(libctx, "fake_cipher",
-                      FAKE_CIPHER_FETCH_PROPS,
-                      OSSL_SKEYMGMT_SELECT_ALL, params)))
-        goto end;
-
-    if (!TEST_ptr(key2 = EVP_SKEY_to_provider(key, libctx, fake_prov,
-                      FAKE_CIPHER_FETCH_PROPS)))
-        goto end;
-
-    /* Same provider should return same object with bumped refcount */
-    if (!TEST_ptr_eq(key2, key))
-        goto end;
-
-    ret = 1;
-end:
-    EVP_SKEY_free(key2);
-    EVP_SKEY_free(key);
-    fake_cipher_finish(fake_prov);
-    return ret;
-}
-
-static int test_skey_to_diff_provider(void)
-{
-    OSSL_PROVIDER *fake_prov = NULL;
-    EVP_SKEY *key = NULL, *key2 = NULL;
-    const unsigned char *export_key = NULL;
-    size_t export_len;
-    unsigned char import_key[KEY_SIZE] = {
-        0x53, 0x4B, 0x45, 0x59, 0x53, 0x4B, 0x45, 0x59, 0x53, 0x4B,
-        0x45, 0x59, 0x53, 0x4B, 0x45, 0x59
-    };
-    int ret = 0;
-
-    deflprov = OSSL_PROVIDER_load(libctx, "default");
-    if (!TEST_ptr(deflprov))
-        return 0;
-
-    if (!TEST_ptr(fake_prov = fake_cipher_start(libctx)))
-        goto end;
-
-    if (!TEST_ptr(key = EVP_SKEY_import_raw_key(libctx, OSSL_SKEY_TYPE_GENERIC,
-                      import_key, sizeof(import_key), NULL)))
-        goto end;
-
-    if (!TEST_ptr(key2 = EVP_SKEY_to_provider(key, libctx, fake_prov,
-                      FAKE_CIPHER_FETCH_PROPS)))
-        goto end;
-
-    /* Different provider must return a different object */
-    if (!TEST_ptr_ne(key2, key))
-        goto end;
-
-    if (!TEST_int_gt(EVP_SKEY_get0_raw_key(key2, &export_key, &export_len), 0)
-        || !TEST_mem_eq(import_key, sizeof(import_key), export_key, export_len))
-        goto end;
-
-    ret = 1;
-end:
-    EVP_SKEY_free(key2);
-    EVP_SKEY_free(key);
-    fake_cipher_finish(fake_prov);
-    OSSL_PROVIDER_unload(deflprov);
-    return ret;
-}
-
 int setup_tests(void)
 {
     libctx = OSSL_LIB_CTX_new();
@@ -400,10 +253,7 @@ int setup_tests(void)
         return 0;
 
     ADD_TEST(test_skey_cipher);
-    ADD_TEST(test_skey_skeymgmt);
 
-    ADD_TEST(test_skey_to_same_provider);
-    ADD_TEST(test_skey_to_diff_provider);
     ADD_TEST(test_aes_raw_skey);
 #ifndef OPENSSL_NO_DES
     ADD_TEST(test_des_raw_skey);

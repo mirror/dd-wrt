@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2016-2025 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -8,10 +8,10 @@
 
 #
 # ====================================================================
-# Written by Andy Polyakov, @dot-asm, initially for use in the OpenSSL
+# Written by Andy Polyakov <appro@openssl.org> for the OpenSSL
 # project. The module is, however, dual licensed under OpenSSL and
 # CRYPTOGAMS licenses depending on where you obtain it. For further
-# details see https://github.com/dot-asm/cryptogams/.
+# details see http://www.openssl.org/~appro/cryptogams/.
 # ====================================================================
 #
 # Poly1305 hash for C64x+.
@@ -323,7 +323,7 @@ ___
 }
 $code.=<<___;
 	.sect	.const
-	.cstring "Poly1305 for C64x+, CRYPTOGAMS by <https://github.com/dot-asm>"
+	.cstring "Poly1305 for C64x+, CRYPTOGAMS by <appro\@openssl.org>"
 	.align	4
 ___
 

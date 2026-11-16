@@ -1469,7 +1469,7 @@ int tls_parse_stoc_session_ticket(SSL_CONNECTION *s, PACKET *pkt,
 {
     SSL *ssl = SSL_CONNECTION_GET_USER_SSL(s);
 
-    if (s->ext.session_ticket_cb != NULL && !s->ext.session_ticket_cb(ssl, PACKET_data(pkt), (int)PACKET_remaining(pkt), s->ext.session_ticket_cb_arg)) {
+    if (s->ext.session_ticket_cb != NULL && !s->ext.session_ticket_cb(ssl, PACKET_data(pkt), PACKET_remaining(pkt), s->ext.session_ticket_cb_arg)) {
         SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE, SSL_R_BAD_EXTENSION);
         return 0;
     }
@@ -1512,8 +1512,14 @@ int tls_parse_stoc_status_request(SSL_CONNECTION *s, PACKET *pkt,
     }
 
     if (SSL_CONNECTION_IS_TLS13(s)) {
+        /* We only know how to handle this if it's for the first Certificate in
+         * the chain. We ignore any other responses.
+         */
+        if (chainidx != 0)
+            return 1;
+
         /* SSLfatal() already called */
-        return tls_process_cert_status_body(s, chainidx, pkt);
+        return tls_process_cert_status_body(s, pkt);
     }
 
     /* Set flag to expect CertificateStatus message */
@@ -1634,7 +1640,7 @@ int tls_parse_stoc_npn(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
     }
     if (sctx->ext.npn_select_cb(SSL_CONNECTION_GET_USER_SSL(s),
             &selected, &selected_len,
-            PACKET_data(pkt), (unsigned int)PACKET_remaining(pkt),
+            PACKET_data(pkt), PACKET_remaining(pkt),
             sctx->ext.npn_select_cb_arg)
             != SSL_TLSEXT_ERR_OK
         || selected_len == 0) {

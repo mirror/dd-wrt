@@ -66,8 +66,7 @@ static int alpn_select_cb(SSL *ssl, const unsigned char **out,
         alpnlen = srv->args.alpnlen;
     }
 
-    if (SSL_select_next_proto((unsigned char **)out, outlen, alpn,
-            (unsigned int)alpnlen,
+    if (SSL_select_next_proto((unsigned char **)out, outlen, alpn, alpnlen,
             in, inlen)
         != OPENSSL_NPN_NEGOTIATED)
         return SSL_TLSEXT_ERR_ALERT_FATAL;

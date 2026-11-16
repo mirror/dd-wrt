@@ -1215,7 +1215,7 @@ static OSSL_CMP_SRV_CTX *setup_srv_ctx(ENGINE *engine)
         }
     } else {
         if (!OSSL_CMP_CTX_set1_referenceValue(ctx, (unsigned char *)opt_srv_ref,
-                (int)strlen(opt_srv_ref)))
+                strlen(opt_srv_ref)))
             goto err;
     }
 
@@ -1226,7 +1226,7 @@ static OSSL_CMP_SRV_CTX *setup_srv_ctx(ENGINE *engine)
         if (pass_str != NULL) {
             cleanse(opt_srv_secret);
             res = OSSL_CMP_CTX_set1_secretValue(ctx, (unsigned char *)pass_str,
-                (int)strlen(pass_str));
+                strlen(pass_str));
             clear_free(pass_str);
             if (res == 0)
                 goto err;
@@ -1620,7 +1620,7 @@ static int setup_protection_ctx(OSSL_CMP_CTX *ctx, ENGINE *engine)
             cleanse(opt_secret);
             res = OSSL_CMP_CTX_set1_secretValue(ctx,
                 (unsigned char *)pass_string,
-                (int)strlen(pass_string));
+                strlen(pass_string));
             clear_free(pass_string);
             if (res == 0)
                 return 0;
@@ -1630,7 +1630,7 @@ static int setup_protection_ctx(OSSL_CMP_CTX *ctx, ENGINE *engine)
     }
     if (opt_ref != NULL
         && !OSSL_CMP_CTX_set1_referenceValue(ctx, (unsigned char *)opt_ref,
-            (int)strlen(opt_ref)))
+            strlen(opt_ref)))
         return 0;
 
     if (opt_key != NULL) {
@@ -3814,14 +3814,10 @@ int cmp_main(int argc, char **argv)
 
         srv_cmp_ctx = OSSL_CMP_SRV_CTX_get0_cmp_ctx(srv_ctx);
         if (!OSSL_CMP_CTX_set_log_cb(srv_cmp_ctx, print_to_bio_err)) {
-            CMP_err1("Cannot set up server-side error reporting and logging for %s", prog);
+            CMP_err1("cannot set up server-side error reporting and logging for %s", prog);
             goto err;
         }
         OSSL_CMP_CTX_set_log_verbosity(srv_cmp_ctx, opt_verbosity);
-        if (opt_ignore_keyusage)
-            (void)OSSL_CMP_CTX_set_option(srv_cmp_ctx, OSSL_CMP_OPT_IGNORE_KEYUSAGE, 1);
-        if (opt_no_cache_extracerts)
-            (void)OSSL_CMP_CTX_set_option(srv_cmp_ctx, OSSL_CMP_OPT_NO_CACHE_EXTRACERTS, 1);
 
 #if !defined(OPENSSL_NO_SOCK) && !defined(OPENSSL_NO_HTTP)
         if (opt_port != NULL) { /* act as very basic CMP HTTP server only */

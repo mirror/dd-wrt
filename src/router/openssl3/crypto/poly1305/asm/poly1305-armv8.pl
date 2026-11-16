@@ -8,10 +8,10 @@
 
 #
 # ====================================================================
-# Written by Andy Polyakov, @dot-asm, initially for use in the OpenSSL
+# Written by Andy Polyakov <appro@openssl.org> for the OpenSSL
 # project. The module is, however, dual licensed under OpenSSL and
 # CRYPTOGAMS licenses depending on where you obtain it. For further
-# details see https://github.com/dot-asm/cryptogams/.
+# details see http://www.openssl.org/~appro/cryptogams/.
 # ====================================================================
 #
 # This module implements Poly1305 hash for ARMv8.
@@ -948,7 +948,7 @@ poly1305_emit_neon:
 .align	5
 .Lzeros:
 .long	0,0,0,0,0,0,0,0
-.asciz	"Poly1305 for ARMv8, CRYPTOGAMS by <https://github.com/dot-asm>"
+.asciz	"Poly1305 for ARMv8, CRYPTOGAMS by <appro\@openssl.org>"
 .align	2
 ___
 

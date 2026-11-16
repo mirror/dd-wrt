@@ -210,7 +210,7 @@ static int dtls_process_record(OSSL_RECORD_LAYER *rl, DTLS_BITMAP *bitmap)
     OSSL_TRACE_BEGIN(TLS)
     {
         BIO_printf(trc_out, "dec %zd\n", rr->length);
-        BIO_dump_indent(trc_out, rr->data, (int)rr->length, 4);
+        BIO_dump_indent(trc_out, rr->data, rr->length, 4);
     }
     OSSL_TRACE_END(TLS);
 

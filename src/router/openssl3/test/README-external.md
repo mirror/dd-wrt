@@ -132,7 +132,8 @@ Then configure/build OpenSSL enabling external tests:
     $ make
 
 pkcs11-provider requires meson for the build process. Moreover, it requires
-kryoptic, opensc and expect to run the tests.
+softhsm and nss softokn tokens and certtool, certutil, pkcs11-tool and expect
+to run the tests.
 
 Tests will then be run as part of the rest of the suite, or can be
 explicitly run (with more debugging):

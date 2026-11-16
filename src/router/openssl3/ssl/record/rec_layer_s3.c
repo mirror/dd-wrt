@@ -168,7 +168,7 @@ static int ossl_early_data_count_ok(SSL_CONNECTION *s, size_t length,
             SSL_R_TOO_MUCH_EARLY_DATA);
         return 0;
     }
-    s->early_data_count += (uint32_t)length;
+    s->early_data_count += length;
 
     return 1;
 }

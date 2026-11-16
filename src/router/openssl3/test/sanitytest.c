@@ -261,9 +261,12 @@ static int test_sanity_sleep(int i)
      * due to interrupts.
      */
     do {
-        static const struct sigaction sa = { .sa_handler = alrm_handler };
-        static const struct itimerval it = { .it_value.tv_usec = 111111 };
+        static const struct itimerval it = { { 0, 111111 } };
+        struct sigaction sa;
         sigset_t mask;
+
+        memset(&sa, 0, sizeof(sa));
+        sa.sa_handler = alrm_handler;
 
         if (sigaction(SIGALRM, &sa, NULL)) {
             TEST_perror("test_sanity_sleep: sigaction");

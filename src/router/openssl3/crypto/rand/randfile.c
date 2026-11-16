@@ -149,7 +149,7 @@ int RAND_load_file(const char *file, long bytes)
             n = (bytes <= RAND_LOAD_BUF_SIZE) ? (int)bytes : RAND_BUF_SIZE;
         else
             n = RAND_LOAD_BUF_SIZE;
-        i = (int)fread(buf, 1, n, in);
+        i = fread(buf, 1, n, in);
 #ifdef EINTR
         if (ferror(in) && errno == EINTR) {
             clearerr(in);
@@ -260,7 +260,7 @@ int RAND_write_file(const char *file)
     chmod(file, 0600);
 #endif
 
-    ret = (int)fwrite(buf, 1, RAND_BUF_SIZE, out);
+    ret = fwrite(buf, 1, RAND_BUF_SIZE, out);
     fclose(out);
     OPENSSL_cleanse(buf, RAND_BUF_SIZE);
     return ret;

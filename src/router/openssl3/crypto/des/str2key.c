@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -19,14 +19,11 @@
 void DES_string_to_key(const char *str, DES_cblock *key)
 {
     DES_key_schedule ks;
-    int i;
-    size_t length;
+    int i, length;
 
     memset(key, 0, 8);
     length = strlen(str);
-    if (length > INT_MAX)
-        length = INT_MAX;
-    for (i = 0; i < (int)length; i++) {
+    for (i = 0; i < length; i++) {
         register unsigned char j = str[i];
 
         if ((i % 16) < 8)
@@ -41,7 +38,7 @@ void DES_string_to_key(const char *str, DES_cblock *key)
     }
     DES_set_odd_parity(key);
     DES_set_key_unchecked(key, &ks);
-    DES_cbc_cksum((const unsigned char *)str, key, (int)length, &ks, key);
+    DES_cbc_cksum((const unsigned char *)str, key, length, &ks, key);
     OPENSSL_cleanse(&ks, sizeof(ks));
     DES_set_odd_parity(key);
 }
@@ -49,15 +46,12 @@ void DES_string_to_key(const char *str, DES_cblock *key)
 void DES_string_to_2keys(const char *str, DES_cblock *key1, DES_cblock *key2)
 {
     DES_key_schedule ks;
-    int i;
-    size_t length;
+    int i, length;
 
     memset(key1, 0, 8);
     memset(key2, 0, 8);
     length = strlen(str);
-    if (length > INT_MAX)
-        length = INT_MAX;
-    for (i = 0; i < (int)length; i++) {
+    for (i = 0; i < length; i++) {
         register unsigned char j = str[i];
 
         if ((i % 32) < 16) {
@@ -80,9 +74,9 @@ void DES_string_to_2keys(const char *str, DES_cblock *key1, DES_cblock *key2)
     DES_set_odd_parity(key1);
     DES_set_odd_parity(key2);
     DES_set_key_unchecked(key1, &ks);
-    DES_cbc_cksum((const unsigned char *)str, key1, (int)length, &ks, key1);
+    DES_cbc_cksum((const unsigned char *)str, key1, length, &ks, key1);
     DES_set_key_unchecked(key2, &ks);
-    DES_cbc_cksum((const unsigned char *)str, key2, (int)length, &ks, key2);
+    DES_cbc_cksum((const unsigned char *)str, key2, length, &ks, key2);
     OPENSSL_cleanse(&ks, sizeof(ks));
     DES_set_odd_parity(key1);
     DES_set_odd_parity(key2);

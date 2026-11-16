@@ -720,7 +720,7 @@ size_t evp_rand_get_seed(EVP_RAND_CTX *ctx,
     int prediction_resistance,
     const unsigned char *adin, size_t adin_len)
 {
-    size_t res;
+    int res;
 
     if (!evp_rand_lock(ctx))
         return 0;

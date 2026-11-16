@@ -269,7 +269,7 @@ static int encode_EVP_PKEY_prov(const char *file, const int line,
         || !TEST_FL_true(OSSL_ENCODER_to_bio(ectx, mem_ser))
         || !TEST_FL_true(BIO_get_mem_ptr(mem_ser, &mem_buf) > 0)
         || !TEST_FL_ptr(*encoded = mem_buf->data)
-        || !TEST_FL_long_gt(*encoded_len = (long)mem_buf->length, 0))
+        || !TEST_FL_long_gt(*encoded_len = mem_buf->length, 0))
         goto end;
 
     /* Detach the encoded output */
@@ -279,34 +279,6 @@ static int encode_EVP_PKEY_prov(const char *file, const int line,
 end:
     BIO_free(mem_ser);
     OSSL_ENCODER_CTX_free(ectx);
-    return ok;
-}
-
-static int encode_EVP_PKEY_i2d(const char *unused_file,
-    const int unused_line,
-    void **encoded, long *encoded_len,
-    void *object, int unused_selection,
-    const char *unused_output_type,
-    const char *unused_output_structure,
-    const char *unused_pass,
-    const char *unused_pcipher)
-{
-    EVP_PKEY *pkey = object;
-    unsigned char *buf = NULL, *p;
-    int len, ok = 0;
-
-    if (!TEST_int_gt((len = i2d_PKCS8PrivateKey(pkey, NULL)), 0)
-        || !TEST_ptr(p = buf = OPENSSL_malloc(len))
-        || !TEST_int_eq(i2d_PKCS8PrivateKey(pkey, &p), len)
-        || !TEST_int_eq((int)(p - buf), len))
-        goto end;
-
-    *encoded = buf;
-    *encoded_len = len;
-    buf = NULL;
-    ok = 1;
-end:
-    OPENSSL_free(buf);
     return ok;
 }
 
@@ -408,11 +380,11 @@ static int encode_EVP_PKEY_legacy_PEM(const char *file, const int line,
     if (!TEST_FL_ptr(mem_ser = BIO_new(BIO_s_mem()))
         || !TEST_FL_true(PEM_write_bio_PrivateKey_traditional(mem_ser, pkey,
             cipher,
-            upass, (int)passlen,
+            upass, passlen,
             NULL, NULL))
         || !TEST_FL_true(BIO_get_mem_ptr(mem_ser, &mem_buf) > 0)
         || !TEST_FL_ptr(*encoded = mem_buf->data)
-        || !TEST_FL_long_gt(*encoded_len = (long)mem_buf->length, 0))
+        || !TEST_FL_long_gt(*encoded_len = mem_buf->length, 0))
         goto end;
 
     /* Detach the encoded output */
@@ -451,7 +423,7 @@ static int encode_EVP_PKEY_MSBLOB(const char *file, const int line,
 
     if (!TEST_FL_true(BIO_get_mem_ptr(mem_ser, &mem_buf) > 0)
         || !TEST_FL_ptr(*encoded = mem_buf->data)
-        || !TEST_FL_long_gt(*encoded_len = (long)mem_buf->length, 0))
+        || !TEST_FL_long_gt(*encoded_len = mem_buf->length, 0))
         goto end;
 
     /* Detach the encoded output */
@@ -467,7 +439,7 @@ static pem_password_cb pass_pw;
 static int pass_pw(char *buf, int size, int rwflag, void *userdata)
 {
     OPENSSL_strlcpy(buf, userdata, size);
-    return (int)strlen(userdata);
+    return strlen(userdata);
 }
 
 static int encode_EVP_PKEY_PVK(const char *file, const int line,
@@ -493,7 +465,7 @@ static int encode_EVP_PKEY_PVK(const char *file, const int line,
             0)
         || !TEST_FL_true(BIO_get_mem_ptr(mem_ser, &mem_buf) > 0)
         || !TEST_FL_ptr(*encoded = mem_buf->data)
-        || !TEST_FL_long_gt(*encoded_len = (long)mem_buf->length, 0))
+        || !TEST_FL_long_gt(*encoded_len = mem_buf->length, 0))
         goto end;
 
     /* Detach the encoded output */
@@ -559,7 +531,7 @@ static int check_unprotected_PKCS8_DER(const char *file, const int line,
     const void *data, size_t data_len)
 {
     const unsigned char *datap = data;
-    PKCS8_PRIV_KEY_INFO *p8inf = d2i_PKCS8_PRIV_KEY_INFO(NULL, &datap, (long)data_len);
+    PKCS8_PRIV_KEY_INFO *p8inf = d2i_PKCS8_PRIV_KEY_INFO(NULL, &datap, data_len);
     int ok = 0;
 
     if (TEST_FL_ptr(p8inf)) {
@@ -588,17 +560,6 @@ static int test_unprotected_via_DER(const char *type, EVP_PKEY *key, int fips)
             | OSSL_KEYMGMT_SELECT_ALL_PARAMETERS,
         "DER", "PrivateKeyInfo", NULL, NULL,
         encode_EVP_PKEY_prov, decode_EVP_PKEY_prov,
-        test_mem, check_unprotected_PKCS8_DER,
-        dump_der, fips ? 0 : FLAG_FAIL_IF_FIPS);
-}
-
-static int test_unprotected_via_i2d(const char *type, EVP_PKEY *key, int fips)
-{
-    return test_encode_decode(__FILE__, __LINE__, type, key,
-        OSSL_KEYMGMT_SELECT_KEYPAIR
-            | OSSL_KEYMGMT_SELECT_ALL_PARAMETERS,
-        "DER", "PrivateKeyInfo", NULL, NULL,
-        encode_EVP_PKEY_i2d, decode_EVP_PKEY_prov,
         test_mem, check_unprotected_PKCS8_DER,
         dump_der, fips ? 0 : FLAG_FAIL_IF_FIPS);
 }
@@ -643,7 +604,7 @@ static int check_params_DER(const char *file, const int line,
         itype = EVP_PKEY_EC;
 
     if (itype != NID_undef) {
-        pkey = d2i_KeyParams(itype, NULL, &datap, (long)data_len);
+        pkey = d2i_KeyParams(itype, NULL, &datap, data_len);
         ok = (pkey != NULL);
         EVP_PKEY_free(pkey);
     }
@@ -714,7 +675,7 @@ static int check_MSBLOB(const char *file, const int line,
     const char *type, const void *data, size_t data_len)
 {
     const unsigned char *datap = data;
-    EVP_PKEY *pkey = b2i_PrivateKey(&datap, (long)data_len);
+    EVP_PKEY *pkey = b2i_PrivateKey(&datap, data_len);
     int ok = TEST_FL_ptr(pkey);
 
     EVP_PKEY_free(pkey);
@@ -739,8 +700,7 @@ static int check_PVK(const char *file, const int line,
     unsigned int saltlen = 0, keylen = 0;
     int isdss = -1;
 
-    return ossl_do_PVK_header(&in, (unsigned int)data_len, 0, &isdss, &saltlen,
-        &keylen);
+    return ossl_do_PVK_header(&in, data_len, 0, &isdss, &saltlen, &keylen);
 }
 
 static int test_unprotected_via_PVK(const char *type, EVP_PKEY *key)
@@ -762,7 +722,7 @@ static int check_protected_PKCS8_DER(const char *file, const int line,
     const void *data, size_t data_len)
 {
     const unsigned char *datap = data;
-    X509_SIG *p8 = d2i_X509_SIG(NULL, &datap, (long)data_len);
+    X509_SIG *p8 = d2i_X509_SIG(NULL, &datap, data_len);
     int ok = TEST_FL_ptr(p8);
 
     X509_SIG_free(p8);
@@ -854,8 +814,7 @@ static int check_public_DER(const char *file, const int line,
     const char *type, const void *data, size_t data_len)
 {
     const unsigned char *datap = data;
-    EVP_PKEY *pkey = d2i_PUBKEY_ex(NULL, &datap, (long)data_len, testctx,
-        testpropq);
+    EVP_PKEY *pkey = d2i_PUBKEY_ex(NULL, &datap, data_len, testctx, testpropq);
     int ok = (TEST_FL_ptr(pkey) && TEST_FL_true(EVP_PKEY_is_a(pkey, type)));
 
     EVP_PKEY_free(pkey);
@@ -898,7 +857,7 @@ static int check_public_MSBLOB(const char *file, const int line,
     const void *data, size_t data_len)
 {
     const unsigned char *datap = data;
-    EVP_PKEY *pkey = b2i_PublicKey(&datap, (long)data_len);
+    EVP_PKEY *pkey = b2i_PublicKey(&datap, data_len);
     int ok = TEST_FL_ptr(pkey);
 
     EVP_PKEY_free(pkey);
@@ -964,7 +923,10 @@ static EVP_PKEY *make_embryonic_copy(EVP_PKEY *src)
  *   1. The full keypair |key| (typically pub + priv).
  *   2. A public-only key derived from |key|.
  *   3. An "embryonic" key (algorithm + domain parameters only, no key
- *      material) produced with EVP_PKEY_copy_parameters().
+ *      material) produced with EVP_PKEY_copy_parameters().  Not every
+ *      keymgmt allows building such a key (RSA's dup refuses any
+ *      selection without keypair bits); when EVP_PKEY_copy_parameters
+ *      fails we skip this arm with a TEST_info().
  */
 static int test_dup(const char *type, EVP_PKEY *key)
 {
@@ -1008,13 +970,10 @@ static int test_dup(const char *type, EVP_PKEY *key)
     dup = NULL;
 
     /*
-     * 3. Dup an embryonic key (algorithm + domain parameters only,
-     * no key bits).  Some keymgmts (RSA, RSA-PSS) refuse to build
-     * such a key via EVP_PKEY_copy_parameters(); treat that as a
-     * graceful skip.  Where an embryo can be built we compare via
-     * EVP_PKEY_parameters_eq() since EVP_PKEY_eq() requires key
-     * bits to match.  Algorithms with no domain parameters may
-     * legitimately answer -2 ("nothing to compare").
+     * 3. Dup an embryonic key.  EVP_PKEY_parameters_eq() answers 1 for
+     * algorithms with real domain parameters and may answer -2 ("nothing
+     * to compare") for those without.  We only reject 0 (definitively
+     * unequal) and -1 (different keymgmts).
      */
     embryo = make_embryonic_copy(key);
     if (embryo != NULL) {
@@ -1176,13 +1135,11 @@ static int test_fromdata(const char *type, EVP_PKEY *prototype)
 }
 
 /*
- * Companion to test_fromdata for keymgmts without a keygen path
- * (LMS and similar verify-only / signature-only algorithms), plus
- * named-group-only partial-shape variants for the prototype-matrix
- * algorithms.  Each entry is one (name, selection, params-builder)
- * shape; a NULL builder means "use an empty OSSL_PARAM[]".
- * Algorithms not loadable under the active provider set are
- * silently skipped.
+ * Named-group-only partial-shape variants for prototype-matrix
+ * algorithms, plus any keymgmts without a keygen path.  Each entry
+ * is one (name, selection, params-builder) shape; a NULL builder
+ * means "use an empty OSSL_PARAM[]".  Algorithms not loadable under
+ * the active provider set are silently skipped.
  */
 typedef int (*fromdata_shape_build_fn)(OSSL_PARAM_BLD *bld);
 
@@ -1216,17 +1173,12 @@ static int build_sm2_named_group(OSSL_PARAM_BLD *bld)
 #endif
 #endif
 
-#if defined(OPENSSL_NO_LMS) && defined(OPENSSL_NO_DH) && defined(OPENSSL_NO_EC)
+#if defined(OPENSSL_NO_DH) && defined(OPENSSL_NO_EC) && defined(OPENSSL_NO_SM2)
 #undef TEST_FROMDATA_NO_KEYGEN
 #else
 #define TEST_FROMDATA_NO_KEYGEN
 
 static const struct fromdata_shape no_keygen_shapes[] = {
-#ifndef OPENSSL_NO_LMS
-    /* Empty OSSL_PARAM[] for LMS (no keygen path). */
-    { "LMS", EVP_PKEY_PUBLIC_KEY, NULL, "LMS / empty / PUBLIC_KEY" },
-    { "LMS", EVP_PKEY_KEYPAIR, NULL, "LMS / empty / KEYPAIR" },
-#endif
 /* Named-group-only partial shapes. */
 #ifndef OPENSSL_NO_DH
     { "DH", EVP_PKEY_KEYPAIR, build_dh_named_group,
@@ -1248,8 +1200,8 @@ static const struct fromdata_shape no_keygen_shapes[] = {
 
 /*
  * Probe an algorithm by name rather than a prototype key, for keymgmts without
- * a keygen path (e.g. LMS).  Algorithms not loadable under the active provider
- * set are silently skipped.  |params| may be NULL (= empty OSSL_PARAM[]) or a
+ * a keygen path.  Algorithms not loadable under the active provider set are
+ * silently skipped.  |params| may be NULL (= empty OSSL_PARAM[]) or a
  * caller-built partial array.
  */
 static int probe_fromdata_by_name(const char *name, int selection,
@@ -1326,10 +1278,6 @@ static int test_fromdata_no_keygen(void)
     {                                                                     \
         return test_unprotected_via_DER(KEYTYPEstr, key_##KEYTYPE, fips); \
     }                                                                     \
-    static int test_unprotected_##KEYTYPE##_via_i2d(void)                 \
-    {                                                                     \
-        return test_unprotected_via_i2d(KEYTYPEstr, key_##KEYTYPE, fips); \
-    }                                                                     \
     static int test_unprotected_##KEYTYPE##_via_PEM(void)                 \
     {                                                                     \
         return test_unprotected_via_PEM(KEYTYPEstr, key_##KEYTYPE, fips); \
@@ -1363,7 +1311,6 @@ static int test_fromdata_no_keygen(void)
     do {                                                    \
         if (key_##KEYTYPE != NULL) {                        \
             ADD_TEST(test_unprotected_##KEYTYPE##_via_DER); \
-            ADD_TEST(test_unprotected_##KEYTYPE##_via_i2d); \
             ADD_TEST(test_unprotected_##KEYTYPE##_via_PEM); \
             ADD_TEST(test_protected_##KEYTYPE##_via_DER);   \
             ADD_TEST(test_protected_##KEYTYPE##_via_PEM);   \
@@ -2095,11 +2042,8 @@ int setup_tests(void)
 #endif /* OPENSSL_NO_SLH_DSA */
 
         /*
-         * Cover keymgmts that have no keygen path and so don't
-         * appear in the prototype matrix above (LMS, and any future
-         * verify-only / signature-only algorithms).  The probe is a
-         * no-op for algorithms not loadable under the active provider
-         * set (e.g. LMS under FIPS), so the test stays portable.
+         * Named-group-only partial shapes for DH and EC/SM2.  Each
+         * shape is silently skipped if the algorithm is not loadable.
          */
 #ifdef TEST_FROMDATA_NO_KEYGEN
         ADD_TEST(test_fromdata_no_keygen);

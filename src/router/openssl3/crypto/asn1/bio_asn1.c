@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -299,12 +299,7 @@ static int asn1_bio_read(BIO *b, char *in, int inl)
 
 static int asn1_bio_puts(BIO *b, const char *str)
 {
-    size_t len = strlen(str);
-
-    if (len > INT_MAX)
-        return -1;
-
-    return asn1_bio_write(b, str, (int)len);
+    return asn1_bio_write(b, str, strlen(str));
 }
 
 static int asn1_bio_gets(BIO *b, char *str, int size)

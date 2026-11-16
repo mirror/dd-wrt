@@ -15,7 +15,7 @@
 #include <openssl/core_names.h>
 #include "internal/encoder.h"
 #include "prov/ml_dsa.h"
-#include "prov/ml_dsa_codecs.h"
+#include "ml_dsa_codecs.h"
 
 /*-
  * Tables describing supported ASN.1 input/output formats.
@@ -331,7 +331,7 @@ int ossl_ml_dsa_i2d_prvkey(const ML_DSA_KEY *key, uint8_t **out,
             params->alg);
         goto end;
     }
-    len = (int)p8fmt->p8_bytes;
+    len = p8fmt->p8_bytes;
 
     if (out == NULL) {
         ret = len;

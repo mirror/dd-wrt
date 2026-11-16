@@ -121,7 +121,7 @@ int EVP_PBE_CipherInit_ex(ASN1_OBJECT *pbe_obj, const char *pass, int passlen,
     if (pass == NULL)
         passlen = 0;
     else if (passlen == -1)
-        passlen = (int)strlen(pass);
+        passlen = strlen(pass);
 
     if (cipher_nid != -1) {
         (void)ERR_set_mark();

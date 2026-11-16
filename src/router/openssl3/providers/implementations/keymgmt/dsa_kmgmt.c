@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2024 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -327,9 +327,6 @@ static ossl_inline int dsa_get_params(void *key, OSSL_PARAM params[])
     if ((p = OSSL_PARAM_locate(params, OSSL_PKEY_PARAM_DEFAULT_DIGEST)) != NULL
         && !OSSL_PARAM_set_utf8_string(p, DSA_DEFAULT_MD))
         return 0;
-    if ((p = OSSL_PARAM_locate(params, OSSL_PKEY_PARAM_SECURITY_CATEGORY)) != NULL
-        && !OSSL_PARAM_set_int(p, 0))
-        return 0;
     return ossl_ffc_params_todata(ossl_dsa_get0_params(dsa), NULL, params)
         && dsa_key_todata(dsa, NULL, params, 1);
 }
@@ -338,7 +335,6 @@ static const OSSL_PARAM dsa_params[] = {
     OSSL_PARAM_int(OSSL_PKEY_PARAM_BITS, NULL),
     OSSL_PARAM_int(OSSL_PKEY_PARAM_SECURITY_BITS, NULL),
     OSSL_PARAM_int(OSSL_PKEY_PARAM_MAX_SIZE, NULL),
-    OSSL_PARAM_int(OSSL_PKEY_PARAM_SECURITY_CATEGORY, NULL),
     OSSL_PARAM_utf8_string(OSSL_PKEY_PARAM_DEFAULT_DIGEST, NULL, 0),
     DSA_IMEXPORTABLE_PARAMETERS,
     DSA_IMEXPORTABLE_PUBLIC_KEY,
@@ -663,8 +659,8 @@ static void *dsa_gen(void *genctx, OSSL_CALLBACK *osslcb, void *cbarg)
     if ((gctx->selection & OSSL_KEYMGMT_SELECT_DOMAIN_PARAMETERS) != 0) {
 
         if (ossl_dsa_generate_ffc_parameters(dsa, gctx->gen_type,
-                (int)gctx->pbits,
-                (int)gctx->qbits, gencb)
+                gctx->pbits, gctx->qbits,
+                gencb)
             <= 0)
             goto end;
     }

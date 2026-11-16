@@ -26,7 +26,7 @@
 #include "prov/providercommon.h"
 #include "prov/provider_ctx.h"
 #include "prov/macsignature.h"
-#include "providers/implementations/keymgmt/keymgmtcommon.inc"
+#include "fips/fipsindicator.h"
 
 static OSSL_FUNC_keymgmt_new_fn mac_new;
 static OSSL_FUNC_keymgmt_free_fn mac_free;
@@ -544,7 +544,9 @@ const OSSL_DISPATCH ossl_mac_legacy_keymgmt_functions[] = {
         (void (*)(void))mac_gen_settable_params },
     { OSSL_FUNC_KEYMGMT_GEN, (void (*)(void))mac_gen },
     { OSSL_FUNC_KEYMGMT_GEN_CLEANUP, (void (*)(void))mac_gen_cleanup },
-    OSSL_KEYMGMT_FIPS_APPROVED_GEN_DISPATCH_END
+    OSSL_FIPS_IND_APPROVED_DISPATCH(OSSL_FUNC_KEYMGMT_GEN_GET_PARAMS,
+        OSSL_FUNC_KEYMGMT_GEN_GETTABLE_PARAMS)
+        OSSL_DISPATCH_END
 };
 
 const OSSL_DISPATCH ossl_cmac_legacy_keymgmt_functions[] = {
@@ -566,5 +568,7 @@ const OSSL_DISPATCH ossl_cmac_legacy_keymgmt_functions[] = {
         (void (*)(void))cmac_gen_settable_params },
     { OSSL_FUNC_KEYMGMT_GEN, (void (*)(void))mac_gen },
     { OSSL_FUNC_KEYMGMT_GEN_CLEANUP, (void (*)(void))mac_gen_cleanup },
-    OSSL_KEYMGMT_FIPS_APPROVED_GEN_DISPATCH_END
+    OSSL_FIPS_IND_APPROVED_DISPATCH(OSSL_FUNC_KEYMGMT_GEN_GET_PARAMS,
+        OSSL_FUNC_KEYMGMT_GEN_GETTABLE_PARAMS)
+        OSSL_DISPATCH_END
 };

@@ -400,7 +400,7 @@ OPT_TEST_DECLARE_USAGE("<pss-self-signed-cert.pem>\n")
 int setup_tests(void)
 {
     const unsigned char *p;
-    size_t cnt;
+    int cnt;
 
     cnt = test_get_argument_count();
     if (cnt != 1) {

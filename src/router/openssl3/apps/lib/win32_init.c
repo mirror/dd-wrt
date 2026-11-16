@@ -158,9 +158,9 @@ void win32_utf8argv(int *argc, char **argv[])
     /*
      * make a copy of the command line, since we might have to modify it...
      */
-    wlen = (int)wcslen(wcmdline);
+    wlen = wcslen(wcmdline);
     p = _alloca((wlen + 1) * sizeof(WCHAR));
-    memcpy(p, wcmdline, (wlen + 1) * sizeof(WCHAR));
+    wcscpy(p, wcmdline);
 
     while (*p != L'\0') {
         int in_quote = 0;
@@ -204,12 +204,14 @@ void win32_utf8argv(int *argc, char **argv[])
                  */
                 {
                     const WCHAR *q = p;
-                    size_t i;
+                    int i;
 
                     while (*p == L'\\')
                         p++;
 
                     if (*p == L'"') {
+                        int i;
+
                         for (i = (p - q) / 2; i > 0; i--)
                             *wend++ = L'\\';
 
@@ -245,7 +247,7 @@ void win32_utf8argv(int *argc, char **argv[])
             }
         }
 
-        wlen = (int)(wend - warg);
+        wlen = wend - warg;
 
         if (wlen == 0 || !process_glob(warg, wlen)) {
             if (!validate_argv(newargc + 1)) {

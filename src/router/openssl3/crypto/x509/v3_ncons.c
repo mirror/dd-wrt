@@ -466,7 +466,7 @@ int NAME_CONSTRAINTS_check_CN(X509 *x, NAME_CONSTRAINTS *nc)
         if (idlen == 0)
             continue;
 
-        stmp.length = (int)idlen;
+        stmp.length = idlen;
         stmp.data = idval;
         r = nc_match(&gntmp, nc);
         OPENSSL_free(idval);
@@ -805,7 +805,7 @@ static int nc_uri(ASN1_IA5STRING *uri, ASN1_IA5STRING *base)
     OPENSSL_free(scheme);
     OPENSSL_free(uri_copy);
 
-    hostlen = (int)strlen(host);
+    hostlen = strlen(host);
 
     /* Special case: initial '.' is RHS match */
     if (base->length > 0 && *baseptr == '.') {

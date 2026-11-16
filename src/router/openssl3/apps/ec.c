@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2002-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -184,6 +184,8 @@ int ec_main(int argc, char **argv)
         goto end;
     }
 
+    BIO_printf(bio_err, "read EC key\n");
+
     if (pubin)
         eckey = load_pubkey(infile, informat, 1, passin, e, "public key");
     else
@@ -252,6 +254,7 @@ int ec_main(int argc, char **argv)
         const char *output_type = outformat == FORMAT_ASN1 ? "DER" : "PEM";
         const char *output_structure = "type-specific";
 
+        BIO_printf(bio_err, "writing EC key\n");
         if (param_out) {
             selection = OSSL_KEYMGMT_SELECT_DOMAIN_PARAMETERS;
         } else if (pubin || pubout) {

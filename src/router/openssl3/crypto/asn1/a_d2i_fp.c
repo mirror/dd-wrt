@@ -110,6 +110,7 @@ int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb)
 {
     BUF_MEM *b;
     unsigned char *p;
+    int i;
     size_t want = HEADER_SIZE;
     uint32_t eos = 0;
     size_t off = 0;
@@ -130,15 +131,13 @@ int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb)
     for (;;) {
         diff = len - off;
         if (want >= diff) {
-            int i;
-
             want -= diff;
 
             if (len + want < len || !BUF_MEM_grow_clean(b, len + want)) {
                 ERR_raise(ERR_LIB_ASN1, ERR_R_BUF_LIB);
                 goto err;
             }
-            i = BIO_read(in, &(b->data[len]), (int)want);
+            i = BIO_read(in, &(b->data[len]), want);
             if (i <= 0) {
                 /*
                  * A read error (i < 0), an EOF in the middle of an object
@@ -180,15 +179,15 @@ int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb)
 
         diff--;
         if ((*(q++) & V_ASN1_PRIMITIVE_TAG) == V_ASN1_PRIMITIVE_TAG) {
-            unsigned int i = 0;
+            unsigned int n = 0;
             /* Multi-byte tag.  See if we have the whole thing yet */
             do {
-                if (i > 4) {
+                if (n > 4) {
                     /* The tag value must fit into int */
                     ERR_raise(ERR_LIB_ASN1, ASN1_R_HEADER_TOO_LONG);
                     goto err;
                 }
-                ++i;
+                ++n;
                 diff--;
             } while (diff > 0 && *(q++) & 0x80);
 
@@ -208,14 +207,14 @@ int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb)
         /* Check the length.  This should also work for indefinite length */
         diff--;
         if (*q & 0x80) {
-            unsigned int i = *q & 0x7f;
+            unsigned int n = *q & 0x7f;
 
-            if (i > sizeof(long)) {
+            if (n > sizeof(long)) {
                 ERR_raise(ERR_LIB_ASN1, ASN1_R_TOO_LONG);
                 goto err;
             }
-            if (i > diff) {
-                want = q - p + i + 1;
+            if (n > diff) {
+                want = q - p + n + 1;
                 continue;
             }
         }
@@ -272,7 +271,6 @@ int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb)
                      * in one go.
                      */
                     size_t chunk = want > chunk_max ? chunk_max : want;
-                    int i;
 
                     if (!BUF_MEM_grow_clean(b, len + chunk)) {
                         ERR_raise(ERR_LIB_ASN1, ERR_R_BUF_LIB);
@@ -280,7 +278,7 @@ int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb)
                     }
                     want -= chunk;
                     while (chunk > 0) {
-                        i = BIO_read(in, &(b->data[len]), (int)chunk);
+                        i = BIO_read(in, &(b->data[len]), chunk);
                         if (i <= 0) {
                             ERR_raise(ERR_LIB_ASN1, ASN1_R_NOT_ENOUGH_DATA);
                             goto err;
@@ -315,7 +313,7 @@ int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb)
 
     *pb = b;
     ERR_clear_last_mark();
-    return (int)off;
+    return off;
 err:
     ERR_clear_last_mark();
     BUF_MEM_free(b);

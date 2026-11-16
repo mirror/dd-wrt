@@ -17,7 +17,6 @@
 #include "internal/constant_time.h"
 #include "internal/cryptlib.h"
 #include "internal/ssl_unwrap.h"
-#include "internal/sizes.h"
 #include <openssl/buffer.h>
 #include <openssl/rand.h>
 #include <openssl/objects.h>
@@ -32,7 +31,6 @@
 #include <openssl/asn1t.h>
 #include <openssl/comp.h>
 #include "internal/comp.h"
-#include <openssl/ocsp.h>
 
 #define TICKET_NONCE_SIZE 8
 
@@ -453,148 +451,6 @@ int send_certificate_request(SSL_CONNECTION *s)
     }
 
     return 0;
-}
-
-/*
- * Get the OCSP response for the certificate from the chain identified
- * chainidx.
- * If no OCSP response could be found NULL is returned.
- */
-OCSP_RESPONSE *ossl_get_ocsp_response(SSL_CONNECTION *s, int chainidx)
-{
-    OCSP_RESPONSE *resp = NULL;
-#ifndef OPENSSL_NO_OCSP
-    int i = 0, num = 0;
-    unsigned int len;
-    X509 *x = NULL;
-    STACK_OF(X509) *chain_certs = NULL;
-    SSL *ssl = SSL_CONNECTION_GET_SSL(s);
-    OCSP_BASICRESP *bs = NULL;
-    OCSP_SINGLERESP *sr = NULL;
-    OCSP_CERTID *cid = NULL;
-    OCSP_CERTID *sr_cert_id = NULL;
-    ASN1_OBJECT *cert_id_md_oid;
-    char cert_id_md_txt[OSSL_MAX_NAME_SIZE];
-    EVP_MD *cert_id_md;
-    ASN1_INTEGER *respSerial;
-    ASN1_OCTET_STRING *respIssuerNameHash = NULL;
-    ASN1_OCTET_STRING *certIssuerNameHash = NULL;
-    const X509_NAME *certIssuerName;
-    unsigned char md[EVP_MAX_MD_SIZE];
-    const ASN1_INTEGER *certSerial;
-    SSL_CTX *sctx = SSL_CONNECTION_GET_CTX(s);
-
-    /*
-     * In TLSv1.3 the caller gives the index of the certificate for which the
-     * status message should be created.
-     * Prior to TLSv1.3 the chain index is 0 and the body should contain only
-     * the status of the server certificate itself.
-     */
-    SSL_get0_chain_certs(ssl, &chain_certs);
-
-    /*
-     * If the certificate chain was built, get the status message for the
-     * requested certificate specified by chainidx.
-     * SSL_get0_chain_certs provides certificate chain except the server cert.
-     *
-     * if chainidx = 0 the server certificate is requested
-     * if chainidx > 0 an intermediate certificate is requested
-     */
-    if (chainidx == 0)
-        x = SSL_get_certificate(ssl);
-    else
-        x = sk_X509_value(chain_certs, chainidx - 1);
-    if (x == NULL)
-        return NULL;
-
-    /* for a selfsigned certificate there will be no OCSP response */
-    if (X509_self_signed(x, 0))
-        return NULL;
-
-    if ((resp = sk_OCSP_RESPONSE_value(s->ext.ocsp.resp_ex, chainidx)) != NULL) {
-        /*
-         * Find the corresponding single OCSP response by comparing the current
-         * certificate's serial number, and the hash of the current certificate's
-         * issuer name, to the serial number and issuer name hash in each OCSP
-         * response received.
-         */
-        if (OCSP_response_status(resp) == OCSP_RESPONSE_STATUS_SUCCESSFUL) {
-            /*
-             * Set a mark for the error queue here to be able to ignore errors
-             * happening because of test cases.
-             */
-            ERR_set_mark();
-            bs = OCSP_response_get1_basic(resp);
-            if (bs != NULL && (sr = OCSP_resp_get0(bs, 0)) != NULL) {
-                /* use the first single response to get the algorithm used */
-                cid = (OCSP_CERTID *)OCSP_SINGLERESP_get0_id(sr);
-
-                /* determine the md algorithm which was used to create cert id */
-                OCSP_id_get0_info(&respIssuerNameHash, &cert_id_md_oid, NULL, &respSerial, cid);
-                if (cert_id_md_oid != NULL) {
-                    OBJ_obj2txt(cert_id_md_txt, sizeof(cert_id_md_txt), cert_id_md_oid, 0);
-                    cert_id_md = EVP_MD_fetch(sctx->libctx, cert_id_md_txt, sctx->propq);
-                } else {
-                    cert_id_md = EVP_MD_fetch(sctx->libctx, SN_sha1, sctx->propq);
-                }
-
-                if (cert_id_md == NULL) {
-                    OCSP_BASICRESP_free(bs);
-                    ERR_clear_last_mark();
-                    return NULL;
-                }
-
-                /* get serial number and issuer name hash of the certificate from the chain */
-                certSerial = X509_get0_serialNumber(x);
-                certIssuerName = X509_get_issuer_name(x);
-                certIssuerNameHash = ASN1_OCTET_STRING_new();
-                if (!X509_NAME_digest(certIssuerName, cert_id_md, md, &len) || !(ASN1_OCTET_STRING_set(certIssuerNameHash, md, len))) {
-                    ASN1_OCTET_STRING_free(certIssuerNameHash);
-                    OCSP_BASICRESP_free(bs);
-                    EVP_MD_free(cert_id_md);
-                    ERR_clear_last_mark();
-                    return NULL;
-                }
-
-                num = OCSP_resp_count(bs);
-                for (i = 0; i < num; i++) {
-                    sr = OCSP_resp_get0(bs, i);
-
-                    /*
-                     * get the CertID from the OCSP response to compare it with the information
-                     * from the certificate
-                     */
-                    sr_cert_id = (OCSP_CERTID *)OCSP_SINGLERESP_get0_id(sr);
-
-                    OCSP_id_get0_info(&respIssuerNameHash, NULL, NULL, &respSerial, sr_cert_id);
-
-                    if (!ASN1_INTEGER_cmp(certSerial, respSerial) && !ASN1_OCTET_STRING_cmp(certIssuerNameHash, respIssuerNameHash))
-                        break;
-                }
-
-                ASN1_OCTET_STRING_free(certIssuerNameHash);
-                OCSP_BASICRESP_free(bs);
-                EVP_MD_free(cert_id_md);
-
-                /*
-                 * if we did not find the right single response we return NULL here
-                 */
-                if (i == num)
-                    resp = NULL;
-            } else {
-                OCSP_BASICRESP_free(bs);
-            }
-
-            /*
-             * in a test case a response without a basic response is used the error set
-             * could be ignored here
-             */
-            ERR_pop_to_mark();
-        }
-    }
-#endif
-
-    return resp;
 }
 
 static int do_compressed_cert(SSL_CONNECTION *sc)
@@ -1937,7 +1793,7 @@ static int tls_early_post_process_client_hello(SSL_CONNECTION *s)
         if (SSL_get_options(ssl) & SSL_OP_COOKIE_EXCHANGE) {
             if (sctx->app_verify_cookie_cb != NULL) {
                 if (sctx->app_verify_cookie_cb(ussl, clienthello->dtls_cookie,
-                        (unsigned int)clienthello->dtls_cookie_len)
+                        clienthello->dtls_cookie_len)
                     == 0) {
                     SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE,
                         SSL_R_COOKIE_MISMATCH);
@@ -2365,11 +2221,8 @@ static int tls_handle_status_request(SSL_CONNECTION *s)
                 break;
                 /* status request response should be sent */
             case SSL_TLSEXT_ERR_OK:
-#ifndef OPENSSL_NO_OCSP
-                if (s->ext.ocsp.resp_ex != NULL
-                    && sk_OCSP_RESPONSE_num(s->ext.ocsp.resp_ex) > 0)
+                if (s->ext.ocsp.resp)
                     s->ext.status_expected = 1;
-#endif
                 break;
                 /* something bad happened */
             case SSL_TLSEXT_ERR_ALERT_FATAL:
@@ -2474,7 +2327,6 @@ WORK_STATE tls_post_process_client_hello(SSL_CONNECTION *s, WORK_STATE wst)
 
     if (wst == WORK_MORE_A) {
         int rv = tls_early_post_process_client_hello(s);
-
         if (rv == 0) {
             /* SSLfatal() was already called */
             goto err;
@@ -3321,11 +3173,8 @@ static int tls_process_cke_ecdhe(SSL_CONNECTION *s, PACKET *pkt)
          * ClientKeyExchange message.
          */
 
-        /*
-         * Get encoded point length
-         * empty key should be handled here
-         */
-        if (!PACKET_get_1(pkt, &i) || i == 0 || !PACKET_get_bytes(pkt, &data, i)
+        /* Get encoded point length */
+        if (!PACKET_get_1(pkt, &i) || !PACKET_get_bytes(pkt, &data, i)
             || PACKET_remaining(pkt) != 0) {
             SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_LENGTH_MISMATCH);
             goto err;
@@ -3455,7 +3304,7 @@ static int tls_process_cke_gost(SSL_CONNECTION *s, PACKET *pkt)
     ptr = PACKET_data(pkt);
     /* Some implementations provide extra data in the opaqueBlob
      * We have nothing to do with this blob so we just skip it */
-    pKX = d2i_GOST_KX_MESSAGE(NULL, &ptr, (long)PACKET_remaining(pkt));
+    pKX = d2i_GOST_KX_MESSAGE(NULL, &ptr, PACKET_remaining(pkt));
     if (pKX == NULL
         || pKX->kxBlob == NULL
         || ASN1_TYPE_get(pKX->kxBlob) != V_ASN1_SEQUENCE) {
@@ -4511,40 +4360,21 @@ err:
  * In TLSv1.3 this is called from the extensions code, otherwise it is used to
  * create a separate message. Returns 1 on success or 0 on failure.
  */
-int tls_construct_cert_status_body(SSL_CONNECTION *s, OCSP_RESPONSE *resp, WPACKET *pkt)
+int tls_construct_cert_status_body(SSL_CONNECTION *s, WPACKET *pkt)
 {
-    unsigned char *respder = NULL;
-    int resplen = 0;
-
-    if (!WPACKET_put_bytes_u8(pkt, s->ext.status_type)) {
+    if (!WPACKET_put_bytes_u8(pkt, s->ext.status_type)
+        || !WPACKET_sub_memcpy_u24(pkt, s->ext.ocsp.resp,
+            s->ext.ocsp.resp_len)) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
         return 0;
     }
 
-#ifndef OPENSSL_NO_OCSP
-    resplen = i2d_OCSP_RESPONSE(resp, &respder);
-#endif
-
-    if (!WPACKET_sub_memcpy_u24(pkt, respder, resplen)) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-        OPENSSL_free(respder);
-        return 0;
-    }
-
-    OPENSSL_free(respder);
     return 1;
 }
 
 CON_FUNC_RETURN tls_construct_cert_status(SSL_CONNECTION *s, WPACKET *pkt)
 {
-    OCSP_RESPONSE *resp;
-
-    resp = ossl_get_ocsp_response(s, 0);
-
-    if (resp == NULL)
-        return CON_FUNC_DONT_SEND;
-
-    if (!tls_construct_cert_status_body(s, resp, pkt)) {
+    if (!tls_construct_cert_status_body(s, pkt)) {
         /* SSLfatal() already called */
         return CON_FUNC_ERROR;
     }

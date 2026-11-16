@@ -620,19 +620,19 @@ static int bio_zstd_read(BIO *b, char *out, int outl)
             }
             /* No more output space */
             if (outBuf.pos == outBuf.size)
-                return (int)outBuf.pos;
+                return outBuf.pos;
         } while (ctx->decompress.inbuf.pos < ctx->decompress.inbuf.size);
 
         /*
          * No data in input buffer try to read some in, if an error then
          * return the total data read.
          */
-        ret = BIO_read(next, ctx->decompress.buffer, (int)ctx->decompress.bufsize);
+        ret = BIO_read(next, ctx->decompress.buffer, ctx->decompress.bufsize);
         if (ret <= 0) {
             BIO_copy_next_retry(b);
             if (ret < 0 && outBuf.pos == 0)
                 return ret;
-            return (int)outBuf.pos;
+            return outBuf.pos;
         }
         ctx->decompress.inbuf.size = ret;
         ctx->decompress.inbuf.pos = 0;
@@ -672,19 +672,19 @@ static int bio_zstd_write(BIO *b, const char *in, int inl)
         /* If data in output buffer write it first */
         while (ctx->compress.write_pos < ctx->compress.outbuf.pos) {
             ret = BIO_write(next, (unsigned char *)ctx->compress.outbuf.dst + ctx->compress.write_pos,
-                (int)(ctx->compress.outbuf.pos - ctx->compress.write_pos));
+                ctx->compress.outbuf.pos - ctx->compress.write_pos);
             if (ret <= 0) {
                 BIO_copy_next_retry(b);
                 if (ret < 0 && inBuf.pos == 0)
                     return ret;
-                return (int)inBuf.pos;
+                return inBuf.pos;
             }
             ctx->compress.write_pos += ret;
         }
 
         /* Have we consumed all supplied data? */
         if (done)
-            return (int)inBuf.pos;
+            return inBuf.pos;
 
         /* Reset buffer */
         ctx->compress.outbuf.pos = 0;
@@ -724,7 +724,7 @@ static int bio_zstd_flush(BIO *b)
         /* If data in output buffer write it first */
         while (ctx->compress.write_pos < ctx->compress.outbuf.pos) {
             ret = BIO_write(next, (unsigned char *)ctx->compress.outbuf.dst + ctx->compress.write_pos,
-                (int)(ctx->compress.outbuf.pos - ctx->compress.write_pos));
+                ctx->compress.outbuf.pos - ctx->compress.write_pos);
             if (ret <= 0) {
                 BIO_copy_next_retry(b);
                 return ret;

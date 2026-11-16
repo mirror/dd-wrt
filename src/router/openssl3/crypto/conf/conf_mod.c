@@ -394,8 +394,7 @@ err:
 static CONF_MODULE *module_find(const char *name)
 {
     CONF_MODULE *tmod;
-    int i;
-    size_t nchar;
+    int i, nchar;
     const char *p;
     STACK_OF(CONF_MODULE) *mods;
 
@@ -409,9 +408,7 @@ static CONF_MODULE *module_find(const char *name)
     if (!RUN_ONCE(&init_module_list_lock, do_init_module_list_lock))
         return NULL;
 
-    if (!ossl_rcu_read_lock(module_list_lock))
-        return NULL;
-
+    ossl_rcu_read_lock(module_list_lock);
     mods = ossl_rcu_deref(&supported_modules);
 
     for (i = 0; i < sk_CONF_MODULE_num(mods); i++) {
@@ -753,7 +750,7 @@ int CONF_parse_list(const char *list_, int sep, int nospc,
                 while (isspace((unsigned char)*tmpend))
                     tmpend--;
             }
-            ret = list_cb(lstart, (int)(tmpend - lstart + 1), arg);
+            ret = list_cb(lstart, tmpend - lstart + 1, arg);
         }
         if (ret <= 0)
             return ret;

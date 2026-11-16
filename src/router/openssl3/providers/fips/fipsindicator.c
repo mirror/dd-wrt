@@ -77,9 +77,11 @@ int ossl_FIPS_IND_on_unapproved(OSSL_FIPS_IND *ind, int id,
     return 0;
 }
 
-int ossl_FIPS_IND_set_ctx_param(OSSL_FIPS_IND *ind, int id, const OSSL_PARAM *p)
+int ossl_FIPS_IND_set_ctx_param(OSSL_FIPS_IND *ind, int id,
+    const OSSL_PARAM params[], const char *name)
 {
     int in = 0;
+    const OSSL_PARAM *p = OSSL_PARAM_locate_const(params, name);
 
     if (p != NULL) {
         if (!OSSL_PARAM_get_int(p, &in))
@@ -89,34 +91,40 @@ int ossl_FIPS_IND_set_ctx_param(OSSL_FIPS_IND *ind, int id, const OSSL_PARAM *p)
     return 1;
 }
 
-int ossl_FIPS_IND_set_ctx_param_locate(OSSL_FIPS_IND *ind, int id,
-    const OSSL_PARAM params[],
-    const char *name)
+int ossl_FIPS_IND_get_ctx_param(const OSSL_FIPS_IND *ind, OSSL_PARAM params[])
 {
-    const OSSL_PARAM *p = OSSL_PARAM_locate_const(params, name);
+    OSSL_PARAM *p = OSSL_PARAM_locate(params, OSSL_ALG_PARAM_FIPS_APPROVED_INDICATOR);
 
-    return ossl_FIPS_IND_set_ctx_param(ind, id, p);
-}
-
-int ossl_FIPS_IND_get_ctx_param(const OSSL_FIPS_IND *ind, OSSL_PARAM *p)
-{
     return p == NULL || OSSL_PARAM_set_int(p, ind->approved);
 }
 
 int ossl_FIPS_IND_get_ctx_param_conditional(const OSSL_FIPS_IND *ind,
-    OSSL_PARAM *p, int condition)
+    OSSL_PARAM params[], int condition)
 {
-    return p == NULL
-        || OSSL_PARAM_set_int(p,
-            condition && (ind == NULL || ind->approved));
+    OSSL_PARAM *p = OSSL_PARAM_locate(params,
+        OSSL_ALG_PARAM_FIPS_APPROVED_INDICATOR);
+
+    return p == NULL || OSSL_PARAM_set_int(p, condition && (ind == NULL || ind->approved));
 }
 
-int ossl_FIPS_IND_get_ctx_param_locate(const OSSL_FIPS_IND *ind,
+const OSSL_PARAM *ossl_FIPS_IND_gettable_ctx_params(ossl_unused void *ctx,
+    ossl_unused void *provctx)
+{
+    static const OSSL_PARAM gettable_ctx_params[] = {
+        OSSL_PARAM_int(OSSL_ALG_PARAM_FIPS_APPROVED_INDICATOR, NULL),
+        OSSL_PARAM_END
+    };
+
+    return gettable_ctx_params;
+}
+
+int ossl_FIPS_IND_get_ctx_param_approved(ossl_unused void *ctx,
     OSSL_PARAM params[])
 {
-    OSSL_PARAM *p = OSSL_PARAM_locate(params, OSSL_ALG_PARAM_FIPS_APPROVED_INDICATOR);
+    OSSL_PARAM *p = OSSL_PARAM_locate(params,
+        OSSL_ALG_PARAM_FIPS_APPROVED_INDICATOR);
 
-    return p == NULL || ossl_FIPS_IND_get_ctx_param(ind, p);
+    return p == NULL || OSSL_PARAM_set_int(p, 1);
 }
 
 /*

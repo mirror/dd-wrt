@@ -116,7 +116,7 @@ int BN_uadd(BIGNUM *r, const BIGNUM *a, const BIGNUM *b)
         carry &= (t2 == 0);
     }
     *rp = carry;
-    r->top += (int)carry;
+    r->top += carry;
 
 end:
     r->neg = 0;

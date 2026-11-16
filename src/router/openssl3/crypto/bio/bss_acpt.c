@@ -558,12 +558,10 @@ static long acpt_ctrl(BIO *b, int cmd, long num, void *ptr)
 
 static int acpt_puts(BIO *bp, const char *str)
 {
-    int ret;
-    size_t n = strlen(str);
+    int n, ret;
 
-    if (n > INT_MAX)
-        return -1;
-    ret = acpt_write(bp, str, (int)n);
+    n = strlen(str);
+    ret = acpt_write(bp, str, n);
     return ret;
 }
 

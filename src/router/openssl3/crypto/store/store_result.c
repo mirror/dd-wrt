@@ -365,7 +365,7 @@ static EVP_PKEY *try_key_value_legacy(struct extracted_param_data_st *data,
                  * No need to check the returned value, |new_der|
                  * will be NULL on error anyway.
                  */
-                PKCS12_pbe_crypt(alg, pbuf, (int)plen,
+                PKCS12_pbe_crypt(alg, pbuf, plen,
                     oct->data, oct->length,
                     &new_der, &len, 0);
                 der_len = len;
@@ -495,11 +495,11 @@ static int try_cert(struct extracted_param_data_st *data, OSSL_STORE_INFO **v,
             ignore_trusted = 0;
 
         if (d2i_X509_AUX(&cert, (const unsigned char **)&data->octet_data,
-                (long)data->octet_data_size)
+                data->octet_data_size)
                 == NULL
             && (!ignore_trusted
                 || d2i_X509(&cert, (const unsigned char **)&data->octet_data,
-                       (long)data->octet_data_size)
+                       data->octet_data_size)
                     == NULL)) {
             X509_free(cert);
             cert = NULL;
@@ -525,7 +525,7 @@ static int try_crl(struct extracted_param_data_st *data, OSSL_STORE_INFO **v,
         X509_CRL *crl;
 
         crl = d2i_X509_CRL(NULL, (const unsigned char **)&data->octet_data,
-            (long)data->octet_data_size);
+            data->octet_data_size);
 
         if (crl != NULL)
             /* We determined the object type */
@@ -557,7 +557,7 @@ static int try_pkcs12(struct extracted_param_data_st *data, OSSL_STORE_INFO **v,
         PKCS12 *p12;
 
         p12 = d2i_PKCS12(NULL, (const unsigned char **)&data->octet_data,
-            (long)data->octet_data_size);
+            data->octet_data_size);
 
         if (p12 != NULL) {
             char *pass = NULL;
@@ -598,7 +598,7 @@ static int try_pkcs12(struct extracted_param_data_st *data, OSSL_STORE_INFO **v,
                  * we must do it for PKCS12_parse()
                  */
                 pass[tpass_len] = '\0';
-                if (!PKCS12_verify_mac(p12, pass, (int)tpass_len)) {
+                if (!PKCS12_verify_mac(p12, pass, tpass_len)) {
                     ERR_raise_data(ERR_LIB_OSSL_STORE,
                         OSSL_STORE_R_ERROR_VERIFYING_PKCS12_MAC,
                         tpass_len == 0 ? "empty password" : "maybe wrong password");

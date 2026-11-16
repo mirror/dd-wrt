@@ -73,7 +73,7 @@ static int mock_http_server(BIO *in, BIO *out, char version, int keep_alive,
     hdr = strchr(hdr, ' ');
     if (hdr == NULL)
         return 0;
-    len = (int)strlen("HTTP/1.");
+    len = strlen("HTTP/1.");
     if (!TEST_strn_eq(++hdr, "HTTP/1.", len))
         return 0;
     hdr += len;
@@ -83,7 +83,7 @@ static int mock_http_server(BIO *in, BIO *out, char version, int keep_alive,
     if (!TEST_char_eq(*hdr++, '\r') || !TEST_char_eq(*hdr++, '\n'))
         return 0;
 
-    count -= (long)(hdr - req);
+    count -= (hdr - req);
     if (count < 0 || out == NULL)
         return 0;
 
@@ -112,7 +112,7 @@ static int mock_http_server(BIO *in, BIO *out, char version, int keep_alive,
 
     if (is_get) { /* construct new header and body */
         if (txt != NULL)
-            len = (int)strlen(txt);
+            len = strlen(txt);
         else if ((len = ASN1_item_i2d(rsp, NULL, it)) <= 0)
             return 0;
         if (BIO_printf(out, "Content-Type: %s\r\n"

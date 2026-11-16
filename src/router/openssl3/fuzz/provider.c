@@ -217,7 +217,7 @@ static int read_octet_string(const uint8_t **buf, size_t *len, char **res)
 
     *res = (char *)*buf;
 
-    r = (int)(ptr - *buf);
+    r = ptr - *buf;
     *len -= r;
     *buf = ptr;
 
@@ -272,7 +272,7 @@ static OSSL_PARAM *fuzz_params(OSSL_PARAM *param, const uint8_t **buf, size_t *l
     for (p = param; p != NULL && p->key != NULL; p++)
         p_num++;
 
-    fuzzed_parameters = OPENSSL_calloc(p_num + 1, sizeof(OSSL_PARAM));
+    fuzzed_parameters = OPENSSL_zalloc(sizeof(OSSL_PARAM) * (p_num + 1));
     p = fuzzed_parameters;
 
     for (; param != NULL && param->key != NULL; param++) {
@@ -411,8 +411,7 @@ static int do_evp_cipher(const EVP_CIPHER *evp_cipher, const OSSL_PARAM param[])
         return 0;
     }
 
-    if (!EVP_EncryptUpdate(ctx, outbuf, &outlen, (const unsigned char *)intext,
-            (int)strlen(intext))) {
+    if (!EVP_EncryptUpdate(ctx, outbuf, &outlen, (const unsigned char *)intext, strlen(intext))) {
         /* Error */
         EVP_CIPHER_CTX_free(ctx);
         return 0;

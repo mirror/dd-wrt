@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2015-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -17,7 +17,6 @@
 
 /* This must be the first #include file */
 #include "async_local.h"
-#include "internal/threads_common.h"
 
 #include <openssl/err.h>
 #include "crypto/cryptlib.h"
@@ -27,6 +26,9 @@
 #define ASYNC_JOB_PAUSING 1
 #define ASYNC_JOB_PAUSED 2
 #define ASYNC_JOB_STOPPING 3
+
+static CRYPTO_THREAD_LOCAL ctxkey;
+static CRYPTO_THREAD_LOCAL poolkey;
 
 static void async_delete_thread_state(void *arg);
 
@@ -44,8 +46,7 @@ static async_ctx *async_ctx_new(void)
     async_fibre_init_dispatcher(&nctx->dispatcher);
     nctx->currjob = NULL;
     nctx->blocked = 0;
-    if (!CRYPTO_THREAD_set_local_ex(CRYPTO_THREAD_LOCAL_ASYNC_CTX_KEY,
-            CRYPTO_THREAD_NO_CONTEXT, nctx))
+    if (!CRYPTO_THREAD_set_local(&ctxkey, nctx))
         goto err;
 
     return nctx;
@@ -57,8 +58,7 @@ err:
 
 async_ctx *async_get_ctx(void)
 {
-    return (async_ctx *)CRYPTO_THREAD_get_local_ex(CRYPTO_THREAD_LOCAL_ASYNC_CTX_KEY,
-        CRYPTO_THREAD_NO_CONTEXT);
+    return (async_ctx *)CRYPTO_THREAD_get_local(&ctxkey);
 }
 
 static int async_ctx_free(void)
@@ -67,8 +67,7 @@ static int async_ctx_free(void)
 
     ctx = async_get_ctx();
 
-    if (!CRYPTO_THREAD_set_local_ex(CRYPTO_THREAD_LOCAL_ASYNC_CTX_KEY,
-            CRYPTO_THREAD_NO_CONTEXT, NULL))
+    if (!CRYPTO_THREAD_set_local(&ctxkey, NULL))
         return 0;
 
     OPENSSL_free(ctx);
@@ -103,8 +102,7 @@ static ASYNC_JOB *async_get_pool_job(void)
     ASYNC_JOB *job;
     async_pool *pool;
 
-    pool = (async_pool *)CRYPTO_THREAD_get_local_ex(CRYPTO_THREAD_LOCAL_ASYNC_POOL_KEY,
-        CRYPTO_THREAD_NO_CONTEXT);
+    pool = (async_pool *)CRYPTO_THREAD_get_local(&poolkey);
     if (pool == NULL) {
         /*
          * Pool has not been initialised, so init with the defaults, i.e.
@@ -112,8 +110,7 @@ static ASYNC_JOB *async_get_pool_job(void)
          */
         if (ASYNC_init_thread(0, 0) == 0)
             return NULL;
-        pool = (async_pool *)CRYPTO_THREAD_get_local_ex(CRYPTO_THREAD_LOCAL_ASYNC_POOL_KEY,
-            CRYPTO_THREAD_NO_CONTEXT);
+        pool = (async_pool *)CRYPTO_THREAD_get_local(&poolkey);
     }
 
     job = sk_ASYNC_JOB_pop(pool->jobs);
@@ -138,8 +135,7 @@ static void async_release_job(ASYNC_JOB *job)
 {
     async_pool *pool;
 
-    pool = (async_pool *)CRYPTO_THREAD_get_local_ex(CRYPTO_THREAD_LOCAL_ASYNC_POOL_KEY,
-        CRYPTO_THREAD_NO_CONTEXT);
+    pool = (async_pool *)CRYPTO_THREAD_get_local(&poolkey);
     if (pool == NULL) {
         ERR_raise(ERR_LIB_ASYNC, ERR_R_INTERNAL_ERROR);
         return;
@@ -334,11 +330,21 @@ static void async_empty_pool(async_pool *pool)
 
 int async_init(void)
 {
+    if (!CRYPTO_THREAD_init_local(&ctxkey, NULL))
+        return 0;
+
+    if (!CRYPTO_THREAD_init_local(&poolkey, NULL)) {
+        CRYPTO_THREAD_cleanup_local(&ctxkey);
+        return 0;
+    }
+
     return async_local_init();
 }
 
 void async_deinit(void)
 {
+    CRYPTO_THREAD_cleanup_local(&ctxkey);
+    CRYPTO_THREAD_cleanup_local(&poolkey);
     async_local_deinit();
 }
 
@@ -347,7 +353,7 @@ int ASYNC_init_thread(size_t max_size, size_t init_size)
     async_pool *pool;
     size_t curr_size = 0;
 
-    if (init_size > max_size || max_size > INT_MAX) {
+    if (init_size > max_size) {
         ERR_raise(ERR_LIB_ASYNC, ASYNC_R_INVALID_POOL_SIZE);
         return 0;
     }
@@ -362,7 +368,7 @@ int ASYNC_init_thread(size_t max_size, size_t init_size)
     if (pool == NULL)
         return 0;
 
-    pool->jobs = sk_ASYNC_JOB_new_reserve(NULL, (int)init_size);
+    pool->jobs = sk_ASYNC_JOB_new_reserve(NULL, init_size);
     if (pool->jobs == NULL) {
         ERR_raise(ERR_LIB_ASYNC, ERR_R_CRYPTO_LIB);
         OPENSSL_free(pool);
@@ -388,8 +394,7 @@ int ASYNC_init_thread(size_t max_size, size_t init_size)
         curr_size++;
     }
     pool->curr_size = curr_size;
-    if (!CRYPTO_THREAD_set_local_ex(CRYPTO_THREAD_LOCAL_ASYNC_POOL_KEY,
-            CRYPTO_THREAD_NO_CONTEXT, pool)) {
+    if (!CRYPTO_THREAD_set_local(&poolkey, pool)) {
         ERR_raise(ERR_LIB_ASYNC, ASYNC_R_FAILED_TO_SET_POOL);
         goto err;
     }
@@ -404,15 +409,13 @@ err:
 
 static void async_delete_thread_state(void *arg)
 {
-    async_pool *pool = (async_pool *)CRYPTO_THREAD_get_local_ex(CRYPTO_THREAD_LOCAL_ASYNC_POOL_KEY,
-        CRYPTO_THREAD_NO_CONTEXT);
+    async_pool *pool = (async_pool *)CRYPTO_THREAD_get_local(&poolkey);
 
     if (pool != NULL) {
         async_empty_pool(pool);
         sk_ASYNC_JOB_free(pool->jobs);
         OPENSSL_free(pool);
-        CRYPTO_THREAD_set_local_ex(CRYPTO_THREAD_LOCAL_ASYNC_POOL_KEY,
-            CRYPTO_THREAD_NO_CONTEXT, NULL);
+        CRYPTO_THREAD_set_local(&poolkey, NULL);
     }
     async_local_cleanup();
     async_ctx_free();

@@ -593,7 +593,7 @@ static void print_out(BIO *out, unsigned char *buf, size_t len,
     int i, backslash = 0;
 
     if (binout) {
-        BIO_write(out, buf, (int)len);
+        BIO_write(out, buf, len);
     } else if (sep == 2) {
         file = newline_escape_filename(file, &backslash);
 

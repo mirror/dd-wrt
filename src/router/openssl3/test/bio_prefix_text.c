@@ -96,7 +96,7 @@ static int setup_bio_chain(const char *progname)
     BIO *next = NULL;
     size_t n = amount;
 
-    chain = OPENSSL_calloc(n, sizeof(*chain));
+    chain = OPENSSL_zalloc(sizeof(*chain) * n);
 
     if (chain != NULL) {
         size_t i;

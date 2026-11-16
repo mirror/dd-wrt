@@ -572,7 +572,7 @@ int pkeyutl_main(int argc, char **argv)
     if (rawin) {
         /* rawin allocates the buffer in do_raw_keyop() */
         rv = do_raw_keyop(pkey_op, mctx, pkey, in, filesize, NULL, 0,
-            &buf_out, &buf_outlen);
+            &buf_out, (size_t *)&buf_outlen);
     } else {
         if (kdflen != 0) {
             buf_outlen = kdflen;
@@ -604,16 +604,16 @@ int pkeyutl_main(int argc, char **argv)
     ret = 0;
 
     if (asn1parse) {
-        if (!ASN1_parse_dump(out, buf_out, (long)buf_outlen, 1, -1))
+        if (!ASN1_parse_dump(out, buf_out, buf_outlen, 1, -1))
             ERR_print_errors(bio_err); /* but still return success */
     } else if (hexdump) {
-        BIO_dump(out, (char *)buf_out, (int)buf_outlen);
+        BIO_dump(out, (char *)buf_out, buf_outlen);
     } else {
-        BIO_write(out, buf_out, (int)buf_outlen);
+        BIO_write(out, buf_out, buf_outlen);
     }
     /* Backwards compatible decap output fallback */
     if (secretlen > 0)
-        BIO_write(secout ? secout : out, secret, (int)secretlen);
+        BIO_write(secout ? secout : out, secret, secretlen);
 
 end:
     if (ret != 0)

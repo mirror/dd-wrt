@@ -13,7 +13,15 @@
 
 #include "cmp_local.h"
 
-#include <internal/cms.h> /* for ossl_cms_sign_encrypt() */
+/* explicit #includes not strictly needed since implied by the above: */
+#include <openssl/asn1t.h>
+#include <openssl/cmp.h>
+#include <openssl/crmf.h>
+#include <openssl/err.h>
+#include <openssl/x509.h>
+#include <openssl/pem.h>
+#include <openssl/bio.h>
+#include <internal/cms.h>
 
 OSSL_CMP_MSG *OSSL_CMP_MSG_new(OSSL_LIB_CTX *libctx, const char *propq)
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2020-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -97,6 +97,7 @@ static void usage(void)
 #if !defined(RUSAGE_SELF) && defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
 #include <sys/times.h>
 #endif
+
 int main(int ac, char **av)
 {
 #if defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
@@ -159,8 +160,6 @@ int main(int ac, char **av)
     }
     fp = fopen(av[0], "r");
     if ((long)fread(contents, 1, sb.st_size, fp) != sb.st_size) {
-        fclose(fp);
-        OPENSSL_free(contents);
         perror("fread");
         exit(EXIT_FAILURE);
     }
@@ -182,7 +181,6 @@ int main(int ac, char **av)
     }
 
     if (gettimeofday(&e_start, NULL) < 0) {
-        OPENSSL_free(contents);
         perror("elapsed start");
         exit(EXIT_FAILURE);
     }
@@ -194,7 +192,6 @@ int main(int ac, char **av)
     s_start.tv_usec = (rus.tms_stime * 1000000) / CLOCKS_PER_SEC;
 #else
     if (getrusage(RUSAGE_SELF, &start) < 0) {
-        OPENSSL_free(contents);
         perror("start");
         exit(EXIT_FAILURE);
     }
@@ -217,13 +214,11 @@ int main(int ac, char **av)
     s_end.tv_usec = (rus.tms_stime * 1000000) / CLOCKS_PER_SEC;
 #else
     if (getrusage(RUSAGE_SELF, &end) < 0) {
-        OPENSSL_free(contents);
         perror("getrusage");
         exit(EXIT_FAILURE);
     }
 #endif
     if (gettimeofday(&e_end, NULL) < 0) {
-        OPENSSL_free(contents);
         perror("gettimeofday");
         exit(EXIT_FAILURE);
     }

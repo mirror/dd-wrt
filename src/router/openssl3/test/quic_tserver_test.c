@@ -352,13 +352,13 @@ static int do_test(int use_thread_assist, int use_fake_time, int use_inject)
 
         if (c_start_idle_test && !c_done_idle_test) {
             /* This is more than our default idle timeout of 30s. */
-            if (idle_units_done < 6000) {
+            if (idle_units_done < 600) {
                 struct timeval tv;
                 int isinf;
 
                 if (!TEST_true(CRYPTO_THREAD_write_lock(fake_time_lock)))
                     goto err;
-                fake_time = ossl_time_add(fake_time, ossl_ms2time(10));
+                fake_time = ossl_time_add(fake_time, ossl_ms2time(100));
                 CRYPTO_THREAD_unlock(fake_time_lock);
 
                 ++idle_units_done;

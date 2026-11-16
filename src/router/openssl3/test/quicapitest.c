@@ -154,7 +154,7 @@ static int test_quic_write_read(int idx)
             if (!TEST_true(SSL_read_ex(clientquic, buf, 1, &numbytes))
                 || !TEST_size_t_eq(numbytes, 1)
                 || !TEST_true(SSL_has_pending(clientquic))
-                || !TEST_int_eq(SSL_pending(clientquic), (int)(msglen - 1))
+                || !TEST_int_eq(SSL_pending(clientquic), msglen - 1)
                 || !TEST_true(SSL_read_ex(clientquic, buf + 1,
                     sizeof(buf) - 1, &numbytes))
                 || !TEST_mem_eq(buf, numbytes + 1, msg, msglen))
@@ -305,8 +305,7 @@ static int test_ciphersuites(void)
 #endif
         TLS1_3_CK_AES_128_GCM_SHA256
     };
-    size_t i;
-    int j;
+    size_t i, j;
 
     if (!TEST_ptr(ctx))
         return 0;
@@ -631,12 +630,11 @@ err:
 
 static int ensure_valid_ciphers(const STACK_OF(SSL_CIPHER) *ciphers)
 {
-    int i;
+    size_t i;
 
     /* Ensure ciphersuite list is suitably subsetted. */
-    for (i = 0; i < sk_SSL_CIPHER_num(ciphers); ++i) {
+    for (i = 0; i < (size_t)sk_SSL_CIPHER_num(ciphers); ++i) {
         const SSL_CIPHER *cipher = sk_SSL_CIPHER_value(ciphers, i);
-
         switch (SSL_CIPHER_get_id(cipher)) {
         case TLS1_3_CK_AES_128_GCM_SHA256:
         case TLS1_3_CK_AES_256_GCM_SHA384:
@@ -3312,165 +3310,6 @@ err:
 }
 
 /*
- * Creates server-initiated streams (1 uni stream if stream_opt=0, 1 bidi stream
- * if stream_opt=1, and both a uni and bidi stream if stream_opt=2) and tests
- * that client calling SSL_accept_stream with accept_flags behaves as expected.
- */
-static int create_accept_stream(SSL *serverssl, SSL *clientssl,
-    uint64_t accept_flags, int stream_opt)
-{
-    unsigned char buf[16], msg[] = "Hello, World!";
-    SSL *clientstream = NULL, *serverstream = NULL, *serverstream2 = NULL;
-    int create_uni = stream_opt != 1, create_bidi = stream_opt != 0;
-    int ret = 0, should_accept = 1, stream_type;
-    size_t nread, nwritten;
-
-    if (stream_opt < 0 || stream_opt > 2)
-        goto err;
-
-    if ((accept_flags & SSL_ACCEPT_STREAM_UNI)
-        && !(accept_flags & SSL_ACCEPT_STREAM_BIDI))
-        should_accept = create_uni;
-    else if ((accept_flags & SSL_ACCEPT_STREAM_BIDI)
-        && !(accept_flags & SSL_ACCEPT_STREAM_UNI))
-        should_accept = create_bidi;
-
-    if (create_uni
-        && (!TEST_ptr(serverstream = SSL_new_stream(serverssl, SSL_STREAM_FLAG_UNI))
-            || !TEST_int_gt(SSL_write_ex(serverstream, msg, sizeof(msg), &nwritten), 0)
-            || !TEST_size_t_eq(nwritten, sizeof(msg))
-            || !TEST_int_eq(SSL_handle_events(clientssl), 1)))
-        goto err;
-
-    if (create_bidi
-        && (!TEST_ptr(serverstream2 = SSL_new_stream(serverssl, 0))
-            || !TEST_int_gt(SSL_write_ex(serverstream2, msg, sizeof(msg), &nwritten), 0)
-            || !TEST_size_t_eq(nwritten, sizeof(msg))
-            || !TEST_int_eq(SSL_handle_events(clientssl), 1)))
-        goto err;
-
-    clientstream = SSL_accept_stream(clientssl, accept_flags);
-    if (should_accept && clientstream == NULL) {
-        TEST_info("Should have accepted stream but did not");
-        goto err;
-    } else if (!should_accept && clientstream != NULL) {
-        TEST_info("Should not have accepted stream but did");
-        goto err;
-    } else if (!should_accept && clientstream == NULL) {
-        ret = 1;
-        goto err;
-    }
-
-    stream_type = SSL_get_stream_type(clientstream);
-    if (!create_uni && create_bidi && stream_type != SSL_STREAM_TYPE_BIDI)
-        goto err;
-    else if (create_uni && !create_bidi && stream_type != SSL_STREAM_TYPE_READ)
-        goto err;
-
-    if (!TEST_int_gt(SSL_read_ex(clientstream, buf, sizeof(buf), &nread), 0)
-        || !TEST_size_t_eq(nread, sizeof(msg)))
-        goto err;
-
-    ret = 1;
-err:
-    SSL_free(serverstream);
-    SSL_free(serverstream2);
-    SSL_free(clientstream);
-
-    /* In case there are still streams still in the queue (up to 2) */
-    clientstream = SSL_accept_stream(clientssl, 0);
-    SSL_free(clientstream);
-    clientstream = SSL_accept_stream(clientssl, 0);
-    SSL_free(clientstream);
-
-    return ret;
-}
-
-static int test_accept_stream(void)
-{
-    SSL_CTX *cctx = NULL, *sctx = NULL;
-    SSL *clientssl = NULL, *serverssl = NULL, *qlistener = NULL;
-    int testresult = 0;
-    int ret, i;
-    long unsigned int j;
-    uint64_t accept_flags[] = {
-        0,
-        SSL_ACCEPT_STREAM_UNI,
-        SSL_ACCEPT_STREAM_BIDI,
-        SSL_ACCEPT_STREAM_UNI | SSL_ACCEPT_STREAM_BIDI
-    };
-
-    if (!TEST_ptr(sctx = create_server_ctx())
-        || !TEST_ptr(cctx = create_client_ctx())
-        || !create_quic_ssl_objects(sctx, cctx, &qlistener, &clientssl))
-        goto err;
-
-    /* Calling SSL_accept() on a listener is expected to fail */
-    ret = SSL_accept(qlistener);
-    if (!TEST_int_le(ret, 0)
-        || !TEST_int_eq(SSL_get_error(qlistener, ret), SSL_ERROR_SSL))
-        goto err;
-
-    /* Send ClientHello and server retry */
-    for (i = 0; i < 2; i++) {
-        ret = SSL_connect(clientssl);
-        if (!TEST_int_le(ret, 0)
-            || !TEST_int_eq(SSL_get_error(clientssl, ret), SSL_ERROR_WANT_READ))
-            goto err;
-        SSL_handle_events(qlistener);
-    }
-
-    /* We expect a server SSL object which has not yet completed its handshake */
-    serverssl = SSL_accept_connection(qlistener, 0);
-    if (!TEST_ptr(serverssl) || !TEST_false(SSL_is_init_finished(serverssl)))
-        goto err;
-
-    /* Call SSL_accept() and SSL_connect() until we are connected */
-    if (!TEST_true(create_bare_ssl_connection(serverssl, clientssl,
-            SSL_ERROR_NONE, 0, 0)))
-        goto err;
-
-    if (!TEST_int_eq(SSL_set_default_stream_mode(clientssl,
-                         SSL_DEFAULT_STREAM_MODE_NONE),
-            1)
-        || !TEST_int_eq(SSL_set_default_stream_mode(serverssl,
-                            SSL_DEFAULT_STREAM_MODE_NONE),
-            1)
-        || !TEST_int_eq(SSL_set_incoming_stream_policy(clientssl,
-                            SSL_INCOMING_STREAM_POLICY_ACCEPT,
-                            0),
-            1)
-        || !TEST_int_eq(SSL_set_incoming_stream_policy(serverssl,
-                            SSL_INCOMING_STREAM_POLICY_ACCEPT,
-                            0),
-            1))
-        goto err;
-
-    for (j = 0; j < sizeof(accept_flags) / sizeof(accept_flags[0]); j++) {
-        if (!TEST_int_eq(create_accept_stream(serverssl, clientssl,
-                             accept_flags[j], 0),
-                1)
-            || !TEST_int_eq(create_accept_stream(serverssl, clientssl,
-                                accept_flags[j], 1),
-                1)
-            || !TEST_int_eq(create_accept_stream(serverssl, clientssl,
-                                accept_flags[j], 2),
-                1))
-            goto err;
-    }
-
-    testresult = 1;
-err:
-    SSL_free(serverssl);
-    SSL_free(clientssl);
-    SSL_free(qlistener);
-    SSL_CTX_free(sctx);
-    SSL_CTX_free(cctx);
-
-    return testresult;
-}
-
-/*
  * Streams rejected by the incoming stream policy are never placed on the accept
  * queue. Check that they are still garbage collected and that the peer is
  * granted credit for another stream, so that a peer which keeps opening streams
@@ -3673,7 +3512,6 @@ end:
     SSL_CTX_free(cctx);
     return ret;
 }
-
 
 #define PENDING_LIMIT 5
 #define HANDSHAKE_STEPS 10
@@ -3901,7 +3739,6 @@ int setup_tests(void)
     ADD_TEST(test_ssl_accept_connection);
     ADD_TEST(test_quic_amplification_limit);
     ADD_TEST(test_ssl_set_verify);
-    ADD_TEST(test_accept_stream);
     ADD_TEST(test_reject_stream_gc);
     ADD_TEST(test_client_hello_retry);
     ADD_TEST(test_quic_resize_txe);

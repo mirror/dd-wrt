@@ -8,10 +8,10 @@
 
 #
 # ====================================================================
-# Written by Andy Polyakov, @dot-asm, initially for use in the OpenSSL
+# Written by Andy Polyakov <appro@openssl.org> for the OpenSSL
 # project. The module is, however, dual licensed under OpenSSL and
 # CRYPTOGAMS licenses depending on where you obtain it. For further
-# details see https://github.com/dot-asm/cryptogams/.
+# details see http://www.openssl.org/~appro/cryptogams/.
 # ====================================================================
 #
 # This module implements Poly1305 hash for x86.
@@ -1813,7 +1813,7 @@ sub vlazy_reduction {
 	&data_word(0x03ffffff,0,0x03ffffff,0,	0x03ffffff,0,	0x03ffffff,0);
 	&data_word(0x0fffffff,0x0ffffffc,0x0ffffffc,0x0ffffffc);
 }
-&asciz	("Poly1305 for x86, CRYPTOGAMS by <https://github.com/dot-asm>");
+&asciz	("Poly1305 for x86, CRYPTOGAMS by <appro\@openssl.org>");
 &align	(4);
 
 &asm_finish();

@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -328,7 +328,7 @@ int X509_NAME_ENTRY_set_data(X509_NAME_ENTRY *ne, int type,
             ? 1
             : 0;
     if (len < 0)
-        len = (int)strlen((const char *)bytes);
+        len = strlen((const char *)bytes);
     i = ASN1_STRING_set(ne->value, bytes, len);
     if (!i)
         return 0;

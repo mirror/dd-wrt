@@ -1638,7 +1638,6 @@ struct ssl_connection_st {
             /* OCSP response received or to be sent */
             unsigned char *resp;
             size_t resp_len;
-            STACK_OF(OCSP_RESPONSE) *resp_ex;
         } ocsp;
 
         /* RFC4507 session ticket expected to be received or sent */
@@ -2592,7 +2591,6 @@ void ssl_cert_set_cert_cb(CERT *c, int (*cb)(SSL *ssl, void *arg), void *arg);
 
 __owur int ssl_verify_cert_chain(SSL_CONNECTION *s, STACK_OF(X509) *sk);
 __owur int ssl_verify_rpk(SSL_CONNECTION *s, EVP_PKEY *rpk);
-__owur int ssl_verify_ocsp(SSL *s, STACK_OF(X509) *sk);
 __owur int ssl_build_cert_chain(SSL_CONNECTION *s, SSL_CTX *ctx, int flags);
 __owur int ssl_cert_set_cert_store(CERT *c, X509_STORE *store, int chain,
     int ref);
@@ -2976,8 +2974,6 @@ __owur int srp_verify_server_param(SSL_CONNECTION *s);
 
 __owur int send_certificate_request(SSL_CONNECTION *s);
 
-OCSP_RESPONSE *ossl_get_ocsp_response(SSL_CONNECTION *s, int chainidx);
-
 /* statem/extensions_cust.c */
 
 custom_ext_method *custom_ext_find(const custom_ext_methods *exts,
@@ -3106,7 +3102,7 @@ long ossl_ctrl_internal(SSL *s, int cmd, long larg, void *parg, int no_quic);
 
 /* Total mask of connection-level options permitted or ignored under QUIC. */
 #define OSSL_QUIC_PERMITTED_OPTIONS_CONN \
-    (OSSL_LEGACY_SSL_OPTIONS | OSSL_TLS1_2_OPTIONS | SSL_OP_SERVER_PREFERENCE | SSL_OP_DISABLE_TLSEXT_CA_NAMES | SSL_OP_NO_TX_CERTIFICATE_COMPRESSION | SSL_OP_NO_RX_CERTIFICATE_COMPRESSION | SSL_OP_PRIORITIZE_CHACHA | SSL_OP_NO_QUERY_MTU | SSL_OP_NO_TICKET | SSL_OP_NO_ANTI_REPLAY)
+    (OSSL_LEGACY_SSL_OPTIONS | OSSL_TLS1_2_OPTIONS | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_DISABLE_TLSEXT_CA_NAMES | SSL_OP_NO_TX_CERTIFICATE_COMPRESSION | SSL_OP_NO_RX_CERTIFICATE_COMPRESSION | SSL_OP_PRIORITIZE_CHACHA | SSL_OP_NO_QUERY_MTU | SSL_OP_NO_TICKET | SSL_OP_NO_ANTI_REPLAY)
 
 /* Total mask of stream-level options permitted or ignored under QUIC. */
 #define OSSL_QUIC_PERMITTED_OPTIONS_STREAM \

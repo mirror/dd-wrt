@@ -466,7 +466,7 @@ BN_MONT_CTX *BN_MONT_CTX_set_locked(BN_MONT_CTX **pmont, CRYPTO_RWLOCK *lock,
 }
 
 int ossl_bn_mont_ctx_set(BN_MONT_CTX *ctx, const BIGNUM *modulus, int ri, const unsigned char *rr,
-    int rrlen, uint32_t nlo, uint32_t nhi)
+    size_t rrlen, uint32_t nlo, uint32_t nhi)
 {
     if (BN_copy(&ctx->N, modulus) == NULL)
         return 0;

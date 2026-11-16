@@ -23,6 +23,7 @@
 #include "cipher_aes_cbc_hmac_sha.h"
 #include "prov/implementations.h"
 #include "prov/providercommon.h"
+#include "fips/fipsindicator.h"
 
 #ifndef AES_CBC_HMAC_SHA_CAPABLE
 #define IMPLEMENT_CIPHER(nm, sub, kbits, blkbits, ivbits, flags) \
@@ -197,11 +198,11 @@ static int aes_set_ctx_params(void *vctx, const OSSL_PARAM params[])
 
     p = OSSL_PARAM_locate_const(params, OSSL_CIPHER_PARAM_AEAD_TLS1_AAD);
     if (p != NULL) {
-        if (p->data_type != OSSL_PARAM_OCTET_STRING || p->data_size > INT_MAX) {
+        if (p->data_type != OSSL_PARAM_OCTET_STRING) {
             ERR_raise(ERR_LIB_PROV, PROV_R_FAILED_TO_GET_PARAMETER);
             return 0;
         }
-        if (hw->set_tls1_aad(ctx, p->data, (int)p->data_size) <= 0)
+        if (hw->set_tls1_aad(ctx, p->data, p->data_size) <= 0)
             return 0;
     }
 
@@ -294,22 +295,19 @@ static int aes_get_ctx_params(void *vctx, OSSL_PARAM params[])
     }
     p = OSSL_PARAM_locate(params, OSSL_CIPHER_PARAM_IV);
     if (p != NULL
-        && !OSSL_PARAM_set_octet_string_or_ptr(p, ctx->base.oiv, ctx->base.ivlen)) {
+        && !OSSL_PARAM_set_octet_string(p, ctx->base.oiv, ctx->base.ivlen)
+        && !OSSL_PARAM_set_octet_ptr(p, &ctx->base.oiv, ctx->base.ivlen)) {
         ERR_raise(ERR_LIB_PROV, PROV_R_FAILED_TO_SET_PARAMETER);
         return 0;
     }
     p = OSSL_PARAM_locate(params, OSSL_CIPHER_PARAM_UPDATED_IV);
     if (p != NULL
-        && !OSSL_PARAM_set_octet_string_or_ptr(p, ctx->base.iv, ctx->base.ivlen)) {
+        && !OSSL_PARAM_set_octet_string(p, ctx->base.iv, ctx->base.ivlen)
+        && !OSSL_PARAM_set_octet_ptr(p, &ctx->base.iv, ctx->base.ivlen)) {
         ERR_raise(ERR_LIB_PROV, PROV_R_FAILED_TO_SET_PARAMETER);
         return 0;
     }
-#ifdef FIPS_MODULE
-    p = OSSL_PARAM_locate(params, OSSL_CIPHER_PARAM_FIPS_APPROVED_INDICATOR);
-    if (p != NULL && !OSSL_PARAM_set_int(p, 1))
-        return 0;
-#endif
-    return 1;
+    return OSSL_FIPS_IND_GET_CTX_PARAM_APPROVED(ctx, params);
 }
 
 static const OSSL_PARAM cipher_aes_known_gettable_ctx_params[] = {
@@ -324,10 +322,8 @@ static const OSSL_PARAM cipher_aes_known_gettable_ctx_params[] = {
     OSSL_PARAM_size_t(OSSL_CIPHER_PARAM_IVLEN, NULL),
     OSSL_PARAM_octet_string(OSSL_CIPHER_PARAM_IV, NULL, 0),
     OSSL_PARAM_octet_string(OSSL_CIPHER_PARAM_UPDATED_IV, NULL, 0),
-#ifdef FIPS_MODULE
-    OSSL_PARAM_int(OSSL_CIPHER_PARAM_FIPS_APPROVED_INDICATOR, NULL),
-#endif
-    OSSL_PARAM_END
+    OSSL_FIPS_IND_GETTABLE_CTX_PARAM()
+        OSSL_PARAM_END
 };
 const OSSL_PARAM *aes_gettable_ctx_params(ossl_unused void *cctx,
     ossl_unused void *provctx)

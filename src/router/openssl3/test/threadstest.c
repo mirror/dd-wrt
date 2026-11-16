@@ -385,13 +385,7 @@ static void reader_fn(int *iterations)
         CRYPTO_atomic_add(&writer1_done, 0, &lw1, atomiclock);
         CRYPTO_atomic_add(&writer2_done, 0, &lw2, atomiclock);
         count++;
-        if (!ossl_rcu_read_lock(rcu_lock)) {
-            TEST_info("rcu torture read lock failed");
-            rcu_torture_result = 0;
-            *iterations = count;
-            return;
-        }
-
+        ossl_rcu_read_lock(rcu_lock);
         valp = ossl_rcu_deref(&writer_ptr);
         val = (valp == NULL) ? 0 : *valp;
 
@@ -898,7 +892,7 @@ static void thread_general_worker(void)
         if (!TEST_true(EVP_EncryptInit_ex(cipherctx, ciph, NULL, key, iv))
             || !TEST_true(EVP_EncryptUpdate(cipherctx, out, &ciphoutl,
                 (unsigned char *)message,
-                (int)messlen))
+                messlen))
             || !TEST_true(EVP_EncryptFinal(cipherctx, out, &ciphoutl)))
             goto err;
     }
@@ -1289,7 +1283,7 @@ static void test_pem_read_one(void)
         goto err;
     }
 
-    pem = BIO_new_mem_buf(pemdata, (int)len);
+    pem = BIO_new_mem_buf(pemdata, len);
     if (pem == NULL) {
         multi_set_success(0);
         goto err;
@@ -1366,42 +1360,6 @@ err:
     X509_STORE_free(store);
     store = NULL;
     return ret;
-}
-
-/* Test using OBJ_create in multiple threads */
-static void test_obj_create_worker(void)
-{
-    int i, nid, nid2;
-    time_t now;
-    char name[40];
-
-    for (i = 0; i < 4; i++) {
-        now = time(NULL);
-        snprintf(name, sizeof(name), "Time in Seconds = %ld", (long)now);
-        while (now == time(NULL))
-            /* no-op */;
-        nid = OBJ_create(NULL, NULL, name);
-        nid2 = OBJ_ln2nid(name);
-        if (nid != NID_undef) {
-            if (nid2 != nid) {
-                TEST_info("oops: name='%s' nid=%d nid2=%d", name, nid, nid2);
-                multi_set_success(0);
-                break;
-            }
-        } else {
-            if (nid2 == NID_undef) {
-                TEST_info("oops: name='%s' nid=%d nid2=%d", name, nid, nid2);
-                multi_set_success(0);
-                break;
-            }
-        }
-    }
-}
-
-static int test_obj_stress(void)
-{
-    return thread_run_test(&test_obj_create_worker, MAXIMUM_THREADS,
-        &test_obj_create_worker, 0, NULL);
 }
 
 typedef enum OPTION_choice {
@@ -1494,7 +1452,6 @@ int setup_tests(void)
 #endif
     ADD_TEST(test_pem_read);
     ADD_TEST(test_x509_store);
-    ADD_TEST(test_obj_stress);
     return 1;
 }
 

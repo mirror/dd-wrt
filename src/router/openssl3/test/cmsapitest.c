@@ -215,7 +215,7 @@ static int test_encrypt_decrypt(const EVP_CIPHER *cipher)
     int testresult = 0;
     STACK_OF(X509) *certstack = sk_X509_new_null();
     const char *msg = "Hello world";
-    BIO *msgbio = BIO_new_mem_buf(msg, (int)strlen(msg));
+    BIO *msgbio = BIO_new_mem_buf(msg, strlen(msg));
     BIO *outmsgbio = BIO_new(BIO_s_mem());
     CMS_ContentInfo *content = NULL;
     BIO *contentbio = NULL;
@@ -242,7 +242,7 @@ static int test_encrypt_decrypt(const EVP_CIPHER *cipher)
         goto end;
 
     /* Check we got the message we first started with */
-    if (!TEST_int_eq(BIO_gets(outmsgbio, buf, sizeof(buf)), (int)strlen(msg))
+    if (!TEST_int_eq(BIO_gets(outmsgbio, buf, sizeof(buf)), strlen(msg))
         || !TEST_int_eq(strcmp(buf, msg), 0))
         goto end;
 
@@ -774,7 +774,7 @@ end:
     return ret;
 }
 
-#if !defined(OPENSSL_NO_EC) && !defined(OPENSSL_NO_X963KDF)
+#ifndef OPENSSL_NO_EC
 
 /*
  * Regression test for CVE-2026-63072: an 8-byte out-of-bounds heap write
@@ -928,7 +928,7 @@ int setup_tests(void)
     ADD_TEST(test_pwri_kek_unwrap_short_encrypted_key);
     ADD_TEST(test_pwri_kek_unwrap_no_iv_key);
 
-#if !defined(OPENSSL_NO_EC) && !defined(OPENSSL_NO_X963KDF)
+#ifndef OPENSSL_NO_EC
     ADD_TEST(test_kari_wrap_pad_unwrap_overflow);
 #endif
     return 1;

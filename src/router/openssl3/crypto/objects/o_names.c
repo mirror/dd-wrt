@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1998-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -335,7 +335,7 @@ void OBJ_NAME_do_all_sorted(int type,
     int n;
 
     d.type = type;
-    d.names = OPENSSL_malloc_array(lh_OBJ_NAME_num_items(names_lh), sizeof(*d.names));
+    d.names = OPENSSL_malloc(sizeof(*d.names) * lh_OBJ_NAME_num_items(names_lh));
     /* Really should return an error if !d.names...but its a void function! */
     if (d.names != NULL) {
         d.n = 0;

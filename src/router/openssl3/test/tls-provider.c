@@ -713,8 +713,10 @@ static void xor_freekey(void *keydata)
         return;
     assert(refcnt == 0);
 
-    OPENSSL_free(key->tls_name);
-    key->tls_name = NULL;
+    if (key != NULL) {
+        OPENSSL_free(key->tls_name);
+        key->tls_name = NULL;
+    }
     CRYPTO_FREE_REF(&key->references);
     OPENSSL_free(key);
 }
@@ -1381,8 +1383,7 @@ static X509_SIG *p8info_to_encp8(PKCS8_PRIV_KEY_INFO *p8info,
         return NULL;
     }
     /* First argument == -1 means "standard" */
-    p8 = PKCS8_encrypt_ex(-1, ctx->cipher, kstr, (int)klen, NULL, 0, 0, p8info,
-        libctx, NULL);
+    p8 = PKCS8_encrypt_ex(-1, ctx->cipher, kstr, klen, NULL, 0, 0, p8info, libctx, NULL);
     OPENSSL_cleanse(kstr, klen);
     return p8;
 }

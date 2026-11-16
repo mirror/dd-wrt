@@ -25,8 +25,7 @@ ELSE
   $RIPEMD_GOAL=../../libdefault.a
 ENDIF
 
-# This source contains a parameter decoder conditioned on FIPS_MODULE and
-# must be built separately for each provider.
+# This source contains FIPS-provider-specific parameter handling.
 SOURCE[$DIGEST_COMMON_GOAL]=digestcommon.c
 
 SOURCE[$SHA2_GOAL]=sha2_prov.c

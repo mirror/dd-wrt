@@ -185,7 +185,7 @@ static int evp_md_init_internal(EVP_MD_CTX *ctx, const EVP_MD *type,
     if (type != NULL) {
         ctx->reqdigest = type;
     } else {
-        if (ossl_unlikely(ctx->digest == NULL)) {
+        if (ctx->digest == NULL) {
             ERR_raise(ERR_LIB_EVP, EVP_R_NO_DIGEST_SET);
             return 0;
         }
@@ -200,7 +200,7 @@ static int evp_md_init_internal(EVP_MD_CTX *ctx, const EVP_MD *type,
      * previous handle, re-querying for an ENGINE, and having a
      * reinitialisation, when it may all be unnecessary.
      */
-    if (ossl_unlikely(ctx->engine != NULL)
+    if (ctx->engine != NULL
         && ctx->digest != NULL
         && type->type == ctx->digest->type)
         goto skip_to_init;
@@ -245,8 +245,8 @@ static int evp_md_init_internal(EVP_MD_CTX *ctx, const EVP_MD *type,
     cleanup_old_md_data(ctx, 1);
 
     /* Start of non-legacy code below */
-    if (ossl_likely(ctx->digest == type)) {
-        if (ossl_unlikely(!ossl_assert(type->prov != NULL))) {
+    if (ctx->digest == type) {
+        if (!ossl_assert(type->prov != NULL)) {
             ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
             return 0;
         }
@@ -255,7 +255,7 @@ static int evp_md_init_internal(EVP_MD_CTX *ctx, const EVP_MD *type,
             return 0;
     }
 
-    if (ossl_unlikely(type->prov == NULL)) {
+    if (type->prov == NULL) {
 #ifdef FIPS_MODULE
         /* We only do explicit fetches inside the FIPS module */
         ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
@@ -277,8 +277,8 @@ static int evp_md_init_internal(EVP_MD_CTX *ctx, const EVP_MD *type,
 #endif
     }
 
-    if (ossl_unlikely(type->prov != NULL && ctx->fetched_digest != type)) {
-        if (ossl_unlikely(!EVP_MD_up_ref((EVP_MD *)type))) {
+    if (type->prov != NULL && ctx->fetched_digest != type) {
+        if (!EVP_MD_up_ref((EVP_MD *)type)) {
             ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
             return 0;
         }
@@ -384,15 +384,15 @@ int EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE *impl)
 
 int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *data, size_t count)
 {
-    if (ossl_unlikely(count == 0))
+    if (count == 0)
         return 1;
 
-    if (ossl_unlikely((ctx->flags & EVP_MD_CTX_FLAG_FINALISED) != 0)) {
+    if ((ctx->flags & EVP_MD_CTX_FLAG_FINALISED) != 0) {
         ERR_raise(ERR_LIB_EVP, EVP_R_UPDATE_ERROR);
         return 0;
     }
 
-    if (ossl_unlikely(ctx->pctx != NULL)
+    if (ctx->pctx != NULL
         && EVP_PKEY_CTX_IS_SIGNATURE_OP(ctx->pctx)
         && ctx->pctx->op.sig.algctx != NULL) {
 #ifndef FIPS_MODULE
@@ -415,10 +415,10 @@ int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *data, size_t count)
 
     if (ctx->digest == NULL
         || ctx->digest->prov == NULL
-        || ossl_unlikely((ctx->flags & EVP_MD_CTX_FLAG_NO_INIT) != 0))
+        || (ctx->flags & EVP_MD_CTX_FLAG_NO_INIT) != 0)
         goto legacy;
 
-    if (ossl_unlikely(ctx->digest->dupdate == NULL)) {
+    if (ctx->digest->dupdate == NULL) {
         ERR_raise(ERR_LIB_EVP, EVP_R_UPDATE_ERROR);
         return 0;
     }
@@ -445,22 +445,22 @@ int EVP_DigestFinal_ex(EVP_MD_CTX *ctx, unsigned char *md, unsigned int *isize)
     size_t size = 0;
     size_t mdsize = 0;
 
-    if (ossl_unlikely(ctx->digest == NULL))
+    if (ctx->digest == NULL)
         return 0;
 
     sz = EVP_MD_CTX_get_size(ctx);
-    if (ossl_unlikely(sz < 0))
+    if (sz < 0)
         return 0;
     mdsize = sz;
-    if (ossl_unlikely(ctx->digest->prov == NULL))
+    if (ctx->digest->prov == NULL)
         goto legacy;
 
-    if (ossl_unlikely(ctx->digest->dfinal == NULL)) {
+    if (ctx->digest->dfinal == NULL) {
         ERR_raise(ERR_LIB_EVP, EVP_R_FINAL_ERROR);
         return 0;
     }
 
-    if (ossl_unlikely((ctx->flags & EVP_MD_CTX_FLAG_FINALISED) != 0)) {
+    if ((ctx->flags & EVP_MD_CTX_FLAG_FINALISED) != 0) {
         ERR_raise(ERR_LIB_EVP, EVP_R_FINAL_ERROR);
         return 0;
     }
@@ -470,7 +470,7 @@ int EVP_DigestFinal_ex(EVP_MD_CTX *ctx, unsigned char *md, unsigned int *isize)
     ctx->flags |= EVP_MD_CTX_FLAG_FINALISED;
 
     if (isize != NULL) {
-        if (ossl_likely(size <= UINT_MAX)) {
+        if (size <= UINT_MAX) {
             *isize = (unsigned int)size;
         } else {
             ERR_raise(ERR_LIB_EVP, EVP_R_FINAL_ERROR);
@@ -485,7 +485,7 @@ legacy:
     OPENSSL_assert(mdsize <= EVP_MAX_MD_SIZE);
     ret = ctx->digest->final(ctx, md);
     if (isize != NULL)
-        *isize = (unsigned int)mdsize;
+        *isize = mdsize;
     if (ctx->digest->cleanup) {
         ctx->digest->cleanup(ctx);
         EVP_MD_CTX_set_flags(ctx, EVP_MD_CTX_FLAG_CLEANED);
@@ -501,20 +501,20 @@ int EVP_DigestFinalXOF(EVP_MD_CTX *ctx, unsigned char *md, size_t size)
     OSSL_PARAM params[2];
     size_t i = 0;
 
-    if (ossl_unlikely(ctx->digest == NULL)) {
+    if (ctx->digest == NULL) {
         ERR_raise(ERR_LIB_EVP, EVP_R_INVALID_NULL_ALGORITHM);
         return 0;
     }
 
-    if (ossl_unlikely(ctx->digest->prov == NULL))
+    if (ctx->digest->prov == NULL)
         goto legacy;
 
-    if (ossl_unlikely(ctx->digest->dfinal == NULL)) {
+    if (ctx->digest->dfinal == NULL) {
         ERR_raise(ERR_LIB_EVP, EVP_R_FINAL_ERROR);
         return 0;
     }
 
-    if (ossl_unlikely((ctx->flags & EVP_MD_CTX_FLAG_FINALISED) != 0)) {
+    if ((ctx->flags & EVP_MD_CTX_FLAG_FINALISED) != 0) {
         ERR_raise(ERR_LIB_EVP, EVP_R_FINAL_ERROR);
         return 0;
     }
@@ -527,7 +527,7 @@ int EVP_DigestFinalXOF(EVP_MD_CTX *ctx, unsigned char *md, size_t size)
     params[i++] = OSSL_PARAM_construct_size_t(OSSL_DIGEST_PARAM_XOFLEN, &size);
     params[i++] = OSSL_PARAM_construct_end();
 
-    if (ossl_likely(EVP_MD_CTX_set_params(ctx, params) >= 0))
+    if (EVP_MD_CTX_set_params(ctx, params) >= 0)
         ret = ctx->digest->dfinal(ctx->algctx, md, &size, size);
 
     ctx->flags |= EVP_MD_CTX_FLAG_FINALISED;
@@ -778,7 +778,7 @@ int EVP_MD_CTX_set_params(EVP_MD_CTX *ctx, const OSSL_PARAM params[])
     EVP_PKEY_CTX *pctx = ctx->pctx;
 
     /* If we have a pctx then we should try that first */
-    if (ossl_unlikely(pctx != NULL)
+    if (pctx != NULL
         && (pctx->operation == EVP_PKEY_OP_VERIFYCTX
             || pctx->operation == EVP_PKEY_OP_SIGNCTX)
         && pctx->op.sig.algctx != NULL
@@ -786,7 +786,7 @@ int EVP_MD_CTX_set_params(EVP_MD_CTX *ctx, const OSSL_PARAM params[])
         return pctx->op.sig.signature->set_ctx_md_params(pctx->op.sig.algctx,
             params);
 
-    if (ossl_likely(ctx->digest != NULL && ctx->digest->set_ctx_params != NULL))
+    if (ctx->digest != NULL && ctx->digest->set_ctx_params != NULL)
         return ctx->digest->set_ctx_params(ctx->algctx, params);
 
     return 0;
@@ -864,12 +864,12 @@ const OSSL_PARAM *EVP_MD_CTX_gettable_params(EVP_MD_CTX *ctx)
     EVP_PKEY_CTX *pctx;
     void *provctx;
 
-    if (ossl_unlikely(ctx == NULL))
+    if (ctx == NULL)
         return NULL;
 
     /* If we have a pctx then we should try that first */
     pctx = ctx->pctx;
-    if (ossl_unlikely(pctx != NULL)
+    if (pctx != NULL
         && (pctx->operation == EVP_PKEY_OP_VERIFYCTX
             || pctx->operation == EVP_PKEY_OP_SIGNCTX)
         && pctx->op.sig.signature != NULL
@@ -878,8 +878,7 @@ const OSSL_PARAM *EVP_MD_CTX_gettable_params(EVP_MD_CTX *ctx)
         return pctx->op.sig.signature->gettable_ctx_md_params(
             pctx->op.sig.algctx);
 
-    if (ossl_unlikely(ctx->digest != NULL
-            && ctx->digest->gettable_ctx_params != NULL)) {
+    if (ctx->digest != NULL && ctx->digest->gettable_ctx_params != NULL) {
         provctx = ossl_provider_ctx(EVP_MD_get0_provider(ctx->digest));
         return ctx->digest->gettable_ctx_params(ctx->algctx, provctx);
     }

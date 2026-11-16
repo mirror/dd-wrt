@@ -48,7 +48,6 @@ B<openssl> B<x509>
 [B<-purpose>]
 [B<-pubkey>]
 [B<-modulus>]
-[B<-multi>]
 [B<-checkend> I<num>]
 [B<-checkhost> I<host>]
 [B<-checkemail> I<host>]
@@ -339,11 +338,6 @@ Prints the certificate's SubjectPublicKeyInfo block in PEM format.
 This option prints out the value of the modulus of the public key
 contained in the certificate.
 
-=item B<-multi>
-
-This option prints selected information about all certificates
-contained in the input.
-
 =back
 
 =head2 Certificate Checking Options
@@ -352,12 +346,8 @@ contained in the input.
 
 =item B<-checkend> I<arg>
 
-Without B<-multi> checks if the certificate expires within the next
-I<arg> seconds and exits nonzero if it will expire or zero if not.
-
-With B<-multi> checks if any certificate in the input will expire
-within the next I<arg> seconds and exits nonzero if any will expire
-or zero if none will.
+Checks if the certificate expires within the next I<arg> seconds and exits
+nonzero if yes it will expire or zero if not.
 
 =item B<-checkhost> I<host>
 
@@ -463,7 +453,7 @@ instead of the key contained in the input
 or given with the B<-key> (or B<-signkey>) option.
 If the input contains no public key but a private key, its public part is used.
 
-This option can be used in conjunction with B<-new> and B<-set_subject>
+This option can be used in conjunction with b<-new> and B<-set_subject>
 to directly generate a certificate containing any desired public key.
 
 This option is also useful for creating self-issued certificates that are not
@@ -796,12 +786,6 @@ Set a certificate to be trusted for SSL client use and change set its alias to
  openssl x509 -in cert.pem -addtrust clientAuth \
         -setalias "Steve's Class 1 CA" -out trust.pem
 
-Check if any certificates in a chain are due to expire within the next 30 days
-(returns zero if none will expire, nonzero if any will expire):
-
- openssl x509 -in chain.pem -multi -checkend $[3600*24*30] \
-        && echo 'perform renewal' || echo 'renewal unnecessary'
-
 =head1 NOTES
 
 The conversion to UTF8 format used with the name options assumes that
@@ -852,7 +836,7 @@ and key identifier extensions are included by default.
 
 =head1 COPYRIGHT
 
-Copyright 2000-2025 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2000-2024 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

@@ -403,7 +403,7 @@ int tls_default_read_n(OSSL_RECORD_LAYER *rl, size_t n, size_t max, int extend,
 
         clear_sys_error();
         if (bio != NULL) {
-            ret = BIO_read(bio, pkt + len + left, (int)(max - left));
+            ret = BIO_read(bio, pkt + len + left, max - left);
             if (ret > 0) {
                 bioread = ret;
                 ret = OSSL_RECORD_RETURN_SUCCESS;
@@ -816,7 +816,7 @@ int tls_get_more_records(OSSL_RECORD_LAYER *rl)
     }
 
     if (mac_size > 0) {
-        macbufs = OPENSSL_calloc(num_recs, sizeof(*macbufs));
+        macbufs = OPENSSL_zalloc(sizeof(*macbufs) * num_recs);
         if (macbufs == NULL) {
             RLAYERfatal(rl, SSL_AD_INTERNAL_ERROR, ERR_R_CRYPTO_LIB);
             return OSSL_RECORD_RETURN_FATAL;
@@ -879,7 +879,7 @@ int tls_get_more_records(OSSL_RECORD_LAYER *rl)
     OSSL_TRACE_BEGIN(TLS)
     {
         BIO_printf(trc_out, "dec %lu\n", (unsigned long)rr[0].length);
-        BIO_dump_indent(trc_out, rr[0].data, (int)rr[0].length, 4);
+        BIO_dump_indent(trc_out, rr[0].data, rr[0].length, 4);
     }
     OSSL_TRACE_END(TLS);
 
@@ -2107,7 +2107,7 @@ const COMP_METHOD *tls_get_compression(OSSL_RECORD_LAYER *rl)
 
 void tls_set_max_frag_len(OSSL_RECORD_LAYER *rl, size_t max_frag_len)
 {
-    rl->max_frag_len = (unsigned int)max_frag_len;
+    rl->max_frag_len = max_frag_len;
     /*
      * We don't need to adjust buffer sizes. Write buffer sizes are
      * automatically checked anyway. We should only be changing the read buffer

@@ -39,9 +39,7 @@ static size_t internal_trace_cb(const char *buf, size_t cnt,
         BIO_set_prefix(trace_data->bio, buffer);
         break;
     case OSSL_TRACE_CTRL_WRITE:
-        if (cnt > INT_MAX)
-            cnt = INT_MAX;
-        ret = BIO_write(trace_data->bio, buf, (int)cnt);
+        ret = BIO_write(trace_data->bio, buf, cnt);
         break;
     case OSSL_TRACE_CTRL_END:
         trace_data->ingroup = 0;

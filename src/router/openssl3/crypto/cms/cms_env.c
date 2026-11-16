@@ -7,12 +7,6 @@
  * https://www.openssl.org/source/license.html
  */
 
-/*
- * Low level key APIs (DH etc) are deprecated for public use, but still ok for
- * internal use.
- */
-#include "internal/deprecated.h"
-
 #include "internal/cryptlib.h"
 #include <openssl/asn1t.h>
 #include <openssl/pem.h>
@@ -20,7 +14,6 @@
 #include <openssl/err.h>
 #include <openssl/cms.h>
 #include <openssl/evp.h>
-#include <openssl/core_names.h>
 #include "internal/sizes.h"
 #include "crypto/asn1.h"
 #include "crypto/evp.h"
@@ -116,12 +109,9 @@ int ossl_cms_env_asn1_ctrl(CMS_RecipientInfo *ri, int cmd)
 {
     EVP_PKEY *pkey;
     int i;
-
-    switch (ri->type) {
-    case CMS_RECIPINFO_TRANS:
+    if (ri->type == CMS_RECIPINFO_TRANS)
         pkey = ri->d.ktri->pkey;
-        break;
-    case CMS_RECIPINFO_AGREE: {
+    else if (ri->type == CMS_RECIPINFO_AGREE) {
         EVP_PKEY_CTX *pctx = ri->d.kari->pctx;
 
         if (pctx == NULL)
@@ -129,13 +119,8 @@ int ossl_cms_env_asn1_ctrl(CMS_RecipientInfo *ri, int cmd)
         pkey = EVP_PKEY_CTX_get0_pkey(pctx);
         if (pkey == NULL)
             return 0;
-        break;
-    }
-    case CMS_RECIPINFO_KEM:
-        return ossl_cms_kem_envelope(ri, cmd);
-    default:
+    } else
         return 0;
-    }
 
     if (EVP_PKEY_is_a(pkey, "DHX") || EVP_PKEY_is_a(pkey, "DH"))
         return ossl_cms_dh_envelope(ri, cmd);
@@ -215,9 +200,6 @@ void ossl_cms_RecipientInfos_set_cmsctx(CMS_ContentInfo *cms)
             case CMS_RECIPINFO_PASS:
                 ri->d.pwri->cms_ctx = ctx;
                 break;
-            case CMS_RECIPINFO_KEM:
-                ri->d.ori->d.kemri->cms_ctx = ctx;
-                break;
             default:
                 break;
             }
@@ -236,8 +218,6 @@ EVP_PKEY_CTX *CMS_RecipientInfo_get0_pkey_ctx(CMS_RecipientInfo *ri)
         return ri->d.ktri->pctx;
     else if (ri->type == CMS_RECIPINFO_AGREE)
         return ri->d.kari->pctx;
-    else if (ri->type == CMS_RECIPINFO_KEM)
-        return ri->d.ori->d.kemri->pctx;
     return NULL;
 }
 
@@ -353,7 +333,7 @@ static int cms_RecipientInfo_ktri_init(CMS_RecipientInfo *ri, X509 *recip,
     ri->d.ktri = M_ASN1_new_of(CMS_KeyTransRecipientInfo);
     if (!ri->d.ktri)
         return 0;
-    ri->encoded_type = ri->type = CMS_RECIPINFO_TRANS;
+    ri->type = CMS_RECIPINFO_TRANS;
 
     ktri = ri->d.ktri;
     ktri->cms_ctx = ctx;
@@ -437,11 +417,6 @@ CMS_RecipientInfo *CMS_add1_recipient(CMS_ContentInfo *cms, X509 *recip,
     case CMS_RECIPINFO_AGREE:
         if (!ossl_cms_RecipientInfo_kari_init(ri, recip, pk, originator,
                 originatorPrivKey, flags, ctx))
-            goto err;
-        break;
-
-    case CMS_RECIPINFO_KEM:
-        if (!ossl_cms_RecipientInfo_kemri_init(ri, recip, pk, flags, ctx))
             goto err;
         break;
 
@@ -572,7 +547,7 @@ static int cms_RecipientInfo_ktri_encrypt(const CMS_ContentInfo *cms,
     if (EVP_PKEY_encrypt(pctx, ek, &eklen, ec->key, ec->keylen) <= 0)
         goto err;
 
-    ASN1_STRING_set0(ktri->encryptedKey, ek, (int)eklen);
+    ASN1_STRING_set0(ktri->encryptedKey, ek, eklen);
     ek = NULL;
 
     ret = 1;
@@ -714,7 +689,7 @@ CMS_RecipientInfo *CMS_add0_recipient_key(CMS_ContentInfo *cms, int nid,
     CMS_KEKRecipientInfo *kekri;
     STACK_OF(CMS_RecipientInfo) *ris = CMS_get0_RecipientInfos(cms);
 
-    if (ris == NULL || idlen > INT_MAX)
+    if (ris == NULL)
         goto err;
 
     if (nid == NID_undef) {
@@ -763,7 +738,7 @@ CMS_RecipientInfo *CMS_add0_recipient_key(CMS_ContentInfo *cms, int nid,
         ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
         goto err;
     }
-    ri->encoded_type = ri->type = CMS_RECIPINFO_KEK;
+    ri->type = CMS_RECIPINFO_KEK;
 
     kekri = ri->d.kekri;
 
@@ -787,7 +762,7 @@ CMS_RecipientInfo *CMS_add0_recipient_key(CMS_ContentInfo *cms, int nid,
     kekri->key = key;
     kekri->keylen = keylen;
 
-    ASN1_STRING_set0(kekri->kekid->keyIdentifier, id, (int)idlen);
+    ASN1_STRING_set0(kekri->kekid->keyIdentifier, id, idlen);
 
     kekri->kekid->date = date;
 
@@ -921,7 +896,7 @@ static int cms_RecipientInfo_kekri_encrypt(const CMS_ContentInfo *cms,
 
     EVP_CIPHER_CTX_set_flags(ctx, EVP_CIPHER_CTX_FLAG_WRAP_ALLOW);
     if (!EVP_EncryptInit_ex(ctx, cipher, NULL, kekri->key, NULL)
-        || !EVP_EncryptUpdate(ctx, wkey, &wkeylen, ec->key, (int)ec->keylen)
+        || !EVP_EncryptUpdate(ctx, wkey, &wkeylen, ec->key, ec->keylen)
         || !EVP_EncryptFinal_ex(ctx, wkey + wkeylen, &outlen)) {
         ERR_raise(ERR_LIB_CMS, CMS_R_WRAP_ERROR);
         goto err;
@@ -1039,9 +1014,6 @@ int CMS_RecipientInfo_decrypt(CMS_ContentInfo *cms, CMS_RecipientInfo *ri)
     case CMS_RECIPINFO_PASS:
         return ossl_cms_RecipientInfo_pwri_crypt(cms, ri, 0);
 
-    case CMS_RECIPINFO_KEM:
-        return ossl_cms_RecipientInfo_kemri_decrypt(cms, ri);
-
     default:
         ERR_raise(ERR_LIB_CMS, CMS_R_UNSUPPORTED_RECIPIENTINFO_TYPE);
         return 0;
@@ -1062,9 +1034,6 @@ int CMS_RecipientInfo_encrypt(const CMS_ContentInfo *cms, CMS_RecipientInfo *ri)
 
     case CMS_RECIPINFO_PASS:
         return ossl_cms_RecipientInfo_pwri_crypt(cms, ri, 1);
-
-    case CMS_RECIPINFO_KEM:
-        return ossl_cms_RecipientInfo_kemri_encrypt(cms, ri);
 
     default:
         ERR_raise(ERR_LIB_CMS, CMS_R_UNSUPPORTED_RECIPIENT_TYPE);
@@ -1120,8 +1089,7 @@ static void cms_env_set_version(CMS_EnvelopedData *env)
 
     for (i = 0; i < sk_CMS_RecipientInfo_num(env->recipientInfos); i++) {
         ri = sk_CMS_RecipientInfo_value(env->recipientInfos, i);
-        if (ri->type == CMS_RECIPINFO_PASS || ri->type == CMS_RECIPINFO_OTHER
-            || ri->type == CMS_RECIPINFO_KEM) {
+        if (ri->type == CMS_RECIPINFO_PASS || ri->type == CMS_RECIPINFO_OTHER) {
             env->version = 3;
             return;
         } else if (ri->type != CMS_RECIPINFO_TRANS
@@ -1400,18 +1368,6 @@ err:
  */
 int ossl_cms_pkey_get_ri_type(EVP_PKEY *pk)
 {
-    int ri_type;
-    EVP_PKEY_CTX *ctx = NULL;
-
-    /*
-     * First check the provider for RecipientInfo support since a key may support
-     * multiple types, e.g. an RSA key and provider may support RSA key transport
-     * and/or RSA-KEM.
-     */
-    if (evp_pkey_is_provided(pk)
-        && EVP_PKEY_get_int_param(pk, OSSL_PKEY_PARAM_CMS_RI_TYPE, &ri_type))
-        return ri_type;
-
     /* Check types that we know about */
     if (EVP_PKEY_is_a(pk, "DH"))
         return CMS_RECIPINFO_AGREE;
@@ -1425,7 +1381,7 @@ int ossl_cms_pkey_get_ri_type(EVP_PKEY *pk)
         return CMS_RECIPINFO_TRANS;
 
     /*
-     * Otherwise this might be an engine implementation, so see if we can get
+     * Otherwise this might ben an engine implementation, so see if we can get
      * the type from the ameth.
      */
     if (pk->ameth && pk->ameth->pkey_ctrl) {
@@ -1434,25 +1390,7 @@ int ossl_cms_pkey_get_ri_type(EVP_PKEY *pk)
         if (i > 0)
             return r;
     }
-
-    /*
-     * Otherwise try very hard to figure out what RecipientInfo the key supports.
-     */
-    ri_type = CMS_RECIPINFO_TRANS;
-    ctx = EVP_PKEY_CTX_new(pk, NULL);
-    if (ctx != NULL) {
-        ERR_set_mark();
-        if (EVP_PKEY_encrypt_init(ctx) > 0)
-            ri_type = CMS_RECIPINFO_TRANS;
-        else if (EVP_PKEY_derive_init(ctx) > 0)
-            ri_type = CMS_RECIPINFO_AGREE;
-        else if (EVP_PKEY_encapsulate_init(ctx, NULL) > 0)
-            ri_type = CMS_RECIPINFO_KEM;
-        ERR_pop_to_mark();
-    }
-    EVP_PKEY_CTX_free(ctx);
-
-    return ri_type;
+    return CMS_RECIPINFO_TRANS;
 }
 
 int ossl_cms_pkey_is_ri_type_supported(EVP_PKEY *pk, int ri_type)
@@ -1473,80 +1411,4 @@ int ossl_cms_pkey_is_ri_type_supported(EVP_PKEY *pk, int ri_type)
         return 0;
 
     return (supportedRiType == ri_type);
-}
-
-int ossl_cms_RecipientInfo_wrap_init(CMS_RecipientInfo *ri,
-    const EVP_CIPHER *cipher)
-{
-    const CMS_CTX *cms_ctx;
-    EVP_CIPHER_CTX *ctx;
-    const EVP_CIPHER *kekcipher;
-    EVP_CIPHER *fetched_kekcipher;
-    const char *kekcipher_name;
-    int keylen;
-    int ret;
-
-    if (ri->type == CMS_RECIPINFO_AGREE) {
-        cms_ctx = ri->d.kari->cms_ctx;
-        ctx = ri->d.kari->ctx;
-    } else if (ri->type == CMS_RECIPINFO_KEM) {
-        cms_ctx = ri->d.ori->d.kemri->cms_ctx;
-        ctx = ri->d.ori->d.kemri->ctx;
-    } else {
-        ERR_raise(ERR_LIB_CMS, CMS_R_UNSUPPORTED_RECIPIENTINFO_TYPE);
-        return 0;
-    }
-
-    /* If a suitable wrap algorithm is already set nothing to do */
-    kekcipher = EVP_CIPHER_CTX_get0_cipher(ctx);
-    if (kekcipher != NULL) {
-        if (EVP_CIPHER_CTX_get_mode(ctx) != EVP_CIPH_WRAP_MODE)
-            return 0;
-        return 1;
-    }
-    if (cipher == NULL)
-        return 0;
-    keylen = EVP_CIPHER_get_key_length(cipher);
-    if (keylen <= 0) {
-        ERR_raise(ERR_LIB_CMS, CMS_R_INVALID_KEY_LENGTH);
-        return 0;
-    }
-    if ((EVP_CIPHER_get_flags(cipher) & EVP_CIPH_FLAG_GET_WRAP_CIPHER) != 0) {
-        ret = EVP_CIPHER_meth_get_ctrl(cipher)(NULL, EVP_CTRL_GET_WRAP_CIPHER,
-            0, &kekcipher);
-        if (ret <= 0)
-            return 0;
-
-        if (kekcipher != NULL) {
-            if (EVP_CIPHER_get_mode(kekcipher) != EVP_CIPH_WRAP_MODE)
-                return 0;
-            kekcipher_name = EVP_CIPHER_get0_name(kekcipher);
-            goto enc;
-        }
-    }
-
-    /*
-     * Pick a cipher based on content encryption cipher. If it is DES3 use
-     * DES3 wrap otherwise use AES wrap similar to key size.
-     */
-#ifndef OPENSSL_NO_DES
-    if (EVP_CIPHER_get_type(cipher) == NID_des_ede3_cbc)
-        kekcipher_name = SN_id_smime_alg_CMS3DESwrap;
-    else
-#endif
-        if (keylen <= 16)
-        kekcipher_name = SN_id_aes128_wrap;
-    else if (keylen <= 24)
-        kekcipher_name = SN_id_aes192_wrap;
-    else
-        kekcipher_name = SN_id_aes256_wrap;
-enc:
-    fetched_kekcipher = EVP_CIPHER_fetch(ossl_cms_ctx_get0_libctx(cms_ctx),
-        kekcipher_name,
-        ossl_cms_ctx_get0_propq(cms_ctx));
-    if (fetched_kekcipher == NULL)
-        return 0;
-    ret = EVP_EncryptInit_ex(ctx, fetched_kekcipher, NULL, NULL, NULL);
-    EVP_CIPHER_free(fetched_kekcipher);
-    return ret;
 }

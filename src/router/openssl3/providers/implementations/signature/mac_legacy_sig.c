@@ -29,12 +29,6 @@
 #include "internal/fips.h"
 #include "internal/common.h"
 
-#ifndef FIPS_MODULE
-#define mac_legacy_get_ctx_params_decoder
-#define mac_legacy_set_ctx_params_decoder
-#endif
-#include "providers/implementations/signature/mac_legacy_sig.inc"
-
 static OSSL_FUNC_signature_newctx_fn mac_hmac_newctx;
 static OSSL_FUNC_signature_newctx_fn mac_siphash_newctx;
 static OSSL_FUNC_signature_newctx_fn mac_poly1305_newctx;
@@ -162,11 +156,12 @@ static int mac_digest_sign_init(void *vpmacctx, const char *mdname, void *vkey,
         engine = (char *)ENGINE_get_id(pmacctx->key->cipher.engine);
 #endif
 
-    if (!ossl_prov_set_macctx(pmacctx->macctx,
+    if (!ossl_prov_set_macctx(pmacctx->macctx, NULL,
             (char *)ciphername,
             (char *)mdname,
             (char *)engine,
-            pmacctx->key->properties))
+            pmacctx->key->properties,
+            NULL, 0))
         return 0;
 
 #ifdef FIPS_MODULE
@@ -256,17 +251,15 @@ static int mac_set_ctx_params(void *vpmacctx, const OSSL_PARAM params[])
 
 #ifdef FIPS_MODULE
     if (ctx->hmac_keysize_check) {
-        struct mac_legacy_set_ctx_params_st p;
+        const OSSL_PARAM *p;
 
-        if (!mac_legacy_set_ctx_params_decoder(params, &p))
+        if (!OSSL_FIPS_IND_SET_CTX_PARAM(ctx, OSSL_FIPS_IND_SETTABLE0,
+                params, OSSL_MAC_PARAM_FIPS_KEY_CHECK))
             return 0;
-        if (!OSSL_FIPS_IND_SET_CTX_FROM_PARAM(ctx, OSSL_FIPS_IND_SETTABLE0,
-                p.ind_k))
-            return 0;
-        if (p.key != NULL) {
-            if (p.key->data_type != OSSL_PARAM_OCTET_STRING)
+        if ((p = OSSL_PARAM_locate_const(params, OSSL_MAC_PARAM_KEY)) != NULL) {
+            if (p->data_type != OSSL_PARAM_OCTET_STRING)
                 return 0;
-            if (!hmac_check_key(ctx, p.key->data, p.key->data_size))
+            if (!hmac_check_key(ctx, p->data, p->data_size))
                 return 0;
         }
     }
@@ -291,26 +284,30 @@ static const OSSL_PARAM *mac_settable_ctx_params(ossl_unused void *ctx,
     return params;
 }
 
+static const OSSL_PARAM mac_known_gettable_ctx_params[] = {
+    OSSL_FIPS_IND_GETTABLE_CTX_PARAM()
+        OSSL_PARAM_END
+};
+
 static const OSSL_PARAM *mac_gettable_ctx_params(ossl_unused void *vctx,
     ossl_unused void *provctx)
 {
-    return mac_legacy_get_ctx_params_list;
+    return mac_known_gettable_ctx_params;
 }
 
 static int mac_get_ctx_params(void *vctx, OSSL_PARAM params[])
 {
     PROV_MAC_CTX *ctx = vctx;
 #ifdef FIPS_MODULE
-    struct mac_legacy_get_ctx_params_st p;
+    OSSL_PARAM *p;
 #endif
 
     if (ctx == NULL)
         return 0;
 
 #ifdef FIPS_MODULE
-    if (!mac_legacy_get_ctx_params_decoder(params, &p))
-        return 0;
-    if (p.ind != NULL) {
+    p = OSSL_PARAM_locate(params, OSSL_ALG_PARAM_FIPS_APPROVED_INDICATOR);
+    if (p != NULL) {
         int approved = OSSL_FIPS_IND_GET(ctx)->approved;
 
         /* Internal HMAC delegates its indicator checks to this wrapper. */
@@ -327,7 +324,7 @@ static int mac_get_ctx_params(void *vctx, OSSL_PARAM params[])
                 return 0;
             approved &= mac_approved;
         }
-        if (!OSSL_PARAM_set_int(p.ind, approved))
+        if (!OSSL_PARAM_set_int(p, approved))
             return 0;
     }
 #endif

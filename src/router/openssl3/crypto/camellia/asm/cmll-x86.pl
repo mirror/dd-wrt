@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2008-2025 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2008-2020 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -8,13 +8,14 @@
 
 
 # ====================================================================
-# Copyright (c) 2008 Andy Polyakov <https://github.com/dot-asm>
+# Copyright (c) 2008 Andy Polyakov <appro@openssl.org>
 #
 # This module may be used under the terms of either the GNU General
 # Public License version 2 or later, the GNU Lesser General Public
 # License version 2.1 or later, the Mozilla Public License version
 # 1.1 or the BSD License. The exact terms of either license are
-# distributed along with this module.
+# distributed along with this module. For further details see
+# http://www.openssl.org/~appro/camellia/.
 # ====================================================================
 
 # Performance in cycles per processed byte (less is better) in
@@ -1141,7 +1142,7 @@ my ($s0,$s1,$s2,$s3) = @T;
 &function_end("Camellia_cbc_encrypt");
 }
 
-&asciz("Camellia for x86 by <https://github.com/dot-asm>");
+&asciz("Camellia for x86 by <appro\@openssl.org>");
 
 &asm_finish();
 

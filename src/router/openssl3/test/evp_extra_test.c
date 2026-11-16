@@ -1520,11 +1520,11 @@ static int test_EC_priv_pub(void)
         goto err;
 
     /* Positive and negative testcase for EVP_PKEY_get1_encoded_public_key */
-    if (!TEST_size_t_gt(EVP_PKEY_get1_encoded_public_key(params_and_pub, &encoded), 0))
+    if (!TEST_int_gt(EVP_PKEY_get1_encoded_public_key(params_and_pub, &encoded), 0))
         goto err;
     OPENSSL_free(encoded);
     encoded = NULL;
-    if (!TEST_size_t_eq(EVP_PKEY_get1_encoded_public_key(just_params, &encoded), 0)) {
+    if (!TEST_int_eq(EVP_PKEY_get1_encoded_public_key(just_params, &encoded), 0)) {
         OPENSSL_free(encoded);
         encoded = NULL;
         goto err;
@@ -1535,7 +1535,7 @@ static int test_EC_priv_pub(void)
                          OSSL_PKEY_PARAM_ENCODED_PUBLIC_KEY,
                          buffer, sizeof(buffer), &len),
             1)
-        || !TEST_size_t_eq(len, 65))
+        || !TEST_int_eq(len, 65))
         goto err;
 
     len = 0;
@@ -1543,7 +1543,7 @@ static int test_EC_priv_pub(void)
                          OSSL_PKEY_PARAM_ENCODED_PUBLIC_KEY,
                          NULL, 0, &len),
             1)
-        || !TEST_size_t_eq(len, 65))
+        || !TEST_int_eq(len, 65))
         goto err;
 
     /* too-short buffer len*/
@@ -2456,7 +2456,7 @@ static int test_d2i_AutoPrivateKey(int i)
     int expected_id = ak->evptype;
 
     p = input;
-    if (!TEST_ptr(pkey = d2i_AutoPrivateKey(NULL, &p, (long)input_len))
+    if (!TEST_ptr(pkey = d2i_AutoPrivateKey(NULL, &p, input_len))
         || !TEST_ptr_eq(p, input + input_len)
         || !TEST_int_eq(EVP_PKEY_get_id(pkey), expected_id))
         goto done;
@@ -2565,7 +2565,7 @@ static int test_EVP_PKCS82PKEY_v2(int i)
 
     /* Can we parse PKCS#8 v2, ignoring the public key for now? */
     p = input;
-    p8inf = d2i_PKCS8_PRIV_KEY_INFO(NULL, &p, (long)input_len);
+    p8inf = d2i_PKCS8_PRIV_KEY_INFO(NULL, &p, input_len);
     if (!TEST_ptr(p8inf)
         || !TEST_true(p == input + input_len))
         goto done;
@@ -2748,7 +2748,7 @@ static int test_EVP_SM2_verify(void)
     EVP_PKEY_CTX *pctx = NULL;
     EVP_MD *sm3 = NULL;
 
-    bio = BIO_new_mem_buf(pubkey, (int)strlen(pubkey));
+    bio = BIO_new_mem_buf(pubkey, strlen(pubkey));
     if (!TEST_true(bio != NULL))
         goto done;
 
@@ -2773,7 +2773,7 @@ static int test_EVP_SM2_verify(void)
     if (!TEST_true(EVP_DigestVerifyInit(mctx, NULL, sm3, NULL, pkey)))
         goto done;
 
-    if (!TEST_int_gt(EVP_PKEY_CTX_set1_id(pctx, id, (int)strlen(id)), 0))
+    if (!TEST_int_gt(EVP_PKEY_CTX_set1_id(pctx, id, strlen(id)), 0))
         goto done;
 
     if (!TEST_true(EVP_DigestVerifyUpdate(mctx, msg, strlen(msg))))
@@ -3373,7 +3373,7 @@ static struct keys_st {
 
 #ifndef OPENSSL_NO_ML_KEM
 static int
-ml_kem_seed_to_priv(const char *alg, const unsigned char *seed, size_t seedlen,
+ml_kem_seed_to_priv(const char *alg, const unsigned char *seed, int seedlen,
     unsigned char **ret, size_t *retlen)
 {
     OSSL_PARAM parr[2] = { OSSL_PARAM_END, OSSL_PARAM_END };
@@ -3827,7 +3827,7 @@ static int test_X509_PUBKEY_inplace(void)
 
     if (!TEST_ptr(xp))
         goto done;
-    if (!TEST_ptr(d2i_X509_PUBKEY(&xp, &p, (long)input_len)))
+    if (!TEST_ptr(d2i_X509_PUBKEY(&xp, &p, input_len)))
         goto done;
 
     if (!TEST_ptr(X509_PUBKEY_get0(xp)))
@@ -3836,7 +3836,7 @@ static int test_X509_PUBKEY_inplace(void)
     p = kExampleBadECPubKeyDER;
     input_len = sizeof(kExampleBadECPubKeyDER);
 
-    if (!TEST_ptr(xp = d2i_X509_PUBKEY(&xp, &p, (long)input_len)))
+    if (!TEST_ptr(xp = d2i_X509_PUBKEY(&xp, &p, input_len)))
         goto done;
 
     if (!TEST_true(X509_PUBKEY_get0(xp) == NULL))
@@ -3858,7 +3858,7 @@ static int test_X509_PUBKEY_dup(void)
 
     xp = X509_PUBKEY_new_ex(testctx, testpropq);
     if (!TEST_ptr(xp)
-        || !TEST_ptr(d2i_X509_PUBKEY(&xp, &p, (long)input_len))
+        || !TEST_ptr(d2i_X509_PUBKEY(&xp, &p, input_len))
         || !TEST_ptr(xq = X509_PUBKEY_dup(xp))
         || !TEST_ptr_ne(xp, xq))
         goto done;
@@ -3873,7 +3873,7 @@ static int test_X509_PUBKEY_dup(void)
     p = kExampleBadECPubKeyDER;
     input_len = sizeof(kExampleBadECPubKeyDER);
 
-    if (!TEST_ptr(xp = d2i_X509_PUBKEY(&xp, &p, (long)input_len))
+    if (!TEST_ptr(xp = d2i_X509_PUBKEY(&xp, &p, input_len))
         || !TEST_ptr(xq = X509_PUBKEY_dup(xp)))
         goto done;
 
@@ -4172,7 +4172,6 @@ static int test_RSA_OAEP_set_null_label(void)
     int ret = 0;
     EVP_PKEY *key = NULL;
     EVP_PKEY_CTX *key_ctx = NULL;
-    char *label = NULL;
 
     if (!TEST_ptr(key = load_example_rsa_key())
         || !TEST_ptr(key_ctx = EVP_PKEY_CTX_new_from_pkey(testctx, key, NULL))
@@ -4182,13 +4181,8 @@ static int test_RSA_OAEP_set_null_label(void)
     if (!TEST_true(EVP_PKEY_CTX_set_rsa_padding(key_ctx, RSA_PKCS1_OAEP_PADDING)))
         goto err;
 
-    if (!TEST_ptr(label = OPENSSL_strdup("foo")))
+    if (!TEST_true(EVP_PKEY_CTX_set0_rsa_oaep_label(key_ctx, OPENSSL_strdup("foo"), 0)))
         goto err;
-
-    if (!TEST_true(EVP_PKEY_CTX_set0_rsa_oaep_label(key_ctx, label, 0))) {
-        OPENSSL_free(label);
-        goto err;
-    }
 
     if (!TEST_true(EVP_PKEY_CTX_set0_rsa_oaep_label(key_ctx, NULL, 0)))
         goto err;
@@ -4622,51 +4616,168 @@ static int test_dhx_derive_rejects_bad_peer_q(void)
     BIGNUM *q_valid = NULL, *pub_local = NULL, *priv_local = NULL;
     BIGNUM *q_bad = NULL, *pub_bad = NULL;
 
-    const char *hex_p = "87a8e61db4b6663cffbbd19c651959998ceef608660dd0f25d2ceed4435e3b00"
-                        "e00df8f1d61957d4faf7df4561b2aa3016c3d91134096faa3bf4296d830e9a7c"
-                        "209e0c6497517abd5a8a9d306bcf67ed91f9e6725b4758c022e0b1ef4275bf7b"
-                        "6c5bfc11d45f9088b941f54eb1e59bb8bc39a0bf12307f5c4fdb70c581b23f76"
-                        "b63acae1caa6b7902d52526735488a0ef13c6d9a51bfa4ab3ad8347796524d8e"
-                        "f6a167b5a41825d967e144e5140564251ccacb83e6b486f6b3ca3f7971506026"
-                        "c0b857f689962856ded4010abd0be621c3a3960a54e710c375f26375d7014103"
-                        "a4b54330c198af126116d2276e11715f693877fad7ef09cadb094ae91e1a1597";
-    const char *hex_g = "3FB32C9B73134D0B2E77506660EDBD484CA7B18F21EF205407F4793A1A0BA125"
-                        "10DBC15077BE463FFF4FED4AAC0BB555BE3A6C1B0C6B47B1BC3773BF7E8C6F62"
-                        "901228F8C28CBB18A55AE31341000A650196F931C77A57F2DDF463E5E9EC144B"
-                        "777DE62AAAB8A8628AC376D282D6ED3864E67982428EBC831D14348F6F2F9193"
-                        "B5045AF2767164E1DFC967C1FB3F2E55A4BD1BFFE83B9C80D052B985D182EA0A"
-                        "DB2A3B7313D3FE14C8484B1E052588B9B7D2BBD2DF016199ECD06E1557CD0915"
-                        "B3353BBB64E0EC377FD028370DF92B52C7891428CDC67EB6184B523D1DB246C3"
-                        "2F63078490F00EF8D647D148D47954515E2327CFEF98C582664B4C0F6CC41659";
+    static const unsigned char bin_p[] = {
+        0x87, 0xa8, 0xe6, 0x1d, 0xb4, 0xb6, 0x66, 0x3c,
+        0xff, 0xbb, 0xd1, 0x9c, 0x65, 0x19, 0x59, 0x99,
+        0x8c, 0xee, 0xf6, 0x08, 0x66, 0x0d, 0xd0, 0xf2,
+        0x5d, 0x2c, 0xee, 0xd4, 0x43, 0x5e, 0x3b, 0x00,
+        0xe0, 0x0d, 0xf8, 0xf1, 0xd6, 0x19, 0x57, 0xd4,
+        0xfa, 0xf7, 0xdf, 0x45, 0x61, 0xb2, 0xaa, 0x30,
+        0x16, 0xc3, 0xd9, 0x11, 0x34, 0x09, 0x6f, 0xaa,
+        0x3b, 0xf4, 0x29, 0x6d, 0x83, 0x0e, 0x9a, 0x7c,
+        0x20, 0x9e, 0x0c, 0x64, 0x97, 0x51, 0x7a, 0xbd,
+        0x5a, 0x8a, 0x9d, 0x30, 0x6b, 0xcf, 0x67, 0xed,
+        0x91, 0xf9, 0xe6, 0x72, 0x5b, 0x47, 0x58, 0xc0,
+        0x22, 0xe0, 0xb1, 0xef, 0x42, 0x75, 0xbf, 0x7b,
+        0x6c, 0x5b, 0xfc, 0x11, 0xd4, 0x5f, 0x90, 0x88,
+        0xb9, 0x41, 0xf5, 0x4e, 0xb1, 0xe5, 0x9b, 0xb8,
+        0xbc, 0x39, 0xa0, 0xbf, 0x12, 0x30, 0x7f, 0x5c,
+        0x4f, 0xdb, 0x70, 0xc5, 0x81, 0xb2, 0x3f, 0x76,
+        0xb6, 0x3a, 0xca, 0xe1, 0xca, 0xa6, 0xb7, 0x90,
+        0x2d, 0x52, 0x52, 0x67, 0x35, 0x48, 0x8a, 0x0e,
+        0xf1, 0x3c, 0x6d, 0x9a, 0x51, 0xbf, 0xa4, 0xab,
+        0x3a, 0xd8, 0x34, 0x77, 0x96, 0x52, 0x4d, 0x8e,
+        0xf6, 0xa1, 0x67, 0xb5, 0xa4, 0x18, 0x25, 0xd9,
+        0x67, 0xe1, 0x44, 0xe5, 0x14, 0x05, 0x64, 0x25,
+        0x1c, 0xca, 0xcb, 0x83, 0xe6, 0xb4, 0x86, 0xf6,
+        0xb3, 0xca, 0x3f, 0x79, 0x71, 0x50, 0x60, 0x26,
+        0xc0, 0xb8, 0x57, 0xf6, 0x89, 0x96, 0x28, 0x56,
+        0xde, 0xd4, 0x01, 0x0a, 0xbd, 0x0b, 0xe6, 0x21,
+        0xc3, 0xa3, 0x96, 0x0a, 0x54, 0xe7, 0x10, 0xc3,
+        0x75, 0xf2, 0x63, 0x75, 0xd7, 0x01, 0x41, 0x03,
+        0xa4, 0xb5, 0x43, 0x30, 0xc1, 0x98, 0xaf, 0x12,
+        0x61, 0x16, 0xd2, 0x27, 0x6e, 0x11, 0x71, 0x5f,
+        0x69, 0x38, 0x77, 0xfa, 0xd7, 0xef, 0x09, 0xca,
+        0xdb, 0x09, 0x4a, 0xe9, 0x1e, 0x1a, 0x15, 0x97
+    };
+    static const unsigned char bin_g[] = {
+        0x3F, 0xB3, 0x2C, 0x9B, 0x73, 0x13, 0x4D, 0x0B,
+        0x2E, 0x77, 0x50, 0x66, 0x60, 0xED, 0xBD, 0x48,
+        0x4C, 0xA7, 0xB1, 0x8F, 0x21, 0xEF, 0x20, 0x54,
+        0x07, 0xF4, 0x79, 0x3A, 0x1A, 0x0B, 0xA1, 0x25,
+        0x10, 0xDB, 0xC1, 0x50, 0x77, 0xBE, 0x46, 0x3F,
+        0xFF, 0x4F, 0xED, 0x4A, 0xAC, 0x0B, 0xB5, 0x55,
+        0xBE, 0x3A, 0x6C, 0x1B, 0x0C, 0x6B, 0x47, 0xB1,
+        0xBC, 0x37, 0x73, 0xBF, 0x7E, 0x8C, 0x6F, 0x62,
+        0x90, 0x12, 0x28, 0xF8, 0xC2, 0x8C, 0xBB, 0x18,
+        0xA5, 0x5A, 0xE3, 0x13, 0x41, 0x00, 0x0A, 0x65,
+        0x01, 0x96, 0xF9, 0x31, 0xC7, 0x7A, 0x57, 0xF2,
+        0xDD, 0xF4, 0x63, 0xE5, 0xE9, 0xEC, 0x14, 0x4B,
+        0x77, 0x7D, 0xE6, 0x2A, 0xAA, 0xB8, 0xA8, 0x62,
+        0x8A, 0xC3, 0x76, 0xD2, 0x82, 0xD6, 0xED, 0x38,
+        0x64, 0xE6, 0x79, 0x82, 0x42, 0x8E, 0xBC, 0x83,
+        0x1D, 0x14, 0x34, 0x8F, 0x6F, 0x2F, 0x91, 0x93,
+        0xB5, 0x04, 0x5A, 0xF2, 0x76, 0x71, 0x64, 0xE1,
+        0xDF, 0xC9, 0x67, 0xC1, 0xFB, 0x3F, 0x2E, 0x55,
+        0xA4, 0xBD, 0x1B, 0xFF, 0xE8, 0x3B, 0x9C, 0x80,
+        0xD0, 0x52, 0xB9, 0x85, 0xD1, 0x82, 0xEA, 0x0A,
+        0xDB, 0x2A, 0x3B, 0x73, 0x13, 0xD3, 0xFE, 0x14,
+        0xC8, 0x48, 0x4B, 0x1E, 0x05, 0x25, 0x88, 0xB9,
+        0xB7, 0xD2, 0xBB, 0xD2, 0xDF, 0x01, 0x61, 0x99,
+        0xEC, 0xD0, 0x6E, 0x15, 0x57, 0xCD, 0x09, 0x15,
+        0xB3, 0x35, 0x3B, 0xBB, 0x64, 0xE0, 0xEC, 0x37,
+        0x7F, 0xD0, 0x28, 0x37, 0x0D, 0xF9, 0x2B, 0x52,
+        0xC7, 0x89, 0x14, 0x28, 0xCD, 0xC6, 0x7E, 0xB6,
+        0x18, 0x4B, 0x52, 0x3D, 0x1D, 0xB2, 0x46, 0xC3,
+        0x2F, 0x63, 0x07, 0x84, 0x90, 0xF0, 0x0E, 0xF8,
+        0xD6, 0x47, 0xD1, 0x48, 0xD4, 0x79, 0x54, 0x51,
+        0x5E, 0x23, 0x27, 0xCF, 0xEF, 0x98, 0xC5, 0x82,
+        0x66, 0x4B, 0x4C, 0x0F, 0x6C, 0xC4, 0x16, 0x59
+    };
 
-    const char *hex_q_valid = "8CF83642A709A097B447997640129DA299B1A47D1EB3750BA308B0FE64F5FBD3";
-    const char *hex_local_pub = "796e15431470ac86fa8a78b8bcdd1f3589dbf15ffe0e0a7a41dd8640887f3cc3"
-                                "f0439e281f4cf3800bac2dbdfcda589b26cc828512085ce0d3e57aa13cd9e7a4"
-                                "66d881bace91ed10c6064ab36e0d66367c4bfed56a9f907e4daec16732fb5c54"
-                                "891cb0d26251fd61c32040774246b3f8bdcd5ef60e6847cdd69bd6d318d1cda0"
-                                "e8a30a716de4dc1a4eb99b0686b77120c4b69b0005f6a8c3ae768d23c08c85bd"
-                                "1d58f40dc0138d6277436137ae69779fdc218c071c14826f471562033e85ffc9"
-                                "9a2147d539e274136a4a1e7f1db97583b51dc0385a52d7383963758d893398a8"
-                                "d013fdbad20ddf30fbe05fbb2249913ae6751b6b246ae5622ba26c4827417c2d";
-    const char *hex_local_priv = "1122334455667788990011223344556677889900112233445566778899001122";
+    static const unsigned char bin_q_valid[] = {
+        0x8C, 0xF8, 0x36, 0x42, 0xA7, 0x09, 0xA0, 0x97,
+        0xB4, 0x47, 0x99, 0x76, 0x40, 0x12, 0x9D, 0xA2,
+        0x99, 0xB1, 0xA4, 0x7D, 0x1E, 0xB3, 0x75, 0x0B,
+        0xA3, 0x08, 0xB0, 0xFE, 0x64, 0xF5, 0xFB, 0xD3
+    };
+    static const unsigned char bin_local_pub[] = {
+        0x79, 0x6e, 0x15, 0x43, 0x14, 0x70, 0xac, 0x86,
+        0xfa, 0x8a, 0x78, 0xb8, 0xbc, 0xdd, 0x1f, 0x35,
+        0x89, 0xdb, 0xf1, 0x5f, 0xfe, 0x0e, 0x0a, 0x7a,
+        0x41, 0xdd, 0x86, 0x40, 0x88, 0x7f, 0x3c, 0xc3,
+        0xf0, 0x43, 0x9e, 0x28, 0x1f, 0x4c, 0xf3, 0x80,
+        0x0b, 0xac, 0x2d, 0xbd, 0xfc, 0xda, 0x58, 0x9b,
+        0x26, 0xcc, 0x82, 0x85, 0x12, 0x08, 0x5c, 0xe0,
+        0xd3, 0xe5, 0x7a, 0xa1, 0x3c, 0xd9, 0xe7, 0xa4,
+        0x66, 0xd8, 0x81, 0xba, 0xce, 0x91, 0xed, 0x10,
+        0xc6, 0x06, 0x4a, 0xb3, 0x6e, 0x0d, 0x66, 0x36,
+        0x7c, 0x4b, 0xfe, 0xd5, 0x6a, 0x9f, 0x90, 0x7e,
+        0x4d, 0xae, 0xc1, 0x67, 0x32, 0xfb, 0x5c, 0x54,
+        0x89, 0x1c, 0xb0, 0xd2, 0x62, 0x51, 0xfd, 0x61,
+        0xc3, 0x20, 0x40, 0x77, 0x42, 0x46, 0xb3, 0xf8,
+        0xbd, 0xcd, 0x5e, 0xf6, 0x0e, 0x68, 0x47, 0xcd,
+        0xd6, 0x9b, 0xd6, 0xd3, 0x18, 0xd1, 0xcd, 0xa0,
+        0xe8, 0xa3, 0x0a, 0x71, 0x6d, 0xe4, 0xdc, 0x1a,
+        0x4e, 0xb9, 0x9b, 0x06, 0x86, 0xb7, 0x71, 0x20,
+        0xc4, 0xb6, 0x9b, 0x00, 0x05, 0xf6, 0xa8, 0xc3,
+        0xae, 0x76, 0x8d, 0x23, 0xc0, 0x8c, 0x85, 0xbd,
+        0x1d, 0x58, 0xf4, 0x0d, 0xc0, 0x13, 0x8d, 0x62,
+        0x77, 0x43, 0x61, 0x37, 0xae, 0x69, 0x77, 0x9f,
+        0xdc, 0x21, 0x8c, 0x07, 0x1c, 0x14, 0x82, 0x6f,
+        0x47, 0x15, 0x62, 0x03, 0x3e, 0x85, 0xff, 0xc9,
+        0x9a, 0x21, 0x47, 0xd5, 0x39, 0xe2, 0x74, 0x13,
+        0x6a, 0x4a, 0x1e, 0x7f, 0x1d, 0xb9, 0x75, 0x83,
+        0xb5, 0x1d, 0xc0, 0x38, 0x5a, 0x52, 0xd7, 0x38,
+        0x39, 0x63, 0x75, 0x8d, 0x89, 0x33, 0x98, 0xa8,
+        0xd0, 0x13, 0xfd, 0xba, 0xd2, 0x0d, 0xdf, 0x30,
+        0xfb, 0xe0, 0x5f, 0xbb, 0x22, 0x49, 0x91, 0x3a,
+        0xe6, 0x75, 0x1b, 0x6b, 0x24, 0x6a, 0xe5, 0x62,
+        0x2b, 0xa2, 0x6c, 0x48, 0x27, 0x41, 0x7c, 0x2d
+    };
+    static const unsigned char bin_local_priv[] = {
+        0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+        0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
+        0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44,
+        0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22
+    };
 
     /* Remote malicious parameters */
-    const char *hex_remote_q = "09f5";
-    const char *hex_remote_pub = "54c057903d362235a65c03f001d8a3ea252836b3580250abdc0a1083451af012"
-                                 "6fd150f9e8d212b384ae0c23aa7c67fe851368114ccc061a661e986bd7e63d25"
-                                 "7513339a6914cbfab209ad793ef25704cd532ddfb7e693de701d17e629ef3c18"
-                                 "4d40d5fea1f9edb89c5bf8d7aa19e3374f805932159ca7b5d573b9e2f3c94fe7"
-                                 "47c4a3b09e31afa3788d35833aaf2ac8ae8bc48500131464e793a2e0352e7c3e"
-                                 "d9da9fcf89b121bc1cee83c544214ceb3338b14ac6891968351746eaf62bb517"
-                                 "eb98fc633d8d235bac37bc08e47f1851d05501949a6733965adbfe8e43f7c3b9"
-                                 "3ca7515cd6ab36d7ef26bb0fd6033abc39613e880fffc8729b03bfeaddf08833";
+    static const unsigned char bin_remote_q[] = { 0x09, 0xf5 };
+    static const unsigned char bin_remote_pub[] = {
+        0x54, 0xc0, 0x57, 0x90, 0x3d, 0x36, 0x22, 0x35,
+        0xa6, 0x5c, 0x03, 0xf0, 0x01, 0xd8, 0xa3, 0xea,
+        0x25, 0x28, 0x36, 0xb3, 0x58, 0x02, 0x50, 0xab,
+        0xdc, 0x0a, 0x10, 0x83, 0x45, 0x1a, 0xf0, 0x12,
+        0x6f, 0xd1, 0x50, 0xf9, 0xe8, 0xd2, 0x12, 0xb3,
+        0x84, 0xae, 0x0c, 0x23, 0xaa, 0x7c, 0x67, 0xfe,
+        0x85, 0x13, 0x68, 0x11, 0x4c, 0xcc, 0x06, 0x1a,
+        0x66, 0x1e, 0x98, 0x6b, 0xd7, 0xe6, 0x3d, 0x25,
+        0x75, 0x13, 0x33, 0x9a, 0x69, 0x14, 0xcb, 0xfa,
+        0xb2, 0x09, 0xad, 0x79, 0x3e, 0xf2, 0x57, 0x04,
+        0xcd, 0x53, 0x2d, 0xdf, 0xb7, 0xe6, 0x93, 0xde,
+        0x70, 0x1d, 0x17, 0xe6, 0x29, 0xef, 0x3c, 0x18,
+        0x4d, 0x40, 0xd5, 0xfe, 0xa1, 0xf9, 0xed, 0xb8,
+        0x9c, 0x5b, 0xf8, 0xd7, 0xaa, 0x19, 0xe3, 0x37,
+        0x4f, 0x80, 0x59, 0x32, 0x15, 0x9c, 0xa7, 0xb5,
+        0xd5, 0x73, 0xb9, 0xe2, 0xf3, 0xc9, 0x4f, 0xe7,
+        0x47, 0xc4, 0xa3, 0xb0, 0x9e, 0x31, 0xaf, 0xa3,
+        0x78, 0x8d, 0x35, 0x83, 0x3a, 0xaf, 0x2a, 0xc8,
+        0xae, 0x8b, 0xc4, 0x85, 0x00, 0x13, 0x14, 0x64,
+        0xe7, 0x93, 0xa2, 0xe0, 0x35, 0x2e, 0x7c, 0x3e,
+        0xd9, 0xda, 0x9f, 0xcf, 0x89, 0xb1, 0x21, 0xbc,
+        0x1c, 0xee, 0x83, 0xc5, 0x44, 0x21, 0x4c, 0xeb,
+        0x33, 0x38, 0xb1, 0x4a, 0xc6, 0x89, 0x19, 0x68,
+        0x35, 0x17, 0x46, 0xea, 0xf6, 0x2b, 0xb5, 0x17,
+        0xeb, 0x98, 0xfc, 0x63, 0x3d, 0x8d, 0x23, 0x5b,
+        0xac, 0x37, 0xbc, 0x08, 0xe4, 0x7f, 0x18, 0x51,
+        0xd0, 0x55, 0x01, 0x94, 0x9a, 0x67, 0x33, 0x96,
+        0x5a, 0xdb, 0xfe, 0x8e, 0x43, 0xf7, 0xc3, 0xb9,
+        0x3c, 0xa7, 0x51, 0x5c, 0xd6, 0xab, 0x36, 0xd7,
+        0xef, 0x26, 0xbb, 0x0f, 0xd6, 0x03, 0x3a, 0xbc,
+        0x39, 0x61, 0x3e, 0x88, 0x0f, 0xff, 0xc8, 0x72,
+        0x9b, 0x03, 0xbf, 0xea, 0xdd, 0xf0, 0x88, 0x33
+    };
 
-    if (!TEST_true(BN_hex2bn(&p, hex_p)) || !TEST_true(BN_hex2bn(&g, hex_g)))
+    if (!TEST_ptr(p = BN_bin2bn(bin_p, sizeof(bin_p), NULL))
+        || !TEST_ptr(g = BN_bin2bn(bin_g, sizeof(bin_g), NULL)))
         goto err;
 
-    if (!TEST_true(BN_hex2bn(&q_valid, hex_q_valid))
-        || !TEST_true(BN_hex2bn(&pub_local, hex_local_pub))
-        || !TEST_true(BN_hex2bn(&priv_local, hex_local_priv)))
+    if (!TEST_ptr(q_valid = BN_bin2bn(bin_q_valid, sizeof(bin_q_valid), NULL))
+        || !TEST_ptr(pub_local
+            = BN_bin2bn(bin_local_pub, sizeof(bin_local_pub), NULL))
+        || !TEST_true(priv_local
+            = BN_bin2bn(bin_local_priv, sizeof(bin_local_priv), NULL)))
         goto err;
 
     if (!TEST_ptr(bld = OSSL_PARAM_BLD_new())
@@ -4690,8 +4801,9 @@ static int test_dhx_derive_rejects_bad_peer_q(void)
     bld = NULL;
     pctx = NULL;
 
-    if (!TEST_true(BN_hex2bn(&q_bad, hex_remote_q))
-        || !TEST_true(BN_hex2bn(&pub_bad, hex_remote_pub)))
+    if (!TEST_ptr(q_bad = BN_bin2bn(bin_remote_q, sizeof(bin_remote_q), NULL))
+        || !TEST_ptr(pub_bad
+            = BN_bin2bn(bin_remote_pub, sizeof(bin_remote_pub), NULL)))
         goto err;
 
     if (!TEST_ptr(bld = OSSL_PARAM_BLD_new())
@@ -5010,7 +5122,7 @@ static int test_evp_iv_aes(int idx)
         goto err;
     ivlen = EVP_CIPHER_CTX_get_iv_length(ctx);
 
-    if (!TEST_size_t_gt(ivlen, 0))
+    if (!TEST_int_gt(ivlen, 0))
         goto err;
 
     if (!TEST_mem_eq(init_iv, ivlen, oiv, ivlen)
@@ -5127,7 +5239,7 @@ static int test_evp_iv_des(int idx)
         goto err;
     ivlen = EVP_CIPHER_CTX_get_iv_length(ctx);
 
-    if (!TEST_size_t_gt(ivlen, 0))
+    if (!TEST_int_gt(ivlen, 0))
         goto err;
 
     if (!TEST_mem_eq(init_iv, ivlen, oiv, ivlen)
@@ -5425,9 +5537,7 @@ static int evp_init_seq_set_iv(EVP_CIPHER_CTX *ctx, const EVP_INIT_TEST_st *t)
     int res = 0;
 
     if (t->ivlen != 0) {
-        if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN,
-                             (int)t->ivlen, NULL),
-                0))
+        if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, t->ivlen, NULL), 0))
             goto err;
     }
     if (!TEST_true(EVP_CipherInit_ex(ctx, NULL, NULL, NULL, t->iv, -1)))
@@ -5487,14 +5597,14 @@ static int test_evp_init_seq(int idx)
         errmsg = "FINAL_ENC_INIT";
         goto err;
     }
-    if (!TEST_true(EVP_CipherUpdate(ctx, outbuf, &outlen1, t->input, (int)t->inlen))) {
+    if (!TEST_true(EVP_CipherUpdate(ctx, outbuf, &outlen1, t->input, t->inlen))) {
         errmsg = "CIPHER_UPDATE";
         goto err;
     }
     if (t->finalenc == 0 && t->tag != NULL) {
         /* Set expected tag */
         if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG,
-                             (int)t->taglen, (void *)t->tag),
+                             t->taglen, (void *)t->tag),
                 0)) {
             errmsg = "SET_TAG";
             goto err;
@@ -5509,9 +5619,7 @@ static int test_evp_init_seq(int idx)
         goto err;
     }
     if (t->finalenc != 0 && t->tag != NULL) {
-        if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG,
-                             (int)taglen, tag),
-                0)) {
+        if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, taglen, tag), 0)) {
             errmsg = "GET_TAG";
             goto err;
         }
@@ -5548,16 +5656,14 @@ static int test_evp_reinit_seq(int idx)
         /* setup cipher context */
         || !TEST_true(EVP_CipherInit_ex2(ctx, type, t->key, t->iv, t->initenc, NULL))
         /* first iteration */
-        || !TEST_true(EVP_CipherUpdate(ctx, outbuf1, &outlen1, t->input,
-            (int)t->inlen))
+        || !TEST_true(EVP_CipherUpdate(ctx, outbuf1, &outlen1, t->input, t->inlen))
         || !TEST_true(EVP_CipherFinal_ex(ctx, outbuf1, &outlen_final))
         /* check test results iteration 1 */
         || !TEST_mem_eq(t->expected, t->expectedlen, outbuf1, outlen1 + outlen_final)
         /* now re-init the context (same cipher, key and iv) */
         || !TEST_true(EVP_CipherInit_ex2(ctx, NULL, NULL, NULL, -1, NULL))
         /* second iteration */
-        || !TEST_true(EVP_CipherUpdate(ctx, outbuf2, &outlen2,
-            t->input, (int)t->inlen))
+        || !TEST_true(EVP_CipherUpdate(ctx, outbuf2, &outlen2, t->input, t->inlen))
         || !TEST_true(EVP_CipherFinal_ex(ctx, outbuf2, &outlen_final))
         /* check test results iteration 2 */
         || !TEST_mem_eq(t->expected, t->expectedlen, outbuf2, outlen2 + outlen_final))
@@ -5614,8 +5720,7 @@ static int test_evp_reset(int idx)
         errmsg = "PADDING";
         goto err;
     }
-    if (!TEST_true(EVP_CipherUpdate(ctx, outbuf, &outlen1,
-            t->input, (int)t->inlen))) {
+    if (!TEST_true(EVP_CipherUpdate(ctx, outbuf, &outlen1, t->input, t->inlen))) {
         errmsg = "CIPHER_UPDATE";
         goto err;
     }
@@ -5631,8 +5736,7 @@ static int test_evp_reset(int idx)
         errmsg = "CIPHER_REINIT";
         goto err;
     }
-    if (!TEST_true(EVP_CipherUpdate(ctx, outbuf, &outlen1,
-            t->input, (int)t->inlen))) {
+    if (!TEST_true(EVP_CipherUpdate(ctx, outbuf, &outlen1, t->input, t->inlen))) {
         errmsg = "CIPHER_UPDATE (reinit)";
         goto err;
     }
@@ -5713,11 +5817,6 @@ static int test_evp_updated_iv(int idx)
     if (!TEST_true(EVP_CIPHER_CTX_get_updated_iv(ctx, updated_iv, sizeof(updated_iv)))) {
         errmsg = "CIPHER_CTX_GET_UPDATED_IV";
         goto err;
-    } else {
-        if (fips_provider_version_ge(testctx, 3, 6, 0) && !TEST_false(ERR_peek_error())) {
-            errmsg = "CIPHER_CTX_GET_UPDATED_IV_SILENT_ERROR";
-            goto err;
-        }
     }
     iv_len = EVP_CIPHER_CTX_get_iv_length(ctx);
     if (!TEST_int_ge(iv_len, 0)) {
@@ -5788,9 +5887,7 @@ static int test_gcm_reinit(int idx)
         errmsg = "ENC_INIT";
         goto err;
     }
-    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN,
-                         (int)t->ivlen1, NULL),
-            0)) {
+    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, t->ivlen1, NULL), 0)) {
         errmsg = "SET_IVLEN1";
         goto err;
     }
@@ -5816,9 +5913,7 @@ static int test_gcm_reinit(int idx)
         errmsg = "WRONG_RESULT1";
         goto err;
     }
-    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG,
-                         (int)taglen, tag),
-            0)) {
+    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, taglen, tag), 0)) {
         errmsg = "GET_TAG1";
         goto err;
     }
@@ -5827,9 +5922,7 @@ static int test_gcm_reinit(int idx)
         goto err;
     }
     /* Now reinit */
-    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN,
-                         (int)t->ivlen2, NULL),
-            0)) {
+    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, t->ivlen2, NULL), 0)) {
         errmsg = "SET_IVLEN2";
         goto err;
     }
@@ -5854,9 +5947,7 @@ static int test_gcm_reinit(int idx)
         errmsg = "WRONG_RESULT2";
         goto err;
     }
-    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG,
-                         (int)taglen, tag),
-            0)) {
+    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, taglen, tag), 0)) {
         errmsg = "GET_TAG2";
         goto err;
     }
@@ -6326,8 +6417,6 @@ static int test_custom_md_meth(void)
     nid = OBJ_create("1.3.6.1.4.1.16604.998866.1", "custom-md", "custom-md");
     if (!TEST_int_ne(nid, NID_undef))
         goto err;
-    if (!TEST_int_eq(OBJ_txt2nid("1.3.6.1.4.1.16604.998866.1"), nid))
-        goto err;
     tmp = EVP_MD_meth_new(nid, NID_undef);
     if (!TEST_ptr(tmp))
         goto err;
@@ -6422,8 +6511,6 @@ static int test_custom_ciph_meth(void)
 
     nid = OBJ_create("1.3.6.1.4.1.16604.998866.2", "custom-ciph", "custom-ciph");
     if (!TEST_int_ne(nid, NID_undef))
-        goto err;
-    if (!TEST_int_eq(OBJ_txt2nid("1.3.6.1.4.1.16604.998866.2"), nid))
         goto err;
     tmp = EVP_CIPHER_meth_new(nid, 16, 16);
     if (!TEST_ptr(tmp))
@@ -6676,13 +6763,13 @@ static int test_aes_cbc_hmac_sha_short_multiblock_aad(void)
 {
     unsigned char aad[EVP_AEAD_TLS1_AAD_LEN - 1] = { 0 };
     unsigned int interleave = 4;
-    OSSL_PARAM params[] = {
-        OSSL_PARAM_octet_string(OSSL_CIPHER_PARAM_TLS1_MULTIBLOCK_AAD, aad,
-            sizeof(aad)),
-        OSSL_PARAM_uint(OSSL_CIPHER_PARAM_TLS1_MULTIBLOCK_INTERLEAVE,
-            &interleave),
-        OSSL_PARAM_END
-    };
+    OSSL_PARAM params[3], *p = params;
+
+    *p++ = OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_TLS1_MULTIBLOCK_AAD,
+        aad, sizeof(aad));
+    *p++ = OSSL_PARAM_construct_uint(OSSL_CIPHER_PARAM_TLS1_MULTIBLOCK_INTERLEAVE,
+        &interleave);
+    *p = OSSL_PARAM_construct_end();
 
     return test_aes_cbc_hmac_sha_reject_multiblock_params(params);
 }
@@ -6692,13 +6779,13 @@ static int test_aes_cbc_hmac_sha_large_multiblock_aad(void)
     static const unsigned int oversized_len = SSL3_RT_MAX_PLAIN_LENGTH + 1;
     unsigned char aad[EVP_AEAD_TLS1_AAD_LEN] = { 0 };
     unsigned int interleave = 4;
-    OSSL_PARAM params[] = {
-        OSSL_PARAM_octet_string(OSSL_CIPHER_PARAM_TLS1_MULTIBLOCK_AAD, aad,
-            sizeof(aad)),
-        OSSL_PARAM_uint(OSSL_CIPHER_PARAM_TLS1_MULTIBLOCK_INTERLEAVE,
-            &interleave),
-        OSSL_PARAM_END
-    };
+    OSSL_PARAM params[3], *p = params;
+
+    *p++ = OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_TLS1_MULTIBLOCK_AAD,
+        aad, sizeof(aad));
+    *p++ = OSSL_PARAM_construct_uint(OSSL_CIPHER_PARAM_TLS1_MULTIBLOCK_INTERLEAVE,
+        &interleave);
+    *p = OSSL_PARAM_construct_end();
 
     aad[9] = (unsigned char)(TLS1_2_VERSION >> 8);
     aad[10] = (unsigned char)TLS1_2_VERSION;
@@ -6894,8 +6981,8 @@ static int aes_gcm_encrypt(const unsigned char *gcm_key, size_t gcm_key_s,
     int outlen, tmplen;
     unsigned char outbuf[1024];
     unsigned char outtag[16];
-    OSSL_PARAM params[4] = {
-        OSSL_PARAM_END, OSSL_PARAM_END, OSSL_PARAM_END, OSSL_PARAM_END
+    OSSL_PARAM params[2] = {
+        OSSL_PARAM_END, OSSL_PARAM_END
     };
 
     if (!TEST_ptr(ctx = EVP_CIPHER_CTX_new())
@@ -6908,9 +6995,9 @@ static int aes_gcm_encrypt(const unsigned char *gcm_key, size_t gcm_key_s,
     if (!TEST_true(EVP_EncryptInit_ex2(ctx, cipher, gcm_key, gcm_iv, params))
         || (gcm_aad != NULL
             && !TEST_true(EVP_EncryptUpdate(ctx, NULL, &outlen,
-                gcm_aad, (int)gcm_aad_s)))
+                gcm_aad, gcm_aad_s)))
         || !TEST_true(EVP_EncryptUpdate(ctx, outbuf, &outlen,
-            gcm_pt, (int)gcm_pt_s))
+            gcm_pt, gcm_pt_s))
         || !TEST_true(EVP_EncryptFinal_ex(ctx, outbuf, &tmplen)))
         goto err;
 
@@ -6920,19 +7007,6 @@ static int aes_gcm_encrypt(const unsigned char *gcm_key, size_t gcm_key_s,
     if (!TEST_true(EVP_CIPHER_CTX_get_params(ctx, params))
         || !TEST_mem_eq(outbuf, outlen, gcm_ct, gcm_ct_s)
         || !TEST_mem_eq(outtag, gcm_tag_s, gcm_tag, gcm_tag_s))
-        goto err;
-
-    params[0] = OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_IV,
-        NULL, 0);
-    params[1] = OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_UPDATED_IV,
-        NULL, 0);
-    params[2] = OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_AEAD_TAG,
-        NULL, 0);
-    params[3] = OSSL_PARAM_construct_end();
-    if (!TEST_true(EVP_CIPHER_CTX_get_params(ctx, params))
-        || !TEST_size_t_eq(params[0].return_size, gcm_ivlen)
-        || !TEST_size_t_eq(params[1].return_size, gcm_ivlen)
-        || !TEST_size_t_eq(params[2].return_size, sizeof(outtag)))
         goto err;
 
     ret = 1;
@@ -6971,9 +7045,9 @@ static int aes_gcm_decrypt(const unsigned char *gcm_key, size_t gcm_key_s,
     if (!TEST_true(EVP_DecryptInit_ex2(ctx, cipher, gcm_key, gcm_iv, params))
         || (gcm_aad != NULL
             && !TEST_true(EVP_DecryptUpdate(ctx, NULL, &outlen,
-                gcm_aad, (int)gcm_aad_s)))
+                gcm_aad, gcm_aad_s)))
         || !TEST_true(EVP_DecryptUpdate(ctx, outbuf, &outlen,
-            gcm_ct, (int)gcm_ct_s))
+            gcm_ct, gcm_ct_s))
         || !TEST_mem_eq(outbuf, outlen, gcm_pt, gcm_pt_s))
         goto err;
 
@@ -7057,7 +7131,7 @@ static int rc4_encrypt(const unsigned char *rc4_key, size_t rc4_key_s,
 
     if (!TEST_true(EVP_EncryptInit_ex2(ctx, cipher, rc4_key, NULL, params))
         || !TEST_true(EVP_EncryptUpdate(ctx, outbuf, &outlen,
-            rc4_pt, (int)rc4_pt_s))
+            rc4_pt, rc4_pt_s))
         || !TEST_true(EVP_EncryptFinal_ex(ctx, outbuf, &tmplen)))
         goto err;
 
@@ -7096,7 +7170,7 @@ static int rc4_decrypt(const unsigned char *rc4_key, size_t rc4_key_s,
 
     if (!TEST_true(EVP_DecryptInit_ex2(ctx, cipher, rc4_key, NULL, params))
         || !TEST_true(EVP_DecryptUpdate(ctx, outbuf, &outlen,
-            rc4_ct, (int)rc4_ct_s))
+            rc4_ct, rc4_ct_s))
         || !TEST_mem_eq(outbuf, outlen, rc4_pt, rc4_pt_s))
         goto err;
 
@@ -8140,8 +8214,8 @@ static int test_evp_cipher_pipeline(void)
                     || !TEST_ptr(tag_array[i] = OPENSSL_malloc(taglen)))
                     goto err;
 
-                memset(iv_array[i], (unsigned char)(i + 33), ivlen);
-                memset(plaintext_array[i], (unsigned char)(i + 1), plaintextlen);
+                memset(iv_array[i], i + 33, ivlen);
+                memset(plaintext_array[i], i + 1, plaintextlen);
                 inlen_array[i] = plaintextlen;
                 outlen_array[i] = 0;
                 ciphertextlen_array[i] = 0;
@@ -8194,10 +8268,10 @@ static int test_evp_cipher_pipeline(void)
                 if (!TEST_true(EVP_EncryptInit(ctx, cipher, key, iv_array[i]))
                     || !TEST_true(EVP_EncryptUpdate(ctx, NULL, &outlen,
                         plaintext_array[i],
-                        (int)plaintextlen))
+                        plaintextlen))
                     || !TEST_true(EVP_EncryptUpdate(ctx, ciphertext, &outlen,
                         plaintext_array[i],
-                        (int)plaintextlen)))
+                        plaintextlen)))
                     goto err;
                 ciphertextlen = outlen;
 
@@ -8247,7 +8321,7 @@ static int test_evp_cipher_pipeline(void)
                 goto err;
 
             for (i = 0; i < numpipes; i++) {
-                memset(exp_plaintext, (unsigned char)(i + 1), plaintextlen);
+                memset(exp_plaintext, i + 1, plaintextlen);
                 if (!TEST_mem_eq(plaintext_array[i], plaintextlen,
                         exp_plaintext, plaintextlen))
                     goto err;

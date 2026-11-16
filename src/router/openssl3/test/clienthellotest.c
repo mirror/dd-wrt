@@ -143,7 +143,7 @@ static int test_client_hello(int currtest)
 
     if (currtest == TEST_SET_SESSION_TICK_DATA_VER_NEG) {
         if (!TEST_true(SSL_set_session_ticket_ext(con, dummytick,
-                (int)strlen(dummytick))))
+                strlen(dummytick))))
             goto end;
     }
 

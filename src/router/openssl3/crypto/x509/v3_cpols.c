@@ -207,7 +207,7 @@ static POLICYINFO *policy_section(X509V3_CTX *ctx,
                 goto err;
             }
             if (!ASN1_STRING_set(qual->d.cpsuri, cnf->value,
-                    (int)strlen(cnf->value))) {
+                    strlen(cnf->value))) {
                 ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
                 goto err;
             }
@@ -258,7 +258,7 @@ static int displaytext_get_tag_len(const char *tagstr)
 {
     const char *colon = strchr(tagstr, ':');
 
-    return (colon == NULL) ? -1 : (int)(colon - tagstr);
+    return (colon == NULL) ? -1 : colon - tagstr;
 }
 
 static int displaytext_str2tag(const char *tagstr, unsigned int *tag_len)
@@ -322,7 +322,7 @@ static POLICYQUALINFO *notice_section(X509V3_CTX *ctx,
             }
             if (tag_len != 0)
                 value += tag_len + 1;
-            len = (int)strlen(value);
+            len = strlen(value);
             if (!ASN1_STRING_set(not->exptext, value, len)) {
                 ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
                 goto err;
@@ -343,7 +343,7 @@ static POLICYQUALINFO *notice_section(X509V3_CTX *ctx,
             else
                 nref->organization->type = V_ASN1_VISIBLESTRING;
             if (!ASN1_STRING_set(nref->organization, cnf->value,
-                    (int)strlen(cnf->value))) {
+                    strlen(cnf->value))) {
                 ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
                 goto err;
             }
