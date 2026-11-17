@@ -16,24 +16,10 @@ successfully.  It also creates a cron.weekly entry that is not removed
 when the package is removed.  Yet to test if vpnstats.pl works okay.
 [JJ]
 
-20040811-0, 1.2.1, RFC2637 timers IDLE_WAIT and MAX_ECHO_WAIT, in
-pptpdefs.h, make these configurable, requested by Tobias Brox.  [JJ]
-
-20040623-0, 1.2.1, "Plugin /usr/lib/pptpd/pptpd-logwtmp.so is for pppd
-version 2.4.2, this is 2.4.3" happens if pppd 2.4.3 is installed, or
-vice versa if 2.4.2 is installed.  [JJ] Workaround on common
-distributions is to use makepackage instead of "make install".
-pptpd.init is also affected, as it has a hardcoded path to pptpd.
-Configure script should detect or accept version of pppd to build
-against.
-
 20040521-4, 1.2.0-b3, running on Fedora Core 1, kernel ? , when a
 connection arrives a warning is issued by the kernel "application bug:
 pptpctrl($PID) has SIGCHLD set to SIG_IGN but calls wait().  (see the
 NOTES section of 'man 2 wait').  Workaround activated."
-
-20040521-0, 1.2.0-b3, write bcrelay man page.  (Debian lintian for
-pptpd 1.1.4-0b4-1)  [JJ]
 
 feature: nuke prior login by user, by writing a new pppd plugin.
 
@@ -59,8 +45,9 @@ hand, if a stop control connection request arrives, are the active
 connections supposed to be closed; there are reports of pppd living
 on.
 
-minor bug: pptpctrl.c:302 (1.11) there is a test for absolute file
-descriptor numbers, which is probably not portable.
+minor bug: pptpctrl.c:325 there is a test for absolute file descriptor
+numbers, which is probably not portable.  "if (gre_fd == 6 && pty_fd
+== 5)"
 
 bug: 1.2.0-b3 configfile.c opens, reads and closes /etc/pptpd.conf as
 many times as there are possible option values, and only returns the
@@ -72,11 +59,6 @@ is being adjusted by ip-up scripts, Bug #181005.
 20030801, 1.1.3, XP seems to need mtu negotiation 4 lower than
 serverside.  MS PPTP-server handles this correctly.
 
-20030620, 1.1.3, PPTP daemon waiting for infinite time if the
-pptpd.conf file does not have a new line character at the EOF. So we
-need a config-check routine. It is allready there, but it seems to
-output to stdout.
-
 20030611, 1.1.3, pptpd incorrectly hides all pppd error output.  This
 is a defect and should be fixed. It apparently doesn't even wait for
 and report the pppd exit status.
@@ -86,9 +68,6 @@ PPPD a runtime one instead of compile time.
 
 20030218, 1.1.3, ask IP-info from a real DHCP-server. It is possible
 to get a Radius-server to do this.
-
-20030128, 1.1.3, Make the logentries more verbose, so that they
-actually mean something to the admins.
 
 20021220, 1.1.3, Add a way to define pools for different usergroups.
 

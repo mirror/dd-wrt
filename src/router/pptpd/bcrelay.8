@@ -7,13 +7,17 @@
 .SH DESCRIPTION
 .B bcrelay
 simply plays as a broadcast repeater. When \fBbcrelay\fR receives packets
-from the incomming interface, it will then relay them to the outgoing
+from the incoming interface, it will then relay them to the outgoing
 interface.
 .LP
 .SH OPTIONS
 .TP
 \fB-d\fR,\fB\-\-daemon\fR
 Run \fBbcrelay\fR as a daemon.
+.TP
+\fB-p\fR,\fB\-\-pidfile\fR \fIpid-file
+specifies an alternate location to store the process ID file (default
+.IR /var/run/bcrelay.pid ).
 .TP
 \fB-h\fR,\fB\-\-help\fR
 Show help message.

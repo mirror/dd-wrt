@@ -4,7 +4,6 @@ AUTOMAKE_OPTIONS = no-dependencies foreign
 @SET_MAKE@
 
 export LIBDIR=$(libdir)/pptpd
-INCLUDES = -I.
 ## Change this if you don't have gcc
 ## -pedantic removed for now (OpenBSD header files).
 ## -Werror removed for now (getopt stuff on OSF/1 throws a
@@ -54,7 +53,7 @@ bcrelay_SOURCES = bcrelay.c defaults.h our_syslog.h our_getopt.h
 subdirs = plugins
 
 all-local:
-	for d in $(subdirs); do $(MAKE) $(MFLAGS) -C $$d all; done
+	for d in $(subdirs); do $(MAKE) $(MFLAGS) 'CC=$(CC)' -C $$d all; done
 
 install-exec-local:
 	for d in $(subdirs); do $(MAKE) $(MFLAGS) -C $$d prefix=$(prefix) DESTDIR=$(DESTDIR) install; done

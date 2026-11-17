@@ -34,6 +34,7 @@
 
 #include <errno.h>
 #include <syslog.h>
+#include <string.h>
 
 #define syslog_perror(s)        syslog(LOG_ERR, "%s: %s", s, strerror(errno))
 

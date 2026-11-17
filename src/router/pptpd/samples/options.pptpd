@@ -1,5 +1,5 @@
 ###############################################################################
-# $Id: options.pptpd,v 1.6 2004/12/22 22:39:30 quozl Exp $
+# $Id: options.pptpd,v 1.11 2005/12/29 01:21:09 quozl Exp $
 #
 # Sample Poptop PPP options file /etc/ppp/options.pptpd
 # Options used by PPP when a connection arrives from a client.
@@ -82,6 +82,15 @@ require-mppe-128
 # packets to the clients -- James Cameron)
 proxyarp
 
+# Normally pptpd passes the IP address to pppd, but if pptpd has been
+# given the delegate option in pptpd.conf or the --delegate command line
+# option, then pppd will use chap-secrets or radius to allocate the
+# client IP address.  The default local IP address used at the server
+# end is often the same as the address of the server.  To override this,
+# specify the local IP address here.
+# (you must not use this unless you have used the delegate option)
+#10.8.0.100
+
 
 # Logging
 
@@ -103,6 +112,17 @@ lock
 # Disable BSD-Compress compression
 nobsdcomp 
 
-# turn off logging to stderr, since this may be redirected to pptpd
+# Disable Van Jacobson compression 
+# (needed on some networks with Windows 9x/ME/XP clients, see posting to
+# poptop-server on 14th April 2005 by Pawel Pokrywka and followups,
+# http://marc.theaimsgroup.com/?t=111343175400006&r=1&w=2 )
+novj
+novjccomp
+
+# turn off logging to stderr, since this may be redirected to pptpd, 
+# which may trigger a loopback
 nologfd
+
+# put plugins here 
+# (putting them higher up may cause them to sent messages to the pty)
 

@@ -1,5 +1,5 @@
 ###############################################################################
-# $Id: pptpd-options,v 1.1 2004/05/17 02:16:35 quozl Exp $
+# $Id$
 #
 # Sample Poptop PPP options file /etc/ppp/pptpd-options
 # Options used by PPP when a connection arrives from a client.
@@ -13,7 +13,7 @@
 
 # Authentication
 
-# Name of the local system for authentication purposes 
+# Name of the local system for authentication purposes
 # (must match the second field in /etc/ppp/chap-secrets entries)
 name pptpd
 
@@ -26,8 +26,11 @@ name pptpd
 
 
 # Encryption
-# Debian: on systems with a kernel built with the package
-# kernel-patch-mppe >= 2.4.2 and using ppp >= 2.4.2, ...
+# (There have been multiple versions of PPP with encryption support,
+# choose with of the following sections you will use.)
+
+
+# BSD licensed ppp-2.4.2 upstream with MPPE only, kernel module ppp_mppe.o
 # {{{
 refuse-pap
 refuse-chap
@@ -50,6 +53,8 @@ require-mppe-128
 # addresses to the clients.  The first instance of this option
 # specifies the primary DNS address; the second instance (if given)
 # specifies the secondary DNS address.
+# Attention! This information may not be taken into account by a Windows
+# client. See KB311218 in Microsoft's knowledge base for more information.
 #ms-dns 10.0.0.1
 #ms-dns 10.0.0.2
 
@@ -68,6 +73,15 @@ require-mppe-128
 # (you do not need this if your PPTP server is responsible for routing
 # packets to the clients -- James Cameron)
 proxyarp
+
+# Normally pptpd passes the IP address to pppd, but if pptpd has been
+# given the delegate option in pptpd.conf or the --delegate command line
+# option, then pppd will use chap-secrets or radius to allocate the
+# client IP address.  The default local IP address used at the server
+# end is often the same as the address of the server.  To override this,
+# specify the local IP address here.
+# (you must not use this unless you have used the delegate option)
+#10.8.0.100
 
 # Debian: do not replace the default route
 nodefaultroute
@@ -91,4 +105,18 @@ nodefaultroute
 lock
 
 # Disable BSD-Compress compression
-nobsdcomp 
+nobsdcomp
+
+# Disable Van Jacobson compression
+# (needed on some networks with Windows 9x/ME/XP clients, see posting to
+# poptop-server on 14th April 2005 by Pawel Pokrywka and followups,
+# http://marc.theaimsgroup.com/?t=111343175400006&r=1&w=2 )
+novj
+novjccomp
+
+# turn off logging to stderr, since this may be redirected to pptpd,
+# which may trigger a loopback
+nologfd
+
+# put plugins here
+# (putting them higher up may cause them to sent messages to the pty)

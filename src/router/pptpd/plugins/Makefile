@@ -1,4 +1,3 @@
-#CC	= gcc
 CFLAGS = $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS	+=  -I.. -I$(TOP)/pppd/include -I$(TOP)/pppd/pppd -fPIC
 LDFLAGS	= -shared

@@ -1,15 +1,29 @@
 Source: pptpd
 Section: net
 Priority: optional
-Maintainer: Rene Mayrhofer <rmayr@debian.org>
-Standards-Version: 3.0.1.0
-Build-Depends: libwrap0-dev, debhelper (>= 4.1.16)
+Maintainer: Christoph Biedl <debian.axhn@manchmal.in-ulm.de>
+Standards-Version: 3.9.4
+Build-Depends: debhelper (>= 9),
+    automake,
+    libwrap0-dev,
+    ppp-dev,
+Homepage: http://poptop.sourceforge.net/dox/
 
 Package: pptpd
-Architecture: any
-Depends: ${shlibs:Depends}, ppp (>=2.4.2+20030811-1), netbase, debconf, perl-base
-Build-Depends: debhelper
+Architecture: linux-any
+Depends: ${misc:Depends}, ${shlibs:Depends},
+    bcrelay,
+    netbase,
+    ppp,
 Description: PoPToP Point to Point Tunneling Server
- This implements a Virtual Private Networking Server (VPN) that is compatible
- with Microsoft VPN clients. It allows windows users to connect to an
- internal firewalled network using their dialup.
+ This implements a Virtual Private Networking Server (VPN) that is
+ compatible with Microsoft VPN clients. It allows Windows users to
+ connect to an internal firewalled network using their dialup.
+
+Package: bcrelay
+Architecture: linux-any
+Replaces: pptpd (<< 1.2.3-1),
+Depends: ${misc:Depends}, ${shlibs:Depends},
+Description: Broadcast relay daemon
+ The bcrelay daemon relays broadcasts between two interfaces. It is
+ shipped with the pptpd package, but can be used for other purposes.

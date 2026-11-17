@@ -1,3 +1,20 @@
+1.5.0: released 2024-05-18
+
+- apply autoconf 2.71 and automake 1.16.5 [Cameron]
+- fix some parts of macro expansion are not guarded [Cameron]
+- strerror and memset require string.h [Cameron]
+- build fixes for ppp-2.5 [Boot]
+- propagate CC to subdirectories [Grohne]
+- bcrelay: added save daemon PID to file [Vladimirovich]
+- fix segfault in pptpctrl argument parser [Biedl]
+- explain padding of argument zero [Biedl]
+- check for remote IP duplicates in pptpd.conf [Biedl]
+- compile fixes [Zacarias]
+- exit when bailing [Cameron]
+- sprintf to snprintf [Cameron]
+- fix typos [Biedl]
+- avoid remotenumber option on FreeBSD [Biedl]
+
 1.4.0: released 2013-10-23
 
 - change GPL license FSF addresses [Cameron]

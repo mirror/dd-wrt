@@ -44,6 +44,7 @@
 #define PPTPD_CONFIG_FILE_DEFAULT       "/etc/pptpd.conf"
 #endif
 #define PIDFILE_DEFAULT                 "/var/run/pptpd.pid"
+#define PIDFILE_BCRELAY_DEFAULT         "/var/run/bcrelay.pid"
 
 #define STIMEOUT_DEFAULT                10 /* seconds */
 

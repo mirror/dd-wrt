@@ -39,6 +39,7 @@ to the outgoing interface.
 Usage: /usr/sbin/bcrelay [options], where options are:
 
  [-d] [--daemon]           Run as daemon.
+ [-p] [--pidfile]          Write process ID to file if run as daemon.
  [-h] [--help]             Displays this help message.
  [-i] [--incoming]         Defines from which interface broadcasts will be
                            relayed.

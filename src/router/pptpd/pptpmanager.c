@@ -136,6 +136,13 @@ void slot_set_local(int i, char *ip)
 void slot_set_remote(int i, char *ip)
 {
   struct slot *slot = &slots[i];
+  int j;
+  for (j = 0; j < slot_count; j++) {
+    if (!slots[j].remote || strcmp(slots[j].remote, ip))
+      continue;
+    syslog(LOG_ERR, "MGR: Remote IP address %s in config is a duplicate!", ip);
+    exit(1);
+  }
   if (slot->remote) free(slot->remote);
   slot->remote = strdup(ip);
 }
@@ -476,7 +483,12 @@ static void connectCall(int clientSocket, int clientNumber)
          * speed and option file on the command line.
          */
 
+#ifdef HAVE_SETPROCTITLE
+        ctrl_argv[pptpctrl_argc++] = PPTP_CTRL_BIN;
+#else
+        /* Add some padding so the forked process can change the title */
         ctrl_argv[pptpctrl_argc++] = PPTP_CTRL_BIN "                                ";
+#endif
 
         /* Pass socket as stdin */
         if (clientSocket != 0) {

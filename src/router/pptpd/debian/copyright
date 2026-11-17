@@ -1,11 +1,77 @@
-This package was debianized by Rene Mayrhofer rene.mayrhofer@gibraltar.at on
-Mon, 16 Aug 1999 11:27:43 +0200.
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: poptop
+Source: http://poptop.sourceforge.net/dox/
 
-It was downloaded from 'http://www.moretonbay.com/vpn/pptp.html'
+Files: *
+Copyright: James Cameron <james.cameron at hp dot com> et.al.
+Comment: See AUTHORS for full list
+License: GPL-2.0+
 
-Upstream Authors: Please look at file AUTHORS
+Files:
+    getopt.c
+    out_getopt.h
+Copyright: 1987, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99
+    Free Software Foundation, Inc.
+License: GPL-2.0+
 
-Copyright:
+Files: plugins/pppd.h
+Copyright: 1984-2000 Carnegie Mellon University
+License: BSD-4-clause-like
 
-PPTPd is released under the GPL. You should find a copy of the GPL in
-'/usr/share/common-licenses/GPL' on Debian systems.
+Files: vpnstats.pl
+Copyright: Scott Merrill (skippy@skippy.net)
+License: GPL-2.0+
+
+License: GPL-2.0+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
+
+License: BSD-4-clause-like
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ .
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ .
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+ .
+ 3. The name "Carnegie Mellon University" must not be used to
+    endorse or promote products derived from this software without
+    prior written permission. For permission or any legal
+    details, please contact
+      Office of Technology Transfer
+      Carnegie Mellon University
+      5000 Forbes Avenue
+      Pittsburgh, PA  15213-3890
+      (412) 268-4387, fax: (412) 268-7395
+      tech-transfer@andrew.cmu.edu
+ .
+ 4. Redistributions of any form whatsoever must retain the following
+    acknowledgment:
+    "This product includes software developed by Computing Services
+     at Carnegie Mellon University (http://www.cmu.edu/computing/)."
+ .
+ CARNEGIE MELLON UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO
+ THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+ AND FITNESS, IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY BE LIABLE
+ FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+ AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
+ OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.

@@ -88,7 +88,7 @@ static void showusage(char *prog)
         printf("Usage: pptpd [options], where options are:\n\n");
 #ifdef BCRELAY
 #define OPT_BCRELAY "b"
-        printf(" [-b] [--bcrelay if]       Use broadcast relay for broadcasts comming from.\n");
+        printf(" [-b] [--bcrelay if]       Use broadcast relay for broadcasts coming from.\n");
         printf("                           the specified interface (default is eth1).\n");
 #else
 #define OPT_BCRELAY ""
@@ -115,7 +115,7 @@ static void showusage(char *prog)
         printf("                           (default is /etc/ppp/options).\n");
 #endif
         printf(" [-p] [--pidfile file]     Specifies the file to write the process ID to\n");
-        printf("                           (default is /var/run/pptpd.pid).\n");
+        printf("                           (default is %s).\n", PIDFILE_DEFAULT);
 #if !defined(BSDUSER_PPP)
         printf(" [-s] [--speed baud]       Specifies the baud speed for the PPP daemon\n");
         printf("                           (default is 115200).\n");

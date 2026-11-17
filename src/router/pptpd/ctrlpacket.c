@@ -319,7 +319,7 @@ ssize_t read_pptp_header(int clientFd, unsigned char *packet, int *pptp_ctrl_typ
         /* Packet sanity check on magic cookie */
         if (ntohl(header->magic) != PPTP_MAGIC_COOKIE) {
                 /* Oops! Not a valid Control Message */
-                syslog(LOG_ERR, "CTRL: Bad magic cookie - lost syncronization, closing control connection.");
+                syslog(LOG_ERR, "CTRL: Bad magic cookie - lost synchronization, closing control connection.");
                 /* draft states loss of syncronization must result in
                  * immediate closing of the control connection
                  */

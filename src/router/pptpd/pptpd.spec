@@ -12,7 +12,7 @@
 
 Summary:        PoPToP Point to Point Tunneling Server
 Name:           pptpd
-Version:        1.4.0
+Version:        1.5.0
 Release:        1%{?dist}
 License:        GPL
 Group:          Applications/Internet
@@ -56,8 +56,7 @@ echo '#define VERSION "%{ppp_version}"' >> plugins/patchlevel.h
 	%{?_with_slirp:--with-slirp} \
 	%{!?_with_ipalloc:--without-pppd-ip-alloc} \
 	%{?_with_ipalloc:--with-pppd-ip-alloc} \
-	%{!?_without_bcrelay:--with-bcrelay} \
-	%{?_without_bcrelay:--without-bcrelay}
+	%{!?_without_bcrelay:--enable-bcrelay}
 %{__make} CFLAGS='-fno-builtin -fPIC -DSBINDIR=\"%{_sbindir}\" %{optflags}'
 
 %install
@@ -107,18 +106,27 @@ fi
 %{_sbindir}/pptpd
 %{_sbindir}/pptpctrl
 %{_sbindir}/pptp-portslave
-%{!?_without_bcrelay:%{_sbindir}/bcrelay}
+%{_sbindir}/bcrelay
 %{_libdir}/pptpd/pptpd-logwtmp.so
 %{_bindir}/vpnuser
 %{_bindir}/vpnstats.pl
 %{_mandir}/man5/pptpd.conf.5*
 %{_mandir}/man8/pptpd.8*
 %{_mandir}/man8/pptpctrl.8*
+%{_mandir}/man8/bcrelay.8*
 /etc/rc.d/init.d/pptpd
 %config(noreplace) /etc/pptpd.conf
 %config(noreplace) /etc/ppp/options.pptpd
 
 %changelog
+* Sat May 18 2024 James Cameron <quozl@laptop.org> - 1.5.0-1
+- Untested
+
+* Wed Oct 23 2013 John Lauro <john.lauro@covenanteyes.com> - 1.4.0-1
+- Update to 1.4.0
+- Bring .spec and bcrelay in sync with configure option
+- Include man pages as expected files for bcrelay
+
 * Thu Aug 30 2012 Charlie Brady <charlie_brady@mitel.com> 1.3.4-2
 - Update pptpd-logwtmp plugin version compatibility to match buildsys
   ppp version.

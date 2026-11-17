@@ -92,19 +92,29 @@ static void launch_pppd(char **pppaddrs, struct in_addr *inetaddrs);
 #define OUR_NB_MODE O_NDELAY
 #endif
 
+void usage()
+{
+        fprintf(stderr, "pptpctrl: insufficient arguments, see man pptpctrl\n");
+        exit(2);
+}
+
 /* read a command line argument, a flag alone */
 #define GETARG_INT(X) \
+        if (arg >= argc) usage() ; \
         X = atoi(argv[arg++])
 
 /* read a command line argument, a string alone */
 #define GETARG_STRING(X) \
+        if (arg >= argc) usage() ; \
         X = strdup(argv[arg++])
 
 /* read a command line argument, a presence flag followed by string */
 #define GETARG_VALUE(X) \
-        if(atoi(argv[arg++]) != 0) \
+        if (arg >= argc) usage() ; \
+        if (atoi(argv[arg++]) != 0) { \
+                if (arg >= argc) usage() ; \
                 strlcpy(X, argv[arg++], sizeof(X)); \
-        else \
+        } else \
                 *X = '\0'
 void add_blocklist(const char *service, char *ip);
 int check_blocklist(const char *service, char *ip);
@@ -124,10 +134,8 @@ int main(int argc, char **argv)
         gargv = argv;
 
         /* fail if argument count invalid */
-        if (argc < 7) {
-                fprintf(stderr, "pptpctrl: insufficient arguments, see man pptpctrl\n");
-                exit(2);
-        }
+        if (argc < 7)
+                usage();
 
         /* open a connection to the syslog daemon */
         openlog("pptpd", LOG_PID, PPTP_FACILITY);
@@ -145,9 +153,9 @@ int main(int argc, char **argv)
         GETARG_VALUE(speed);
         GETARG_VALUE(pppLocal);
         GETARG_VALUE(pppRemote);
-        if (arg < argc) GETARG_INT(unique_call_id);
-        if (arg < argc) GETARG_STRING(ppp_binary);
-        if (arg < argc) GETARG_INT(pptp_logwtmp);
+        if (arg < argc) { GETARG_INT(unique_call_id); }
+        if (arg < argc) { GETARG_STRING(ppp_binary); }
+        if (arg < argc) { GETARG_INT(pptp_logwtmp); }
 
 #ifdef VRF
         if (!*vrf) {
@@ -554,6 +562,8 @@ static void bail(int sigraised)
 
         if (pptpctrl_debug)
                 syslog(LOG_DEBUG, "CTRL: Exiting now");
+
+        exit((GET_VALUE(PAC, call_id_pair) == htons(-1)) ? 0 : 1);
 }
 
 /*
@@ -799,10 +809,10 @@ static void launch_pppd(char **pppaddrs, struct in_addr *inetaddrs)
                  pppd_argv[an++] = "pptpd-original-ip";
                  pppd_argv[an++] = inet_ntoa(inetaddrs[1]);
         }
-#endif
 
         pppd_argv[an++] = "remotenumber";
         pppd_argv[an++] = inet_ntoa(inetaddrs[1]);
+#endif
 
         /* argv arrays must always be NULL terminated */
         pppd_argv[an++] = NULL;
