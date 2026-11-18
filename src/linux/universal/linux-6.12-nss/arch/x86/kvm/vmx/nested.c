@@ -4968,7 +4968,6 @@ static void nested_vmx_restore_host_state(struct kvm_vcpu *vcpu)
 					__func__, j, h.index, h.value);
 				goto vmabort;
 			}
-			break;
 		}
 	}
 

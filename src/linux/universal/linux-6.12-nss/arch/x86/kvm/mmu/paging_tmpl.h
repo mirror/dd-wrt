@@ -321,13 +321,6 @@ static int FNAME(walk_addr_generic)(struct guest_walker *walker,
 	gpa_t real_gpa;
 	gfn_t gfn;
 
-	/*
-	 * KVM might sleep/resched when retrying the walk if the updating A/D
-	 * fails because the gPTE changed between reading the gPTE and trying
-	 * the CMPXHG to set A/D bits.
-	 */
-	might_sleep();
-
 	trace_kvm_mmu_pagetable_walk(addr, access);
 retry_walk:
 	walker->level = mmu->cpu_role.base.level;
@@ -478,10 +471,8 @@ retry_walk:
 							addr, write_fault);
 		if (unlikely(ret < 0))
 			goto error;
-		else if (ret) {
-			cond_resched();
+		else if (ret)
 			goto retry_walk;
-		}
 	}
 
 	return 1;

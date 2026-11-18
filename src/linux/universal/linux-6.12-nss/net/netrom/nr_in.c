@@ -67,44 +67,26 @@ static int nr_queue_rx_frame(struct sock *sk, struct sk_buff *skb, int more)
 		return 0;
 	}
 
-	if (nr->fraglen > 0) {	/* End of fragment */
-		skbn = alloc_skb(nr->fraglen + skb->len, GFP_ATOMIC);
-		if (!skbn)
-			goto busy;
+	if (!more && nr->fraglen > 0) {	/* End of fragment */
+		nr->fraglen += skb->len;
+		skb_queue_tail(&nr->frag_queue, skb);
+
+		if ((skbn = alloc_skb(nr->fraglen, GFP_ATOMIC)) == NULL)
+			return 1;
 
 		skb_reset_transport_header(skbn);
 
-		skb_queue_walk(&nr->frag_queue, skbo)
+		while ((skbo = skb_dequeue(&nr->frag_queue)) != NULL) {
 			skb_copy_from_linear_data(skbo,
 						  skb_put(skbn, skbo->len),
 						  skbo->len);
-		skb_copy_from_linear_data(skb, skb_put(skbn, skb->len),
-					  skb->len);
-	}
+			kfree_skb(skbo);
+		}
 
-	if (sock_queue_rcv_skb(sk, skbn) != 0) {
-		if (skbn != skb)
-			kfree_skb(skbn);
-		goto busy;
-	}
-
-	if (skbn != skb) {
-		/* The whole message is delivered: drop its pieces */
-		skb_queue_purge(&nr->frag_queue);
 		nr->fraglen = 0;
-		kfree_skb(skb);
 	}
 
-	return 0;
-
-busy:
-	/*
-	 * Not delivered: give the frame back as it came, headers included,
-	 * and leave the earlier fragments where they are, so that the
-	 * caller can keep it on reseq_queue and deliver it later.
-	 */
-	skb_push(skb, NR_NETWORK_LEN + NR_TRANSPORT_LEN);
-	return 1;
+	return sock_queue_rcv_skb(sk, skbn);
 }
 
 /*
@@ -129,7 +111,7 @@ static int nr_state1_machine(struct sock *sk, struct sk_buff *skb,
 		nr->vl	       = 0;
 		nr->state      = NR_STATE_3;
 		nr->n2count    = 0;
-		nr_negotiate_window(nr, skb->data[20]);
+		nr->window     = skb->data[20];
 		sk->sk_state   = TCP_ESTABLISHED;
 		if (!sock_flag(sk, SOCK_DEAD))
 			sk->sk_state_change(sk);
@@ -194,7 +176,7 @@ static int nr_state3_machine(struct sock *sk, struct sk_buff *skb, int frametype
 	struct sk_buff *skbn;
 	unsigned short save_vr;
 	unsigned short nr, ns;
-	int queued = 0, more;
+	int queued = 0;
 
 	nr = skb->data[18];
 
@@ -276,9 +258,7 @@ static int nr_state3_machine(struct sock *sk, struct sk_buff *skb, int frametype
 			while ((skbn = skb_dequeue(&nrom->reseq_queue)) != NULL) {
 				ns = skbn->data[17];
 				if (ns == nrom->vr) {
-					/* The flags of this frame, not of the one just received */
-					more = skbn->data[19] & NR_MORE_FLAG;
-					if (nr_queue_rx_frame(sk, skbn, more) == 0) {
+					if (nr_queue_rx_frame(sk, skbn, frametype & NR_MORE_FLAG) == 0) {
 						nrom->vr = (nrom->vr + 1) % NR_MODULUS;
 					} else {
 						nrom->condition |= NR_COND_OWN_RX_BUSY;

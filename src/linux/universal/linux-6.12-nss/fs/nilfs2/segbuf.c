@@ -403,7 +403,12 @@ static int nilfs_segbuf_submit_bh(struct nilfs_segment_buffer *segbuf,
  * @segbuf: buffer storing a log to be written
  * @nilfs: nilfs object
  *
- * Return: Always 0.
+ * Return Value: On Success, 0 is returned. On Error, one of the following
+ * negative error code is returned.
+ *
+ * %-EIO - I/O error
+ *
+ * %-ENOMEM - Insufficient memory available.
  */
 static int nilfs_segbuf_write(struct nilfs_segment_buffer *segbuf,
 			      struct the_nilfs *nilfs)
@@ -444,7 +449,10 @@ static int nilfs_segbuf_write(struct nilfs_segment_buffer *segbuf,
  * nilfs_segbuf_wait - wait for completion of requested BIOs
  * @segbuf: segment buffer
  *
- * Return: 0 on success, or %-EIO if I/O error is detected.
+ * Return Value: On Success, 0 is returned. On Error, one of the following
+ * negative error code is returned.
+ *
+ * %-EIO - I/O error
  */
 static int nilfs_segbuf_wait(struct nilfs_segment_buffer *segbuf)
 {

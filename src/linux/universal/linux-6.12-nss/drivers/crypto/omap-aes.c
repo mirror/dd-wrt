@@ -33,7 +33,6 @@
 #include <linux/pm_runtime.h>
 #include <linux/scatterlist.h>
 #include <linux/string.h>
-#include <linux/workqueue.h>
 
 #include "omap-crypto.h"
 #include "omap-aes.h"
@@ -223,7 +222,7 @@ static void omap_aes_dma_out_callback(void *data)
 	struct omap_aes_dev *dd = data;
 
 	/* dma_lch_out - completed */
-	queue_work(system_bh_wq, &dd->done_task);
+	tasklet_schedule(&dd->done_task);
 }
 
 static int omap_aes_dma_init(struct omap_aes_dev *dd)
@@ -497,9 +496,9 @@ static void omap_aes_copy_ivout(struct omap_aes_dev *dd, u8 *ivbuf)
 		((u32 *)ivbuf)[i] = omap_aes_read(dd, AES_REG_IV(dd, i));
 }
 
-static void omap_aes_done_task(struct work_struct *t)
+static void omap_aes_done_task(unsigned long data)
 {
-	struct omap_aes_dev *dd = from_work(dd, t, done_task);
+	struct omap_aes_dev *dd = (struct omap_aes_dev *)data;
 
 	pr_debug("enter done_task\n");
 
@@ -933,7 +932,7 @@ static irqreturn_t omap_aes_irq(int irq, void *dev_id)
 
 		if (!dd->total)
 			/* All bytes read! */
-			queue_work(system_bh_wq, &dd->done_task);
+			tasklet_schedule(&dd->done_task);
 		else
 			/* Enable DATA_IN interrupt for next block */
 			omap_aes_write(dd, AES_REG_IRQ_ENABLE(dd), 0x2);
@@ -1151,7 +1150,7 @@ static int omap_aes_probe(struct platform_device *pdev)
 		 (reg & dd->pdata->major_mask) >> dd->pdata->major_shift,
 		 (reg & dd->pdata->minor_mask) >> dd->pdata->minor_shift);
 
-	INIT_WORK(&dd->done_task, omap_aes_done_task);
+	tasklet_init(&dd->done_task, omap_aes_done_task, (unsigned long)dd);
 
 	err = omap_aes_dma_init(dd);
 	if (err == -EPROBE_DEFER) {
@@ -1246,7 +1245,7 @@ err_engine:
 
 	omap_aes_dma_cleanup(dd);
 err_irq:
-	cancel_work_sync(&dd->done_task);
+	tasklet_kill(&dd->done_task);
 err_pm_disable:
 	pm_runtime_disable(dev);
 err_res:
@@ -1281,7 +1280,7 @@ static void omap_aes_remove(struct platform_device *pdev)
 
 	crypto_engine_exit(dd->engine);
 
-	cancel_work_sync(&dd->done_task);
+	tasklet_kill(&dd->done_task);
 	omap_aes_dma_cleanup(dd);
 	pm_runtime_disable(dd->dev);
 

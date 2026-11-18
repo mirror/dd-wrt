@@ -254,8 +254,7 @@ static ssize_t ext2_dio_write_iter(struct kiocb *iocb, struct iov_iter *from)
 		pos = iocb->ki_pos;
 		status = generic_perform_write(iocb, from);
 		if (unlikely(status < 0)) {
-			if (!ret)
-				ret = status;
+			ret = status;
 			goto out_unlock;
 		}
 

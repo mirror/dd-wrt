@@ -387,13 +387,9 @@ void lsdc_bo_kunmap(struct lsdc_bo *lbo)
 	ttm_bo_kunmap(&lbo->kmap);
 }
 
-int lsdc_bo_clear(struct lsdc_bo *lbo)
+void lsdc_bo_clear(struct lsdc_bo *lbo)
 {
-	int ret;
-
-	ret = lsdc_bo_kmap(lbo);
-	if (ret)
-		return ret;
+	lsdc_bo_kmap(lbo);
 
 	if (lbo->is_iomem)
 		memset_io((void __iomem *)lbo->kptr, 0, lbo->size);
@@ -401,8 +397,6 @@ int lsdc_bo_clear(struct lsdc_bo *lbo)
 		memset(lbo->kptr, 0, lbo->size);
 
 	lsdc_bo_kunmap(lbo);
-
-	return 0;
 }
 
 int lsdc_bo_evict_vram(struct drm_device *ddev)
@@ -480,8 +474,10 @@ struct lsdc_bo *lsdc_bo_create(struct drm_device *ddev,
 
 	ret = ttm_bo_init_validate(bdev, tbo, bo_type, &lbo->placement, 0,
 				   false, sg, resv, lsdc_bo_destroy);
-	if (ret)
+	if (ret) {
+		kfree(lbo);
 		return ERR_PTR(ret);
+	}
 
 	return lbo;
 }

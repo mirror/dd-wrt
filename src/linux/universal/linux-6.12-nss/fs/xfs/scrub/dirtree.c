@@ -849,8 +849,7 @@ xchk_dirtree_find_paths_to_root(
 				 * A parent pointer of @sc->ip is bad, don't
 				 * bother continuing.
 				 */
-				xchk_set_incomplete(sc);
-				return error;
+				break;
 			}
 			if (error == -ESTALE) {
 				/* This had better be an invalidation. */
@@ -971,7 +970,6 @@ xchk_dirtree(
 		 * parent pointers are corrupt; this scan cannot be completed
 		 * without full information.
 		 */
-		xchk_set_incomplete(sc);
 		xchk_ino_xref_set_corrupt(sc, sc->ip->i_ino);
 		error = 0;
 		goto out_scanlock;

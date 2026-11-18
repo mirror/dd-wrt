@@ -1694,10 +1694,7 @@ struct vm_area_struct *copy_vma(struct vm_area_struct **vmap,
 		faulted_in_anon_vma = true;
 	}
 
-	/* If not registered for remap, uffd context will be cleared. */
-	new_vma = NULL;
-	if (!vma_has_uffd_without_event_remap(vma))
-		new_vma = vma_merge_new_range(&vmg);
+	new_vma = vma_merge_new_range(&vmg);
 
 	if (new_vma) {
 		/*

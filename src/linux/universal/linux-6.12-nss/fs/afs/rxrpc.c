@@ -442,8 +442,10 @@ void afs_make_call(struct afs_call *call, gfp_t gfp)
 	return;
 
 error_do_abort:
-	rxrpc_kernel_abort_call(call->net->socket, rxcall,
-				RX_USER_ABORT, ret, afs_abort_send_data_error);
+	if (ret != -ECONNABORTED)
+		rxrpc_kernel_abort_call(call->net->socket, rxcall,
+					RX_USER_ABORT, ret,
+					afs_abort_send_data_error);
 	if (call->async) {
 		afs_see_call(call, afs_call_trace_async_abort);
 		return;
@@ -851,7 +853,6 @@ void afs_send_empty_reply(struct afs_call *call)
 {
 	struct afs_net *net = call->net;
 	struct msghdr msg;
-	int ret;
 
 	_enter("");
 
@@ -864,13 +865,21 @@ void afs_send_empty_reply(struct afs_call *call)
 	msg.msg_controllen	= 0;
 	msg.msg_flags		= 0;
 
-	ret = rxrpc_kernel_send_data(net->socket, call->rxcall, &msg, 0,
-				     afs_notify_end_reply_tx);
-	if (ret < 0) {
+	switch (rxrpc_kernel_send_data(net->socket, call->rxcall, &msg, 0,
+				       afs_notify_end_reply_tx)) {
+	case 0:
+		_leave(" [replied]");
+		return;
+
+	case -ENOMEM:
+		_debug("oom");
 		rxrpc_kernel_abort_call(net->socket, call->rxcall,
-					RXGEN_SS_MARSHAL, ret,
-					afs_abort_send_error);
-		afs_set_call_complete(call, ret, RXGEN_SS_MARSHAL);
+					RXGEN_SS_MARSHAL, -ENOMEM,
+					afs_abort_oom);
+		fallthrough;
+	default:
+		_leave(" [error]");
+		return;
 	}
 }
 
@@ -882,7 +891,7 @@ void afs_send_simple_reply(struct afs_call *call, const void *buf, size_t len)
 	struct afs_net *net = call->net;
 	struct msghdr msg;
 	struct kvec iov[1];
-	int ret;
+	int n;
 
 	_enter("");
 
@@ -897,15 +906,21 @@ void afs_send_simple_reply(struct afs_call *call, const void *buf, size_t len)
 	msg.msg_controllen	= 0;
 	msg.msg_flags		= 0;
 
-	ret = rxrpc_kernel_send_data(net->socket, call->rxcall, &msg, len,
-				     afs_notify_end_reply_tx);
-	if (ret < 0) {
-		rxrpc_kernel_abort_call(net->socket, call->rxcall,
-					RXGEN_SS_MARSHAL, ret,
-					afs_abort_send_error);
-		afs_set_call_complete(call, ret, RXGEN_SS_MARSHAL);
-		_leave(" [error]");
+	n = rxrpc_kernel_send_data(net->socket, call->rxcall, &msg, len,
+				   afs_notify_end_reply_tx);
+	if (n >= 0) {
+		/* Success */
+		_leave(" [replied]");
+		return;
 	}
+
+	if (n == -ENOMEM) {
+		_debug("oom");
+		rxrpc_kernel_abort_call(net->socket, call->rxcall,
+					RXGEN_SS_MARSHAL, -ENOMEM,
+					afs_abort_oom);
+	}
+	_leave(" [error]");
 }
 
 /*

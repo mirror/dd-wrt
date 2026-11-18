@@ -35,9 +35,8 @@ struct pnfs_ff_device_addr {
 struct pnfs_ff_layout {
 	u32				flags;
 	u32				stats_collect_hint;
-	/* Values to encode; nfsd4_ff_proc_layoutget() has mapped these */
-	u32				uid;
-	u32				gid;
+	kuid_t				uid;
+	kgid_t				gid;
 	struct nfsd4_deviceid		deviceid;
 	stateid_t			stateid;
 	struct nfs_fh			fh;

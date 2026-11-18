@@ -1224,7 +1224,6 @@ svm_range_get_pte_flags(struct kfd_node *node,
 	struct kfd_node *bo_node;
 	uint32_t flags = prange->flags;
 	uint32_t mapping_flags = 0;
-	uint32_t gc_ip_version = KFD_GC_VERSION(node);
 	uint64_t pte_flags;
 	bool snoop = (domain != SVM_RANGE_VRAM_DOMAIN);
 	bool coherent = flags & (KFD_IOCTL_SVM_FLAG_COHERENT | KFD_IOCTL_SVM_FLAG_EXT_COHERENT);
@@ -1234,7 +1233,7 @@ svm_range_get_pte_flags(struct kfd_node *node,
 	if (domain == SVM_RANGE_VRAM_DOMAIN)
 		bo_node = prange->svm_bo->node;
 
-	switch (gc_ip_version) {
+	switch (amdgpu_ip_version(node->adev, GC_HWIP, 0)) {
 	case IP_VERSION(9, 4, 1):
 		if (domain == SVM_RANGE_VRAM_DOMAIN) {
 			if (bo_node == node) {
@@ -1272,7 +1271,7 @@ svm_range_get_pte_flags(struct kfd_node *node,
 	case IP_VERSION(9, 4, 3):
 	case IP_VERSION(9, 4, 4):
 		if (ext_coherent)
-			mtype_local = AMDGPU_VM_MTYPE_CC;
+			mtype_local = node->adev->rev_id ? AMDGPU_VM_MTYPE_CC : AMDGPU_VM_MTYPE_UC;
 		else
 			mtype_local = amdgpu_mtype_local == 1 ? AMDGPU_VM_MTYPE_NC :
 				amdgpu_mtype_local == 2 ? AMDGPU_VM_MTYPE_CC : AMDGPU_VM_MTYPE_RW;
@@ -1287,13 +1286,9 @@ svm_range_get_pte_flags(struct kfd_node *node,
 			 */
 			else if (svm_nodes_in_same_hive(bo_node, node) && !ext_coherent)
 				mapping_flags |= AMDGPU_VM_MTYPE_NC;
-			/* PCIe P2P on GPUs pre-9.5.0 */
-			else if (gc_ip_version < IP_VERSION(9, 5, 0) &&
-				 !svm_nodes_in_same_hive(bo_node, node))
-				mapping_flags |= AMDGPU_VM_MTYPE_UC;
-			/* Other remote memory */
+			/* PCIe P2P or extended system scope coherence */
 			else
-				mapping_flags |= ext_coherent ? AMDGPU_VM_MTYPE_UC : AMDGPU_VM_MTYPE_NC;
+				mapping_flags |= AMDGPU_VM_MTYPE_UC;
 		/* system memory accessed by the APU */
 		} else if (node->adev->flags & AMD_IS_APU) {
 			/* On NUMA systems, locality is determined per-page
@@ -1305,10 +1300,7 @@ svm_range_get_pte_flags(struct kfd_node *node,
 				mapping_flags |= ext_coherent ? AMDGPU_VM_MTYPE_UC : AMDGPU_VM_MTYPE_NC;
 		/* system memory accessed by the dGPU */
 		} else {
-			if (gc_ip_version < IP_VERSION(9, 5, 0))
-				mapping_flags |= AMDGPU_VM_MTYPE_UC;
-			else
-				mapping_flags |= AMDGPU_VM_MTYPE_NC;
+			mapping_flags |= AMDGPU_VM_MTYPE_UC;
 		}
 		break;
 	case IP_VERSION(12, 0, 0):
@@ -1330,7 +1322,7 @@ svm_range_get_pte_flags(struct kfd_node *node,
 	pte_flags = AMDGPU_PTE_VALID;
 	pte_flags |= (domain == SVM_RANGE_VRAM_DOMAIN) ? 0 : AMDGPU_PTE_SYSTEM;
 	pte_flags |= snoop ? AMDGPU_PTE_SNOOPED : 0;
-	if (gc_ip_version >= IP_VERSION(12, 0, 0))
+	if (KFD_GC_VERSION(node) >= IP_VERSION(12, 0, 0))
 		pte_flags |= AMDGPU_PTE_IS_PTE;
 
 	pte_flags |= amdgpu_gem_va_map_flags(node->adev, mapping_flags);

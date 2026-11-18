@@ -499,8 +499,6 @@ int	ahd_linux_show_info(struct seq_file *,struct Scsi_Host *);
 static inline
 void ahd_cmd_set_transaction_status(struct scsi_cmnd *cmd, uint32_t status)
 {
-	if (!cmd)
-		return;
 	cmd->result &= ~(CAM_STATUS_MASK << 16);
 	cmd->result |= status << 16;
 }
@@ -514,8 +512,6 @@ void ahd_set_transaction_status(struct scb *scb, uint32_t status)
 static inline
 void ahd_cmd_set_scsi_status(struct scsi_cmnd *cmd, uint32_t status)
 {
-	if (!cmd)
-		return;
 	cmd->result &= ~0xFFFF;
 	cmd->result |= status;
 }
@@ -529,8 +525,6 @@ void ahd_set_scsi_status(struct scb *scb, uint32_t status)
 static inline
 uint32_t ahd_cmd_get_transaction_status(struct scsi_cmnd *cmd)
 {
-	if (!cmd)
-		return CAM_REQ_INPROG;
 	return ((cmd->result >> 16) & CAM_STATUS_MASK);
 }
 
@@ -543,8 +537,6 @@ uint32_t ahd_get_transaction_status(struct scb *scb)
 static inline
 uint32_t ahd_cmd_get_scsi_status(struct scsi_cmnd *cmd)
 {
-	if (!cmd)
-		return SAM_STAT_GOOD;
 	return (cmd->result & 0xFFFF);
 }
 
@@ -572,16 +564,13 @@ u_long ahd_get_transfer_length(struct scb *scb)
 static inline
 int ahd_get_transfer_dir(struct scb *scb)
 {
-	if (!scb->io_ctx)
-		return DMA_NONE;
 	return (scb->io_ctx->sc_data_direction);
 }
 
 static inline
 void ahd_set_residual(struct scb *scb, u_long resid)
 {
-	if (scb->io_ctx)
-		scsi_set_resid(scb->io_ctx, resid);
+	scsi_set_resid(scb->io_ctx, resid);
 }
 
 static inline
@@ -593,8 +582,6 @@ void ahd_set_sense_residual(struct scb *scb, u_long resid)
 static inline
 u_long ahd_get_residual(struct scb *scb)
 {
-	if (!scb->io_ctx)
-		return 0;
 	return scsi_get_resid(scb->io_ctx);
 }
 
@@ -608,12 +595,11 @@ static inline
 int ahd_perform_autosense(struct scb *scb)
 {
 	/*
-	 * We always perform autosense in Linux, except for the device
-	 * reset SCB, which has no command to return sense data to.
+	 * We always perform autosense in Linux.
+	 * On other platforms this is set on a
+	 * per-transaction basis.
 	 */
-	if (!scb->io_ctx)
-		return 0;
-	return 1;
+	return (1);
 }
 
 static inline uint32_t
@@ -643,8 +629,6 @@ void	ahd_platform_freeze_devq(struct ahd_softc *ahd, struct scb *scb);
 static inline void
 ahd_freeze_scb(struct scb *scb)
 {
-	if (!scb->io_ctx)
-		return;
 	if ((scb->io_ctx->result & (CAM_DEV_QFRZN << 16)) == 0) {
 		scb->io_ctx->result |= CAM_DEV_QFRZN << 16;
 		scb->platform_data->dev->qfrozen++;

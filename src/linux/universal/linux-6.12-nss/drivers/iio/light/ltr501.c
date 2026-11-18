@@ -1558,7 +1558,7 @@ static int ltr501_probe(struct i2c_client *client)
 		if (ret) {
 			dev_err(&client->dev, "request irq (%d) failed\n",
 				client->irq);
-			goto powerdown_on_error;
+			return ret;
 		}
 	} else {
 		indio_dev->info = data->chip_info->info_no_irq;

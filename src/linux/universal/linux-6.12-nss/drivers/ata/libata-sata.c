@@ -1735,6 +1735,6 @@ const struct ata_port_operations sata_port_ops = {
 	.inherits		= &ata_base_port_ops,
 
 	.qc_defer		= ata_std_qc_defer,
-	.reset.hardreset	= sata_std_hardreset,
+	.hardreset		= sata_std_hardreset,
 };
 EXPORT_SYMBOL_GPL(sata_port_ops);

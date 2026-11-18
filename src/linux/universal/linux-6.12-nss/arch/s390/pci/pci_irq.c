@@ -450,10 +450,15 @@ static int __init zpci_directed_irq_init(void)
 	if (!zpci_sbv)
 		return -ENOMEM;
 
+	iib.diib.isc = PCI_ISC;
+	iib.diib.nr_cpus = num_possible_cpus();
+	iib.diib.disb_addr = virt_to_phys(zpci_sbv->vector);
+	zpci_set_irq_ctrl(SIC_IRQ_MODE_DIRECT, 0, &iib);
+
 	zpci_ibv = kcalloc(num_possible_cpus(), sizeof(*zpci_ibv),
 			   GFP_KERNEL);
 	if (!zpci_ibv)
-		goto out_free_sbv;
+		return -ENOMEM;
 
 	for_each_possible_cpu(cpu) {
 		/*
@@ -465,30 +470,13 @@ static int __init zpci_directed_irq_init(void)
 					       AIRQ_IV_CACHELINE |
 					       (!cpu ? AIRQ_IV_ALLOC : 0), NULL);
 		if (!zpci_ibv[cpu])
-			goto out_free_dibv;
+			return -ENOMEM;
 	}
-
-	iib.diib.isc = PCI_ISC;
-	iib.diib.nr_cpus = num_possible_cpus();
-	iib.diib.disb_addr = virt_to_phys(zpci_sbv->vector);
-	zpci_set_irq_ctrl(SIC_IRQ_MODE_DIRECT, 0, &iib);
 	on_each_cpu(cpu_enable_directed_irq, NULL, 1);
 
 	zpci_irq_chip.irq_set_affinity = zpci_set_irq_affinity;
 
 	return 0;
-
-out_free_dibv:
-	for_each_possible_cpu(cpu) {
-		if (zpci_ibv[cpu])
-			airq_iv_release(zpci_ibv[cpu]);
-	}
-	kfree(zpci_ibv);
-	zpci_ibv = NULL;
-out_free_sbv:
-	airq_iv_release(zpci_sbv);
-	zpci_sbv = NULL;
-	return -ENOMEM;
 }
 
 static int __init zpci_floating_irq_init(void)

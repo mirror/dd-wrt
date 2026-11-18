@@ -48,7 +48,8 @@ struct vm_area_struct *find_vma_and_prepare_anon(struct mm_struct *mm,
 	vma = vma_lookup(mm, addr);
 	if (!vma)
 		vma = ERR_PTR(-ENOENT);
-	else if (is_cow_mapping(vma->vm_flags) && unlikely(anon_vma_prepare(vma)))
+	else if (!(vma->vm_flags & VM_SHARED) &&
+		 unlikely(anon_vma_prepare(vma)))
 		vma = ERR_PTR(-ENOMEM);
 
 	return vma;
@@ -76,7 +77,7 @@ static struct vm_area_struct *uffd_lock_vma(struct mm_struct *mm,
 		 * We know we're going to need to use anon_vma, so check
 		 * that early.
 		 */
-		if (is_cow_mapping(vma->vm_flags) && unlikely(!vma->anon_vma))
+		if (!(vma->vm_flags & VM_SHARED) && unlikely(!vma->anon_vma))
 			vma_end_read(vma);
 		else
 			return vma;
@@ -1322,12 +1323,8 @@ retry:
 			pte_unmap(dst_pte);
 			src_pte = dst_pte = NULL;
 			err = split_folio(src_folio);
-			if (err) {
-				/* do not retry, extra refs may be held forever */
-				if (err == -EAGAIN)
-					err = -EBUSY;
+			if (err)
 				goto out;
-			}
 			/* have to reacquire the folio after it got split */
 			folio_unlock(src_folio);
 			folio_put(src_folio);

@@ -50,7 +50,6 @@ do { \
 		p1 = (unsigned long *)((uintptr_t)p1 + 512);
 	}
 
-	asm volatile("vzeroupper");
 	kernel_fpu_end();
 }
 
@@ -82,7 +81,6 @@ do { \
 		p2 = (unsigned long *)((uintptr_t)p2 + 512);
 	}
 
-	asm volatile("vzeroupper");
 	kernel_fpu_end();
 }
 
@@ -118,7 +116,6 @@ do { \
 		p3 = (unsigned long *)((uintptr_t)p3 + 512);
 	}
 
-	asm volatile("vzeroupper");
 	kernel_fpu_end();
 }
 
@@ -158,7 +155,6 @@ do { \
 		p4 = (unsigned long *)((uintptr_t)p4 + 512);
 	}
 
-	asm volatile("vzeroupper");
 	kernel_fpu_end();
 }
 

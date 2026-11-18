@@ -2632,16 +2632,14 @@ static int ata_eh_followup_srst_needed(struct ata_link *link, int rc)
 	return 0;
 }
 
-int ata_eh_reset(struct ata_port *ap, struct ata_link *link, int classify,
-		 struct ata_reset_operations *reset_ops)
+int ata_eh_reset(struct ata_link *link, int classify,
+		 ata_prereset_fn_t prereset, ata_reset_fn_t softreset,
+		 ata_reset_fn_t hardreset, ata_postreset_fn_t postreset)
 {
+	struct ata_port *ap = link->ap;
 	struct ata_link *slave = ap->slave_link;
 	struct ata_eh_context *ehc = &link->eh_context;
 	struct ata_eh_context *sehc = slave ? &slave->eh_context : NULL;
-	ata_reset_fn_t hardreset = reset_ops->hardreset;
-	ata_reset_fn_t softreset = reset_ops->softreset;
-	ata_prereset_fn_t prereset = reset_ops->prereset;
-	ata_postreset_fn_t postreset = reset_ops->postreset;
 	unsigned int *classes = ehc->classes;
 	unsigned int lflags = link->flags;
 	int verbose = !(ehc->i.flags & ATA_EHI_QUIET);
@@ -3250,12 +3248,12 @@ static int ata_eh_revalidate_and_attach(struct ata_link *link,
 }
 
 /**
- *	ata_eh_set_mode - Program timings and issue SET FEATURES - XFER
+ *	ata_set_mode - Program timings and issue SET FEATURES - XFER
  *	@link: link on which timings will be programmed
  *	@r_failed_dev: out parameter for failed device
  *
  *	Set ATA device disk transfer mode (PIO3, UDMA6, etc.).  If
- *	ata_eh_set_mode() fails, pointer to the failing device is
+ *	ata_set_mode() fails, pointer to the failing device is
  *	returned in @r_failed_dev.
  *
  *	LOCKING:
@@ -3264,8 +3262,7 @@ static int ata_eh_revalidate_and_attach(struct ata_link *link,
  *	RETURNS:
  *	0 on success, negative errno otherwise
  */
-static int ata_eh_set_mode(struct ata_link *link,
-			   struct ata_device **r_failed_dev)
+int ata_set_mode(struct ata_link *link, struct ata_device **r_failed_dev)
 {
 	struct ata_port *ap = link->ap;
 	struct ata_device *dev;
@@ -3732,7 +3729,10 @@ static int ata_eh_handle_dev_fail(struct ata_device *dev, int err)
 /**
  *	ata_eh_recover - recover host port after error
  *	@ap: host port to recover
- *	@reset_ops: The set of reset operations to use
+ *	@prereset: prereset method (can be NULL)
+ *	@softreset: softreset method (can be NULL)
+ *	@hardreset: hardreset method (can be NULL)
+ *	@postreset: postreset method (can be NULL)
  *	@r_failed_link: out parameter for failed link
  *
  *	This is the alpha and omega, eum and yang, heart and soul of
@@ -3748,7 +3748,9 @@ static int ata_eh_handle_dev_fail(struct ata_device *dev, int err)
  *	RETURNS:
  *	0 on success, -errno on failure.
  */
-int ata_eh_recover(struct ata_port *ap, struct ata_reset_operations *reset_ops,
+int ata_eh_recover(struct ata_port *ap, ata_prereset_fn_t prereset,
+		   ata_reset_fn_t softreset, ata_reset_fn_t hardreset,
+		   ata_postreset_fn_t postreset,
 		   struct ata_link **r_failed_link)
 {
 	struct ata_link *link;
@@ -3816,8 +3818,8 @@ int ata_eh_recover(struct ata_port *ap, struct ata_reset_operations *reset_ops,
 		if (!(ehc->i.action & ATA_EH_RESET))
 			continue;
 
-		rc = ata_eh_reset(ap, link, ata_link_nr_vacant(link),
-				  reset_ops);
+		rc = ata_eh_reset(link, ata_link_nr_vacant(link),
+				  prereset, softreset, hardreset, postreset);
 		if (rc) {
 			ata_link_err(link, "reset failed, giving up\n");
 			goto out;
@@ -3898,7 +3900,7 @@ int ata_eh_recover(struct ata_port *ap, struct ata_reset_operations *reset_ops,
 
 		/* configure transfer mode if necessary */
 		if (ehc->i.flags & ATA_EHI_SETMODE) {
-			rc = ata_eh_set_mode(link, &dev);
+			rc = ata_set_mode(link, &dev);
 			if (rc)
 				goto rest_fail;
 			ehc->i.flags &= ~ATA_EHI_SETMODE;
@@ -4037,38 +4039,58 @@ void ata_eh_finish(struct ata_port *ap)
 }
 
 /**
- *	ata_std_error_handler - standard error handler
+ *	ata_do_eh - do standard error handling
  *	@ap: host port to handle error for
+ *
+ *	@prereset: prereset method (can be NULL)
+ *	@softreset: softreset method (can be NULL)
+ *	@hardreset: hardreset method (can be NULL)
+ *	@postreset: postreset method (can be NULL)
  *
  *	Perform standard error handling sequence.
  *
  *	LOCKING:
  *	Kernel thread context (may sleep).
  */
-void ata_std_error_handler(struct ata_port *ap)
+void ata_do_eh(struct ata_port *ap, ata_prereset_fn_t prereset,
+	       ata_reset_fn_t softreset, ata_reset_fn_t hardreset,
+	       ata_postreset_fn_t postreset)
 {
-	struct ata_reset_operations *reset_ops = &ap->ops->reset;
-	struct ata_link *link = &ap->link;
+	struct ata_device *dev;
 	int rc;
-
-	/* Ignore built-in hardresets if SCR access is not available */
-	if ((reset_ops->hardreset == sata_std_hardreset ||
-	     reset_ops->hardreset == sata_sff_hardreset) &&
-	    !sata_scr_valid(link))
-		link->flags |= ATA_LFLAG_NO_HRST;
 
 	ata_eh_autopsy(ap);
 	ata_eh_report(ap);
 
-	rc = ata_eh_recover(ap, reset_ops, NULL);
+	rc = ata_eh_recover(ap, prereset, softreset, hardreset, postreset,
+			    NULL);
 	if (rc) {
-		struct ata_device *dev;
-
-		ata_for_each_dev(dev, link, ALL)
+		ata_for_each_dev(dev, &ap->link, ALL)
 			ata_dev_disable(dev);
 	}
 
 	ata_eh_finish(ap);
+}
+
+/**
+ *	ata_std_error_handler - standard error handler
+ *	@ap: host port to handle error for
+ *
+ *	Standard error handler
+ *
+ *	LOCKING:
+ *	Kernel thread context (may sleep).
+ */
+void ata_std_error_handler(struct ata_port *ap)
+{
+	struct ata_port_operations *ops = ap->ops;
+	ata_reset_fn_t hardreset = ops->hardreset;
+
+	/* ignore built-in hardreset if SCR access is not available */
+	if (hardreset == sata_std_hardreset && !sata_scr_valid(&ap->link))
+		hardreset = NULL;
+
+	ata_do_eh(ap, ops->prereset, ops->softreset, hardreset, ops->postreset);
 }
 EXPORT_SYMBOL_GPL(ata_std_error_handler);
 

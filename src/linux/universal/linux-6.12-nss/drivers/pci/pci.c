@@ -2090,28 +2090,6 @@ int __weak pcibios_enable_device(struct pci_dev *dev, int bars)
 	return pci_enable_resources(dev, bars);
 }
 
-static int pci_host_bridge_enable_device(struct pci_dev *dev)
-{
-	struct pci_host_bridge *host_bridge = pci_find_host_bridge(dev->bus);
-	int err;
-
-	if (host_bridge && host_bridge->enable_device) {
-		err = host_bridge->enable_device(host_bridge, dev);
-		if (err)
-			return err;
-	}
-
-	return 0;
-}
-
-static void pci_host_bridge_disable_device(struct pci_dev *dev)
-{
-	struct pci_host_bridge *host_bridge = pci_find_host_bridge(dev->bus);
-
-	if (host_bridge && host_bridge->disable_device)
-		host_bridge->disable_device(host_bridge, dev);
-}
-
 static int do_pci_enable_device(struct pci_dev *dev, int bars)
 {
 	int err;
@@ -2127,13 +2105,9 @@ static int do_pci_enable_device(struct pci_dev *dev, int bars)
 	if (bridge)
 		pcie_aspm_powersave_config_link(bridge);
 
-	err = pci_host_bridge_enable_device(dev);
-	if (err)
-		return err;
-
 	err = pcibios_enable_device(dev, bars);
 	if (err < 0)
-		goto err_enable;
+		return err;
 	pci_fixup_device(pci_fixup_enable, dev);
 
 	if (dev->msi_enabled || dev->msix_enabled)
@@ -2148,12 +2122,6 @@ static int do_pci_enable_device(struct pci_dev *dev, int bars)
 	}
 
 	return 0;
-
-err_enable:
-	pci_host_bridge_disable_device(dev);
-
-	return err;
-
 }
 
 /**
@@ -2336,8 +2304,6 @@ void pci_disable_device(struct pci_dev *dev)
 
 	if (atomic_dec_return(&dev->enable_cnt) != 0)
 		return;
-
-	pci_host_bridge_disable_device(dev);
 
 	do_pci_disable_device(dev);
 

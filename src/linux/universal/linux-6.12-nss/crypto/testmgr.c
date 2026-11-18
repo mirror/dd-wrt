@@ -4209,10 +4209,8 @@ static int test_akcipher_one(struct crypto_akcipher *tfm,
 			      crypto_akcipher_verify(req) :
 			      /* Run asymmetric encrypt */
 			      crypto_akcipher_encrypt(req), &wait);
-	if (err != vecs->verify_error) {
-		pr_err("alg: akcipher: %s test failed: expected %d, got %d\n",
-		       op, vecs->verify_error, err);
-		err = err ?: -EINVAL;
+	if (err) {
+		pr_err("alg: akcipher: %s test failed. err %d\n", op, err);
 		goto free_all;
 	}
 	if (!vecs->siggen_sigver_test && c) {
@@ -4234,9 +4232,9 @@ static int test_akcipher_one(struct crypto_akcipher *tfm,
 
 	/*
 	 * Don't invoke (decrypt or sign) test which require a private key
-	 * for vectors with only a public key or an invalid signature.
+	 * for vectors with only a public key.
 	 */
-	if (vecs->public_key_vec || vecs->verify_error) {
+	if (vecs->public_key_vec) {
 		err = 0;
 		goto free_all;
 	}

@@ -263,11 +263,6 @@ void batadv_mesh_free(struct net_device *soft_iface)
 
 	atomic_set(&bat_priv->mesh_state, BATADV_MESH_DEACTIVATING);
 
-	/* the originator purge worker accesses (among others) the TT tables
-	 * and must therefore be stopped before any of them are freed
-	 */
-	disable_delayed_work_sync(&bat_priv->orig_work);
-
 	batadv_purge_outstanding_packets(bat_priv, NULL);
 	batadv_tp_stop_all(bat_priv);
 
@@ -454,10 +449,8 @@ int batadv_batman_skb_recv(struct sk_buff *skb, struct net_device *dev,
 	 * shut down otherwise the packet may trigger de-reference errors
 	 * further down in the receive path.
 	 */
-	if (!kref_get_unless_zero(&hard_iface->refcount)) {
-		kfree_skb(skb);
-		return NET_RX_DROP;
-	}
+	if (!kref_get_unless_zero(&hard_iface->refcount))
+		goto err_out;
 
 	skb = skb_share_check(skb, GFP_ATOMIC);
 
@@ -516,6 +509,7 @@ err_free:
 	kfree_skb(skb);
 err_put:
 	batadv_hardif_put(hard_iface);
+err_out:
 	return NET_RX_DROP;
 }
 

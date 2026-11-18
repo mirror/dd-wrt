@@ -125,12 +125,11 @@ static void aic_resume(struct irq_data *d)
 static void aic_pm_shutdown(struct irq_data *d)
 {
 	struct irq_chip_generic *gc = irq_data_get_irq_chip_data(d);
-	unsigned long flags;
 
-	irq_gc_lock_irqsave(gc, flags);
+	irq_gc_lock(gc);
 	irq_reg_writel(gc, 0xffffffff, AT91_AIC_IDCR);
 	irq_reg_writel(gc, 0xffffffff, AT91_AIC_ICCR);
-	irq_gc_unlock_irqrestore(gc, flags);
+	irq_gc_unlock(gc);
 }
 #else
 #define aic_suspend		NULL

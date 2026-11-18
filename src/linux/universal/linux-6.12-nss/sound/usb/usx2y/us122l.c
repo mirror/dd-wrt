@@ -148,26 +148,19 @@ static const struct vm_operations_struct usb_stream_hwdep_vm_ops = {
 static int usb_stream_hwdep_open(struct snd_hwdep *hw, struct file *file)
 {
 	struct us122l	*us122l = hw->private_data;
-	struct usb_interface *iface, *iface0 = NULL;
+	struct usb_interface *iface;
 
 	if (hw->used >= 2)
 		return -EBUSY;
 
-	if (us122l->is_us144) {
-		iface0 = usb_ifnum_to_if(us122l->dev, 0);
-		if (!iface0)
-			return -ENODEV;
-	}
-
-	iface = usb_ifnum_to_if(us122l->dev, 1);
-	if (!iface)
-		return -ENODEV;
-
 	if (!us122l->first)
 		us122l->first = file;
 
-	if (iface0)
-		usb_autopm_get_interface(iface0);
+	if (us122l->is_us144) {
+		iface = usb_ifnum_to_if(us122l->dev, 0);
+		usb_autopm_get_interface(iface);
+	}
+	iface = usb_ifnum_to_if(us122l->dev, 1);
 	usb_autopm_get_interface(iface);
 	return 0;
 }
@@ -179,12 +172,10 @@ static int usb_stream_hwdep_release(struct snd_hwdep *hw, struct file *file)
 
 	if (us122l->is_us144) {
 		iface = usb_ifnum_to_if(us122l->dev, 0);
-		if (iface)
-			usb_autopm_put_interface(iface);
+		usb_autopm_put_interface(iface);
 	}
 	iface = usb_ifnum_to_if(us122l->dev, 1);
-	if (iface)
-		usb_autopm_put_interface(iface);
+	usb_autopm_put_interface(iface);
 	if (us122l->first == file)
 		us122l->first = NULL;
 	mutex_lock(&us122l->mutex);
@@ -209,8 +200,6 @@ static int usb_stream_hwdep_mmap(struct snd_hwdep *hw,
 	offset = area->vm_pgoff << PAGE_SHIFT;
 	mutex_lock(&us122l->mutex);
 	s = us122l->sk.s;
-	if (!s)
-		return -ENODEV;
 	read = offset < s->read_size;
 	if (read) {
 		if (area->vm_flags & VM_WRITE) {

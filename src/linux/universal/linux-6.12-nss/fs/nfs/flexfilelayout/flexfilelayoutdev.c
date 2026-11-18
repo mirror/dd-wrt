@@ -155,13 +155,26 @@ nfs4_ff_alloc_deviceid_node(struct nfs_server *server, struct pnfs_device *pdev,
 		goto out_err_drain_dsaddrs;
 
 	/* If DS was already in cache, free ds addrs */
-	nfs4_pnfs_ds_addr_list_free(&dsaddrs);
+	while (!list_empty(&dsaddrs)) {
+		da = list_first_entry(&dsaddrs,
+				      struct nfs4_pnfs_ds_addr,
+				      da_node);
+		list_del_init(&da->da_node);
+		kfree(da->da_remotestr);
+		kfree(da);
+	}
 
 	__free_page(scratch);
 	return new_ds;
 
 out_err_drain_dsaddrs:
-	nfs4_pnfs_ds_addr_list_free(&dsaddrs);
+	while (!list_empty(&dsaddrs)) {
+		da = list_first_entry(&dsaddrs, struct nfs4_pnfs_ds_addr,
+				      da_node);
+		list_del_init(&da->da_node);
+		kfree(da->da_remotestr);
+		kfree(da);
+	}
 
 	kfree(ds_versions);
 out_scratch:

@@ -720,9 +720,9 @@ static struct dentry *ovl_lower_fh_to_d(struct super_block *sb,
 		}
 	}
 
-	/* Then lookup indexed upper/whiteout by origin */
+	/* Then lookup indexed upper/whiteout by origin fh */
 	if (ovl_indexdir(sb)) {
-		index = ovl_get_index_origin(ofs, origin.dentry);
+		index = ovl_get_index_fh(ofs, fh);
 		err = PTR_ERR(index);
 		if (IS_ERR(index)) {
 			index = NULL;

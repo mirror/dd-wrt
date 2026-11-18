@@ -14,6 +14,14 @@
 
 #define CDNS_PLAT_CPU_TO_BUS_ADDR	0x0FFFFFFF
 
+/**
+ * struct cdns_plat_pcie - private data for this PCIe platform driver
+ * @pcie: Cadence PCIe controller
+ */
+struct cdns_plat_pcie {
+	struct cdns_pcie        *pcie;
+};
+
 struct cdns_plat_pcie_of_data {
 	bool is_rc;
 };
@@ -32,9 +40,9 @@ static const struct cdns_pcie_ops cdns_plat_ops = {
 static int cdns_plat_pcie_probe(struct platform_device *pdev)
 {
 	const struct cdns_plat_pcie_of_data *data;
+	struct cdns_plat_pcie *cdns_plat_pcie;
 	struct device *dev = &pdev->dev;
 	struct pci_host_bridge *bridge;
-	struct cdns_pcie *pcie;
 	struct cdns_pcie_ep *ep;
 	struct cdns_pcie_rc *rc;
 	int phy_count;
@@ -48,6 +56,11 @@ static int cdns_plat_pcie_probe(struct platform_device *pdev)
 	is_rc = data->is_rc;
 
 	pr_debug(" Started %s with is_rc: %d\n", __func__, is_rc);
+	cdns_plat_pcie = devm_kzalloc(dev, sizeof(*cdns_plat_pcie), GFP_KERNEL);
+	if (!cdns_plat_pcie)
+		return -ENOMEM;
+
+	platform_set_drvdata(pdev, cdns_plat_pcie);
 	if (is_rc) {
 		if (!IS_ENABLED(CONFIG_PCIE_CADENCE_PLAT_HOST))
 			return -ENODEV;
@@ -59,9 +72,9 @@ static int cdns_plat_pcie_probe(struct platform_device *pdev)
 		rc = pci_host_bridge_priv(bridge);
 		rc->pcie.dev = dev;
 		rc->pcie.ops = &cdns_plat_ops;
-		pcie = &rc->pcie;
+		cdns_plat_pcie->pcie = &rc->pcie;
 
-		ret = cdns_pcie_init_phy(dev, pcie);
+		ret = cdns_pcie_init_phy(dev, cdns_plat_pcie->pcie);
 		if (ret) {
 			dev_err(dev, "failed to init phy\n");
 			return ret;
@@ -86,9 +99,9 @@ static int cdns_plat_pcie_probe(struct platform_device *pdev)
 
 		ep->pcie.dev = dev;
 		ep->pcie.ops = &cdns_plat_ops;
-		pcie = &ep->pcie;
+		cdns_plat_pcie->pcie = &ep->pcie;
 
-		ret = cdns_pcie_init_phy(dev, pcie);
+		ret = cdns_pcie_init_phy(dev, cdns_plat_pcie->pcie);
 		if (ret) {
 			dev_err(dev, "failed to init phy\n");
 			return ret;
@@ -106,20 +119,18 @@ static int cdns_plat_pcie_probe(struct platform_device *pdev)
 			goto err_init;
 	}
 
-	platform_set_drvdata(pdev, pcie);
-
 	return 0;
 
  err_init:
  err_get_sync:
 	pm_runtime_put_sync(dev);
 	pm_runtime_disable(dev);
-	cdns_pcie_disable_phy(pcie);
-	phy_count = pcie->phy_count;
+	cdns_pcie_disable_phy(cdns_plat_pcie->pcie);
+	phy_count = cdns_plat_pcie->pcie->phy_count;
 	while (phy_count--)
-		device_link_del(pcie->link[phy_count]);
+		device_link_del(cdns_plat_pcie->pcie->link[phy_count]);
 
-	return ret;
+	return 0;
 }
 
 static void cdns_plat_pcie_shutdown(struct platform_device *pdev)

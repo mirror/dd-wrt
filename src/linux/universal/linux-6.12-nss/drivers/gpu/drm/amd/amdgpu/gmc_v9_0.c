@@ -1139,13 +1139,12 @@ static void gmc_v9_0_get_coherence_flags(struct amdgpu_device *adev,
 	bool uncached = bo->flags & AMDGPU_GEM_CREATE_UNCACHED;
 	struct amdgpu_vm *vm = mapping->bo_va->base.vm;
 	unsigned int mtype_local, mtype;
-	uint32_t gc_ip_version = amdgpu_ip_version(adev, GC_HWIP, 0);
 	bool snoop = false;
 	bool is_local;
 
 	dma_resv_assert_held(bo->tbo.base.resv);
 
-	switch (gc_ip_version) {
+	switch (amdgpu_ip_version(adev, GC_HWIP, 0)) {
 	case IP_VERSION(9, 4, 1):
 	case IP_VERSION(9, 4, 2):
 		if (is_vram) {
@@ -1159,7 +1158,10 @@ static void gmc_v9_0_get_coherence_flags(struct amdgpu_device *adev,
 				/* FIXME: is this still needed? Or does
 				 * amdgpu_ttm_tt_pde_flags already handle this?
 				 */
-				if (gc_ip_version == IP_VERSION(9, 4, 2) &&
+				if ((amdgpu_ip_version(adev, GC_HWIP, 0) ==
+					     IP_VERSION(9, 4, 2) ||
+				     amdgpu_ip_version(adev, GC_HWIP, 0) ==
+					     IP_VERSION(9, 4, 3)) &&
 				    adev->gmc.xgmi.connected_to_cpu)
 					snoop = true;
 			} else {
@@ -1207,17 +1209,20 @@ static void gmc_v9_0_get_coherence_flags(struct amdgpu_device *adev,
 		if (uncached) {
 			mtype = MTYPE_UC;
 		} else if (ext_coherent) {
-			mtype = is_local ? MTYPE_CC : MTYPE_UC;
+			if (adev->rev_id)
+				mtype = is_local ? MTYPE_CC : MTYPE_UC;
+			else
+				mtype = MTYPE_UC;
 		} else if (adev->flags & AMD_IS_APU) {
 			mtype = is_local ? mtype_local : MTYPE_NC;
 		} else {
 			/* dGPU */
 			if (is_local)
 				mtype = mtype_local;
-			else if (gc_ip_version < IP_VERSION(9, 5, 0) && !is_vram)
-				mtype = MTYPE_UC;
-			else
+			else if (is_vram)
 				mtype = MTYPE_NC;
+			else
+				mtype = MTYPE_UC;
 		}
 
 		break;
@@ -1327,7 +1332,7 @@ static void gmc_v9_0_override_vm_pte_flags(struct amdgpu_device *adev,
 				mtype_local = MTYPE_CC;
 
 			*flags = AMDGPU_PTE_MTYPE_VG10(*flags, mtype_local);
-		} else {
+		} else if (adev->rev_id) {
 			/* MTYPE_UC case */
 			*flags = AMDGPU_PTE_MTYPE_VG10(*flags, MTYPE_CC);
 		}
@@ -2324,22 +2329,17 @@ static int gmc_v9_0_hw_init(void *handle)
 	 * (type 2), which flushes both. Due to a race condition with
 	 * concurrent memory accesses using the same TLB cache line, we still
 	 * need a second TLB flush after this.
-	 *
-	 * GC 9.4.3, 9.4.4 and 9.5.0 hit a similar race.
 	 */
-	switch (amdgpu_ip_version(adev, GC_HWIP, 0)) {
-	case IP_VERSION(9, 4, 0):
-		adev->gmc.flush_tlb_needs_extra_type_2 =
-			adev->gmc.xgmi.num_physical_nodes;
-		break;
-	case IP_VERSION(9, 4, 3):
-	case IP_VERSION(9, 4, 4):
-	case IP_VERSION(9, 5, 0):
-		adev->gmc.flush_tlb_needs_extra_type_2 = true;
-		break;
-	default:
-		break;
-	}
+	adev->gmc.flush_tlb_needs_extra_type_2 =
+		amdgpu_ip_version(adev, GC_HWIP, 0) == IP_VERSION(9, 4, 0) &&
+		adev->gmc.xgmi.num_physical_nodes;
+	/*
+	 * TODO: This workaround is badly documented and had a buggy
+	 * implementation. We should probably verify what we do here.
+	 */
+	adev->gmc.flush_tlb_needs_extra_type_0 =
+		amdgpu_ip_version(adev, GC_HWIP, 0) == IP_VERSION(9, 4, 3) &&
+		adev->rev_id == 0;
 
 	/* The sequence of these two function calls matters.*/
 	gmc_v9_0_init_golden_registers(adev);

@@ -1285,7 +1285,7 @@ static ssize_t amd_pstate_show_status(char *buf)
 
 int amd_pstate_update_status(const char *buf, size_t size)
 {
-	int cpu, mode_idx, ret = 0;
+	int mode_idx;
 
 	if (size > strlen("passive") || size < strlen("active"))
 		return -EINVAL;
@@ -1295,25 +1295,10 @@ int amd_pstate_update_status(const char *buf, size_t size)
 	if (mode_idx < 0 || mode_idx >= AMD_PSTATE_MAX)
 		return -EINVAL;
 
-	if (!mode_state_machine[cppc_state][mode_idx])
-		return 0;
+	if (mode_state_machine[cppc_state][mode_idx])
+		return mode_state_machine[cppc_state][mode_idx](mode_idx);
 
-	if (mode_idx == AMD_PSTATE_PASSIVE &&
-	    !cpu_feature_enabled(X86_FEATURE_CPPC)) {
-		cpus_read_lock();
-		/* Check offline CPUs too, before changing or removing the driver. */
-		for_each_present_cpu(cpu) {
-			if (cppc_auto_sel_is_immutable(cpu)) {
-				ret = -EOPNOTSUPP;
-				break;
-			}
-		}
-		cpus_read_unlock();
-		if (ret)
-			return ret;
-	}
-
-	return mode_state_machine[cppc_state][mode_idx](mode_idx);
+	return 0;
 }
 EXPORT_SYMBOL_GPL(amd_pstate_update_status);
 

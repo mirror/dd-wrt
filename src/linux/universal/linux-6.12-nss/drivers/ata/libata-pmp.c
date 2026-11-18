@@ -15,9 +15,9 @@
 
 const struct ata_port_operations sata_pmp_port_ops = {
 	.inherits		= &sata_port_ops,
-	.pmp_reset.prereset	= ata_std_prereset,
-	.pmp_reset.hardreset	= sata_std_hardreset,
-	.pmp_reset.postreset	= ata_std_postreset,
+	.pmp_prereset		= ata_std_prereset,
+	.pmp_hardreset		= sata_std_hardreset,
+	.pmp_postreset		= ata_std_postreset,
 	.error_handler		= sata_pmp_error_handler,
 };
 
@@ -482,20 +482,6 @@ static void sata_pmp_quirks(struct ata_port *ap)
 			if (link->pmp == 4)
 				link->flags |= ATA_LFLAG_DISABLED;
 		}
-	} else if (vendor == 0x1b4b && devid == 0x9705) {
-		/*
-		 * Marvell 88SM9705 quirks
-		 *
-		 * 1-to-5 PMP with an extra SEMB port.  It reports 6 ports and
-		 * port 5 is the SEMB, which never answers SRST: EH spends about
-		 * a minute per round retrying it, and disk discovery waits for
-		 * that.  Seen behind a Marvell 88SE9235 in the Synology DX1215
-		 * and DX1222.
-		 */
-		ata_for_each_link(link, ap, EDGE) {
-			if (link->pmp == 5)
-				link->flags |= ATA_LFLAG_DISABLED;
-		}
 	}
 }
 
@@ -760,7 +746,10 @@ static int sata_pmp_revalidate_quick(struct ata_device *dev)
 /**
  *	sata_pmp_eh_recover_pmp - recover PMP
  *	@ap: ATA port PMP is attached to
- *	@reset_ops: The set of reset operations to use
+ *	@prereset: prereset method (can be NULL)
+ *	@softreset: softreset method
+ *	@hardreset: hardreset method
+ *	@postreset: postreset method (can be NULL)
  *
  *	Recover PMP attached to @ap.  Recovery procedure is somewhat
  *	similar to that of ata_eh_recover() except that reset should
@@ -774,7 +763,8 @@ static int sata_pmp_revalidate_quick(struct ata_device *dev)
  *	0 on success, -errno on failure.
  */
 static int sata_pmp_eh_recover_pmp(struct ata_port *ap,
-				   struct ata_reset_operations *reset_ops)
+		ata_prereset_fn_t prereset, ata_reset_fn_t softreset,
+		ata_reset_fn_t hardreset, ata_postreset_fn_t postreset)
 {
 	struct ata_link *link = &ap->link;
 	struct ata_eh_context *ehc = &link->eh_context;
@@ -796,7 +786,8 @@ static int sata_pmp_eh_recover_pmp(struct ata_port *ap,
 		struct ata_link *tlink;
 
 		/* reset */
-		rc = ata_eh_reset(ap, link, 0, reset_ops);
+		rc = ata_eh_reset(link, 0, prereset, softreset, hardreset,
+				  postreset);
 		if (rc) {
 			ata_link_err(link, "failed to reset PMP, giving up\n");
 			goto fail;
@@ -960,7 +951,8 @@ static int sata_pmp_eh_recover(struct ata_port *ap)
  retry:
 	/* PMP attached? */
 	if (!sata_pmp_attached(ap)) {
-		rc = ata_eh_recover(ap, &ops->reset, NULL);
+		rc = ata_eh_recover(ap, ops->prereset, ops->softreset,
+				    ops->hardreset, ops->postreset, NULL);
 		if (rc) {
 			ata_for_each_dev(dev, &ap->link, ALL)
 				ata_dev_disable(dev);
@@ -978,7 +970,8 @@ static int sata_pmp_eh_recover(struct ata_port *ap)
 	}
 
 	/* recover pmp */
-	rc = sata_pmp_eh_recover_pmp(ap, &ops->reset);
+	rc = sata_pmp_eh_recover_pmp(ap, ops->prereset, ops->softreset,
+				     ops->hardreset, ops->postreset);
 	if (rc)
 		goto pmp_fail;
 
@@ -1004,7 +997,8 @@ static int sata_pmp_eh_recover(struct ata_port *ap)
 		goto pmp_fail;
 
 	/* recover links */
-	rc = ata_eh_recover(ap, &ops->pmp_reset, &link);
+	rc = ata_eh_recover(ap, ops->pmp_prereset, ops->pmp_softreset,
+			    ops->pmp_hardreset, ops->pmp_postreset, &link);
 	if (rc)
 		goto link_fail;
 

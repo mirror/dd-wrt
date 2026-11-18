@@ -462,7 +462,7 @@ static struct ata_port_operations nv_generic_ops = {
 	.lost_interrupt		= ATA_OP_NULL,
 	.scr_read		= nv_scr_read,
 	.scr_write		= nv_scr_write,
-	.reset.hardreset	= nv_hardreset,
+	.hardreset		= nv_hardreset,
 };
 
 static struct ata_port_operations nv_nf2_ops = {

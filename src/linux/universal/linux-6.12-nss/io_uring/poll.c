@@ -169,24 +169,12 @@ static void io_poll_tw_hash_eject(struct io_kiocb *req, struct io_tw_state *ts)
 	}
 }
 
-#define IO_POLL_UNMASK	(EPOLLERR|EPOLLHUP|EPOLLNVAL)
-
-static __poll_t io_poll_unmask(__poll_t events)
-{
-	/*
-	 * A peer that stopped sending is an event for a reader, but a write
-	 * only poll must stay armed until the file is writable again.
-	 */
-	if (events & (EPOLLIN | EPOLLRDNORM | EPOLLRDBAND))
-		return IO_POLL_UNMASK | EPOLLRDHUP;
-	return IO_POLL_UNMASK;
-}
-
 static void io_init_poll_iocb(struct io_poll *poll, __poll_t events)
 {
 	poll->head = NULL;
+#define IO_POLL_UNMASK	(EPOLLERR|EPOLLHUP|EPOLLNVAL|EPOLLRDHUP)
 	/* mask in events that we always want/need */
-	poll->events = events | io_poll_unmask(events);
+	poll->events = events | IO_POLL_UNMASK;
 	INIT_LIST_HEAD(&poll->wait.entry);
 	init_waitqueue_func_entry(&poll->wait, io_poll_wake);
 }
@@ -757,7 +745,7 @@ int io_arm_poll_handler(struct io_kiocb *req, unsigned issue_flags)
 	const struct io_issue_def *def = &io_issue_defs[req->opcode];
 	struct async_poll *apoll;
 	struct io_poll_table ipt;
-	__poll_t mask = POLLERR | EPOLLET;
+	__poll_t mask = POLLPRI | POLLERR | EPOLLET;
 	int ret;
 
 	/*
@@ -774,8 +762,7 @@ int io_arm_poll_handler(struct io_kiocb *req, unsigned issue_flags)
 		mask |= EPOLLONESHOT;
 
 	if (def->pollin) {
-		/* urgent data is an event for a reader only */
-		mask |= EPOLLIN | EPOLLRDNORM | EPOLLPRI;
+		mask |= EPOLLIN | EPOLLRDNORM;
 
 		/* If reading from MSG_ERRQUEUE using recvmsg, ignore POLLIN */
 		if (req->flags & REQ_F_CLEAR_POLLIN)
@@ -905,52 +892,14 @@ static int io_poll_disarm(struct io_kiocb *req)
 	return 0;
 }
 
-/*
- * Cancel every request matching @cd in one pass. Cancelled requests stay
- * hashed until their task work runs, so finding them one at a time would
- * walk past all the earlier ones on each lookup.
- */
-static int io_poll_cancel_all(struct io_ring_ctx *ctx, struct io_cancel_data *cd,
-			      struct io_hash_table *table)
-{
-	unsigned int nr_buckets = 1U << table->hash_bits;
-	unsigned int i = 0;
-	struct hlist_node *tmp;
-	struct io_kiocb *req;
-	int nr = 0;
-
-	if (!(cd->flags & (IORING_ASYNC_CANCEL_FD | IORING_ASYNC_CANCEL_OP |
-			   IORING_ASYNC_CANCEL_ANY))) {
-		/* keyed by user_data, so only one bucket can match */
-		i = hash_long(cd->data, table->hash_bits);
-		nr_buckets = i + 1;
-	}
-
-	for (; i < nr_buckets; i++) {
-		struct io_hash_bucket *hb = &table->hbs[i];
-
-		spin_lock(&hb->lock);
-		hlist_for_each_entry_safe(req, tmp, &hb->list, hash_node) {
-			if (!io_cancel_req_match(req, cd))
-				continue;
-			io_poll_cancel_req(req);
-			nr++;
-		}
-		spin_unlock(&hb->lock);
-	}
-	return nr;
-}
-
 static int __io_poll_cancel(struct io_ring_ctx *ctx, struct io_cancel_data *cd,
 			    struct io_hash_table *table)
 {
 	struct io_hash_bucket *bucket;
 	struct io_kiocb *req;
 
-	if (cd->flags & (IORING_ASYNC_CANCEL_ALL | IORING_ASYNC_CANCEL_ANY))
-		return io_poll_cancel_all(ctx, cd, table) ?: -ENOENT;
-
-	if (cd->flags & (IORING_ASYNC_CANCEL_FD | IORING_ASYNC_CANCEL_OP))
+	if (cd->flags & (IORING_ASYNC_CANCEL_FD | IORING_ASYNC_CANCEL_OP |
+			 IORING_ASYNC_CANCEL_ANY))
 		req = io_poll_file_find(ctx, cd, table, &bucket);
 	else
 		req = io_poll_find(ctx, false, cd, table, &bucket);
@@ -965,22 +914,16 @@ static int __io_poll_cancel(struct io_ring_ctx *ctx, struct io_cancel_data *cd,
 int io_poll_cancel(struct io_ring_ctx *ctx, struct io_cancel_data *cd,
 		   unsigned issue_flags)
 {
-	bool all = cd->flags & (IORING_ASYNC_CANCEL_ALL | IORING_ASYNC_CANCEL_ANY);
-	int ret, nr;
+	int ret;
 
 	ret = __io_poll_cancel(ctx, cd, &ctx->cancel_table);
-	if (ret != -ENOENT && !all)
+	if (ret != -ENOENT)
 		return ret;
-	nr = max(ret, 0);
 
 	io_ring_submit_lock(ctx, issue_flags);
 	ret = __io_poll_cancel(ctx, cd, &ctx->cancel_table_locked);
 	io_ring_submit_unlock(ctx, issue_flags);
-	if (!all)
-		return ret;
-	/* with ALL or ANY, both tables return how many they cancelled */
-	nr += max(ret, 0);
-	return nr ?: -ENOENT;
+	return ret;
 }
 
 static __poll_t io_poll_parse_events(const struct io_uring_sqe *sqe,
@@ -1125,7 +1068,7 @@ found:
 
 			poll->events &= ~0xffff;
 			poll->events |= poll_update->events & 0xffff;
-			poll->events |= io_poll_unmask(poll->events);
+			poll->events |= IO_POLL_UNMASK;
 		}
 		if (poll_update->update_user_data)
 			preq->cqe.user_data = poll_update->new_user_data;

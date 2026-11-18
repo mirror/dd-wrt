@@ -138,7 +138,6 @@ struct thread_struct {
 	struct loongarch_lbt lbt; /* Also conditionally copied */
 
 	/* Hardware breakpoints pinned to this task. */
-	bool hbp_break_skip, hbp_watch_skip;
 	struct perf_event *hbp_break[LOONGARCH_MAX_BRP];
 	struct perf_event *hbp_watch[LOONGARCH_MAX_WRP];
 };

@@ -17,8 +17,9 @@ struct ocfs2_dentry_lock {
 	u64			dl_parent_blkno;
 
 	/*
-	 * The inode reference is dropped before dl_lockres is unlocked.
-	 * Callbacks must not use it to find the mount context during teardown.
+	 * The ocfs2_dentry_lock keeps an inode reference until
+	 * dl_lockres has been destroyed. This is usually done in
+	 * ->d_iput() anyway, so there should be minimal impact.
 	 */
 	struct inode		*dl_inode;
 	struct ocfs2_lock_res	dl_lockres;

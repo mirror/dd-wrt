@@ -457,7 +457,6 @@ static void udf_table_free_blocks(struct super_block *sb,
 
 		int adsize;
 
-		eloc.partitionReferenceNum = bloc->partitionReferenceNum;
 		eloc.logicalBlockNum = start;
 		elen = EXT_RECORDED_ALLOCATED |
 			(count << sb->s_blocksize_bits);
@@ -533,7 +532,7 @@ static int udf_table_prealloc_blocks(struct super_block *sb,
 			  eloc.logicalBlockNum, elen, first_block);
 	}
 
-	if (ret > 0 && first_block == eloc.logicalBlockNum) {
+	if (first_block == eloc.logicalBlockNum) {
 		epos.offset -= adsize;
 
 		alloc_count = (elen >> sb->s_blocksize_bits);
@@ -573,7 +572,7 @@ static udf_pblk_t udf_table_new_block(struct super_block *sb,
 	uint32_t elen, goal_elen = 0;
 	struct kernel_lb_addr eloc, goal_eloc;
 	struct extent_position epos, goal_epos;
-	int8_t etype, goal_etype = 0;
+	int8_t etype;
 	struct udf_inode_info *iinfo = UDF_I(table);
 	int ret = 0;
 
@@ -624,8 +623,7 @@ static udf_pblk_t udf_table_new_block(struct super_block *sb,
 			goal_epos.block = epos.block;
 			goal_epos.offset = epos.offset - adsize;
 			goal_eloc = eloc;
-			goal_elen = elen;
-			goal_etype = etype;
+			goal_elen = (etype << 30) | elen;
 		}
 	}
 
@@ -649,8 +647,7 @@ static udf_pblk_t udf_table_new_block(struct super_block *sb,
 	goal_elen -= sb->s_blocksize;
 
 	if (goal_elen)
-		udf_write_aext(table, &goal_epos, &goal_eloc,
-			       (goal_etype << 30) | goal_elen, 1);
+		udf_write_aext(table, &goal_epos, &goal_eloc, goal_elen, 1);
 	else
 		udf_delete_aext(table, goal_epos, &freed);
 	brelse(goal_epos.bh);

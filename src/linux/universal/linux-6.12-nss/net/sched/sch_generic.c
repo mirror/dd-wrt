@@ -70,34 +70,9 @@ static void qdisc_maybe_clear_missed(struct Qdisc *q,
 
 #define SKB_XOFF_MAGIC ((struct sk_buff *)1UL)
 
-/* Re-cap a stale queue_mapping; an ONETXQUEUE qdisc pins q->dev_queue. */
-static u16 qdisc_cap_skb_tx_queue(struct Qdisc *q, struct sk_buff *skb)
-{
-	u16 queue = skb_get_queue_mapping(skb);
-	struct net_device *dev = qdisc_dev(q);
-	u16 capped;
-
-	if (q->flags & TCQ_F_ONETXQUEUE)
-		capped = q->dev_queue - netdev_get_tx_queue(dev, 0);
-	else
-		capped = netdev_cap_txqueue(dev, queue);
-
-	if (unlikely(capped != queue))
-		skb_set_queue_mapping(skb, capped);
-
-	return capped;
-}
-
-static struct netdev_queue *skb_cap_tx_queue(struct Qdisc *q,
-					     struct sk_buff *skb)
-{
-	return netdev_get_tx_queue(qdisc_dev(q),
-				   qdisc_cap_skb_tx_queue(q, skb));
-}
-
 static inline struct sk_buff *__skb_dequeue_bad_txq(struct Qdisc *q)
 {
-	const struct netdev_queue *txq;
+	const struct netdev_queue *txq = q->dev_queue;
 	spinlock_t *lock = NULL;
 	struct sk_buff *skb;
 
@@ -109,8 +84,7 @@ static inline struct sk_buff *__skb_dequeue_bad_txq(struct Qdisc *q)
 	skb = skb_peek(&q->skb_bad_txq);
 	if (skb) {
 		/* check the reason of requeuing without tx lock first */
-		/* re-cap: real_num_tx_queues may have shrunk */
-		txq = skb_cap_tx_queue(q, skb);
+		txq = skb_get_tx_queue(txq->dev, skb);
 		if (!netif_xmit_frozen_or_stopped(txq)) {
 			skb = __skb_dequeue(&q->skb_bad_txq);
 			if (qdisc_is_percpu_stats(q)) {
@@ -224,8 +198,6 @@ static void try_bulk_dequeue_skb(struct Qdisc *q,
 		if (!nskb)
 			break;
 
-		/* Every element of an ONETXQUEUE qdisc is pinned to q->dev_queue. */
-		qdisc_cap_skb_tx_queue(q, nskb);
 		bytelimit -= nskb->len; /* covers GSO len */
 		skb->next = nskb;
 		skb = nskb;
@@ -243,6 +215,7 @@ static void try_bulk_dequeue_skb_slow(struct Qdisc *q,
 				      struct sk_buff *skb,
 				      int *packets)
 {
+	int mapping = skb_get_queue_mapping(skb);
 	struct sk_buff *nskb;
 	int cnt = 0;
 
@@ -250,9 +223,7 @@ static void try_bulk_dequeue_skb_slow(struct Qdisc *q,
 		nskb = q->dequeue(q);
 		if (!nskb)
 			break;
-		/* A tc BPF store may have changed the mapping; cap it. */
-		if (unlikely(qdisc_cap_skb_tx_queue(q, nskb) !=
-			     skb_get_queue_mapping(skb))) {
+		if (unlikely(skb_get_queue_mapping(nskb) != mapping)) {
 			qdisc_enqueue_skb_bad_txq(q, nskb);
 			break;
 		}
@@ -297,7 +268,7 @@ static struct sk_buff *dequeue_skb(struct Qdisc *q, bool *validate,
 		if (xfrm_offload(skb))
 			*validate = true;
 		/* check the reason of requeuing without tx lock first */
-		txq = skb_cap_tx_queue(q, skb);
+		txq = skb_get_tx_queue(txq->dev, skb);
 		if (!netif_xmit_frozen_or_stopped(txq)) {
 			skb = __skb_dequeue(&q->gso_skb);
 			if (qdisc_is_percpu_stats(q)) {
@@ -333,8 +304,6 @@ validate:
 	skb = q->dequeue(q);
 	if (skb) {
 bulk:
-		/* cap the head; the bulk helpers cap every appended element */
-		qdisc_cap_skb_tx_queue(q, skb);
 		if (qdisc_may_bulk(q))
 			try_bulk_dequeue_skb(q, skb, txq, packets, budget);
 		else

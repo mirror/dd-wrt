@@ -196,16 +196,18 @@ static int __set_item(struct pppoe_net *pn, struct pppox_sock *po)
 	return 0;
 }
 
-static void __delete_item(struct pppoe_net *pn, struct pppox_sock *po)
+static void __delete_item(struct pppoe_net *pn, __be16 sid,
+					char *addr, int ifindex)
 {
-	int hash = hash_item(po->pppoe_pa.sid, po->pppoe_pa.remote);
+	int hash = hash_item(sid, addr);
 	struct pppox_sock *ret, **src;
 
 	ret = pn->hash_table[hash];
 	src = &pn->hash_table[hash];
 
 	while (ret) {
-		if (ret == po) {
+		if (cmp_addr(&ret->pppoe_pa, sid, addr) &&
+		    ret->pppoe_ifindex == ifindex) {
 			*src = ret->next;
 			break;
 		}
@@ -255,10 +257,11 @@ static inline struct pppox_sock *get_item_by_addr(struct net *net,
 	return pppox_sock;
 }
 
-static void delete_item(struct pppoe_net *pn, struct pppox_sock *po)
+static inline void delete_item(struct pppoe_net *pn, __be16 sid,
+					char *addr, int ifindex)
 {
 	write_lock_bh(&pn->hash_lock);
-	__delete_item(pn, po);
+	__delete_item(pn, sid, addr, ifindex);
 	write_unlock_bh(&pn->hash_lock);
 }
 
@@ -598,7 +601,8 @@ static int pppoe_release(struct socket *sock)
 	 * protect "po" from concurrent updates
 	 * on pppoe_flush_dev
 	 */
-	delete_item(pn, po);
+	delete_item(pn, po->pppoe_pa.sid, po->pppoe_pa.remote,
+		    po->pppoe_ifindex);
 
 	sock_orphan(sk);
 	sock->sk = NULL;
@@ -649,7 +653,8 @@ static int pppoe_connect(struct socket *sock, struct sockaddr *uservaddr,
 	if (stage_session(po->pppoe_pa.sid)) {
 		pppox_unbind_sock(sk);
 		pn = pppoe_pernet(sock_net(sk));
-		delete_item(pn, po);
+		delete_item(pn, po->pppoe_pa.sid,
+			    po->pppoe_pa.remote, po->pppoe_ifindex);
 		if (po->pppoe_dev) {
 			dev_put(po->pppoe_dev);
 			po->pppoe_dev = NULL;
@@ -700,7 +705,8 @@ static int pppoe_connect(struct socket *sock, struct sockaddr *uservaddr,
 
 		error = ppp_register_net_channel(dev_net(dev), &po->chan);
 		if (error) {
-			delete_item(pn, po);
+			delete_item(pn, po->pppoe_pa.sid,
+				    po->pppoe_pa.remote, po->pppoe_ifindex);
 			goto err_put;
 		}
 

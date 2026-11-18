@@ -94,18 +94,6 @@ void line6_capture_copy(struct snd_line6_pcm *line6pcm, char *fbuf, int fsize)
 	if (runtime == NULL)
 		return;
 
-	/*
-	 * snd_line6_capture_open() constrains the buffer to hold at least
-	 * two packets, so this cannot happen for a conforming device. Drop
-	 * the packet rather than overrun the single wrap below.
-	 */
-	if (unlikely(frames > runtime->buffer_size)) {
-		dev_err_ratelimited(line6pcm->line6->ifcdev,
-				    "packet of %d frames exceeds %lu-frame buffer, dropping\n",
-				    frames, runtime->buffer_size);
-		return;
-	}
-
 	if (line6pcm->in.pos_done + frames > runtime->buffer_size) {
 		/*
 		   The transferred area goes over buffer boundary,
@@ -137,23 +125,28 @@ void line6_capture_copy(struct snd_line6_pcm *line6pcm, char *fbuf, int fsize)
 		line6pcm->in.pos_done -= runtime->buffer_size;
 }
 
-/* update the capture position and check whether we need period_elapsed call */
-bool line6_capture_check_period(struct snd_line6_pcm *line6pcm, int length)
+void line6_capture_check_period(struct snd_line6_pcm *line6pcm, int length)
 {
+	struct snd_pcm_substream *substream =
+	    get_substream(line6pcm, SNDRV_PCM_STREAM_CAPTURE);
+
 	line6pcm->in.bytes += length;
 	if (line6pcm->in.bytes >= line6pcm->in.period) {
 		line6pcm->in.bytes %= line6pcm->in.period;
-		return true;
+		spin_unlock(&line6pcm->in.lock);
+		snd_pcm_period_elapsed(substream);
+		spin_lock(&line6pcm->in.lock);
 	}
-	return false;
 }
 
 /*
  * Callback for completed capture URB.
  */
-static bool handle_audio_in(struct urb *urb)
+static void audio_in_callback(struct urb *urb)
 {
 	int i, index, length = 0, shutdown = 0;
+	unsigned long flags;
+
 	struct snd_line6_pcm *line6pcm = (struct snd_line6_pcm *)urb->context;
 
 	line6pcm->in.last_frame = urb->start_frame;
@@ -163,7 +156,7 @@ static bool handle_audio_in(struct urb *urb)
 		if (urb == line6pcm->in.urbs[index])
 			break;
 
-	guard(spinlock_irqsave)(&line6pcm->in.lock);
+	spin_lock_irqsave(&line6pcm->in.lock, flags);
 
 	for (i = 0; i < LINE6_ISO_PACKETS; ++i) {
 		char *fbuf;
@@ -216,18 +209,10 @@ static bool handle_audio_in(struct urb *urb)
 
 		if (!test_bit(LINE6_STREAM_IMPULSE, &line6pcm->in.running) &&
 		    test_bit(LINE6_STREAM_PCM, &line6pcm->in.running))
-			return line6_capture_check_period(line6pcm, length);
+			line6_capture_check_period(line6pcm, length);
 	}
 
-	return false;
-}
-
-static void audio_in_callback(struct urb *urb)
-{
-	struct snd_line6_pcm *line6pcm = (struct snd_line6_pcm *)urb->context;
-
-	if (handle_audio_in(urb))
-		snd_pcm_period_elapsed(get_substream(line6pcm, SNDRV_PCM_STREAM_CAPTURE));
+	spin_unlock_irqrestore(&line6pcm->in.lock, flags);
 }
 
 /* open capture callback */
@@ -240,23 +225,6 @@ static int snd_line6_capture_open(struct snd_pcm_substream *substream)
 	err = snd_pcm_hw_constraint_ratdens(runtime, 0,
 					    SNDRV_PCM_HW_PARAM_RATE,
 					    &line6pcm->properties->rates);
-	if (err < 0)
-		return err;
-
-	/*
-	 * line6_capture_copy() wraps the ring buffer once per packet and
-	 * advances pos_done by the packet, which only works when the buffer
-	 * holds more than one packet: with exactly one, pos_done gains a
-	 * buffer and loses it again on every packet. The packet size comes
-	 * from the device, so bound the buffer by two packets here. The
-	 * impulse-response path copies a playback URB into this ring, so
-	 * take the larger of the two endpoints.
-	 */
-	err = snd_pcm_hw_constraint_minmax(runtime,
-					   SNDRV_PCM_HW_PARAM_BUFFER_BYTES,
-					   2 * max(line6pcm->max_packet_size_in,
-						   line6pcm->max_packet_size_out),
-					   UINT_MAX);
 	if (err < 0)
 		return err;
 

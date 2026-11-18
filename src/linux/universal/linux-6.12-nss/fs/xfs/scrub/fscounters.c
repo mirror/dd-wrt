@@ -296,7 +296,7 @@ xchk_fscount_aggregate_agcounts(
 {
 	struct xfs_mount	*mp = sc->mp;
 	struct xfs_perag	*pag;
-	int64_t			delayed;
+	uint64_t		delayed;
 	xfs_agnumber_t		agno;
 	int			tries = 8;
 	int			error = 0;
@@ -359,11 +359,6 @@ retry:
 	 * of the computation.
 	 */
 	delayed = percpu_counter_sum(&mp->m_delalloc_blks);
-	if (delayed < 0) {
-		ASSERT(delayed >= 0);
-		xchk_set_incomplete(sc);
-		return -EFSCORRUPTED;
-	}
 	fsc->fdblocks -= delayed;
 
 	trace_xchk_fscounters_calc(mp, fsc->icount, fsc->ifree, fsc->fdblocks,
@@ -421,7 +416,6 @@ xchk_fscount_count_frextents(
 	struct xchk_fscounters	*fsc)
 {
 	struct xfs_mount	*mp = sc->mp;
-	int64_t			delayed;
 	int			error;
 
 	fsc->frextents = 0;
@@ -437,14 +431,7 @@ xchk_fscount_count_frextents(
 		goto out_unlock;
 	}
 
-	delayed = percpu_counter_sum(&mp->m_delalloc_rtextents);
-	if (delayed < 0) {
-		ASSERT(delayed >= 0);
-		xchk_set_incomplete(sc);
-		error = -EFSCORRUPTED;
-		goto out_unlock;
-	}
-	fsc->frextents_delayed = delayed;
+	fsc->frextents_delayed = percpu_counter_sum(&mp->m_delalloc_rtextents);
 
 out_unlock:
 	xfs_rtbitmap_unlock_shared(sc->mp, XFS_RBMLOCK_BITMAP);
@@ -615,13 +602,6 @@ xchk_fscounters(
 			fsc->fdblocks)) {
 		if (fsc->frozen)
 			xchk_set_corrupt(sc);
-		else
-			try_again = true;
-	}
-
-	if (fsc->frextents < fsc->frextents_delayed) {
-		if (fsc->frozen)
-			xchk_set_incomplete(sc);
 		else
 			try_again = true;
 	}

@@ -1606,10 +1606,7 @@ next_ace:
 				else
 					continue;
 
-				/* A group entry grants only to the group's members */
-				if (id == uid &&
-				    (pa_entry->e_tag == ACL_USER ||
-				     in_group_p(make_kgid(&init_user_ns, id)))) {
+				if (id == uid) {
 					mode_to_access_flags(pa_entry->e_perm,
 							     0777,
 							     &access_bits);

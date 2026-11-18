@@ -109,7 +109,6 @@ static void rose_loopback_timer(struct timer_list *unused)
 		if (sk) {
 			if (rose_rcv_frame(sk, skb) == 0)
 				kfree_skb(skb);
-			sock_put(sk);
 			continue;
 		}
 

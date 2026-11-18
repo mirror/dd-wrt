@@ -10,7 +10,6 @@
 #include <linux/hwmon.h>
 #include <linux/hwmon-sysfs.h>
 #include <linux/jiffies.h>
-#include <linux/limits.h>
 #include <linux/mutex.h>
 #include <linux/dmi.h>
 #include <linux/slab.h>
@@ -32,12 +31,7 @@
 #define POWER_METER_CAN_NOTIFY	(1 << 3)
 #define POWER_METER_IS_BATTERY	(1 << 8)
 #define UNKNOWN_HYSTERESIS	0xFFFFFFFF
-/*
- * ACPI integers can either be 32-bit or 64-bit wide, so
- * we have to check for both values.
- */
-#define UNKNOWN_POWER_32	U32_MAX
-#define UNKNOWN_POWER_64	U64_MAX
+#define UNKNOWN_POWER		0xFFFFFFFF
 
 #define METER_NOTIFY_CONFIG	0x80
 #define METER_NOTIFY_TRIP	0x81
@@ -355,7 +349,7 @@ static ssize_t show_power(struct device *dev,
 	update_meter(resource);
 	mutex_unlock(&resource->lock);
 
-	if (resource->power == UNKNOWN_POWER_32 || resource->power == UNKNOWN_POWER_64)
+	if (resource->power == UNKNOWN_POWER)
 		return -ENODATA;
 
 	return sprintf(buf, "%llu\n", resource->power * 1000);
