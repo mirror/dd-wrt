@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0
 dtb-$(CONFIG_ARCH_QCOM) += \
 	msm8226-motorola-falcon.dtb \
+	qcom-ipq4019-habanero-dvk.dtb \
+	qcom-ipq4018-rt-ac58u.dtb \
+	qcom-ipq4019-ea8300.dtb \
+	qcom-ipq4019-mr8300.dtb \
+	qcom-ipq4019-mr9000.dtb \
 	qcom-apq8016-sbc.dtb \
 	qcom-apq8026-asus-sparrow.dtb \
 	qcom-apq8026-huawei-sturgeon.dtb \
