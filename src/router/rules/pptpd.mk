@@ -1,4 +1,10 @@
 pptpd-configure:
+	cd pptpd && libtoolize
+	cd pptpd && aclocal
+	cd pptpd && autoconf
+	cd pptpd && autoheader
+	cd pptpd && autoreconf -vfi
+
 ifeq ($(CONFIG_PPTP_ACCEL),y)
 	cd pptpd-accel && ./configure CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF" LDFLAGS="$(COPTS)" --prefix=/usr --with-bcrelay --host=$(ARCH)-linux
 else
