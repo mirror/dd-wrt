@@ -20,7 +20,9 @@
 #include <linux/kernel.h>
 #include <linux/spinlock.h>
 #include <linux/jump_label.h>
+#include <linux/sizes.h>
 #include <linux/vmalloc.h>
+#include <asm/cpu-info.h>
 #include <asm/jump_label.h>
 
 struct mips_hi16 {
@@ -106,18 +108,53 @@ get_plt_size(const Elf_Ehdr *hdr, const Elf_Shdr *sechdrs,
 	return ret;
 }
 
+/*
+ * 24K cores can save a wrong EPC (bits 31:28) for an interrupt taken at
+ * the target of a J or JAL in the first 32 KiB of a 256 MiB segment. This
+ * is known from tests only: the 24KEc of the MT7620A and RT5350 and the
+ * 24Kc of the AR9132 and QCA9531 show it, the 24KEc V5.5 of the MT7628
+ * did not. The PRId holds the implementation above the revision, so one
+ * comparison takes every 24Kc (0x93xx) and the 24KEc (0x96xx) below V5.5.
+ */
+static bool cpu_has_epc_erratum(void)
+{
+	return boot_cpu_data.cputype == CPU_24K &&
+	       boot_cpu_data.processor_id < 0x00019655;
+}
+
+/* no module code in the first 32 KiB of a segment on such a core */
+static bool in_first_32k(void *ptr)
+{
+	return ptr && cpu_has_epc_erratum() &&
+	       ((unsigned long)ptr & (SZ_256M - 1)) < SZ_32K;
+}
+
 #ifndef MODULES_VADDR
 static void *alloc_phys(unsigned long size)
 {
 	unsigned order;
 	struct page *page;
 	struct page *p;
+	LIST_HEAD(skipped);
 
 	size = PAGE_ALIGN(size);
 	order = get_order(size);
 
-	page = alloc_pages(GFP_KERNEL | __GFP_NORETRY | __GFP_NOWARN |
-			__GFP_THISNODE, order);
+	/* hold the blocks that start there, or they would be offered again */
+	while (1) {
+		page = alloc_pages(GFP_KERNEL | __GFP_NORETRY | __GFP_NOWARN |
+				__GFP_THISNODE, order);
+		if (!page || !in_first_32k(page_address(page)))
+			break;
+		list_add(&page->lru, &skipped);
+	}
+
+	while (!list_empty(&skipped)) {
+		p = list_first_entry(&skipped, struct page, lru);
+		list_del(&p->lru);
+		__free_pages(p, order);
+	}
+
 	if (!page)
 		return NULL;
 
@@ -146,6 +183,23 @@ static void free_phys(void *ptr)
 	} while (free);
 }
 
+/*
+ * the vmalloc area starts at the start of a segment: stay in that segment,
+ * and fail once it is used up rather than go on to the next one
+ */
+static void *alloc_virt(unsigned long size)
+{
+	unsigned long start = PAGE_ALIGN(VMALLOC_START + SZ_32K);
+	unsigned long end = min(ALIGN(start, SZ_256M), VMALLOC_END);
+
+	if (!cpu_has_epc_erratum())
+		return vmalloc(size);
+
+	return __vmalloc_node_range(size, 1, start, end, GFP_KERNEL,
+				    PAGE_KERNEL, 0, NUMA_NO_NODE,
+				    __builtin_return_address(0));
+}
+
 void *arch_execmem_alloc(enum execmem_type type,
 			 size_t size)
 {
@@ -157,7 +211,7 @@ void *arch_execmem_alloc(enum execmem_type type,
 	 * fall back to regular vmalloc. The module loader code will
 	 * create jump tables to handle long jumps */
 	if (!ptr)
-		return vmalloc(size);
+		return alloc_virt(size);
 
 	return ptr;
 }
@@ -688,6 +742,10 @@ int module_finalize(const Elf_Ehdr *hdr,
 		__module_free(me->arch.virt_plt_tbl);
 		me->arch.virt_plt_tbl = NULL;
 	}
+
+	/* the allocator above keeps module code out of the first 32 KiB */
+	WARN_ON(in_first_32k(me->mem[MOD_TEXT].base) ||
+		in_first_32k(me->mem[MOD_INIT_TEXT].base));
 
 	return 0;
 }
