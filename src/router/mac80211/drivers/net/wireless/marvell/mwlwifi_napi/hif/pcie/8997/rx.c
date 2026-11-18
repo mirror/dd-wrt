@@ -303,6 +303,7 @@ static inline int pcie_rx_process_amsdu(struct mwl_priv *priv,
 			status->flag &= ~RX_FLAG_AMSDU_MORE;
 		memcpy(IEEE80211_SKB_RXCB(newskb), status, sizeof(*status));
 		ieee80211_rx_napi(priv->hw, NULL, newskb, &pcie_priv->napi);
+		work_done++;
 	}
 
 	if (priv->rx_decrypt && (status->flag & RX_FLAG_DECRYPTED)) {
@@ -480,13 +481,13 @@ int pcie_8997_poll_napi(struct napi_struct *napi, int budget)
 		}
 
 		ieee80211_rx_napi(hw, NULL, prx_skb, &pcie_priv->napi);
+		work_done++;
 refill:
 		pcie_rx_set_buff(pcie_priv, desc, curr_hndl, new_page);
 		/* Hand the descriptor back to the firmware last. */
 		wmb();
 		curr_hndl->pdesc->rx_control = EAGLE_RXD_CTRL_DRIVER_OWN;
 		curr_hndl = curr_hndl->pnext;
-		work_done++;
 	}
 
 	desc->pnext_rx_hndl = curr_hndl;

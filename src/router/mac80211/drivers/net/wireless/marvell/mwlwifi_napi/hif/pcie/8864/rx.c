@@ -261,8 +261,8 @@ static inline int pcie_rx_process_amsdu(struct mwl_priv *priv,
 	u8 *data;
 	u16 frame_len;
 	struct sk_buff *newskb;
-	int work_done = 0;
 	struct pcie_priv *pcie_priv = priv->hif.priv;
+	int work_done = 0;
 
 	wh = (struct ieee80211_hdr *)skb->data;
 
@@ -311,6 +311,7 @@ static inline int pcie_rx_process_amsdu(struct mwl_priv *priv,
 		status->flag |= RX_FLAG_ONLY_MONITOR;
 		((struct ieee80211_hdr *)skb->data)->frame_control &= ~__cpu_to_le16(IEEE80211_FCTL_PROTECTED);
 		ieee80211_rx_napi(priv->hw, NULL, skb, &pcie_priv->napi);
+		work_done++;
 	} else {
 		dev_kfree_skb_any(skb);
 	}
@@ -479,13 +480,13 @@ int pcie_8864_poll_napi(struct napi_struct *napi, int budget)
 		}
 
 		ieee80211_rx_napi(hw, NULL, prx_skb, &pcie_priv->napi);
+		work_done++;
 refill:
 		pcie_rx_set_buff(pcie_priv, desc, curr_hndl, new_page);
 		/* Hand the descriptor back to the firmware last. */
 		wmb();
 		curr_hndl->pdesc->rx_control = EAGLE_RXD_CTRL_DRIVER_OWN;
 		curr_hndl = curr_hndl->pnext;
-		work_done++;
 	}
 
 	desc->pnext_rx_hndl = curr_hndl;
