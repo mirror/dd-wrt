@@ -249,7 +249,7 @@ static inline void pcie_rx_status(struct mwl_priv *priv,
 	}
 }
 
-static inline void pcie_rx_process_amsdu(struct mwl_priv *priv,
+static inline int pcie_rx_process_amsdu(struct mwl_priv *priv,
 					      struct sk_buff *skb,
 					      struct ieee80211_rx_status *status)
 {
@@ -262,6 +262,7 @@ static inline void pcie_rx_process_amsdu(struct mwl_priv *priv,
 	u16 frame_len;
 	struct sk_buff *newskb;
 	struct pcie_priv *pcie_priv = priv->hif.priv;
+	int work_done = 0;
 
 	wh = (struct ieee80211_hdr *)skb->data;
 
@@ -309,9 +310,12 @@ static inline void pcie_rx_process_amsdu(struct mwl_priv *priv,
 		status->flag |= RX_FLAG_ONLY_MONITOR;
 		((struct ieee80211_hdr *)skb->data)->frame_control &= ~__cpu_to_le16(IEEE80211_FCTL_PROTECTED);
 		ieee80211_rx_napi(priv->hw, NULL, skb, &pcie_priv->napi);
+		work_done++;
 	} else {
 		dev_kfree_skb_any(skb);
 	}
+
+	return work_done;
 }
 
 int pcie_8997_rx_init(struct ieee80211_hw *hw)
@@ -457,7 +461,7 @@ int pcie_8997_poll_napi(struct napi_struct *napi, int budget)
 				*qc |= 7;
 
 			if ((*qc & IEEE80211_QOS_CTL_A_MSDU_PRESENT) && (ieee80211_has_a4(wh->frame_control))) {
-				pcie_rx_process_amsdu(priv, prx_skb, status);
+				work_done += pcie_rx_process_amsdu(priv, prx_skb, status);
 				goto refill;
 			}
 		}

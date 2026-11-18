@@ -2393,6 +2393,16 @@ int mwl_fwcmd_set_switch_channel(struct ieee80211_hw *hw,
 		return -EINVAL;
 
 	switch (chandef->width) {
+	case NL80211_CHAN_WIDTH_10:
+		chnl_width = CH_10_MHZ_WIDTH;
+		act_primary = ACT_PRIMARY_CHAN_0;
+		sec_chnl_offset = IEEE80211_HT_PARAM_CHA_SEC_NONE;
+		break;
+	case NL80211_CHAN_WIDTH_5:
+		chnl_width = CH_5_MHZ_WIDTH;
+		act_primary = ACT_PRIMARY_CHAN_0;
+		sec_chnl_offset = IEEE80211_HT_PARAM_CHA_SEC_NONE;
+		break;
 	case NL80211_CHAN_WIDTH_20_NOHT:
 	case NL80211_CHAN_WIDTH_20:
 		chnl_width = CH_20_MHZ_WIDTH;
