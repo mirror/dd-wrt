@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8921 | brainslayer | 2026-11-19 00:27:54 +0600 (Thu, 19 Nov 2026) | 1 line
+
+fix counting
+------------------------------------------------------------------------
 r8920 | brainslayer | 2026-11-17 02:06:02 +0600 (Tue, 17 Nov 2026) | 1 line
 
 disable threading. i have seen some curious instabiltiies and latency spikes
