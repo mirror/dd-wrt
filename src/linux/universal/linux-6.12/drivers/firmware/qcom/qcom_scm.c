@@ -401,6 +401,17 @@ static int qcom_scm_set_boot_addr(void *entry, const u8 *cpu_bits)
 	desc.args[0] = flags;
 	desc.args[1] = virt_to_phys(entry);
 
+	/*
+	 * Factory firmware doesn't support the atomic variant. Non-atomic SCMs
+	 * require ugly DMA invalidation support that was dropped upstream a
+	 * while ago. For more info, see:
+	 *
+	 *  [RFC] qcom_scm: IPQ4019 firmware does not support atomic API?
+	 *  https://lore.kernel.org/linux-arm-msm/20200913201608.GA3162100@bDebian/
+	 */
+	if (of_machine_is_compatible("google,wifi"))
+		return qcom_scm_call(__scm ? __scm->dev : NULL, &desc, NULL);
+
 	return qcom_scm_call_atomic(__scm ? __scm->dev : NULL, &desc, NULL);
 }
 
@@ -2335,7 +2346,8 @@ err:
 static void qcom_scm_shutdown(struct platform_device *pdev)
 {
 	/* Clean shutdown, disable download mode to allow normal restart */
-	qcom_scm_set_download_mode(QCOM_DLOAD_NODUMP);
+	if (download_mode)
+		qcom_scm_set_download_mode(QCOM_DLOAD_NODUMP);
 }
 
 static const struct of_device_id qcom_scm_dt_match[] = {

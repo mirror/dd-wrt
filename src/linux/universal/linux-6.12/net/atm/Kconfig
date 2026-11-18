@@ -56,6 +56,12 @@ config ATM_MPOA
 	  subnetwork boundaries. These shortcut connections bypass routers
 	  enhancing overall network performance.
 
+config ATM_MPOA_INTEL_DSL_PHY_SUPPORT
+	bool "Intel DSL Phy MPOA support"
+	depends on ATM && INET && ATM_MPOA!=n
+	help
+	  Add support for Intel DSL Phy ATM MPOA
+
 config ATM_BR2684
 	tristate "RFC1483/2684 Bridged protocols"
 	depends on ATM && INET

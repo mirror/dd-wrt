@@ -2985,6 +2985,24 @@ char *ppp_dev_name(struct ppp_channel *chan)
 	return name;
 }
 
+/*
+ * Return the PPP device interface pointer
+ */
+struct net_device *ppp_device(struct ppp_channel *chan)
+{
+	struct channel *pch = chan->ppp;
+	struct net_device *dev = NULL;
+
+	if (pch) {
+		struct ppp *ppp;
+		rcu_read_lock();
+		ppp = rcu_dereference(pch->ppp);
+		if (ppp)
+			dev = ppp->dev;
+		rcu_read_unlock();
+	}
+	return dev;
+}
 
 /*
  * Disconnect a channel from the generic layer.
@@ -3661,6 +3679,7 @@ EXPORT_SYMBOL(ppp_unregister_channel);
 EXPORT_SYMBOL(ppp_channel_index);
 EXPORT_SYMBOL(ppp_unit_number);
 EXPORT_SYMBOL(ppp_dev_name);
+EXPORT_SYMBOL(ppp_device);
 EXPORT_SYMBOL(ppp_input);
 EXPORT_SYMBOL(ppp_input_error);
 EXPORT_SYMBOL(ppp_output_wakeup);

@@ -24,3 +24,11 @@ config NET_DSA_QCA8K_LEDS_SUPPORT
 	help
 	  This enabled support for LEDs present on the Qualcomm Atheros
 	  QCA8K Ethernet switch chips.
+
+config NET_DSA_QCA8K_IPQ4019
+	tristate "Qualcomm Atheros IPQ4019 Ethernet switch support"
+	select NET_DSA_TAG_OOB
+	select REGMAP_MMIO
+	help
+	  This enables support for the switch built-into Qualcomm Atheros
+	  IPQ4019 SoCs.

@@ -412,7 +412,7 @@ static int qca8k_vlan_del(struct qca8k_priv *priv, u8 port, u16 vid)
 
 	/* Check if we're the last member to be removed */
 	del = true;
-	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
+	for (i = 0; i < priv->ds->num_ports; i++) {
 		mask = QCA8K_VTU_FUNC0_EG_MODE_PORT_NOT(i);
 
 		if ((reg & mask) != mask) {
@@ -623,7 +623,7 @@ static int qca8k_update_port_member(struct qca8k_priv *priv, int port,
 	u32 port_mask = BIT(dp->cpu_dp->index);
 	int i, ret;
 
-	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
+	for (i = 0; i < priv->ds->num_ports; i++) {
 		if (i == port)
 			continue;
 		if (dsa_is_cpu_port(priv->ds, i))

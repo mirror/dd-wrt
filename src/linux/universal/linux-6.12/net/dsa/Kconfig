@@ -119,6 +119,15 @@ config NET_DSA_TAG_OCELOT_8021Q
 	  this mode, less TCAM resources (VCAP IS1, IS2, ES0) are available for
 	  use with tc-flower.
 
+config NET_DSA_TAG_OOB
+	select SKB_EXTENSIONS
+	tristate "Tag driver for Out-of-band tagging drivers"
+	help
+	  Say Y or M if you want to enable support for pairs of embedded
+	  switches and host MAC drivers which perform demultiplexing and
+	  packet steering to ports using out of band metadata processed
+	  by the DSA master, rather than tags present in the packets.
+
 config NET_DSA_TAG_QCA
 	tristate "Tag driver for Qualcomm Atheros QCA8K switches"
 	help

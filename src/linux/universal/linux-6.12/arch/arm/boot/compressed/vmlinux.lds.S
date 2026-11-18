@@ -103,6 +103,13 @@ SECTIONS
 
   _edata = .;
 
+  .appended_dtb : {
+    /* leave space for appended DTB */
+    . += 0x100000;
+  }
+
+  _edata_dtb = .;
+
   /*
    * The image_end section appears after any additional loadable sections
    * that the linker may decide to insert in the binary image.  Having
@@ -140,4 +147,4 @@ SECTIONS
 
   ARM_ASSERTS
 }
-ASSERT(_edata_real == _edata, "error: zImage file size is incorrect");
+ASSERT(_edata_real == _edata_dtb, "error: zImage file size is incorrect");

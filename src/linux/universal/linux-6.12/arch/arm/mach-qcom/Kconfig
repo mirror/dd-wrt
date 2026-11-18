@@ -21,4 +21,12 @@ config ARCH_QCOM_RESERVE_SMEM
 	  Reserve 2MB at the beginning of the System RAM for shared mem.
 	  This is required on IPQ40xx, MSM8x60 and MSM8960 platforms.
 
+config ARCH_QCOM_IPQ40XX_BOOT_COMPRESSED_PET_WATCHDOG_EARLY
+	bool "Pet ipq40xx watchdog early in boot uncompression"
+	help
+	  Pet the IPQ40xx watchdog very early in boot uncompress stage.
+	  Use where bootloader sets a watchdog timeout that bites the
+	  device before the Linux watchdog device driver can manage it.
+	  Required for Mikrotik RouterBOOT on ipq40xx devices
+
 endif
