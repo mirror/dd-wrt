@@ -6,3 +6,36 @@
 	model = "Qualcomm Technologies, Inc. IPQ8062";
 	compatible = "qcom,ipq8062", "qcom,ipq8064";
 };
+
+&opp_table0 {
+	/*
+	 * Voltage thresholds are <target min max>
+	 */
+	opp-384000000 {
+		opp-microvolt-speed0-pvs0 = <1000000 950000 1050000>;
+		opp-microvolt-speed0-pvs1 = <925000 878750 971250>;
+		opp-microvolt-speed0-pvs2 = <875000 831250 918750>;
+		opp-microvolt-speed0-pvs3 = <800000 760000 840000>;
+	};
+
+	opp-600000000 {
+		opp-microvolt-speed0-pvs0 = <1050000 997500 1102500>;
+		opp-microvolt-speed0-pvs1 = <975000 926250 1023750>;
+		opp-microvolt-speed0-pvs2 = <925000 878750 971250>;
+		opp-microvolt-speed0-pvs3 = <850000 807500 892500>;
+	};
+
+	opp-800000000 {
+		opp-microvolt-speed0-pvs0 = <1100000 1045000 1155000>;
+		opp-microvolt-speed0-pvs1 = <1025000 973750 1076250>;
+		opp-microvolt-speed0-pvs2 = <995000 945250 1044750>;
+		opp-microvolt-speed0-pvs3 = <900000 855000 945000>;
+	};
+
+	opp-1000000000 {
+		opp-microvolt-speed0-pvs0 = <1150000 1092500 1207500>;
+		opp-microvolt-speed0-pvs1 = <1075000 1021250 1128750>;
+		opp-microvolt-speed0-pvs2 = <1025000 973750 1076250>;
+		opp-microvolt-speed0-pvs3 = <950000  902500 997500>;
+	};
+};

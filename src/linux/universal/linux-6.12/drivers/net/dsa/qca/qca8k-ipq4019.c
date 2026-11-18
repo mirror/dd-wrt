@@ -66,10 +66,10 @@ qca8k_ipq4019_phylink_mac_select_pcs(struct dsa_switch *ds, int port,
 	return pcs;
 }
 
-static int qca8k_ipq4019_pcs_config(struct phylink_pcs *pcs, unsigned int mode,
-				    phy_interface_t interface,
-				    const unsigned long *advertising,
-				    bool permit_pause_to_mac)
+static int qca8k_ipq4019_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+			    phy_interface_t interface,
+			    const unsigned long *advertising,
+			    bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	return 0;
 }
@@ -83,7 +83,7 @@ static struct qca8k_pcs *pcs_to_qca8k_pcs(struct phylink_pcs *pcs)
 	return container_of(pcs, struct qca8k_pcs, pcs);
 }
 
-static void qca8k_ipq4019_pcs_get_state(struct phylink_pcs *pcs,
+static void qca8k_ipq4019_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 					struct phylink_link_state *state)
 {
 	struct qca8k_priv *priv = pcs_to_qca8k_pcs(pcs)->priv;
