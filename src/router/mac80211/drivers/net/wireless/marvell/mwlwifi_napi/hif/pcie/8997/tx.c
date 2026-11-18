@@ -407,6 +407,7 @@ static void pcie_pfu_tx_done(struct mwl_priv *priv)
 	struct pcie_pfu_dma_data *pfu_dma;
 	struct pcie_tx_desc *tx_desc;
 	struct pcie_dma_data *dma_data;
+	struct ieee80211_hdr *wh;
 	struct ieee80211_tx_info *info;
 	struct pcie_tx_ctrl *tx_ctrl;
 
@@ -436,6 +437,14 @@ static void pcie_pfu_tx_done(struct mwl_priv *priv)
 			tx_desc->status = cpu_to_le32(EAGLE_TXD_STATUS_IDLE);
 			wmb(); /* memory barrier */
 
+			wh = &dma_data->wh;
+			if (ieee80211_is_nullfunc(wh->frame_control) ||
+			    ieee80211_is_qos_nullfunc(wh->frame_control)) {
+				pcie_tx_remove_dma_header(done_skb, tx_desc->qos_ctrl);
+				ieee80211_free_txskb(priv->hw, done_skb);
+ 				goto next;
+			}
+
 			info = IEEE80211_SKB_CB(done_skb);
 			tx_ctrl = (struct pcie_tx_ctrl *)info->driver_data;
 			if (ieee80211_is_data(dma_data->wh.frame_control) ||
@@ -447,6 +456,7 @@ static void pcie_pfu_tx_done(struct mwl_priv *priv)
 			pcie_tx_remove_dma_header(done_skb, tx_desc->qos_ctrl);
 			ieee80211_tx_status(priv->hw, done_skb);
 		}
+		next:;
 		memset(data_buf, 0, sizeof(*data_buf));
 		pcie_priv->tx_buf_list[wrdoneidx] = NULL;
 
@@ -641,9 +651,12 @@ void pcie_8997_tx_xmit(struct ieee80211_hw *hw,
 		mgmtframe = true;
 		mgmt = (struct ieee80211_mgmt *)skb->data;
 	} else {
+		u16 pkt_type;
 		struct mwl_sta *sta_info;
 
-		if (skb->protocol == cpu_to_be16(ETH_P_PAE)) {
+		pkt_type = be16_to_cpu(*((__be16 *)
+			&skb->data[ieee80211_hdrlen(wh->frame_control) + 6]));
+		if (pkt_type == ETH_P_PAE) {
 			index = IEEE80211_AC_VO;
 			eapol_frame = true;
 		}

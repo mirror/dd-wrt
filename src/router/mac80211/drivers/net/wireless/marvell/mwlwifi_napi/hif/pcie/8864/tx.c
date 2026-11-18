@@ -449,6 +449,7 @@ static void pcie_non_pfu_tx_done(struct mwl_priv *priv)
 	u32 rate;
 	__le16 qos;
 	struct pcie_dma_data *dma_data;
+	struct ieee80211_hdr *wh;
 	struct ieee80211_tx_info *info;
 
 	spin_lock_bh(&pcie_priv->tx_desc_lock);
@@ -485,6 +486,15 @@ static void pcie_non_pfu_tx_done(struct mwl_priv *priv)
 			wmb(); /*Data Memory Barrier*/
 
 			dma_data = (struct pcie_dma_data *)done_skb->data;
+			wh = &dma_data->wh;
+			if (ieee80211_is_nullfunc(wh->frame_control) ||
+			    ieee80211_is_qos_nullfunc(wh->frame_control)) {
+				pcie_tx_remove_dma_header(done_skb, tx_desc->qos_ctrl);
+				ieee80211_free_txskb(priv->hw, done_skb);
+				goto next;
+			}
+
+
 			info = IEEE80211_SKB_CB(done_skb);
 			if (ieee80211_is_data(dma_data->wh.frame_control) ||
 			    ieee80211_is_data_qos(dma_data->wh.frame_control))
@@ -494,7 +504,7 @@ static void pcie_non_pfu_tx_done(struct mwl_priv *priv)
 
 			pcie_tx_remove_dma_header(done_skb, qos);
 			ieee80211_tx_status(priv->hw, done_skb);
-
+next:;
 			tx_hndl = tx_hndl->pnext;
 			tx_desc = tx_hndl->pdesc;
 			pcie_priv->fw_desc_cnt[num]--;
@@ -690,12 +700,17 @@ void pcie_8864_tx_xmit(struct ieee80211_hw *hw,
 		mgmtframe = true;
 		mgmt = (struct ieee80211_mgmt *)skb->data;
 	} else {
+		u16 pkt_type;
 		struct mwl_sta *sta_info;
 
-		if (skb->protocol == cpu_to_be16(ETH_P_PAE)) {
+		pkt_type = be16_to_cpu(*((__be16 *)
+			&skb->data[ieee80211_hdrlen(wh->frame_control) + 6]));
+
+		if (pkt_type == ETH_P_PAE) {
 			index = IEEE80211_AC_VO;
 			eapol_frame = true;
 		}
+
 		if (sta) {
 			if (mwl_vif->is_hw_crypto_enabled) {
 				sta_info = mwl_dev_get_sta(sta);
