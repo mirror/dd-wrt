@@ -520,3 +520,22 @@
 #define NGX_HTTP_HEADERS  1
 #endif
 
+#ifndef NGX_HTTP_UPSTREAM_LEAST_TIME
+#define NGX_HTTP_UPSTREAM_LEAST_TIME  1
+#endif
+
+
+#ifndef NGX_HTTP_UPSTREAM_ZONE
+#define NGX_HTTP_UPSTREAM_ZONE  1
+#endif
+
+
+#ifndef NGX_HTTP_UPSTREAM_STICKY
+#define NGX_HTTP_UPSTREAM_STICKY  1
+#endif
+
+
+#ifndef NGX_HTTP_UPSTREAM_SID
+#define NGX_HTTP_UPSTREAM_SID  1
+#endif
+

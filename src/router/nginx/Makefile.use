@@ -136,6 +136,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/core/ngx_murmurhash.o \
 	objs/src/core/ngx_md5.o \
 	objs/src/core/ngx_sha1.o \
+        objs/src/core/ngx_siphash.o \
 	objs/src/core/ngx_rbtree.o \
 	objs/src/core/ngx_radix_tree.o \
 	objs/src/core/ngx_slab.o \
@@ -207,6 +208,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/ngx_http_file_cache.o \
 	objs/src/http/ngx_http_huff_decode.o \
 	objs/src/http/ngx_http_huff_encode.o \
+	objs/src/http/ngx_http_priority.o \
 	objs/src/http/ngx_http_write_filter_module.o \
 	objs/src/http/ngx_http_header_filter_module.o \
 	objs/src/http/modules/ngx_http_chunked_filter_module.o \
@@ -244,16 +246,12 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_uwsgi_module.o \
 	objs/src/http/modules/ngx_http_scgi_module.o \
 	objs/src/http/modules/ngx_http_grpc_module.o \
+	objs/src/http/modules/ngx_http_proxy_v2_module.o \
 	objs/src/http/modules/ngx_http_memcached_module.o \
+	objs/src/http/modules/ngx_http_tunnel_module.o \
 	objs/src/http/modules/ngx_http_empty_gif_module.o \
 	objs/src/http/modules/ngx_http_browser_module.o \
 	objs/src/http/modules/ngx_http_mp4_module.o \
-	objs/src/http/modules/ngx_http_upstream_hash_module.o \
-	objs/src/http/modules/ngx_http_upstream_ip_hash_module.o \
-	objs/src/http/modules/ngx_http_upstream_least_conn_module.o \
-	objs/src/http/modules/ngx_http_upstream_random_module.o \
-	objs/src/http/modules/ngx_http_upstream_keepalive_module.o \
-	objs/src/http/modules/ngx_http_upstream_zone_module.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp_init.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp_handshake.o \
@@ -289,6 +287,14 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/addon/dash/ngx_rtmp_mp4.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp_stat_module.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp_control_module.o \
+	objs/src/http/modules/ngx_http_upstream_hash_module.o \
+	objs/src/http/modules/ngx_http_upstream_ip_hash_module.o \
+	objs/src/http/modules/ngx_http_upstream_least_conn_module.o \
+	objs/src/http/modules/ngx_http_upstream_least_time_module.o \
+	objs/src/http/modules/ngx_http_upstream_random_module.o \
+	objs/src/http/modules/ngx_http_upstream_keepalive_module.o \
+	objs/src/http/modules/ngx_http_upstream_zone_module.o \
+	objs/src/http/modules/ngx_http_upstream_sticky_module.o \
 	objs/ngx_modules.o
 
 	$(LINK) -o objs/nginx \
@@ -310,6 +316,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/core/ngx_murmurhash.o \
 	objs/src/core/ngx_md5.o \
 	objs/src/core/ngx_sha1.o \
+        objs/src/core/ngx_siphash.o \
 	objs/src/core/ngx_rbtree.o \
 	objs/src/core/ngx_radix_tree.o \
 	objs/src/core/ngx_slab.o \
@@ -381,6 +388,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/ngx_http_file_cache.o \
 	objs/src/http/ngx_http_huff_decode.o \
 	objs/src/http/ngx_http_huff_encode.o \
+	objs/src/http/ngx_http_priority.o \
 	objs/src/http/ngx_http_write_filter_module.o \
 	objs/src/http/ngx_http_header_filter_module.o \
 	objs/src/http/modules/ngx_http_chunked_filter_module.o \
@@ -418,16 +426,12 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_uwsgi_module.o \
 	objs/src/http/modules/ngx_http_scgi_module.o \
 	objs/src/http/modules/ngx_http_grpc_module.o \
+	objs/src/http/modules/ngx_http_proxy_v2_module.o \
 	objs/src/http/modules/ngx_http_memcached_module.o \
+	objs/src/http/modules/ngx_http_tunnel_module.o \
 	objs/src/http/modules/ngx_http_empty_gif_module.o \
 	objs/src/http/modules/ngx_http_browser_module.o \
 	objs/src/http/modules/ngx_http_mp4_module.o \
-	objs/src/http/modules/ngx_http_upstream_hash_module.o \
-	objs/src/http/modules/ngx_http_upstream_ip_hash_module.o \
-	objs/src/http/modules/ngx_http_upstream_least_conn_module.o \
-	objs/src/http/modules/ngx_http_upstream_random_module.o \
-	objs/src/http/modules/ngx_http_upstream_keepalive_module.o \
-	objs/src/http/modules/ngx_http_upstream_zone_module.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp_init.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp_handshake.o \
@@ -463,6 +467,14 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/addon/dash/ngx_rtmp_mp4.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp_stat_module.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp_control_module.o \
+	objs/src/http/modules/ngx_http_upstream_hash_module.o \
+	objs/src/http/modules/ngx_http_upstream_ip_hash_module.o \
+	objs/src/http/modules/ngx_http_upstream_least_conn_module.o \
+	objs/src/http/modules/ngx_http_upstream_least_time_module.o \
+	objs/src/http/modules/ngx_http_upstream_random_module.o \
+	objs/src/http/modules/ngx_http_upstream_keepalive_module.o \
+	objs/src/http/modules/ngx_http_upstream_zone_module.o \
+	objs/src/http/modules/ngx_http_upstream_sticky_module.o \
 	objs/ngx_modules.o \
 	-lpthread -lcrypt -lpcre -lssl -lcrypto -lpthread -lz \
 	-Wl,-E
@@ -602,6 +614,12 @@ objs/src/core/ngx_sha1.o:	$(CORE_DEPS) \
 	$(CC) -c $(CFLAGS) $(CORE_INCS) \
 		-o objs/src/core/ngx_sha1.o \
 		src/core/ngx_sha1.c
+
+objs/src/core/ngx_siphash.o:	$(CORE_DEPS) \
+	src/core/ngx_siphash.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) \
+		-o objs/src/core/ngx_siphash.o \
+		src/core/ngx_siphash.c
 
 
 objs/src/core/ngx_rbtree.o:	$(CORE_DEPS) \
@@ -1099,6 +1117,12 @@ objs/src/http/ngx_http_huff_encode.o:	$(CORE_DEPS) $(HTTP_DEPS) \
 		-o objs/src/http/ngx_http_huff_encode.o \
 		src/http/ngx_http_huff_encode.c
 
+objs/src/http/ngx_http_priority.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/ngx_http_priority.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/ngx_http_priority.o \
+		src/http/ngx_http_priority.c
+
 
 objs/src/http/ngx_http_write_filter_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
 	src/http/ngx_http_write_filter_module.c
@@ -1358,6 +1382,17 @@ objs/src/http/modules/ngx_http_grpc_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
 		-o objs/src/http/modules/ngx_http_grpc_module.o \
 		src/http/modules/ngx_http_grpc_module.c
 
+objs/src/http/modules/ngx_http_proxy_v2_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/modules/ngx_http_proxy_v2_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/modules/ngx_http_proxy_v2_module.o \
+		src/http/modules/ngx_http_proxy_v2_module.c
+
+objs/src/http/modules/ngx_http_tunnel_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/modules/ngx_http_tunnel_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/modules/ngx_http_tunnel_module.o \
+		src/http/modules/ngx_http_tunnel_module.c
 
 objs/src/http/modules/ngx_http_memcached_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
 	src/http/modules/ngx_http_memcached_module.c
@@ -1385,48 +1420,6 @@ objs/src/http/modules/ngx_http_mp4_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
 	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
 		-o objs/src/http/modules/ngx_http_mp4_module.o \
 		src/http/modules/ngx_http_mp4_module.c
-
-
-objs/src/http/modules/ngx_http_upstream_hash_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
-	src/http/modules/ngx_http_upstream_hash_module.c
-	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
-		-o objs/src/http/modules/ngx_http_upstream_hash_module.o \
-		src/http/modules/ngx_http_upstream_hash_module.c
-
-
-objs/src/http/modules/ngx_http_upstream_ip_hash_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
-	src/http/modules/ngx_http_upstream_ip_hash_module.c
-	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
-		-o objs/src/http/modules/ngx_http_upstream_ip_hash_module.o \
-		src/http/modules/ngx_http_upstream_ip_hash_module.c
-
-
-objs/src/http/modules/ngx_http_upstream_least_conn_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
-	src/http/modules/ngx_http_upstream_least_conn_module.c
-	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
-		-o objs/src/http/modules/ngx_http_upstream_least_conn_module.o \
-		src/http/modules/ngx_http_upstream_least_conn_module.c
-
-
-objs/src/http/modules/ngx_http_upstream_random_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
-	src/http/modules/ngx_http_upstream_random_module.c
-	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
-		-o objs/src/http/modules/ngx_http_upstream_random_module.o \
-		src/http/modules/ngx_http_upstream_random_module.c
-
-
-objs/src/http/modules/ngx_http_upstream_keepalive_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
-	src/http/modules/ngx_http_upstream_keepalive_module.c
-	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
-		-o objs/src/http/modules/ngx_http_upstream_keepalive_module.o \
-		src/http/modules/ngx_http_upstream_keepalive_module.c
-
-
-objs/src/http/modules/ngx_http_upstream_zone_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
-	src/http/modules/ngx_http_upstream_zone_module.c
-	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
-		-o objs/src/http/modules/ngx_http_upstream_zone_module.o \
-		src/http/modules/ngx_http_upstream_zone_module.c
 
 
 objs/addon/nginx-rtmp-module/ngx_rtmp.o:	$(ADDON_DEPS) \
@@ -1672,6 +1665,62 @@ objs/addon/nginx-rtmp-module/ngx_rtmp_control_module.o:	$(ADDON_DEPS) \
 	$(CC) -c $(CFLAGS)  $(ALL_INCS) \
 		-o objs/addon/nginx-rtmp-module/ngx_rtmp_control_module.o \
 		../nginx-rtmp-module/ngx_rtmp_control_module.c
+
+
+objs/src/http/modules/ngx_http_upstream_hash_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/modules/ngx_http_upstream_hash_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/modules/ngx_http_upstream_hash_module.o \
+		src/http/modules/ngx_http_upstream_hash_module.c
+
+
+objs/src/http/modules/ngx_http_upstream_ip_hash_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/modules/ngx_http_upstream_ip_hash_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/modules/ngx_http_upstream_ip_hash_module.o \
+		src/http/modules/ngx_http_upstream_ip_hash_module.c
+
+
+objs/src/http/modules/ngx_http_upstream_least_conn_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/modules/ngx_http_upstream_least_conn_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/modules/ngx_http_upstream_least_conn_module.o \
+		src/http/modules/ngx_http_upstream_least_conn_module.c
+
+
+objs/src/http/modules/ngx_http_upstream_least_time_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/modules/ngx_http_upstream_least_time_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/modules/ngx_http_upstream_least_time_module.o \
+		src/http/modules/ngx_http_upstream_least_time_module.c
+
+
+objs/src/http/modules/ngx_http_upstream_random_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/modules/ngx_http_upstream_random_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/modules/ngx_http_upstream_random_module.o \
+		src/http/modules/ngx_http_upstream_random_module.c
+
+
+objs/src/http/modules/ngx_http_upstream_keepalive_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/modules/ngx_http_upstream_keepalive_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/modules/ngx_http_upstream_keepalive_module.o \
+		src/http/modules/ngx_http_upstream_keepalive_module.c
+
+
+objs/src/http/modules/ngx_http_upstream_zone_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/modules/ngx_http_upstream_zone_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/modules/ngx_http_upstream_zone_module.o \
+		src/http/modules/ngx_http_upstream_zone_module.c
+
+
+objs/src/http/modules/ngx_http_upstream_sticky_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/modules/ngx_http_upstream_sticky_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/modules/ngx_http_upstream_sticky_module.o \
+		src/http/modules/ngx_http_upstream_sticky_module.c
 
 
 manpage:	objs/nginx.8
