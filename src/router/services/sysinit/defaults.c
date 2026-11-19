@@ -1849,10 +1849,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "radius_common", "Antaira FreeRadius Certificate" },
 	{ "radius_passphrase", "none" },
 	{ "wan_default", "eth0" },
-	{ "resetbutton_enable", "0" },
 	{ "menu_nosecurity", "1" },
 	{ "menu_noaccrestriction", "1" },
-	{ "sv_restore_defaults", "0" },
 	{ "xor_backup", "1" },
 #elif  HAVE_BKM
 	{ "router_name", "BKM-HSDL" },
@@ -2370,8 +2368,11 @@ struct nvram_param srouter_defaults[] = {
 #else
 	{ "pptp_encrypt", "0" },
 #endif
+#lfdef HAVE_ANTAIRA
+	{ "resetbutton_enable", "0" },
+#else
 	{ "resetbutton_enable", "1" },
-
+#endif
 #ifdef HAVE_SKYTRON
 	{ "telnetd_enable", "0" },
 #elif HAVE_GGEW
