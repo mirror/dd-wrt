@@ -112,7 +112,6 @@ void start_smartdns(void)
 						"server-quic 159.69.155.94:853 -host-name wurzn.hagezi.org -tls-host-verify wurzn.hagezi.org\n");
 					fprintf(fp,
 						"server-quic 95.217.163.17:853 -host-name juuri.hagezi.org -tls-host-verify juuri.hagezi.org\n");
-
 		#else
 					fprintf(fp,
 						"server-tls 188.34.161.210:853 -host-name root.hagezi.org -tls-host-verify root.hagezi.org\n");
