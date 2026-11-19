@@ -24,6 +24,7 @@ struct ngx_listening_s {
     ngx_str_t           addr_text;
 
     int                 type;
+    int                 protocol;
 
     int                 backlog;
     int                 rcvbuf;
@@ -43,8 +44,6 @@ struct ngx_listening_s {
     ngx_log_t          *logp;
 
     size_t              pool_size;
-    /* should be here because of the AcceptEx() preread */
-    size_t              post_accept_buffer_size;
 
     ngx_listening_t    *previous;
     ngx_connection_t   *connection;
@@ -74,6 +73,8 @@ struct ngx_listening_s {
     unsigned            add_reuseport:1;
     unsigned            keepalive:2;
     unsigned            quic:1;
+
+    unsigned            change_protocol:1;
 
     unsigned            deferred_accept:1;
     unsigned            delete_deferred:1;
@@ -196,6 +197,8 @@ struct ngx_connection_s {
 #if (NGX_HAVE_SENDFILE_NODISKIO || NGX_COMPAT)
     unsigned            busy_count:2;
 #endif
+
+    unsigned            ktls_recv:1;
 
 #if (NGX_THREADS || NGX_COMPAT)
     ngx_thread_task_t  *sendfile_task;

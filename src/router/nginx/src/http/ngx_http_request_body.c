@@ -307,6 +307,7 @@ ngx_http_do_read_client_request_body(ngx_http_request_t *r)
     c = r->connection;
     rb = r->request_body;
     flush = 1;
+    n = NGX_AGAIN;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
                    "http read client request body");
@@ -432,7 +433,7 @@ ngx_http_do_read_client_request_body(ngx_http_request_t *r)
             break;
         }
 
-        if (!c->read->ready || rb->rest == 0) {
+        if (n == NGX_AGAIN || !c->read->ready || rb->rest == 0) {
 
             clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
             ngx_add_timer(c->read, clcf->client_body_timeout);
@@ -581,7 +582,9 @@ ngx_http_write_request_body(ngx_http_request_t *r)
 
         rb->temp_file = tf;
 
-        if (rb->bufs == NULL) {
+        if (rb->bufs == NULL
+            || (!ngx_buf_in_memory(rb->bufs->buf) && rb->bufs->buf->last_buf))
+        {
             /* empty body with r->request_body_in_file_only */
 
             if (ngx_create_temp_file(&tf->file, tf->path, tf->pool,
@@ -1088,6 +1091,7 @@ static ngx_int_t
 ngx_http_request_body_chunked_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
     size_t                     size;
+    u_char                    *p;
     ngx_int_t                  rc;
     ngx_buf_t                 *b;
     ngx_chain_t               *cl, *out, *tl, **ll;
@@ -1119,6 +1123,7 @@ ngx_http_request_body_chunked_filter(ngx_http_request_t *r, ngx_chain_t *in)
     for (cl = in; cl; cl = cl->next) {
 
         b = NULL;
+        p = cl->buf->pos;
 
         for ( ;; ) {
 
@@ -1254,6 +1259,18 @@ ngx_http_request_body_chunked_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                           "client sent invalid chunked body");
+
+            return NGX_HTTP_BAD_REQUEST;
+        }
+
+        rb->received += cl->buf->pos - p;
+
+        if (rb->received / 8 > r->headers_in.content_length_n + 1048576) {
+            ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
+                          "client sent too large chunked body "
+                          "overhead: %O+%O bytes",
+                          r->headers_in.content_length_n,
+                          rb->received - r->headers_in.content_length_n);
 
             return NGX_HTTP_BAD_REQUEST;
         }

@@ -633,9 +633,23 @@ ngx_http_v3_parse_literal(ngx_connection_t *c, ngx_http_v3_parse_literal_t *st,
                 st->huffstate = 0;
             }
 
-            st->last = ngx_pnalloc(c->pool, n + 1);
-            if (st->last == NULL) {
-                return NGX_ERROR;
+            if (st->buf) {
+                if ((size_t) (st->buf->end - st->buf->last) < n + 1) {
+                    ngx_log_error(NGX_LOG_INFO, c->log, 0,
+                                  "not enough dynamic table capacity");
+
+                    st->last = NULL;
+                    return NGX_ERROR;
+                }
+
+                st->last = st->buf->last;
+                st->buf->last += n + 1;
+
+            } else {
+                st->last = ngx_pnalloc(c->pool, n + 1);
+                if (st->last == NULL) {
+                    return NGX_ERROR;
+                }
             }
 
             st->value.data = st->last;
@@ -1486,6 +1500,11 @@ ngx_http_v3_parse_field_inr(ngx_connection_t *c,
 
             ch = *b->pos;
 
+            st->literal.buf = ngx_http_v3_get_insert_buffer(c);
+            if (st->literal.buf == NULL) {
+                return NGX_ERROR;
+            }
+
             st->dynamic = (ch & 0x40) ? 0 : 1;
             st->state = sw_name_index;
 
@@ -1524,7 +1543,7 @@ ngx_http_v3_parse_field_inr(ngx_connection_t *c,
 
             st->literal.length = st->pint.value;
             if (st->literal.length == 0) {
-                st->value.len = 0;
+                ngx_str_set(&st->value, "");
                 goto done;
             }
 
@@ -1590,6 +1609,11 @@ ngx_http_v3_parse_field_iln(ngx_connection_t *c,
 
             ch = *b->pos;
 
+            st->literal.buf = ngx_http_v3_get_insert_buffer(c);
+            if (st->literal.buf == NULL) {
+                return NGX_ERROR;
+            }
+
             st->literal.huffman = (ch & 0x20) ? 1 : 0;
             st->state = sw_name_len;
 
@@ -1643,7 +1667,7 @@ ngx_http_v3_parse_field_iln(ngx_connection_t *c,
 
             st->literal.length = st->pint.value;
             if (st->literal.length == 0) {
-                st->value.len = 0;
+                ngx_str_set(&st->value, "");
                 goto done;
             }
 
@@ -1837,6 +1861,8 @@ ngx_http_v3_parse_data(ngx_connection_t *c, ngx_http_v3_parse_data_t *st,
                            st->type, st->length);
 
             if (st->type != NGX_HTTP_V3_FRAME_DATA && st->length > 0) {
+                st->skip = st->length;
+                st->length = 0;
                 st->state = sw_skip;
                 break;
             }
@@ -1846,7 +1872,7 @@ ngx_http_v3_parse_data(ngx_connection_t *c, ngx_http_v3_parse_data_t *st,
 
         case sw_skip:
 
-            rc = ngx_http_v3_parse_skip(b, &st->length);
+            rc = ngx_http_v3_parse_skip(b, &st->skip);
             if (rc != NGX_DONE) {
                 return rc;
             }

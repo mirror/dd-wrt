@@ -113,6 +113,7 @@ struct ngx_ssl_ocsp_ctx_s {
 
     ngx_resolver_t              *resolver;
     ngx_msec_t                   resolver_timeout;
+    ngx_resolver_ctx_t          *resolve;
 
     ngx_msec_t                   timeout;
 
@@ -1341,6 +1342,10 @@ ngx_ssl_ocsp_done(ngx_ssl_ocsp_ctx_t *ctx)
     ngx_log_debug0(NGX_LOG_DEBUG_EVENT, ctx->log, 0,
                    "ssl ocsp done");
 
+    if (ctx->resolve) {
+        ngx_resolve_name_done(ctx->resolve);
+    }
+
     if (ctx->peer.connection) {
         ngx_close_connection(ctx->peer.connection);
     }
@@ -1433,7 +1438,10 @@ ngx_ssl_ocsp_request(ngx_ssl_ocsp_ctx_t *ctx)
         resolve->data = ctx;
         resolve->timeout = ctx->resolver_timeout;
 
+        ctx->resolve = resolve;
+
         if (ngx_resolve_name(resolve) != NGX_OK) {
+            ctx->resolve = NULL;
             ngx_ssl_ocsp_error(ctx);
             return;
         }
@@ -1522,6 +1530,7 @@ ngx_ssl_ocsp_resolve_handler(ngx_resolver_ctx_t *resolve)
     }
 
     ngx_resolve_name_done(resolve);
+    ctx->resolve = NULL;
 
     ngx_ssl_ocsp_connect(ctx);
     return;
@@ -1529,6 +1538,8 @@ ngx_ssl_ocsp_resolve_handler(ngx_resolver_ctx_t *resolve)
 failed:
 
     ngx_resolve_name_done(resolve);
+    ctx->resolve = NULL;
+
     ngx_ssl_ocsp_error(ctx);
 }
 
@@ -2226,21 +2237,6 @@ ngx_ssl_ocsp_parse_header_line(ngx_ssl_ocsp_ctx_t *ctx)
                 break;
             }
 
-            if (ch == CR) {
-                ctx->header_name_end = p;
-                ctx->header_start = p;
-                ctx->header_end = p;
-                state = sw_almost_done;
-                break;
-            }
-
-            if (ch == LF) {
-                ctx->header_name_end = p;
-                ctx->header_start = p;
-                ctx->header_end = p;
-                goto done;
-            }
-
             return NGX_ERROR;
 
         /* space* before header value */
@@ -2667,17 +2663,25 @@ ngx_ssl_ocsp_cache_store(ngx_ssl_ocsp_ctx_t *ctx)
 static ngx_int_t
 ngx_ssl_ocsp_create_key(ngx_ssl_ocsp_ctx_t *ctx)
 {
-    u_char        *p;
-    X509_NAME     *name;
-    ASN1_INTEGER  *serial;
+    u_char           *p;
+    ngx_int_t         length;
+    ASN1_INTEGER     *serial;
+    const X509_NAME  *name;
 
-    p = ngx_pnalloc(ctx->pool, 60);
+    serial = X509_get_serialNumber(ctx->cert);
+    length = i2d_ASN1_INTEGER(serial, NULL);
+
+    if (length <= 2 || length > 23) {
+        return NGX_ERROR;
+    }
+
+    p = ngx_pnalloc(ctx->pool, 40 + length);
     if (p == NULL) {
         return NGX_ERROR;
     }
 
     ctx->key.data = p;
-    ctx->key.len = 60;
+    ctx->key.len = 40 + length;
 
     name = X509_get_subject_name(ctx->issuer);
     if (X509_NAME_digest(name, EVP_sha1(), p, NULL) == 0) {
@@ -2692,13 +2696,7 @@ ngx_ssl_ocsp_create_key(ngx_ssl_ocsp_ctx_t *ctx)
 
     p += 20;
 
-    serial = X509_get_serialNumber(ctx->cert);
-    if (serial->length > 20) {
-        return NGX_ERROR;
-    }
-
-    p = ngx_cpymem(p, serial->data, serial->length);
-    ngx_memzero(p, 20 - serial->length);
+    (void) i2d_ASN1_INTEGER(serial, &p);
 
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, ctx->log, 0,
                    "ssl ocsp key %xV", &ctx->key);

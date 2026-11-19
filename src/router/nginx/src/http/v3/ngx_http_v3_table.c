@@ -88,7 +88,7 @@ static ngx_http_v3_field_t  ngx_http_v3_static_table[] = {
     { ngx_string("content-type"),          ngx_string("image/png") },
     { ngx_string("content-type"),          ngx_string("text/css") },
     { ngx_string("content-type"),
-          ngx_string("text/html;charset=utf-8") },
+          ngx_string("text/html; charset=utf-8") },
     { ngx_string("content-type"),          ngx_string("text/plain") },
     { ngx_string("content-type"),
           ngx_string("text/plain;charset=utf-8") },
@@ -96,14 +96,14 @@ static ngx_http_v3_field_t  ngx_http_v3_static_table[] = {
     { ngx_string("strict-transport-security"),
                                            ngx_string("max-age=31536000") },
     { ngx_string("strict-transport-security"),
-          ngx_string("max-age=31536000;includesubdomains") },
+          ngx_string("max-age=31536000; includesubdomains") },
     { ngx_string("strict-transport-security"),
-          ngx_string("max-age=31536000;includesubdomains;preload") },
+          ngx_string("max-age=31536000; includesubdomains; preload") },
     { ngx_string("vary"),                  ngx_string("accept-encoding") },
     { ngx_string("vary"),                  ngx_string("origin") },
     { ngx_string("x-content-type-options"),
                                            ngx_string("nosniff") },
-    { ngx_string("x-xss-protection"),      ngx_string("1;mode=block") },
+    { ngx_string("x-xss-protection"),      ngx_string("1; mode=block") },
     { ngx_string(":status"),               ngx_string("100") },
     { ngx_string(":status"),               ngx_string("204") },
     { ngx_string(":status"),               ngx_string("206") },
@@ -137,7 +137,7 @@ static ngx_http_v3_field_t  ngx_http_v3_static_table[] = {
     { ngx_string("alt-svc"),               ngx_string("clear") },
     { ngx_string("authorization"),         ngx_string("") },
     { ngx_string("content-security-policy"),
-          ngx_string("script-src 'none';object-src 'none';base-uri 'none'") },
+          ngx_string("script-src 'none'; object-src 'none'; base-uri 'none'") },
     { ngx_string("early-data"),            ngx_string("1") },
     { ngx_string("expect-ct"),             ngx_string("") },
     { ngx_string("forwarded"),             ngx_string("") },
@@ -153,6 +153,32 @@ static ngx_http_v3_field_t  ngx_http_v3_static_table[] = {
     { ngx_string("x-frame-options"),       ngx_string("deny") },
     { ngx_string("x-frame-options"),       ngx_string("sameorigin") }
 };
+
+
+ngx_buf_t *
+ngx_http_v3_get_insert_buffer(ngx_connection_t *c)
+{
+    ngx_http_v3_session_t        *h3c;
+    ngx_http_v3_srv_conf_t       *h3scf;
+    ngx_http_v3_dynamic_table_t  *dt;
+
+    h3c = ngx_http_v3_get_session(c);
+    dt = &h3c->table;
+
+    if (dt->insert_buffer == NULL) {
+        h3scf = ngx_http_v3_get_module_srv_conf(c, ngx_http_v3_module);
+
+        dt->insert_buffer = ngx_create_temp_buf(c->quic->parent->pool,
+                                                h3scf->max_table_capacity);
+        if (dt->insert_buffer == NULL) {
+            return NULL;
+        }
+    }
+
+    dt->insert_buffer->last = dt->insert_buffer->pos;
+
+    return dt->insert_buffer;
+}
 
 
 ngx_int_t

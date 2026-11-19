@@ -152,21 +152,17 @@ ngx_quic_cbs_recv_rcd(ngx_ssl_conn_t *ssl_conn,
     qc = ngx_quic_get_connection(c);
     ctx = ngx_quic_get_send_ctx(qc, qc->read_level);
 
-    for (cl = ctx->crypto.chain; cl; cl = cl->next) {
+    cl = ctx->crypto.chain;
+
+    if (cl == NULL || cl->buf->sync) {
+        *data = NULL;
+        *bytes_read = 0;
+
+    } else {
         b = cl->buf;
-
-        if (b->sync) {
-            /* hole */
-
-            *bytes_read = 0;
-
-            break;
-        }
 
         *data = b->pos;
         *bytes_read = b->last - b->pos;
-
-        break;
     }
 
     return 1;
@@ -185,7 +181,13 @@ ngx_quic_cbs_release_rcd(ngx_ssl_conn_t *ssl_conn, size_t bytes_read, void *arg)
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0,
                    "quic ngx_quic_cbs_release_rcd len:%uz", bytes_read);
 
+    /* already closed on handshake failure */
+
     qc = ngx_quic_get_connection(c);
+    if (qc == NULL) {
+        return 1;
+    }
+
     ctx = ngx_quic_get_send_ctx(qc, qc->read_level);
 
     cl = ngx_quic_read_buffer(c, &ctx->crypto, bytes_read);
@@ -636,6 +638,15 @@ ngx_quic_handle_crypto_frame(ngx_connection_t *c, ngx_quic_header_t *pkt,
         return NGX_OK;
     }
 
+    if (c->ssl->handshaked) {
+        /* QUIC doesn't define post-handshake messages for a client */
+
+        qc->error = NGX_QUIC_ERR_CRYPTO(SSL_AD_UNEXPECTED_MESSAGE);
+        qc->error_reason = "unexpected CRYPTO frame";
+
+        return NGX_ERROR;
+    }
+
     ctx = ngx_quic_get_send_ctx(qc, pkt->level);
     f = &frame->u.crypto;
 
@@ -695,28 +706,33 @@ ngx_quic_handshake(ngx_connection_t *c)
 
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0, "SSL_do_handshake: %d", n);
 
-    if (qc->error) {
-        return NGX_ERROR;
-    }
-
     if (n <= 0) {
         sslerr = SSL_get_error(ssl_conn, n);
 
         ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0, "SSL_get_error: %d",
                        sslerr);
 
+        if (c->ssl->handshake_rejected) {
+            ngx_connection_error(c, 0, "handshake rejected");
+            ERR_clear_error();
+            return NGX_ERROR;
+        }
+
+        if (qc->error) {
+            ngx_connection_error(c, 0, "SSL_do_handshake() failed");
+            ERR_clear_error();
+            return NGX_ERROR;
+        }
+
         if (sslerr != SSL_ERROR_WANT_READ) {
-
-            if (c->ssl->handshake_rejected) {
-                ngx_connection_error(c, 0, "handshake rejected");
-                ERR_clear_error();
-
-                return NGX_ERROR;
-            }
-
             ngx_ssl_connection_error(c, sslerr, 0, "SSL_do_handshake() failed");
             return NGX_ERROR;
         }
+    }
+
+    if (qc->error) {
+        ngx_connection_error(c, 0, "SSL_do_handshake() failed");
+        return NGX_ERROR;
     }
 
     if (!SSL_is_init_finished(ssl_conn)) {
@@ -968,7 +984,7 @@ ngx_quic_init_connection(ngx_connection_t *c)
     }
 #endif
 
-#ifdef OPENSSL_IS_BORINGSSL
+#if (defined OPENSSL_IS_BORINGSSL || defined OPENSSL_IS_AWSLC)
     if (SSL_set_quic_early_data_context(ssl_conn, p, clen) == 0) {
         ngx_ssl_error(NGX_LOG_ALERT, c->log, 0,
                       "quic SSL_set_quic_early_data_context() failed");
