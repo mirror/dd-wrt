@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r8923 | brainslayer | 2026-11-19 17:55:47 +0600 (Thu, 19 Nov 2026) | 1 line
+
+88W8864: protect management frames in software (802.11w/PMF), thx @rauar
+------------------------------------------------------------------------
+r8922 | brainslayer | 2026-11-19 17:55:40 +0600 (Thu, 19 Nov 2026) | 1 line
+
+88W8864: protect management frames in software (802.11w/PMF), thx @rauar
+------------------------------------------------------------------------
 r8921 | brainslayer | 2026-11-19 00:27:54 +0600 (Thu, 19 Nov 2026) | 1 line
 
 fix counting
