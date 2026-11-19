@@ -2368,7 +2368,7 @@ struct nvram_param srouter_defaults[] = {
 #else
 	{ "pptp_encrypt", "0" },
 #endif
-#lfdef HAVE_ANTAIRA
+#ifdef HAVE_ANTAIRA
 	{ "resetbutton_enable", "0" },
 #else
 	{ "resetbutton_enable", "1" },
