@@ -12,14 +12,15 @@
 #include <string.h>
 
 
-/* force usage of internal conversation routine */
-#undef HAVE_ICONV_H
-#undef HAVE_ICONV
 
 #if defined(HAVE_ICONV_H) || defined(HAVE_ICONV)
 #include <errno.h>
 #include <iconv.h>
 #endif
+
+/* force usage of internal conversation routine */
+#undef HAVE_ICONV_H
+#undef HAVE_ICONV
 
 #if defined(HAVE_ICONV_H) && !defined(HAVE_ICONV)
 #define HAVE_ICONV 1
