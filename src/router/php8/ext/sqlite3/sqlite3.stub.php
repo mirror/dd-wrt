@@ -162,13 +162,13 @@ class SQLite3
 #endif
 
     /** @implementation-alias SQLite3::open */
-    public function __construct(string $filename, int $flags = SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE, string $encryptionKey = "") {}
+    public function __construct(string $filename, int $flags = SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE, #[\SensitiveParameter] string $encryptionKey = "") {}
 
     /**
      * @tentative-return-type
      * @todo SQLite3::open should really be static
      */
-    public function open(string $filename, int $flags = SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE, string $encryptionKey = ""): void {}
+    public function open(string $filename, int $flags = SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE, #[\SensitiveParameter] string $encryptionKey = ""): void {}
 
     /** @tentative-return-type */
     public function close(): bool {}
@@ -199,10 +199,8 @@ class SQLite3
     public function loadExtension(string $name): bool {}
 #endif
 
-#if SQLITE_VERSION_NUMBER >= 3006011
     /** @tentative-return-type */
     public function backup(SQLite3 $destination, string $sourceDatabase = "main", string $destinationDatabase = "main"): bool {}
-#endif
 
     /** @tentative-return-type */
     public static function escapeString(string $string): string {}

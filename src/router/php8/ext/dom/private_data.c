@@ -1,14 +1,12 @@
 /*
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Authors: Nora Dossche  <ndossche@php.net>                            |
    +----------------------------------------------------------------------+
@@ -70,8 +68,12 @@ void php_dom_private_data_destroy(php_dom_private_data *data)
 	efree(data);
 }
 
-static void php_dom_free_templated_content(php_dom_private_data *private_data, xmlNodePtr base)
+void php_dom_remove_templated_content_in_subtree(php_dom_private_data *private_data, xmlNodePtr base)
 {
+	if (private_data->template_fragments == NULL) {
+		return;
+	}
+
 	/* Note: it's not possible to obtain a userland reference to these yet, so we can just free them without worrying
 	 *       about their proxies.
 	 * Note 2: it's possible to have nested template content. */
@@ -87,7 +89,11 @@ static void php_dom_free_templated_content(php_dom_private_data *private_data, x
 			current = php_dom_next_in_tree_order(current, base);
 		}
 	}
+}
 
+static void php_dom_free_templated_content(php_dom_private_data *private_data, xmlNodePtr base)
+{
+	php_dom_remove_templated_content_in_subtree(private_data, base);
 	xmlFreeNode(base);
 }
 

@@ -152,14 +152,17 @@ void dasm_setup(Dst_DECL, const void *actionlist)
   }
 }
 
+#ifndef DASM_ABORT
+# define DASM_ABORT
+#endif
 
 #ifdef DASM_CHECKS
 #define CK(x, st) \
   do { if (!(x)) { \
-    D->status = DASM_S_##st|(int)(p-D->actionlist-1); return; } } while (0)
+    D->status = DASM_S_##st|(int)(p-D->actionlist-1); DASM_ABORT; return; } } while (0)
 #define CKPL(kind, st) \
   do { if ((size_t)((char *)pl-(char *)D->kind##labels) >= D->kind##size) { \
-    D->status = DASM_S_RANGE_##st|(int)(p-D->actionlist-1); return; } } while (0)
+    D->status = DASM_S_RANGE_##st|(int)(p-D->actionlist-1); DASM_ABORT; return; } } while (0)
 #else
 #define CK(x, st)	((void)0)
 #define CKPL(kind, st)	((void)0)
@@ -175,44 +178,46 @@ static int dasm_imm12(unsigned int n)
     return -1;
 }
 
-static int dasm_ffs(unsigned long long x)
+#if defined(__GNUC__) || defined(__clang__)
+#define dasm_ctz(x) __builtin_ctzll(x)
+#define dasm_clz(x) __builtin_clzll(x)
+#else
+static int dasm_ctz(unsigned long long x)
 {
-  int n = -1;
-  while (x) { x >>= 1; n++; }
+  int n = 0;
+  x = ~x;
+  while (x & 1) { x >>= 1; n++; }
   return n;
+}
+
+static int dasm_clz(unsigned long long x)
+{
+  int n = 0;
+  x = ~x;
+  while ((long long)x < 0) { x <<= 1; n++; }
+  return n;
+}
+#endif
+
+static unsigned long long dasm_ror(unsigned long long x, int n)
+{
+  return (x << (-n & 63)) | (x >> n);
 }
 
 static int dasm_imm13(int lo, int hi)
 {
-  int inv = 0, w = 64, s = 0xfff, xa, xb;
+  /* Thanks to: https://dougallj.wordpress.com/2021/10/30/ */
+  int rot, ones, size, immr, imms;
   unsigned long long n = (((unsigned long long)hi) << 32) | (unsigned int)lo;
-  unsigned long long m = 1ULL, a, b, c;
-  if (n & 1) { n = ~n; inv = 1; }
-  a = n & (unsigned long long)-(long long)n;
-  b = (n+a)&(unsigned long long)-(long long)(n+a);
-  c = (n+a-b)&(unsigned long long)-(long long)(n+a-b);
-  xa = dasm_ffs(a); xb = dasm_ffs(b);
-  if (c) {
-    w = dasm_ffs(c) - xa;
-    if (w == 32) m = 0x0000000100000001UL;
-    else if (w == 16) m = 0x0001000100010001UL;
-    else if (w == 8) m = 0x0101010101010101UL;
-    else if (w == 4) m = 0x1111111111111111UL;
-    else if (w == 2) m = 0x5555555555555555UL;
-    else return -1;
-    s = (-2*w & 0x3f) - 1;
-  } else if (!a) {
-    return -1;
-  } else if (xb == -1) {
-    xb = 64;
-  }
-  if ((b-a) * m != n) return -1;
-  if (inv) {
-    return ((w - xb) << 6) | (s+w+xa-xb);
-  } else {
-    return ((w - xa) << 6) | (s+xb-xa);
-  }
-  return -1;
+  if ((n+1u) <= 1u) return -1;  /* Neither all-zero nor all-ones are allowed. */
+  rot = (n & (n+1u)) ? dasm_ctz(n & (n+1u)) : 64;
+  n = dasm_ror(n, rot & 63);
+  ones = dasm_ctz(~n);
+  size = dasm_clz(n) + ones;
+  if (dasm_ror(n, size & 63) != n) return -1;  /* Non-repeating? */
+  immr = -rot & (size - 1);
+  imms = (-(size << 1) | (ones - 1)) & 63;
+  return ((immr | (size & 64)) << 6) | imms;
 }
 
 /* Pass 1: Store actions and args, link branches/labels, estimate offsets. */

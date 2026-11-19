@@ -1,14 +1,12 @@
 /*
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Author: Edin Kadribasic <edink@php.net>                              |
    |         Marcus Boerger <helly@php.net>                               |
@@ -31,7 +29,6 @@
 #include "SAPI.h"
 
 #include <stdio.h>
-#include "php.h"
 #ifdef PHP_WIN32
 #include "win32/time.h"
 #include "win32/signal.h"
@@ -51,7 +48,6 @@
 #include "zend.h"
 #include "zend_extensions.h"
 #include "php_ini.h"
-#include "php_globals.h"
 #include "php_main.h"
 #include "fopen_wrappers.h"
 #include "ext/standard/php_standard.h"
@@ -81,12 +77,6 @@
 #include "ps_title.h"
 #include "php_cli_process_title.h"
 #include "php_cli_process_title_arginfo.h"
-
-#ifndef PHP_WIN32
-# define php_select(m, r, w, e, t)	select(m, r, w, e, t)
-#else
-# include "win32/select.h"
-#endif
 
 #if defined(PHP_WIN32) && defined(HAVE_OPENSSL_EXT)
 # include "openssl/applink.c"
@@ -222,20 +212,12 @@ static void print_extensions(void) /* {{{ */
 #ifdef PHP_WRITE_STDOUT
 static inline bool sapi_cli_select(php_socket_t fd)
 {
-	fd_set wfd;
 	struct timeval tv;
-	int ret;
-
-	FD_ZERO(&wfd);
-
-	PHP_SAFE_FD_SET(fd, &wfd);
 
 	tv.tv_sec = (long)FG(default_socket_timeout);
 	tv.tv_usec = 0;
 
-	ret = php_select(fd+1, NULL, &wfd, NULL, &tv);
-
-	return ret != -1;
+	return php_pollfd_for(fd, POLLOUT, &tv) != -1;
 }
 #endif
 
@@ -484,6 +466,7 @@ static void php_cli_usage(char *argv0)
 				"\n"
 				"  -a               Run as interactive shell (requires readline extension)\n"
 				"  -c <path>|<file> Look for php.ini file in this directory\n"
+				"  -C               Do not chdir to the script's directory (no-op in CLI)\n"
 				"  -n               No configuration (ini) files will be used\n"
 				"  -d foo[=bar]     Define INI entry foo with value 'bar'\n"
 				"  -e               Generate extended information for debugger/profiler\n"
@@ -492,6 +475,7 @@ static void php_cli_usage(char *argv0)
 				"  -i               PHP information\n"
 				"  -l               Syntax check only (lint)\n"
 				"  -m               Show compiled in modules\n"
+				"  -q               Do not output HTTP headers (no-op in CLI)\n"
 				"  -r <code>        Run PHP <code> without using script tags <?..?>\n"
 				"  -B <begin_code>  Run PHP <begin_code> before processing input lines\n"
 				"  -R <code>        Run PHP <code> for every input line\n"
@@ -1106,10 +1090,9 @@ do_repeat:
 		case PHP_CLI_MODE_REFLECTION_EXT_INFO:
 			{
 				size_t len = strlen(reflection_what);
-				char *lcname = zend_str_tolower_dup(reflection_what, len);
 				zend_module_entry *module;
 
-				if ((module = zend_hash_str_find_ptr(&module_registry, lcname, len)) == NULL) {
+				if ((module = zend_hash_str_find_ptr_lc(&module_registry, reflection_what, len)) == NULL) {
 					if (!strcmp(reflection_what, "main")) {
 						display_ini_entries(NULL);
 					} else {
@@ -1120,7 +1103,6 @@ do_repeat:
 					php_info_print_module(module);
 				}
 
-				efree(lcname);
 				break;
 			}
 
@@ -1203,18 +1185,10 @@ err:
 /* }}} */
 
 int cgi_main(int argc, char *argv[]);
-/* {{{ main */
-#ifdef PHP_CLI_WIN32_NO_CONSOLE
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
-#else
-int main(int argc, char *argv[])
-#endif
+/* {{{ do_php_cli */
+PHP_CLI_API int do_php_cli(int argc, char *argv[])
 {
 #if defined(PHP_WIN32)
-# ifdef PHP_CLI_WIN32_NO_CONSOLE
-	int argc = __argc;
-	char **argv = __argv;
-# endif
 	int num_args;
 	wchar_t **argv_wide;
 	char **argv_save = argv;
@@ -1364,12 +1338,16 @@ exit_loop:
 #if defined(PHP_WIN32)
 	php_win32_cp_cli_setup();
 	orig_cp = (php_win32_cp_get_orig())->id;
-	/* Ignore the delivered argv and argc, read from W API. This place
-		might be too late though, but this is the earliest place ATW
-		we can access the internal charset information from PHP. */
-	argv_wide = CommandLineToArgvW(GetCommandLineW(), &num_args);
-	PHP_WIN32_CP_W_TO_ANY_ARRAY(argv_wide, num_args, argv, argc)
-	using_wide_argv = 1;
+	/* Embedders supply their own arguments, we mustn't replace them with
+	 * the ones by the host process command line. */
+	if (argv_save == __argv) {
+		/* Ignore the delivered argv and argc, read from W API. This place
+			might be too late though, but this is the earliest place ATW
+			we can access the internal charset information from PHP. */
+		argv_wide = CommandLineToArgvW(GetCommandLineW(), &num_args);
+		PHP_WIN32_CP_W_TO_ANY_ARRAY(argv_wide, num_args, argv, argc)
+		using_wide_argv = 1;
+	}
 
 	SetConsoleCtrlHandler(php_cli_win32_ctrl_handler, TRUE);
 #endif
@@ -1419,6 +1397,6 @@ out:
 	 * exiting.
 	 */
 	cleanup_ps_args(argv);
-	exit(exit_status);
+	return exit_status;
 }
 /* }}} */

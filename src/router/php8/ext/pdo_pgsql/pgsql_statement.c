@@ -1,14 +1,12 @@
 /*
   +----------------------------------------------------------------------+
-  | Copyright (c) The PHP Group                                          |
+  | Copyright © The PHP Group and Contributors.                          |
   +----------------------------------------------------------------------+
-  | This source file is subject to version 3.01 of the PHP license,      |
-  | that is bundled with this package in the file LICENSE, and is        |
-  | available through the world-wide-web at the following url:           |
-  | https://www.php.net/license/3_01.txt                                 |
-  | If you did not receive a copy of the PHP license and are unable to   |
-  | obtain it through the world-wide-web, please send a note to          |
-  | license@php.net so we can mail you a copy immediately.               |
+  | This source file is subject to the Modified BSD License that is      |
+  | bundled with this package in the file LICENSE, and is available      |
+  | through the World Wide Web at <https://www.php.net/license/>.        |
+  |                                                                      |
+  | SPDX-License-Identifier: BSD-3-Clause                                |
   +----------------------------------------------------------------------+
   | Authors: Edin Kadribasic <edink@emini.dk>                            |
   |          Ilia Alshanestsky <ilia@prohost.org>                        |
@@ -59,6 +57,21 @@
 #define FIN_DISCARD 0x1
 #define FIN_CLOSE   0x2
 #define FIN_ABORT   0x4
+
+static bool pgsql_result_status_ok(ExecStatusType status)
+{
+	switch (status) {
+		case PGRES_COMMAND_OK:
+		case PGRES_TUPLES_OK:
+		case PGRES_SINGLE_TUPLE:
+#ifdef HAVE_PG_SET_CHUNKED_ROWS_SIZE
+		case PGRES_TUPLES_CHUNK:
+#endif
+			return true;
+		default:
+			return false;
+	}
+}
 
 #ifndef HAVE_PQCLOSEPORTAL
 static bool pdo_pgsql_try_cmd(const char *cmd, const char *ok_sqlstate, pdo_pgsql_db_handle *H)
@@ -177,9 +190,11 @@ static void pgsql_stmt_finish(pdo_pgsql_stmt *S, int fin_mode)
 		res = PQclosePrepared(H->server, S->stmt_name);
 #endif
 		if (res) {
+			if (H->prepared_stmts && PQresultStatus(res) == PGRES_COMMAND_OK) {
+				zend_hash_str_del(H->prepared_stmts, S->stmt_name, strlen(S->stmt_name));
+			}
 			PQclear(res);
 		}
-
 		S->is_prepared = false;
 	}
 }
@@ -325,7 +340,10 @@ stmt_retry:
 				case PGRES_COMMAND_OK:
 				case PGRES_TUPLES_OK:
 					/* it worked */
-					S->is_prepared = 1;
+					S->is_prepared = true;
+					if (H->prepared_stmts) {
+						zend_hash_str_add_empty_element(H->prepared_stmts, S->stmt_name, strlen(S->stmt_name));
+					}
 					PQclear(S->result);
 					S->result = NULL;
 					break;
@@ -413,8 +431,16 @@ stmt_retry:
 			return 0;
 		}
 		S->is_running_unbuffered = true;
+		/* no matter if they return 0: PQ then transparently fallbacks to full result fetching */
+#ifdef HAVE_PG_SET_CHUNKED_ROWS_SIZE
+		if (S->chunk_size >= 1) {
+			(void)PQsetChunkedRowsMode(H->server, (int)S->chunk_size);
+		} else {
+			(void)PQsetSingleRowMode(H->server);
+		}
+#else
 		(void)PQsetSingleRowMode(H->server);
-		/* no matter if it returns 0: PQ then transparently fallbacks to full result fetching */
+#endif
 
 		/* try a first fetch to at least have column names and so on */
 		S->result = PQgetResult(S->H->server);
@@ -422,7 +448,7 @@ stmt_retry:
 
 	status = PQresultStatus(S->result);
 
-	if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK && status != PGRES_SINGLE_TUPLE) {
+	if (!pgsql_result_status_ok(status)) {
 		pdo_pgsql_error_stmt(stmt, status, pdo_pgsql_sqlstate(S->result));
 		return 0;
 	}
@@ -666,7 +692,7 @@ static int pgsql_stmt_fetch(pdo_stmt_t *stmt,
 			}
 			status = PQresultStatus(S->result);
 
-			if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK && status != PGRES_SINGLE_TUPLE) {
+			if (!pgsql_result_status_ok(status)) {
 				pdo_pgsql_error_stmt(stmt, status, pdo_pgsql_sqlstate(S->result));
 				return 0;
 			}
@@ -940,6 +966,12 @@ static int pgsql_stmt_get_attr(pdo_stmt_t *stmt, zend_long attr, zval *val)
 
 				ZVAL_NULL(val);
 			}
+			return 1;
+#endif
+
+#ifdef HAVE_PG_SET_CHUNKED_ROWS_SIZE
+		case PDO_PGSQL_ATTR_CHUNK_SIZE:
+			ZVAL_LONG(val, S->chunk_size);
 			return 1;
 #endif
 

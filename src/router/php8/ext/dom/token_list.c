@@ -1,14 +1,12 @@
 /*
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Authors: Nora Dossche  <ndossche@php.net>                            |
    +----------------------------------------------------------------------+
@@ -194,7 +192,7 @@ static void dom_token_list_update(dom_token_list_object *intern)
 	/* 2. Set an attribute value for the associated element using associated attribute’s local name and the result of
 	 *    running the ordered set serializer for token set. */
 	char *value = dom_ordered_set_serializer(token_set);
-	xmlSetNsProp(dom_token_list_get_element(intern), NULL, BAD_CAST "class", BAD_CAST value);
+	dom_set_attribute_value(dom_token_list_get_element(intern), NULL, BAD_CAST "class", BAD_CAST value);
 	efree(intern->cached_string);
 	intern->cached_string = value;
 }
@@ -434,7 +432,7 @@ zend_result dom_token_list_value_write(dom_object *obj, zval *newval)
 		return FAILURE;
 	}
 	php_libxml_invalidate_node_list_cache(intern->dom.document);
-	xmlSetNsProp(dom_token_list_get_element(intern), NULL, BAD_CAST "class", BAD_CAST Z_STRVAL_P(newval));
+	dom_set_attribute_value(dom_token_list_get_element(intern), NULL, BAD_CAST "class", BAD_CAST Z_STRVAL_P(newval));
 	/* Note: we don't update the set here, the set is always lazily updated for performance reasons. */
 	return SUCCESS;
 }
@@ -488,7 +486,7 @@ static bool dom_validate_tokens_varargs(const zval *args, uint32_t argc)
 {
 	for (uint32_t i = 0; i < argc; i++) {
 		if (Z_TYPE(args[i]) != IS_STRING) {
-			zend_argument_type_error(i + 1, "must be of type string, %s given", zend_zval_value_name(&args[i]));
+			zend_wrong_parameter_type_error(i + 1, Z_EXPECTED_STRING, &args[i]);
 			return false;
 		}
 
@@ -579,7 +577,7 @@ PHP_METHOD(Dom_TokenList, toggle)
 	HashTable *token_set = TOKEN_LIST_GET_SET(intern);
 	zval *found_token = zend_hash_find(token_set, token);
 	if (found_token != NULL) {
-		ZEND_ASSERT(XtOffsetOf(Bucket, val) == 0 && "the cast only works if this is true");
+		ZEND_ASSERT(offsetof(Bucket, val) == 0 && "the cast only works if this is true");
 		Bucket *bucket = (Bucket *) found_token;
 
 		/* 3.1. If force is either not given or is false, then remove token from this’s token set,
@@ -629,7 +627,7 @@ PHP_METHOD(Dom_TokenList, replace)
 	}
 
 	/* 4. Replace token in this’s token set with newToken. */
-	ZEND_ASSERT(XtOffsetOf(Bucket, val) == 0 && "the cast only works if this is true");
+	ZEND_ASSERT(offsetof(Bucket, val) == 0 && "the cast only works if this is true");
 	Bucket *bucket = (Bucket *) found_token;
 	if (zend_hash_set_bucket_key(token_set, bucket, new_token) == NULL) {
 		/* It already exists, remove token instead. */

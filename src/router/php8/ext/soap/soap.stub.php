@@ -541,7 +541,6 @@ namespace {
         private bool $trace = false;
         private ?int $compression = null;
         private ?Soap\Sdl $sdl = null;
-        private ?array $typemap = null;
         /** @var resource|null */
         private $httpsocket = null;
         private ?Soap\Url $httpurl = null;
@@ -573,6 +572,7 @@ namespace {
         private ?string $__last_response = null;
         private ?string $__last_request_headers = null;
         private ?string $__last_response_headers = null;
+        private int $_keep_headers = 0;
 
         public function __construct(?string $wsdl, array $options = []) {}
 

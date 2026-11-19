@@ -45,5 +45,5 @@ a();
   <!-- init var_dump() -->
   <!-- init class@anonymous::__debugInfo() -->
 
-Fatal error: __debuginfo() must return an array in %s on line %d
+Fatal error: __debugInfo() must return an array in %s on line %d
 </a>

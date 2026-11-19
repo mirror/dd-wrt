@@ -1,20 +1,18 @@
 /*
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Author: Marcus Boerger <helly@php.net>                               |
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 570e3625b0cea5c29455cecf40fdfd491c0eb3c6 $ */
+/* $Id: b216b904e9bdc3c07d038e35ad19aab60dd718e3 $ */
 
 /* incorporated from D.J.Bernstein's cdb-0.75 (http://cr.yp.to/cdb.html)*/
 
@@ -238,5 +236,5 @@ int cdb_make_finish(struct cdb_make *c)
 /* {{{ cdb_make_version */
 const char *cdb_make_version(void)
 {
-	return "0.75, $Id: 570e3625b0cea5c29455cecf40fdfd491c0eb3c6 $";
+	return "0.75, $Id: b216b904e9bdc3c07d038e35ad19aab60dd718e3 $";
 }

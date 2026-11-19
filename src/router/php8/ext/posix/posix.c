@@ -1,14 +1,12 @@
 /*
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Author: Kristian Koehntopp <kris@koehntopp.de>                       |
    +----------------------------------------------------------------------+
@@ -1217,7 +1215,14 @@ PHP_FUNCTION(posix_getrlimit)
 #endif /* HAVE_GETRLIMIT */
 
 #ifdef HAVE_SETRLIMIT
-/* {{{ Set system resource consumption limits (POSIX.1-2001) */
+/* Solaris defines RLIM_INFINITY as (rlim_t)-3, so POSIX_RLIMIT_INFINITY is below -1 */
+#ifdef __sun
+# define POSIX_RLIM_VALID(v) ((v) >= -1 || (v) == (zend_long) RLIM_INFINITY)
+#else
+# define POSIX_RLIM_VALID(v) ((v) >= -1)
+#endif
+
+/* Set system resource consumption limits (POSIX.1-2001) */
 PHP_FUNCTION(posix_setrlimit)
 {
 	struct rlimit rl;
@@ -1229,12 +1234,12 @@ PHP_FUNCTION(posix_setrlimit)
 		Z_PARAM_LONG(max)
 	ZEND_PARSE_PARAMETERS_END();
 
-	if (cur < -1) {
+	if (!POSIX_RLIM_VALID(cur)) {
 		zend_argument_value_error(2, "must be greater or equal to -1");
 		RETURN_THROWS();
 	}
 
-	if (max < -1) {
+	if (!POSIX_RLIM_VALID(max)) {
 		zend_argument_value_error(3, "must be greater or equal to -1");
 		RETURN_THROWS();
 	}
@@ -1254,7 +1259,6 @@ PHP_FUNCTION(posix_setrlimit)
 
 	RETURN_TRUE;
 }
-/* }}} */
 
 #endif /* HAVE_SETRLIMIT */
 

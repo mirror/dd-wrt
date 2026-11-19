@@ -29,7 +29,7 @@ echo 'You should not see this.';
       <class@anonymous::__debugInfo>
       </class@anonymous::__debugInfo:''>
 
-Fatal error: __debuginfo() must return an array in %s on line %d
+Fatal error: __debugInfo() must return an array in %s on line %d
     </var_dump:NULL>
   </foo:NULL>
 </file '%s%eobserver_error_%d.php'>

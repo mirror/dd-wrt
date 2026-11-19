@@ -1,14 +1,12 @@
 /*
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Authors: Calvin Buckley <calvin@cmpct.info>                          |
    +----------------------------------------------------------------------+
@@ -48,12 +46,13 @@ PHPAPI bool php_odbc_connstr_is_quoted(const char *str)
 		if (str[i] == '}' && str[i + 1] == '}') {
 			/* Skip over so we don't count it again */
 			i++;
-		} else if (str[i] == '}' && str[i + 1] != '\0') {
-			/* If not at the end, not quoted */
-			return false;
+		} else if (str[i] == '}') {
+			/* Only quoted if at the end */
+			return str[i + 1] == '\0';
 		}
 	}
-	return true;
+	/* No closing brace */
+	return false;
 }
 
 /**
@@ -78,12 +77,20 @@ PHPAPI bool php_odbc_connstr_should_quote(const char *str)
 }
 
 /**
- * Estimates the worst-case scenario for a quoted version of a string's size.
+ * Gets the length of a string after it has been quoted.
  */
-PHPAPI size_t php_odbc_connstr_estimate_quote_length(const char *in_str)
+PHPAPI size_t php_odbc_connstr_get_quoted_length(const char *in_str)
 {
-	/* Assume all '}'. Include '{,' '}', and the null terminator too */
-	return (strlen(in_str) * 2) + 3;
+	/* Start with including the quotes ({}) and the null terminator */
+	size_t size = 3;
+	/* Scan the string like strlen, doubling each } character. */
+	while (*in_str) {
+		size++;
+		if (*in_str++ == '}') {
+			size++;
+		}
+	}
+	return size;
 }
 
 /**

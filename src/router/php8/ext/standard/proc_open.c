@@ -1,14 +1,12 @@
 /*
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Author: Wez Furlong <wez@thebrainroom.com>                           |
    +----------------------------------------------------------------------+
@@ -278,7 +276,7 @@ static void proc_open_rsrc_dtor(zend_resource *rsrc)
 	php_process_handle *proc = (php_process_handle*)rsrc->ptr;
 #ifdef PHP_WIN32
 	DWORD wstatus;
-#elif HAVE_SYS_WAIT_H
+#elif defined(HAVE_SYS_WAIT_H)
 	int wstatus;
 	int waitpid_options = 0;
 	pid_t wait_pid;
@@ -309,7 +307,7 @@ static void proc_open_rsrc_dtor(zend_resource *rsrc)
 	}
 	CloseHandle(proc->childHandle);
 
-#elif HAVE_SYS_WAIT_H
+#elif defined(HAVE_SYS_WAIT_H)
 	if (!FG(pclose_wait)) {
 		waitpid_options = WNOHANG;
 	}
@@ -401,7 +399,7 @@ PHP_FUNCTION(proc_get_status)
 	php_process_handle *proc;
 #ifdef PHP_WIN32
 	DWORD wstatus;
-#elif HAVE_SYS_WAIT_H
+#elif defined(HAVE_SYS_WAIT_H)
 	int wstatus;
 	pid_t wait_pid;
 #endif
@@ -430,7 +428,7 @@ PHP_FUNCTION(proc_get_status)
 	 * even if the child has already exited. This is because the result stays available
 	 * until the child handle is closed. Hence no caching is used on Windows. */
 	add_assoc_bool(return_value, "cached", false);
-#elif HAVE_SYS_WAIT_H
+#elif defined(HAVE_SYS_WAIT_H)
 	wait_pid = waitpid_cached(proc, &wstatus, WNOHANG|WUNTRACED);
 
 	if (wait_pid == proc->child) {
@@ -660,7 +658,7 @@ static zend_string *create_win_command_from_args(HashTable *args)
 
 		append_win_escaped_arg(&str, arg_str, !is_prog_name && is_cmd_execution);
 
-		is_prog_name = 0;
+		is_prog_name = false;
 		zend_string_release(arg_str);
 	} ZEND_HASH_FOREACH_END();
 	smart_str_0(&str);
@@ -843,7 +841,7 @@ static zend_result set_proc_descriptor_to_blackhole(descriptorspec_item *desc)
 {
 #ifdef PHP_WIN32
 	desc->childend = CreateFileA("nul", GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+		FILE_SHARE_READ | FILE_SHARE_WRITE, &php_proc_open_security, OPEN_EXISTING, 0, NULL);
 	if (desc->childend == INVALID_HANDLE_VALUE) {
 		php_error_docref(NULL, E_WARNING, "Failed to open nul");
 		return FAILURE;
@@ -940,7 +938,7 @@ static zend_result set_proc_descriptor_to_socket(descriptorspec_item *desc)
 
 	if (create_socketpair(sock)) {
 		zend_string *err = php_socket_error_str(php_socket_errno());
-		php_error_docref(NULL, E_WARNING, "Unable to create socket pair: %s", ZSTR_VAL(err));
+		php_error_docref(NULL, E_WARNING, "Unable to create socket pair: %pS", err);
 		zend_string_release(err);
 		return FAILURE;
 	}
@@ -1034,7 +1032,7 @@ static zend_result redirect_proc_descriptor(descriptorspec_item *desc, int targe
 			case 0: redirect_to = GetStdHandle(STD_INPUT_HANDLE); break;
 			case 1: redirect_to = GetStdHandle(STD_OUTPUT_HANDLE); break;
 			case 2: redirect_to = GetStdHandle(STD_ERROR_HANDLE); break;
-			EMPTY_SWITCH_DEFAULT_CASE()
+			default: ZEND_UNREACHABLE();
 		}
 #endif
 	}
@@ -1093,7 +1091,7 @@ static zend_result set_proc_descriptor_from_array(const HashTable *ht, descripto
 		/* Set descriptor to slave end of PTY */
 		retval = set_proc_descriptor_to_pty(&descriptors[ndesc], pty_master_fd, pty_slave_fd);
 	} else {
-		php_error_docref(NULL, E_WARNING, "%s is not a valid descriptor spec/mode", ZSTR_VAL(ztype));
+		php_error_docref(NULL, E_WARNING, "%pS is not a valid descriptor spec/mode", ztype);
 		goto finish;
 	}
 
@@ -1253,7 +1251,7 @@ PHP_FUNCTION(proc_open)
 		Z_PARAM_ARRAY_HT(descriptorspec)
 		Z_PARAM_ZVAL(pipes)
 		Z_PARAM_OPTIONAL
-		Z_PARAM_STRING_OR_NULL(cwd, cwd_len)
+		Z_PARAM_PATH_OR_NULL(cwd, cwd_len)
 		Z_PARAM_ARRAY_HT_OR_NULL(environment)
 		Z_PARAM_ARRAY_OR_NULL(other_options)
 	ZEND_PARSE_PARAMETERS_END();

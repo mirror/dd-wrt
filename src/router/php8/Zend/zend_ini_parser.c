@@ -78,15 +78,14 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
+   | Copyright © Zend Technologies Ltd., a subsidiary company of          |
+   |     Perforce Software, Inc., and Contributors.                       |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 2.00 of the Zend license,     |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.zend.com/license/2_00.txt.                                |
-   | If you did not receive a copy of the Zend license and are unable to  |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@zend.com so we can mail you a copy immediately.              |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Authors: Zeev Suraski <zeev@php.net>                                 |
    |          Jani Taskinen <jani@php.net>                                |
@@ -131,7 +130,7 @@ static int get_int_val(zval *op) {
 			zend_string_free(Z_STR_P(op));
 			return val;
 		}
-		EMPTY_SWITCH_DEFAULT_CASE()
+		default: ZEND_UNREACHABLE();
 	}
 }
 
@@ -226,7 +225,7 @@ static void zend_ini_get_constant(zval *result, zval *name)
 		   	&& (c = zend_get_constant(Z_STR_P(name))) != 0) {
 		if (Z_TYPE_P(c) != IS_STRING) {
 			ZVAL_COPY_OR_DUP(&tmp, c);
-			if (Z_OPT_CONSTANT(tmp)) {
+			if (Z_OPT_TYPE(tmp) == IS_CONSTANT_AST) {
 				zval_update_constant_ex(&tmp, NULL);
 			}
 			convert_to_string(&tmp);
@@ -279,7 +278,7 @@ static ZEND_COLD void ini_error(const char *msg)
 		error_buf_len = 128 + (int)strlen(msg) + (int)strlen(currently_parsed_filename); /* should be more than enough */
 		error_buf = (char *) emalloc(error_buf_len);
 
-		sprintf(error_buf, "%s in %s on line %d\n", msg, currently_parsed_filename, zend_ini_scanner_get_lineno());
+		sprintf(error_buf, "%s in %s on line %" PRIu32 "\n", msg, currently_parsed_filename, zend_ini_scanner_get_lineno());
 	} else {
 		error_buf = estrdup("Invalid configuration directive\n");
 	}
@@ -872,12 +871,12 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   361,   361,   362,   366,   373,   384,   393,   394,   398,
-     399,   403,   404,   405,   406,   407,   411,   412,   416,   417,
-     418,   422,   423,   424,   425,   426,   427,   431,   432,   433,
-     434,   435,   436,   440,   441,   442,   443,   444,   445,   446,
-     450,   451,   456,   457,   461,   462,   463,   464,   465,   469,
-     470,   471,   476,   477
+       0,   360,   360,   361,   365,   372,   383,   392,   393,   397,
+     398,   402,   403,   404,   405,   406,   410,   411,   415,   416,
+     417,   421,   422,   423,   424,   425,   426,   430,   431,   432,
+     433,   434,   435,   439,   440,   441,   442,   443,   444,   445,
+     449,   450,   455,   456,   460,   461,   462,   463,   464,   468,
+     469,   470,   475,   476
 };
 #endif
 

@@ -139,7 +139,6 @@ typedef enum yysymbol_kind_t yysymbol_kind_t;
 
 #include "phpdbg_cmd.h"
 #include "phpdbg_utils.h"
-#include "phpdbg_cmd.h"
 #include "phpdbg_prompt.h"
 
 #include "phpdbg_parser.h"
@@ -538,10 +537,10 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    67,    67,    68,    69,    73,    74,    78,    79,    80,
-      84,    89,    94,   104,   114,   119,   125,   131,   136,   137,
-     138,   139,   140,   141,   142,   146,   147,   151,   156,   161,
-     165
+       0,    66,    66,    67,    68,    72,    73,    77,    78,    79,
+      83,    88,    93,   103,   113,   118,   124,   130,   135,   136,
+     137,   138,   139,   140,   141,   145,   146,   150,   155,   160,
+     164
 };
 #endif
 

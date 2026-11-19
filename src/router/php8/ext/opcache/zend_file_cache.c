@@ -2,15 +2,13 @@
    +----------------------------------------------------------------------+
    | Zend OPcache                                                         |
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Authors: Dmitry Stogov <dmitry@php.net>                              |
    +----------------------------------------------------------------------+
@@ -24,6 +22,7 @@
 #include "zend_attributes.h"
 #include "zend_system_id.h"
 #include "zend_enum.h"
+#include "zend_partial.h"
 
 #include "php.h"
 #ifdef ZEND_WIN32
@@ -384,6 +383,16 @@ static void zend_file_cache_serialize_ast(zend_ast                 *ast,
 	} else if (ast->kind == ZEND_AST_CALLABLE_CONVERT) {
 		zend_ast_fcc *fcc = (zend_ast_fcc*)ast;
 		ZEND_MAP_PTR_INIT(fcc->fptr, NULL);
+		/* Will be reset if needed during unserialize */
+		fcc->attr |= ZEND_PARTIAL_CACHEABLE_IN_SHM;
+		SERIALIZE_STR(fcc->filename);
+		SERIALIZE_STR(fcc->name);
+		if (!IS_SERIALIZED(fcc->args)) {
+			SERIALIZE_PTR(fcc->args);
+			tmp = fcc->args;
+			UNSERIALIZE_PTR(tmp);
+			zend_file_cache_serialize_ast(tmp, script, info, buf);
+		}
 	} else if (zend_ast_is_decl(ast)) {
 		/* Not implemented. */
 		ZEND_UNREACHABLE();
@@ -561,6 +570,10 @@ static void zend_file_cache_serialize_op_array(zend_op_array            *op_arra
 				&& (opline-1)->opcode == ZEND_DECLARE_ATTRIBUTED_CONST
 			) {
 				zval *literal = RT_CONSTANT(opline, opline->op1);
+#if ZEND_USE_ABS_CONST_ADDR
+				SERIALIZE_PTR(literal);
+				UNSERIALIZE_PTR(literal);
+#endif
 				SERIALIZE_ATTRIBUTES(Z_PTR_P(literal));
 			}
 
@@ -570,32 +583,13 @@ static void zend_file_cache_serialize_op_array(zend_op_array            *op_arra
 			}
 			if (opline->op2_type == IS_CONST) {
 				SERIALIZE_PTR(opline->op2.zv);
-
-				/* See GH-17733. Reset Z_EXTRA_P(op2) of ZEND_INIT_FCALL, which
-				 * is an offset into the global function table, to avoid calling
-				 * incorrect functions when environment changes. This, and the
-				 * equivalent code below, can be removed once proper system ID
-				 * validation is implemented. */
-				if (opline->opcode == ZEND_INIT_FCALL) {
-					zval *op2 = opline->op2.zv;
-					UNSERIALIZE_PTR(op2);
-					Z_EXTRA_P(op2) = 0;
-					ZEND_VM_SET_OPCODE_HANDLER(opline);
-				}
 			}
 #else
 			if (opline->op1_type == IS_CONST) {
 				opline->op1.constant = RT_CONSTANT(opline, opline->op1) - literals;
 			}
 			if (opline->op2_type == IS_CONST) {
-				zval *op2 = RT_CONSTANT(opline, opline->op2);
-				opline->op2.constant = op2 - literals;
-
-				/* See GH-17733 and comment above. */
-				if (opline->opcode == ZEND_INIT_FCALL) {
-					Z_EXTRA_P(op2) = 0;
-					ZEND_VM_SET_OPCODE_HANDLER(opline);
-				}
+				opline->op2.constant = RT_CONSTANT(opline, opline->op2) - literals;
 			}
 #endif
 #if ZEND_USE_ABS_JMP_ADDR
@@ -632,6 +626,12 @@ static void zend_file_cache_serialize_op_array(zend_op_array            *op_arra
 					break;
 			}
 #endif
+
+			if (opline->opcode == ZEND_CALLABLE_CONVERT_PARTIAL) {
+				/* Will be reset if needed during unserialize */
+				opline->extended_value |= ZEND_PARTIAL_CACHEABLE_IN_SHM;
+			}
+
 			zend_serialize_opcode_handler(opline);
 			opline++;
 		}
@@ -653,6 +653,7 @@ static void zend_file_cache_serialize_op_array(zend_op_array            *op_arra
 					SERIALIZE_STR(p->name);
 				}
 				zend_file_cache_serialize_type(&p->type, script, info, buf);
+				SERIALIZE_STR(p->doc_comment);
 				p++;
 			}
 		}
@@ -1303,8 +1304,16 @@ static void zend_file_cache_unserialize_ast(zend_ast                *ast,
 		zend_ast_get_op_array(ast)->op_array = Z_PTR(z);
 	} else if (ast->kind == ZEND_AST_CALLABLE_CONVERT) {
 		zend_ast_fcc *fcc = (zend_ast_fcc*)ast;
-		if (!script->corrupted) {
+		if (script->corrupted) {
+			fcc->attr &= ~ZEND_PARTIAL_CACHEABLE_IN_SHM;
+		} else {
 			ZEND_MAP_PTR_NEW(fcc->fptr);
+		}
+		UNSERIALIZE_STR(fcc->filename);
+		UNSERIALIZE_STR(fcc->name);
+		if (!IS_UNSERIALIZED(fcc->args)) {
+			UNSERIALIZE_PTR(fcc->args);
+			zend_file_cache_unserialize_ast(fcc->args, script, buf);
 		}
 	} else if (zend_ast_is_decl(ast)) {
 		/* Not implemented. */
@@ -1532,6 +1541,13 @@ static void zend_file_cache_unserialize_op_array(zend_op_array           *op_arr
 				zval *literal = RT_CONSTANT(opline, opline->op1);
 				UNSERIALIZE_ATTRIBUTES(Z_PTR_P(literal));
 			}
+
+			if (opline->opcode == ZEND_CALLABLE_CONVERT_PARTIAL) {
+				if (script->corrupted) {
+					opline->extended_value &= ~ZEND_PARTIAL_CACHEABLE_IN_SHM;
+				}
+			}
+
 			zend_deserialize_opcode_handler(opline);
 			opline++;
 		}
@@ -1554,6 +1570,7 @@ static void zend_file_cache_unserialize_op_array(zend_op_array           *op_arr
 					UNSERIALIZE_STR(p->name);
 				}
 				zend_file_cache_unserialize_type(&p->type, (op_array->fn_flags & ZEND_ACC_CLOSURE) ? NULL : op_array->scope, script, buf);
+				UNSERIALIZE_STR(p->doc_comment);
 				p++;
 			}
 		}

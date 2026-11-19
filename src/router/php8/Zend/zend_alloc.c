@@ -2,15 +2,14 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
+   | Copyright © Zend Technologies Ltd., a subsidiary company of          |
+   |     Perforce Software, Inc., and Contributors.                       |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 2.00 of the Zend license,     |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.zend.com/license/2_00.txt.                                |
-   | If you did not receive a copy of the Zend license and are unable to  |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@zend.com so we can mail you a copy immediately.              |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Authors: Andi Gutmans <andi@php.net>                                 |
    |          Zeev Suraski <zeev@php.net>                                 |
@@ -201,7 +200,7 @@ typedef zend_mm_bitset zend_mm_page_map[ZEND_MM_PAGE_MAP_LEN];     /* 64B */
 #define ZEND_MM_SRUN_BIN_NUM_MASK        0x0000001f
 #define ZEND_MM_SRUN_BIN_NUM_OFFSET      0
 
-#define ZEND_MM_SRUN_FREE_COUNTER_MASK   0x01ff0000
+#define ZEND_MM_SRUN_FREE_COUNTER_MASK   0x03ff0000
 #define ZEND_MM_SRUN_FREE_COUNTER_OFFSET 16
 
 #define ZEND_MM_NRUN_OFFSET_MASK         0x01ff0000
@@ -339,10 +338,11 @@ struct _zend_mm_chunk {
 	zend_mm_heap      *heap;
 	zend_mm_chunk     *next;
 	zend_mm_chunk     *prev;
+	zend_mm_chunk     *next_shadow;             /* shadow of "next" while the chunk is cached */
 	uint32_t           free_pages;				/* number of free pages */
 	uint32_t           free_tail;               /* number of free pages at the end of chunk */
 	uint32_t           num;
-	char               reserve[64 - (sizeof(void*) * 3 + sizeof(uint32_t) * 3)];
+	char               reserve[64 - (sizeof(void*) * 4 + sizeof(uint32_t) * 3)];
 	zend_mm_heap       heap_slot;               /* used only in main chunk */
 	zend_mm_page_map   free_map;                /* 512 bits or 64 bytes */
 	zend_mm_page_info  map[ZEND_MM_PAGES];      /* 2 KB = 512 * 4 */
@@ -368,6 +368,7 @@ struct _zend_mm_huge_list {
 	void              *ptr;
 	size_t             size;
 	zend_mm_huge_list *next;
+	zend_mm_huge_list *prev;
 #if ZEND_DEBUG
 	zend_mm_debug_info dbg;
 #endif
@@ -899,6 +900,9 @@ static void *zend_mm_chunk_alloc_int(size_t size, size_t alignment)
 		/* chunk has to be aligned */
 		zend_mm_munmap(ptr, size);
 		ptr = zend_mm_mmap(size + alignment - REAL_PAGE_SIZE);
+		if (ptr == NULL) {
+			return NULL;
+		}
 #ifdef _WIN32
 		offset = ZEND_MM_ALIGNED_OFFSET(ptr, alignment);
 		if (offset != 0) {
@@ -1023,6 +1027,64 @@ static zend_always_inline void zend_mm_chunk_init(zend_mm_heap *heap, zend_mm_ch
 	/* mark first pages as allocated */
 	chunk->free_map[0] = (1L << ZEND_MM_FIRST_PAGE) - 1;
 	chunk->map[0] = ZEND_MM_LRUN(ZEND_MM_FIRST_PAGE);
+}
+
+/* Cached chunks are linked through their headers, which live in memory a heap
+ * overflow can reach, so the link is mirrored in an encoded shadow. The shadow
+ * is byte-swapped, so that small overwrites hit the most significant bytes of
+ * the address, XOR'ed with the heap key, and XOR'ed with its own address so
+ * that a valid (link, shadow) pair cannot be replayed into another chunk. */
+static zend_always_inline zend_mm_chunk *zend_mm_encode_cached_chunk(const zend_mm_heap *heap, const void *holder, const zend_mm_chunk *next)
+{
+#ifdef WORDS_BIGENDIAN
+	return (zend_mm_chunk*)((uintptr_t)next ^ heap->shadow_key ^ (uintptr_t)holder);
+#else
+	return (zend_mm_chunk*)(BSWAPPTR((uintptr_t)next) ^ heap->shadow_key ^ (uintptr_t)holder);
+#endif
+}
+
+static zend_always_inline zend_mm_chunk *zend_mm_decode_cached_chunk_key(uintptr_t key, const void *holder, const zend_mm_chunk *encoded)
+{
+#ifdef WORDS_BIGENDIAN
+	zend_mm_chunk *next = (zend_mm_chunk*)((uintptr_t)encoded ^ key ^ (uintptr_t)holder);
+#else
+	zend_mm_chunk *next = (zend_mm_chunk*)(BSWAPPTR((uintptr_t)encoded ^ key ^ (uintptr_t)holder));
+#endif
+
+	ZEND_MM_CHECK(ZEND_MM_ALIGNED_OFFSET(next, ZEND_MM_CHUNK_SIZE) == 0, "zend_mm_heap corrupted");
+	return next;
+}
+
+static zend_always_inline void zend_mm_set_next_cached_chunk(zend_mm_heap *heap, zend_mm_chunk *chunk, zend_mm_chunk *next)
+{
+	chunk->next = next;
+	chunk->next_shadow = zend_mm_encode_cached_chunk(heap, &chunk->next_shadow, next);
+}
+
+static zend_always_inline zend_mm_chunk *zend_mm_get_next_cached_chunk_key(uintptr_t key, const zend_mm_chunk *chunk)
+{
+	zend_mm_chunk *next = zend_mm_decode_cached_chunk_key(key, &chunk->next_shadow, chunk->next_shadow);
+
+	ZEND_MM_CHECK(chunk->next == next, "zend_mm_heap corrupted");
+	return next;
+}
+
+static zend_always_inline zend_mm_chunk *zend_mm_get_next_cached_chunk(const zend_mm_heap *heap, const zend_mm_chunk *chunk)
+{
+	return zend_mm_get_next_cached_chunk_key(heap->shadow_key, chunk);
+}
+
+/* Re-encode the cached links after the heap key changed. */
+static zend_always_inline void zend_mm_rekey_cached_chunks(zend_mm_heap *heap, uintptr_t old_key)
+{
+	zend_mm_chunk *chunk = heap->cached_chunks;
+
+	while (chunk != NULL) {
+		zend_mm_chunk *next = zend_mm_get_next_cached_chunk_key(old_key, chunk);
+
+		zend_mm_set_next_cached_chunk(heap, chunk, next);
+		chunk = next;
+	}
 }
 
 /***********************/
@@ -1173,7 +1235,9 @@ get_chunk:
 			if (heap->cached_chunks) {
 				heap->cached_chunks_count--;
 				chunk = heap->cached_chunks;
-				heap->cached_chunks = chunk->next;
+				/* The list head lives in the heap, which is as reachable as the chunk headers. */
+				ZEND_MM_CHECK(ZEND_MM_ALIGNED_OFFSET(chunk, ZEND_MM_CHUNK_SIZE) == 0, "zend_mm_heap corrupted");
+				heap->cached_chunks = zend_mm_get_next_cached_chunk(heap, chunk);
 			} else {
 				bool did_gc = false;
 				if (UNEXPECTED(zend_mm_check_limit(heap, ZEND_MM_CHUNK_SIZE, /* gc */ true, &did_gc ZEND_FILE_LINE_RELAY_CC) == FAILURE)) {
@@ -1282,7 +1346,7 @@ static zend_always_inline void zend_mm_delete_chunk(zend_mm_heap *heap, zend_mm_
 	  && heap->last_chunks_delete_count >= 4)) {
 		/* delay deletion */
 		heap->cached_chunks_count++;
-		chunk->next = heap->cached_chunks;
+		zend_mm_set_next_cached_chunk(heap, chunk, heap->cached_chunks);
 		heap->cached_chunks = chunk;
 	} else {
 #if ZEND_MM_STAT || ZEND_MM_LIMIT
@@ -1300,7 +1364,7 @@ static zend_always_inline void zend_mm_delete_chunk(zend_mm_heap *heap, zend_mm_
 			zend_mm_chunk_free(heap, chunk, ZEND_MM_CHUNK_SIZE);
 		} else {
 //TODO: select the best chunk to delete???
-			chunk->next = heap->cached_chunks->next;
+			zend_mm_set_next_cached_chunk(heap, chunk, zend_mm_get_next_cached_chunk(heap, heap->cached_chunks));
 			zend_mm_chunk_free(heap, heap->cached_chunks, ZEND_MM_CHUNK_SIZE);
 			heap->cached_chunks = chunk;
 		}
@@ -1408,35 +1472,38 @@ static zend_always_inline int zend_mm_small_size_to_bin(size_t size)
  * before dereference by comparing them with a shadow.
  *
  * The shadow is a copy of the pointer, stored at the end of the slot. It is
- * XOR'ed with a random key, and converted to big-endian so that smaller
- * corruptions affect the most significant bytes, which has a high chance of
- * resulting in an invalid address instead of pointing to an adjacent slot.
+ * XOR'ed with a random key and with its own address, and converted to
+ * big-endian so that smaller corruptions affect the most significant bytes,
+ * which has a high chance of resulting in an invalid address instead of
+ * pointing to an adjacent slot. Mixing in the holder address keeps the key from
+ * being stored verbatim when the encoded pointer is NULL, and prevents a valid
+ * shadow from being naïvely replayed into another slot.
  */
 
-#define ZEND_MM_FREE_SLOT_PTR_SHADOW(free_slot, bin_num) \
-	*((zend_mm_free_slot**)((char*)(free_slot) + bin_data_size[(bin_num)] - sizeof(zend_mm_free_slot*)))
+#define ZEND_MM_FREE_SLOT_PTR_SHADOW_ADDR(free_slot, bin_num) \
+	((zend_mm_free_slot**)((char*)(free_slot) + bin_data_size[(bin_num)] - sizeof(zend_mm_free_slot*)))
 
-static zend_always_inline zend_mm_free_slot* zend_mm_encode_free_slot(const zend_mm_heap *heap, const zend_mm_free_slot *slot)
+static zend_always_inline zend_mm_free_slot* zend_mm_encode_free_slot(const zend_mm_heap *heap, const void *holder, const zend_mm_free_slot *next)
 {
 #ifdef WORDS_BIGENDIAN
-	return (zend_mm_free_slot*)(((uintptr_t)slot) ^ heap->shadow_key);
+	return (zend_mm_free_slot*)((uintptr_t)next ^ heap->shadow_key ^ (uintptr_t)holder);
 #else
-	return (zend_mm_free_slot*)(BSWAPPTR((uintptr_t)slot) ^ heap->shadow_key);
+	return (zend_mm_free_slot*)(BSWAPPTR((uintptr_t)next) ^ heap->shadow_key ^ (uintptr_t)holder);
 #endif
 }
 
-static zend_always_inline zend_mm_free_slot* zend_mm_decode_free_slot_key(uintptr_t shadow_key, zend_mm_free_slot *slot)
+static zend_always_inline zend_mm_free_slot* zend_mm_decode_free_slot_key(uintptr_t shadow_key, const void *holder, zend_mm_free_slot *shadow)
 {
 #ifdef WORDS_BIGENDIAN
-	return (zend_mm_free_slot*)((uintptr_t)slot ^ shadow_key);
+	return (zend_mm_free_slot*)((uintptr_t)shadow ^ shadow_key ^ (uintptr_t)holder);
 #else
-	return (zend_mm_free_slot*)(BSWAPPTR((uintptr_t)slot ^ shadow_key));
+	return (zend_mm_free_slot*)(BSWAPPTR((uintptr_t)shadow ^ shadow_key ^ (uintptr_t)holder));
 #endif
 }
 
-static zend_always_inline zend_mm_free_slot* zend_mm_decode_free_slot(zend_mm_heap *heap, zend_mm_free_slot *slot)
+static zend_always_inline zend_mm_free_slot* zend_mm_decode_free_slot(zend_mm_heap *heap, const void *holder, zend_mm_free_slot *shadow)
 {
-	return zend_mm_decode_free_slot_key(heap->shadow_key, slot);
+	return zend_mm_decode_free_slot_key(heap->shadow_key, holder, shadow);
 }
 
 static zend_always_inline void zend_mm_set_next_free_slot(zend_mm_heap *heap, uint32_t bin_num, zend_mm_free_slot *slot, zend_mm_free_slot *next)
@@ -1444,15 +1511,17 @@ static zend_always_inline void zend_mm_set_next_free_slot(zend_mm_heap *heap, ui
 	ZEND_ASSERT(bin_data_size[bin_num] >= ZEND_MM_MIN_USEABLE_BIN_SIZE);
 
 	slot->next_free_slot = next;
-	ZEND_MM_FREE_SLOT_PTR_SHADOW(slot, bin_num) = zend_mm_encode_free_slot(heap, next);
+
+	zend_mm_free_slot **shadow_addr = ZEND_MM_FREE_SLOT_PTR_SHADOW_ADDR(slot, bin_num);
+	*shadow_addr = zend_mm_encode_free_slot(heap, shadow_addr, next);
 }
 
 static zend_always_inline zend_mm_free_slot *zend_mm_get_next_free_slot(zend_mm_heap *heap, uint32_t bin_num, zend_mm_free_slot* slot)
 {
 	zend_mm_free_slot *next = slot->next_free_slot;
 	if (EXPECTED(next != NULL)) {
-		zend_mm_free_slot *shadow = ZEND_MM_FREE_SLOT_PTR_SHADOW(slot, bin_num);
-		if (UNEXPECTED(next != zend_mm_decode_free_slot(heap, shadow))) {
+		zend_mm_free_slot **shadow_addr = ZEND_MM_FREE_SLOT_PTR_SHADOW_ADDR(slot, bin_num);
+		if (UNEXPECTED(next != zend_mm_decode_free_slot(heap, shadow_addr, *shadow_addr))) {
 			zend_mm_panic("zend_mm_heap corrupted");
 		}
 	}
@@ -1567,6 +1636,12 @@ static zend_always_inline void zend_mm_free_small(zend_mm_heap *heap, void *ptr,
 #endif
 
 	p = (zend_mm_free_slot*)ptr;
+#if ZEND_MM_HEAP_PROTECTION
+	/* Catch the most common double-free pattern for free. */
+	if (UNEXPECTED(p == heap->free_slot[bin_num])) {
+		zend_mm_panic("zend_mm_heap corrupted (double free)");
+	}
+#endif
 	zend_mm_set_next_free_slot(heap, bin_num, p, heap->free_slot[bin_num]);
 	heap->free_slot[bin_num] = p;
 }
@@ -1669,9 +1744,11 @@ static zend_always_inline void zend_mm_free_heap(zend_mm_heap *heap, void *ptr Z
 		ZEND_MM_CHECK(chunk->heap == heap, "zend_mm_heap corrupted");
 		if (EXPECTED(info & ZEND_MM_IS_SRUN)) {
 			zend_mm_free_small(heap, ptr, ZEND_MM_SRUN_BIN_NUM(info));
-		} else /* if (info & ZEND_MM_IS_LRUN) */ {
-			int pages_count = ZEND_MM_LRUN_PAGES(info);
+		} else {
+			/* A freed large run has a zeroed map entry, so this also rejects double frees. */
+			ZEND_MM_CHECK(info & ZEND_MM_IS_LRUN, "zend_mm_heap corrupted");
 
+			int pages_count = ZEND_MM_LRUN_PAGES(info);
 			ZEND_MM_CHECK(ZEND_MM_ALIGNED_OFFSET(page_offset, ZEND_MM_PAGE_SIZE) == 0, "zend_mm_heap corrupted");
 			zend_mm_free_large(heap, chunk, page_num, pages_count);
 		}
@@ -1699,7 +1776,8 @@ static size_t zend_mm_size(zend_mm_heap *heap, void *ptr ZEND_FILE_LINE_DC ZEND_
 		ZEND_MM_CHECK(chunk->heap == heap, "zend_mm_heap corrupted");
 		if (EXPECTED(info & ZEND_MM_IS_SRUN)) {
 			return bin_data_size[ZEND_MM_SRUN_BIN_NUM(info)];
-		} else /* if (info & ZEND_MM_IS_LARGE_RUN) */ {
+		} else {
+			ZEND_MM_CHECK(info & ZEND_MM_IS_LRUN, "zend_mm_heap corrupted");
 			return ZEND_MM_LRUN_PAGES(info) * ZEND_MM_PAGE_SIZE;
 		}
 #endif
@@ -1848,8 +1926,9 @@ static zend_always_inline void *zend_mm_realloc_heap(zend_mm_heap *heap, void *p
 
 				/* Check if requested size fits into current bin */
 				if (size <= old_size) {
-					/* Check if truncation is necessary */
-					if (old_bin_num > 0 && size < bin_data_size[old_bin_num - 1]) {
+					/* Check if truncation is necessary. A size that fits the
+					 * bin below moves there, as efree_size() maps it to that bin. */
+					if (old_bin_num > 0 && size <= bin_data_size[old_bin_num - 1]) {
 						/* truncation */
 						ret = zend_mm_alloc_small(heap, ZEND_MM_SMALL_SIZE_TO_BIN(size) ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
 						if (UNEXPECTED(ret == NULL)) {
@@ -1900,7 +1979,8 @@ failed:
 				return NULL;
 			}  while (0);
 
-		} else /* if (info & ZEND_MM_IS_LARGE_RUN) */ {
+		} else {
+			ZEND_MM_CHECK(info & ZEND_MM_IS_LRUN, "zend_mm_heap corrupted");
 			ZEND_MM_CHECK(ZEND_MM_ALIGNED_OFFSET(page_offset, ZEND_MM_PAGE_SIZE) == 0, "zend_mm_heap corrupted");
 			old_size = ZEND_MM_LRUN_PAGES(info) * ZEND_MM_PAGE_SIZE;
 			if (size > ZEND_MM_MAX_SMALL_SIZE && size <= ZEND_MM_MAX_LARGE_SIZE) {
@@ -1979,6 +2059,20 @@ failed:
 /* Huge Runs (again) */
 /*********************/
 
+/* Huge block metadata is allocated from the very heap it describes, so a heap
+ * overflow can reach it. size ends up as a munmap() length, where a corrupted
+ * value would unmap unrelated mappings, so bound it before use: a live block is
+ * page aligned and is still accounted for in real_size. */
+static zend_always_inline void zend_mm_check_huge_block_size(const zend_mm_heap *heap, size_t size)
+{
+	ZEND_MM_CHECK(size != 0 && ZEND_MM_ALIGNED_OFFSET(size, REAL_PAGE_SIZE) == 0, "zend_mm_heap corrupted");
+#if ZEND_MM_STAT || ZEND_MM_LIMIT
+	ZEND_MM_CHECK(size <= heap->real_size, "zend_mm_heap corrupted");
+#else
+	(void)heap;
+#endif
+}
+
 #if ZEND_DEBUG
 static void zend_mm_add_huge_block(zend_mm_heap *heap, void *ptr, size_t size, size_t dbg_size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
 #else
@@ -1991,6 +2085,10 @@ static void zend_mm_add_huge_block(zend_mm_heap *heap, void *ptr, size_t size ZE
 	list->ptr = ptr;
 	list->size = size;
 	list->next = heap->huge_list;
+	list->prev = NULL;
+	if (heap->huge_list) {
+		heap->huge_list->prev = list;
+	}
 #if ZEND_DEBUG
 	list->dbg.size = dbg_size;
 	list->dbg.filename = __zend_filename;
@@ -2004,22 +2102,28 @@ static void zend_mm_add_huge_block(zend_mm_heap *heap, void *ptr, size_t size ZE
 
 static size_t zend_mm_del_huge_block(zend_mm_heap *heap, void *ptr ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
 {
-	zend_mm_huge_list *prev = NULL;
 	zend_mm_huge_list *list = heap->huge_list;
 	while (list != NULL) {
 		if (list->ptr == ptr) {
 			size_t size;
 
-			if (prev) {
-				prev->next = list->next;
+			/* Unlinking writes through these, so make sure they still point back
+			 * at this block before trusting them. */
+			ZEND_MM_CHECK(list->prev ? list->prev->next == list : heap->huge_list == list, "zend_mm_heap corrupted");
+			ZEND_MM_CHECK(!list->next || list->next->prev == list, "zend_mm_heap corrupted");
+
+			if (list->prev) {
+				list->prev->next = list->next;
 			} else {
 				heap->huge_list = list->next;
+			}
+			if (list->next) {
+				list->next->prev = list->prev;
 			}
 			size = list->size;
 			zend_mm_free_heap(heap, list ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
 			return size;
 		}
-		prev = list;
 		list = list->next;
 	}
 	ZEND_MM_CHECK(0, "zend_mm_heap corrupted");
@@ -2031,6 +2135,7 @@ static size_t zend_mm_get_huge_block_size(zend_mm_heap *heap, void *ptr ZEND_FIL
 	zend_mm_huge_list *list = heap->huge_list;
 	while (list != NULL) {
 		if (list->ptr == ptr) {
+			zend_mm_check_huge_block_size(heap, list->size);
 			return list->size;
 		}
 		list = list->next;
@@ -2126,6 +2231,7 @@ static void zend_mm_free_huge(zend_mm_heap *heap, void *ptr ZEND_FILE_LINE_DC ZE
 
 	ZEND_MM_CHECK(ZEND_MM_ALIGNED_OFFSET(ptr, ZEND_MM_CHUNK_SIZE) == 0, "zend_mm_heap corrupted");
 	size = zend_mm_del_huge_block(heap, ptr ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
+	zend_mm_check_huge_block_size(heap, size);
 	zend_mm_chunk_free(heap, ptr, size);
 #if ZEND_MM_STAT || ZEND_MM_LIMIT
 	heap->real_size -= size;
@@ -2164,14 +2270,16 @@ ZEND_API void zend_mm_refresh_key_child(zend_mm_heap *heap)
 		}
 		zend_mm_free_slot *next;
 		while ((next = slot->next_free_slot)) {
-			zend_mm_free_slot *shadow = ZEND_MM_FREE_SLOT_PTR_SHADOW(slot, i);
-			if (UNEXPECTED(next != zend_mm_decode_free_slot_key(old_key, shadow))) {
+			zend_mm_free_slot **shadow_addr = ZEND_MM_FREE_SLOT_PTR_SHADOW_ADDR(slot, i);
+			if (UNEXPECTED(next != zend_mm_decode_free_slot_key(old_key, shadow_addr, *shadow_addr))) {
 				zend_mm_panic("zend_mm_heap corrupted");
 			}
 			zend_mm_set_next_free_slot(heap, i, slot, next);
 			slot = next;
 		}
 	}
+
+	zend_mm_rekey_cached_chunks(heap, old_key);
 
 #if ZEND_DEBUG
 	heap->pid = getpid();
@@ -2275,6 +2383,10 @@ ZEND_API size_t zend_mm_gc(zend_mm_heap *heap)
 			}
 			ZEND_ASSERT(ZEND_MM_SRUN_BIN_NUM(info) == i);
 			free_counter = ZEND_MM_SRUN_FREE_COUNTER(info) + 1;
+			/* A slot can only be on the free list once, so exceeding the number
+			 * of slots in the page means the list is corrupted, most likely a
+			 * cycle, which would loop here forever. */
+			ZEND_MM_CHECK(free_counter <= bin_elements[i], "zend_mm_heap corrupted");
 			if (free_counter == bin_elements[i]) {
 				has_free_pages = true;
 			}
@@ -2433,6 +2545,9 @@ static zend_long zend_mm_find_leaks_huge(zend_mm_heap *heap, zend_mm_huge_list *
 	while (p) {
 		if (p->dbg.filename == list->dbg.filename && p->dbg.lineno == list->dbg.lineno) {
 			prev->next = p->next;
+			if (p->next) {
+				p->next->prev = prev;
+			}
 			zend_mm_chunk_free(heap, p->ptr, p->size);
 			zend_mm_free_heap(heap, p, NULL, 0, NULL, 0);
 			count++;
@@ -2475,6 +2590,9 @@ static void zend_mm_check_leaks(zend_mm_heap *heap)
 		}
 
 		heap->huge_list = list = list->next;
+		if (list) {
+			list->prev = NULL;
+		}
 		zend_mm_chunk_free(heap, q->ptr, q->size);
 		zend_mm_free_heap(heap, q, NULL, 0, NULL, 0);
 	}
@@ -2622,6 +2740,7 @@ ZEND_API void zend_mm_shutdown(zend_mm_heap *heap, bool full, bool silent)
 	while (list) {
 		zend_mm_huge_list *q = list;
 		list = list->next;
+		zend_mm_check_huge_block_size(heap, q->size);
 		zend_mm_chunk_free(heap, q->ptr, q->size);
 	}
 
@@ -2629,7 +2748,7 @@ ZEND_API void zend_mm_shutdown(zend_mm_heap *heap, bool full, bool silent)
 	p = heap->main_chunk->next;
 	while (p != heap->main_chunk) {
 		zend_mm_chunk *q = p->next;
-		p->next = heap->cached_chunks;
+		zend_mm_set_next_cached_chunk(heap, p, heap->cached_chunks);
 		heap->cached_chunks = p;
 		p = q;
 		heap->chunks_count--;
@@ -2640,7 +2759,7 @@ ZEND_API void zend_mm_shutdown(zend_mm_heap *heap, bool full, bool silent)
 		/* free all cached chunks */
 		while (heap->cached_chunks) {
 			p = heap->cached_chunks;
-			heap->cached_chunks = p->next;
+			heap->cached_chunks = zend_mm_get_next_cached_chunk(heap, p);
 			zend_mm_chunk_free(heap, p, ZEND_MM_CHUNK_SIZE);
 		}
 		/* free the first chunk */
@@ -2651,16 +2770,16 @@ ZEND_API void zend_mm_shutdown(zend_mm_heap *heap, bool full, bool silent)
 		while ((double)heap->cached_chunks_count + 0.9 > heap->avg_chunks_count &&
 		       heap->cached_chunks) {
 			p = heap->cached_chunks;
-			heap->cached_chunks = p->next;
+			heap->cached_chunks = zend_mm_get_next_cached_chunk(heap, p);
 			zend_mm_chunk_free(heap, p, ZEND_MM_CHUNK_SIZE);
 			heap->cached_chunks_count--;
 		}
 		/* clear cached chunks */
 		p = heap->cached_chunks;
 		while (p != NULL) {
-			zend_mm_chunk *q = p->next;
+			zend_mm_chunk *q = zend_mm_get_next_cached_chunk(heap, p);
 			memset(p, 0, sizeof(zend_mm_chunk));
-			p->next = q;
+			zend_mm_set_next_cached_chunk(heap, p, q);
 			p = q;
 		}
 
@@ -2697,7 +2816,12 @@ ZEND_API void zend_mm_shutdown(zend_mm_heap *heap, bool full, bool silent)
 				&& "heap was re-used without calling zend_mm_refresh_key_child() after a fork");
 #endif
 
+		uintptr_t old_key = heap->shadow_key;
+
 		zend_mm_refresh_key(heap);
+
+		/* Cached chunks outlive the request, so re-encode their links */
+		zend_mm_rekey_cached_chunks(heap, old_key);
 	}
 }
 
@@ -2753,19 +2877,19 @@ typedef struct _zend_alloc_globals {
 
 #ifdef ZTS
 static int alloc_globals_id;
-static size_t alloc_globals_offset;
-# define AG(v) ZEND_TSRMG_FAST(alloc_globals_offset, zend_alloc_globals *, v)
+static TSRM_TLS TSRM_TLS_MODEL_ATTR zend_alloc_globals alloc_globals;
+static void *alloc_globals_tls_addr(void) { return &alloc_globals; }
 #else
-# define AG(v) (alloc_globals.v)
 static zend_alloc_globals alloc_globals;
 #endif
+#define AG(v) (alloc_globals.v)
 
 ZEND_API bool is_zend_mm(void)
 {
 #if ZEND_MM_CUSTOM
 	return !AG(mm_heap)->use_custom_heap;
 #else
-	return 1;
+	return true;
 #endif
 }
 
@@ -3174,7 +3298,7 @@ ZEND_API zend_result zend_set_memory_limit(size_t memory_limit)
 			/* free some cached chunks to fit into new memory limit */
 			do {
 				zend_mm_chunk *p = heap->cached_chunks;
-				heap->cached_chunks = p->next;
+				heap->cached_chunks = zend_mm_get_next_cached_chunk(heap, p);
 				zend_mm_chunk_free(heap, p, ZEND_MM_CHUNK_SIZE);
 				heap->cached_chunks_count--;
 				heap->real_size -= ZEND_MM_CHUNK_SIZE;
@@ -3279,7 +3403,7 @@ ZEND_API void refresh_memory_manager(void)
 static ZEND_COLD ZEND_NORETURN void zend_out_of_memory(void)
 {
 	fprintf(stderr, "Out of memory\n");
-	exit(1);
+	abort();
 }
 
 #if ZEND_MM_CUSTOM
@@ -3674,7 +3798,7 @@ ZEND_API void start_memory_manager(void)
 #  endif
 #endif
 #ifdef ZTS
-	ts_allocate_fast_id(&alloc_globals_id, &alloc_globals_offset, sizeof(zend_alloc_globals), (ts_allocate_ctor) alloc_globals_ctor, (ts_allocate_dtor) alloc_globals_dtor);
+	ts_allocate_tls_id(&alloc_globals_id, alloc_globals_tls_addr, sizeof(zend_alloc_globals), (ts_allocate_ctor) alloc_globals_ctor, (ts_allocate_dtor) alloc_globals_dtor);
 #else
 	alloc_globals_ctor(&alloc_globals);
 #endif
@@ -3985,10 +4109,3 @@ ZEND_API char * __zend_strdup(const char *s)
 	}
 	zend_out_of_memory();
 }
-
-#ifdef ZTS
-size_t zend_mm_globals_size(void)
-{
-	return sizeof(zend_alloc_globals);
-}
-#endif

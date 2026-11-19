@@ -1,14 +1,12 @@
 /*
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Author: Dmitry Stogov <dmitry@zend.com>                              |
    +----------------------------------------------------------------------+
@@ -30,15 +28,13 @@ php llk.php ffi.g
 %{
 /*
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Author: Dmitry Stogov <dmitry@zend.com>                              |
    +----------------------------------------------------------------------+
@@ -890,9 +886,15 @@ zend_result zend_ffi_parse_decl(const char *str, size_t len) {
 		FFI_G(attribute_parsing) = 0;
 		yy_buf = (unsigned char*)str;
 		yy_end = yy_buf + len;
+		FFI_G(parse_failed) = 0;
 		parse();
+		if (FFI_G(parse_failed)) {
+			FFI_G(parse_failed) = 0;
+			return FAILURE;
+		}
 		return SUCCESS;
 	} else {
+		FFI_G(parse_failed) = 0;
 		return FAILURE;
 	}
 }
@@ -906,13 +908,19 @@ zend_result zend_ffi_parse_type(const char *str, size_t len, zend_ffi_dcl *dcl) 
 		yy_pos = yy_text = yy_buf = (unsigned char*)str;
 		yy_end = yy_buf + len;
 		yy_line = 1;
+		FFI_G(parse_failed) = 0;
 		sym = parse_type_name(get_sym(), dcl);
 		if (sym != YY_EOF) {
 			yy_error_sym("<EOF> expected, got", sym);
 		}
 		zend_ffi_validate_type_name(dcl);
+		if (FFI_G(parse_failed)) {
+			FFI_G(parse_failed) = 0;
+			return FAILURE;
+		}
 		return SUCCESS;
 	} else {
+		FFI_G(parse_failed) = 0;
 		return FAILURE;
 	};
 }

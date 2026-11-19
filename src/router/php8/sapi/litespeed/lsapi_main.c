@@ -1,14 +1,12 @@
 /*
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Author: George Wang <gwang@litespeedtech.com>                        |
    +----------------------------------------------------------------------+
@@ -623,6 +621,11 @@ static sapi_module_struct lsapi_sapi_module =
 };
 /* }}} */
 
+/* SG(request_info).path_translated comes from LSAPI_GetScriptFileName() without
+ * any additional validation; this is intentional, and is the mechanism by which
+ * LiteSpeed communicates the file to execute. The LiteSpeed listener should
+ * only be reachable from trusted callers. See README.md in this directory for
+ * more details. */
 static void init_request_info( void )
 {
     char * pContentType = LSAPI_GetHeader( H_CONTENT_TYPE );
@@ -776,6 +779,11 @@ static int lsapi_module_main(int show_source)
 }
 
 
+/* The use of `type = ZEND_INI_SYSTEM` when the key starts with `\x01\x04` is
+ * intentional - this is the mechanism by which LiteSpeed communicates the
+ * system-level INI options that should be set. This is only called from
+ * override_ini() with LSAPI_ForeachSpecialEnv(). See README.md in this
+ * directory for more details. */
 static int alter_ini( const char * pKey, int keyLen, const char * pValue, int valLen,
                 void * arg )
 {
@@ -1658,9 +1666,7 @@ static int add_associate_array( const char * pKey, int keyLen, const char * pVal
 /* {{{ Fetch all HTTP request headers */
 PHP_FUNCTION(litespeed_request_headers)
 {
-    if (zend_parse_parameters_none() == FAILURE) {
-        RETURN_THROWS();
-    }
+    ZEND_PARSE_PARAMETERS_NONE();
 
     array_init(return_value);
 
@@ -1679,12 +1685,14 @@ PHP_FUNCTION(litespeed_response_headers)
     int          len;
     char         headerBuf[SAPI_LSAPI_MAX_HEADER_LENGTH];
 
-    if (zend_parse_parameters_none() == FAILURE) {
-	    RETURN_THROWS();
-    }
+    ZEND_PARSE_PARAMETERS_NONE();
 
     if (!zend_llist_count(&SG(sapi_headers).headers)) {
 	    RETURN_FALSE;
+    }
+
+    if (!&SG(sapi_headers).headers) {
+        RETURN_FALSE;
     }
     array_init(return_value);
 
@@ -1721,9 +1729,7 @@ PHP_FUNCTION(apache_get_modules)
     };
     const char **name = mod_names;
 
-    if (zend_parse_parameters_none() == FAILURE) {
-		RETURN_THROWS();
-	}
+    ZEND_PARSE_PARAMETERS_NONE();
 
     array_init(return_value);
     while( *name )
@@ -1738,9 +1744,7 @@ PHP_FUNCTION(apache_get_modules)
 /* {{{ Flushes all response data to the client */
 PHP_FUNCTION(litespeed_finish_request)
 {
-	if (zend_parse_parameters_none() == FAILURE) {
-		RETURN_THROWS();
-	}
+    ZEND_PARSE_PARAMETERS_NONE();
 
     php_output_end_all();
     php_header();

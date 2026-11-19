@@ -225,7 +225,7 @@ class Tester
      */
     static public function findExecutable(): bool|string
     {
-        $phpPath = getenv("TEST_PHP_EXECUTABLE");
+        $phpPath = getenv("TEST_PHP_FPM_EXECUTABLE") ?: getenv("TEST_PHP_EXECUTABLE");
         for ($i = 0; $i < 2; $i++) {
             $slashPosition = strrpos($phpPath, "/");
             if ($slashPosition) {
@@ -1124,6 +1124,9 @@ class Tester
     {
         if (is_null($pid)) {
             $pid = $this->getPid();
+            if ($pid === 0) {
+                return '';
+            }
         }
         $cmd = "kill -$signal $pid";
         $this->trace('Sending signal using command', $cmd, true);

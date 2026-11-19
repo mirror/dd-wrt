@@ -1,14 +1,12 @@
 /*
   +----------------------------------------------------------------------+
-  | Copyright (c) The PHP Group                                          |
+  | Copyright © The PHP Group and Contributors.                          |
   +----------------------------------------------------------------------+
-  | This source file is subject to version 3.01 of the PHP license,      |
-  | that is bundled with this package in the file LICENSE, and is        |
-  | available through the world-wide-web at the following url:           |
-  | https://www.php.net/license/3_01.txt                                 |
-  | If you did not receive a copy of the PHP license and are unable to   |
-  | obtain it through the world-wide-web, please send a note to          |
-  | license@php.net so we can mail you a copy immediately.               |
+  | This source file is subject to the Modified BSD License that is      |
+  | bundled with this package in the file LICENSE, and is available      |
+  | through the World Wide Web at <https://www.php.net/license/>.        |
+  |                                                                      |
+  | SPDX-License-Identifier: BSD-3-Clause                                |
   +----------------------------------------------------------------------+
   | Author: Wez Furlong <wez@php.net>                                    |
   +----------------------------------------------------------------------+
@@ -67,11 +65,10 @@ static int pdo_sqlite_stmt_execute(pdo_stmt_t *stmt)
 			return 1;
 
 		case SQLITE_ERROR:
-			sqlite3_reset(S->stmt);
-			ZEND_FALLTHROUGH;
 		case SQLITE_MISUSE:
 		case SQLITE_BUSY:
 		default:
+			sqlite3_reset(S->stmt);
 			pdo_sqlite_error_stmt(stmt);
 			return 0;
 	}
@@ -120,7 +117,7 @@ static int pdo_sqlite_stmt_param_hook(pdo_stmt_t *stmt, struct pdo_bound_param_d
 							}
 						} else {
 							convert_to_long(parameter);
-#if ZEND_LONG_MAX > 2147483647
+#ifdef ZEND_ENABLE_ZVAL_LONG64
 							if (SQLITE_OK == sqlite3_bind_int64(S->stmt, param->paramno + 1, Z_LVAL_P(parameter))) {
 								return 1;
 							}
@@ -251,7 +248,7 @@ static int pdo_sqlite_stmt_describe(pdo_stmt_t *stmt, int colno)
 
 	str = sqlite3_column_name(S->stmt, colno);
 	stmt->columns[colno].name = zend_string_init(str, strlen(str), 0);
-	stmt->columns[colno].maxlen = SIZE_MAX;
+	stmt->columns[colno].maxlen = -1;
 	stmt->columns[colno].precision = 0;
 
 	return 1;
@@ -278,8 +275,13 @@ static int pdo_sqlite_stmt_get_col(
 			int64_t i = sqlite3_column_int64(S->stmt, colno);
 #if SIZEOF_ZEND_LONG < 8
 			if (i > ZEND_LONG_MAX || i < ZEND_LONG_MIN) {
+				const char *text = (const char *) sqlite3_column_text(S->stmt, colno);
+				if (UNEXPECTED(!text)) {
+					pdo_sqlite_error_stmt(stmt);
+					return 0;
+				}
 				ZVAL_STRINGL(result,
-					(char *) sqlite3_column_text(S->stmt, colno),
+					text,
 					sqlite3_column_bytes(S->stmt, colno));
 				return 1;
 			}
@@ -297,10 +299,15 @@ static int pdo_sqlite_stmt_get_col(
 				sqlite3_column_blob(S->stmt, colno), sqlite3_column_bytes(S->stmt, colno));
 			return 1;
 
-		default:
-			ZVAL_STRINGL_FAST(result,
-				(char *) sqlite3_column_text(S->stmt, colno), sqlite3_column_bytes(S->stmt, colno));
+		default: {
+			const char *text = (const char *) sqlite3_column_text(S->stmt, colno);
+			if (UNEXPECTED(!text)) {
+				pdo_sqlite_error_stmt(stmt);
+				return 0;
+			}
+			ZVAL_STRINGL_FAST(result, text, sqlite3_column_bytes(S->stmt, colno));
 			return 1;
+		}
 	}
 }
 
@@ -335,7 +342,6 @@ static int pdo_sqlite_stmt_col_meta(pdo_stmt_t *stmt, zend_long colno, zval *ret
 
 		case SQLITE_BLOB:
 			add_next_index_string(&flags, "blob");
-			/* TODO Check this is correct */
 			ZEND_FALLTHROUGH;
 		case SQLITE_TEXT:
 			add_assoc_str(return_value, "native_type", ZSTR_KNOWN(ZEND_STR_STRING));

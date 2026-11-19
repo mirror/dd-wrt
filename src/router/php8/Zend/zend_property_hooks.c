@@ -2,15 +2,14 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
+   | Copyright © Zend Technologies Ltd., a subsidiary company of          |
+   |     Perforce Software, Inc., and Contributors.                       |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 2.00 of the Zend license,     |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.zend.com/license/2_00.txt.                                |
-   | If you did not receive a copy of the Zend license and are unable to  |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@zend.com so we can mail you a copy immediately.              |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Authors: Ilija Tovilo <ilutov@php.net>                               |
    +----------------------------------------------------------------------+
@@ -167,8 +166,8 @@ static void zho_declared_it_fetch_current(zend_object_iterator *iter)
 		if (hooked_iter->by_ref
 		 && (get == NULL
 		  || !(get->common.fn_flags & ZEND_ACC_RETURN_REFERENCE))) {
-			zend_throw_error(NULL, "Cannot create reference to property %s::$%s",
-				ZSTR_VAL(zobj->ce->name), zend_get_unmangled_property_name(prop_info->name));
+			zend_throw_error(NULL, "Cannot create reference to property %pS::$%s",
+				zobj->ce->name, zend_get_unmangled_property_name(prop_info->name));
 			return;
 		}
 		zend_string *unmangled_name = prop_info->name;
@@ -196,8 +195,8 @@ static void zho_declared_it_fetch_current(zend_object_iterator *iter)
 		} else if (Z_TYPE_P(property) != IS_REFERENCE) {
 			if (UNEXPECTED(prop_info->flags & ZEND_ACC_READONLY)) {
 				zend_throw_error(NULL,
-					"Cannot acquire reference to readonly property %s::$%s",
-					ZSTR_VAL(prop_info->ce->name), zend_get_unmangled_property_name(prop_info->name));
+					"Cannot acquire reference to readonly property %pS::$%s",
+					prop_info->ce->name, zend_get_unmangled_property_name(prop_info->name));
 				return;
 			}
 			ZVAL_MAKE_REF(property);

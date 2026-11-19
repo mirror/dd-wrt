@@ -67,15 +67,13 @@
 
 /*
   +----------------------------------------------------------------------+
-  | Copyright (c) The PHP Group                                          |
+  | Copyright © The PHP Group and Contributors.                          |
   +----------------------------------------------------------------------+
-  | This source file is subject to version 3.01 of the PHP license,      |
-  | that is bundled with this package in the file LICENSE, and is        |
-  | available through the world-wide-web at the following url:           |
-  | https://www.php.net/license/3_01.txt                                 |
-  | If you did not receive a copy of the PHP license and are unable to   |
-  | obtain it through the world-wide-web, please send a note to          |
-  | license@php.net so we can mail you a copy immediately.               |
+  | This source file is subject to the Modified BSD License that is      |
+  | bundled with this package in the file LICENSE, and is available      |
+  | through the World Wide Web at <https://www.php.net/license/>.        |
+  |                                                                      |
+  | SPDX-License-Identifier: BSD-3-Clause                                |
   +----------------------------------------------------------------------+
   | Author: Jakub Zelenka <bukka@php.net>                                |
   +----------------------------------------------------------------------+
@@ -567,9 +565,9 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    79,    79,    90,    89,   107,   108,   116,   126,   130,
-     139,   150,   149,   167,   168,   176,   186,   190,   199,   209,
-     210,   214,   215,   216,   217,   218,   219,   220,   221,   222
+       0,    76,    76,    87,    86,   104,   105,   113,   123,   127,
+     136,   147,   146,   164,   165,   173,   183,   187,   196,   206,
+     207,   211,   212,   213,   214,   215,   216,   217,   218,   219
 };
 #endif
 
@@ -1656,6 +1654,30 @@ static void php_json_yyerror(php_json_parser *parser, char const *msg)
 PHP_JSON_API php_json_error_code php_json_parser_error_code(const php_json_parser *parser)
 {
 	return parser->scanner.errcode;
+}
+
+static uint64_t php_json_compute_error_column(const php_json_scanner *s)
+{
+	const php_json_ctype *p = s->line_start;
+	const php_json_ctype *end = s->token;
+	/* Count characters from the start of the line to the failing token,
+	 * folding UTF-8 continuation bytes into their leading byte. */
+	uint64_t column = 1;
+
+	while (p < end) {
+		if ((*p & 0b11000000) != 0b10000000) {
+			column++;
+		}
+		p++;
+	}
+	return column;
+}
+
+PHP_JSON_API void php_json_parser_error_details(const php_json_parser *parser, php_json_error_details *out)
+{
+	out->code = parser->scanner.errcode;
+	out->line = parser->scanner.line;
+	out->column = php_json_compute_error_column(&parser->scanner);
 }
 
 static const php_json_parser_methods default_parser_methods =

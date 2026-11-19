@@ -1,14 +1,12 @@
 /*
    +----------------------------------------------------------------------+
-   | Copyright (c) The PHP Group                                          |
+   | Copyright © The PHP Group and Contributors.                          |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Authors: Benjamin Eberlei <beberlei@php.net>                         |
    |          Nora Dossche  <ndossche@php.net>                            |
@@ -467,7 +465,7 @@ static zend_result dom_sanity_check_node_list_types(zval *nodes, uint32_t nodesc
 			const zend_class_entry *ce = Z_OBJCE(nodes[i]);
 
 			if (!instanceof_function(ce, node_ce)) {
-				zend_argument_type_error(i + 1, "must be of type %s|string, %s given", ZSTR_VAL(node_ce->name), zend_zval_type_name(&nodes[i]));
+				zend_argument_type_error(i + 1, "must be of type %pS|string, %s given", node_ce->name, zend_zval_type_name(&nodes[i]));
 				return FAILURE;
 			}
 		} else if (type == IS_STRING) {
@@ -476,7 +474,7 @@ static zend_result dom_sanity_check_node_list_types(zval *nodes, uint32_t nodesc
 				return FAILURE;
 			}
 		} else {
-			zend_argument_type_error(i + 1, "must be of type %s|string, %s given", ZSTR_VAL(node_ce->name), zend_zval_type_name(&nodes[i]));
+			zend_argument_type_error(i + 1, "must be of type %pS|string, %s given", node_ce->name, zend_zval_type_name(&nodes[i]));
 			return FAILURE;
 		}
 	}

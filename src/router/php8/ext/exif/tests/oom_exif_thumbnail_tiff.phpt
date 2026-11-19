@@ -28,5 +28,5 @@ var_dump(exif_thumbnail($file));
 @unlink(__DIR__ . '/oom_exif_thumbnail_tiff.tif');
 ?>
 --EXPECTF--
-Warning: exif_thumbnail(%s): Thumbnail goes IFD boundary or end of file reached in %s on line %d
+Warning: exif_thumbnail(): Thumbnail goes IFD boundary or end of file reached in %s on line %d
 bool(false)

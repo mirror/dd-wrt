@@ -22,7 +22,7 @@ foo($foo->bar);
 
 try {
     $foo->baz = &$foo->bar;
-} catch (Error $e) { echo $e->getMessage(), "\n"; }
+} catch (Throwable $e) { echo $e::class, ': ', $e->getMessage(), "\n"; }
 $foo->bar = 10;
 
 foreach ($foo->getIterator() as &$item) {
@@ -32,18 +32,18 @@ foreach ($foo->getIterator() as &$item) {
 
 try {
     foo($foo->bar);
-} catch (Error $e) { echo $e->getMessage(), "\n"; }
+} catch (Throwable $e) { echo $e::class, ': ', $e->getMessage(), "\n"; }
 
 var_dump($foo);
 ?>
---EXPECT--
+--EXPECTF--
 int(42)
-Cannot assign null to property class@anonymous::$baz of type int
+TypeError: Cannot assign null to property class@anonymous%0%s::$baz of type int
 int(1)
 int(10)
 int(10)
-Cannot assign null to reference held by property class@anonymous::$baz of type int
-object(class@anonymous)#1 (2) {
+TypeError: Cannot assign null to reference held by property class@anonymous%0%s::$baz of type int
+object(class@anonymous%0%s)#1 (2) {
   ["bar"]=>
   &int(10)
   ["baz"]=>

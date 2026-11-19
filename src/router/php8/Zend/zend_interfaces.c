@@ -2,15 +2,14 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
+   | Copyright © Zend Technologies Ltd., a subsidiary company of          |
+   |     Perforce Software, Inc., and Contributors.                       |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 2.00 of the Zend license,     |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.zend.com/license/2_00.txt.                                |
-   | If you did not receive a copy of the Zend license and are unable to  |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@zend.com so we can mail you a copy immediately.              |
+   | This source file is subject to the Modified BSD License that is      |
+   | bundled with this package in the file LICENSE, and is available      |
+   | through the World Wide Web at <https://www.php.net/license/>.        |
+   |                                                                      |
+   | SPDX-License-Identifier: BSD-3-Clause                                |
    +----------------------------------------------------------------------+
    | Authors: Marcus Boerger <helly@php.net>                              |
    +----------------------------------------------------------------------+
@@ -58,7 +57,7 @@ ZEND_API zval* zend_call_method(zend_object *object, zend_class_entry *obj_ce, z
 				&obj_ce->function_table, function_name, function_name_len);
 			if (UNEXPECTED(fn == NULL)) {
 				/* error at c-level */
-				zend_error_noreturn(E_CORE_ERROR, "Couldn't find implementation for method %s::%s", ZSTR_VAL(obj_ce->name), function_name);
+				zend_error_noreturn(E_CORE_ERROR, "Couldn't find implementation for method %pS::%s", obj_ce->name, function_name);
 			}
 		} else {
 			fn = zend_fetch_function_str(function_name, function_name_len);
@@ -244,7 +243,7 @@ ZEND_API zend_object_iterator *zend_user_it_get_new_iterator(zend_class_entry *c
 
 	if (!ce_it || !ce_it->get_iterator || (ce_it->get_iterator == zend_user_it_get_new_iterator && Z_OBJ(iterator) == Z_OBJ_P(object))) {
 		if (!EG(exception)) {
-			zend_throw_exception_ex(NULL, 0, "Objects returned by %s::getIterator() must be traversable or implement interface Iterator", ce ? ZSTR_VAL(ce->name) : ZSTR_VAL(Z_OBJCE_P(object)->name));
+			zend_throw_exception_ex(NULL, 0, "Objects returned by %pS::getIterator() must be traversable or implement interface Iterator", ce ? ce->name : Z_OBJCE_P(object)->name);
 		}
 		zval_ptr_dtor(&iterator);
 		return NULL;
@@ -274,12 +273,12 @@ static int zend_implement_traversable(zend_class_entry *interface, zend_class_en
 			}
 		}
 	}
-	zend_error_noreturn(E_CORE_ERROR, "%s %s must implement interface %s as part of either %s or %s",
+	zend_error_noreturn(E_CORE_ERROR, "%s %pS must implement interface %pS as part of either %pS or %pS",
 		zend_get_object_type_uc(class_type),
-		ZSTR_VAL(class_type->name),
-		ZSTR_VAL(zend_ce_traversable->name),
-		ZSTR_VAL(zend_ce_iterator->name),
-		ZSTR_VAL(zend_ce_aggregate->name));
+		class_type->name,
+		zend_ce_traversable->name,
+		zend_ce_iterator->name,
+		zend_ce_aggregate->name);
 	return FAILURE;
 }
 /* }}} */
@@ -289,8 +288,8 @@ static int zend_implement_aggregate(zend_class_entry *interface, zend_class_entr
 {
 	if (zend_class_implements_interface(class_type, zend_ce_iterator)) {
 		zend_error_noreturn(E_ERROR,
-			"Class %s cannot implement both Iterator and IteratorAggregate at the same time",
-			ZSTR_VAL(class_type->name));
+			"Class %pS cannot implement both Iterator and IteratorAggregate at the same time",
+			class_type->name);
 	}
 
 	/* Always initialize iterator_funcs_ptr. */
@@ -331,8 +330,8 @@ static int zend_implement_iterator(zend_class_entry *interface, zend_class_entry
 {
 	if (zend_class_implements_interface(class_type, zend_ce_aggregate)) {
 		zend_error_noreturn(E_ERROR,
-			"Class %s cannot implement both Iterator and IteratorAggregate at the same time",
-			ZSTR_VAL(class_type->name));
+			"Class %pS cannot implement both Iterator and IteratorAggregate at the same time",
+			class_type->name);
 	}
 
 	ZEND_ASSERT(!class_type->iterator_funcs_ptr && "Iterator funcs already set?");
@@ -432,7 +431,7 @@ ZEND_API int zend_user_serialize(zval *object, unsigned char **buffer, size_t *b
 	}
 
 	if (result == FAILURE && !EG(exception)) {
-		zend_throw_exception_ex(NULL, 0, "%s::serialize() must return a string or NULL", ZSTR_VAL(ce->name));
+		zend_throw_exception_ex(NULL, 0, "%pS::serialize() must return a string or NULL", ce->name);
 	}
 	return result;
 }
@@ -476,10 +475,10 @@ static int zend_implement_serializable(zend_class_entry *interface, zend_class_e
 	}
 	if (!(class_type->ce_flags & ZEND_ACC_EXPLICIT_ABSTRACT_CLASS)
 			&& (!class_type->__serialize || !class_type->__unserialize)) {
-		zend_error(E_DEPRECATED, "%s implements the Serializable interface, which is deprecated. Implement __serialize() and __unserialize() instead (or in addition, if support for old PHP versions is necessary)", ZSTR_VAL(class_type->name));
+		zend_error(E_DEPRECATED, "%pS implements the Serializable interface, which is deprecated. Implement __serialize() and __unserialize() instead (or in addition, if support for old PHP versions is necessary)", class_type->name);
 		if (EG(exception)) {
 			zend_exception_uncaught_error(
-				"During inheritance of %s, while implementing Serializable", ZSTR_VAL(class_type->name));
+				"During inheritance of %pS, while implementing Serializable", class_type->name);
 		}
 	}
 	return SUCCESS;
@@ -496,7 +495,7 @@ static zend_object *zend_internal_iterator_create(zend_class_entry *ce) {
 	zend_internal_iterator *intern = emalloc(sizeof(zend_internal_iterator));
 	zend_object_std_init(&intern->std, ce);
 	intern->iter = NULL;
-	intern->rewind_called = 0;
+	intern->rewind_called = false;
 	return &intern->std;
 }
 
@@ -537,7 +536,7 @@ static zend_internal_iterator *zend_internal_iterator_fetch(zval *This) {
 static zend_result zend_internal_iterator_ensure_rewound(zend_internal_iterator *intern) {
 	if (!intern->rewind_called) {
 		zend_object_iterator *iter = intern->iter;
-		intern->rewind_called = 1;
+		intern->rewind_called = true;
 		if (iter->funcs->rewind) {
 			iter->funcs->rewind(iter);
 			if (UNEXPECTED(EG(exception))) {
@@ -630,7 +629,7 @@ ZEND_METHOD(InternalIterator, rewind) {
 		RETURN_THROWS();
 	}
 
-	intern->rewind_called = 1;
+	intern->rewind_called = true;
 	if (!intern->iter->funcs->rewind) {
 		/* Allow calling rewind() if no iteration has happened yet,
 		 * even if the iterator does not support rewinding. */

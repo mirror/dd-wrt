@@ -15,7 +15,7 @@ $fiber->start();
 
 ?>
 --EXPECTF--
-Fatal error: __debuginfo() must return an array in %s on line %d
+Fatal error: __debugInfo() must return an array in %s on line %d
 
 Fatal error: Uncaught FiberError: Cannot get fiber return value: The fiber exited with a fatal error in %sget-return-after-bailout.php:%d
 Stack trace:

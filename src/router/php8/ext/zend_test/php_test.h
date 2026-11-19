@@ -1,16 +1,12 @@
 /*
   +----------------------------------------------------------------------+
-  | Copyright (c) The PHP Group                                          |
+  | Copyright © The PHP Group and Contributors.                          |
   +----------------------------------------------------------------------+
-  | This source file is subject to version 3.01 of the PHP license,      |
-  | that is bundled with this package in the file LICENSE, and is        |
-  | available through the world-wide-web at the following url:           |
-  | https://www.php.net/license/3_01.txt                                 |
-  | If you did not receive a copy of the PHP license and are unable to   |
-  | obtain it through the world-wide-web, please send a note to          |
-  | license@php.net so we can mail you a copy immediately.               |
-  +----------------------------------------------------------------------+
-  | Author:                                                              |
+  | This source file is subject to the Modified BSD License that is      |
+  | bundled with this package in the file LICENSE, and is available      |
+  | through the World Wide Web at <https://www.php.net/license/>.        |
+  |                                                                      |
+  | SPDX-License-Identifier: BSD-3-Clause                                |
   +----------------------------------------------------------------------+
 */
 
@@ -47,6 +43,8 @@ ZEND_BEGIN_MODULE_GLOBALS(zend_test)
 	char *observer_show_opcode_in_user_handler;
 	int observer_set_vm_interrupt_on_begin;
 	int observer_set_vm_interrupt_on_begin_without_callback;
+	int observer_set_vm_interrupt_on_end;
+	bool observer_throw_on_vm_interrupt;
 	int observer_nesting_depth;
 	int observer_fiber_init;
 	int observer_fiber_switch;
@@ -56,7 +54,9 @@ ZEND_BEGIN_MODULE_GLOBALS(zend_test)
 	HashTable *global_weakmap;
 	int replace_zend_execute_ex;
 	int register_passes;
+	bool rearm_vm_interrupt;
 	bool print_stderr_mshutdown;
+	bool warn_on_startup;
 	zend_long limit_copy_file_range;
 	int observe_opline_in_zendmm;
 	zend_mm_heap* zend_orig_heap;
