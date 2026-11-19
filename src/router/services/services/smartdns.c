@@ -101,14 +101,28 @@ void start_smartdns(void)
 			fprintf(fp, "server 127.0.0.1:7053\n");
 		} else if (nvram_matchi("smartdns_use_dns", 0)) {
 			if (nvram_match("dns_adblock", "1")) {
-				/*	#ifdef HAVE_USE_OPENSSL
-				fprintf(fp,
-					"server-tls 188.34.161.210:853 -host-name root.hagezi.org -tls-host-verify root.hagezi.org\n");
-				fprintf(fp,
-					"server-tls 159.69.155.94:853 -host-name wurzn.hagezi.org -tls-host-verify wurzn.hagezi.org\n");
-				fprintf(fp,
-					"server-tls 95.217.163.17:853 -host-name juuri.hagezi.org -tls-host-verify juuri.hagezi.org\n");
-	#endif*/
+	#ifdef HAVE_USE_OPENSSL
+				/* after ntp update smartdns is restarted and can now use quic / tls */
+				if (nvram_match("ntp_done", "1") && nvram_match("ntp_success", "1")) {
+		#ifdef HAVE_USE_OPENSSL3
+					//for quic openssl 3 is required
+					fprintf(fp,
+						"server-quic 188.34.161.210:853 -host-name root.hagezi.org -tls-host-verify root.hagezi.org\n");
+					fprintf(fp,
+						"server-quic 159.69.155.94:853 -host-name wurzn.hagezi.org -tls-host-verify wurzn.hagezi.org\n");
+					fprintf(fp,
+						"server-quic 95.217.163.17:853 -host-name juuri.hagezi.org -tls-host-verify juuri.hagezi.org\n");
+
+		#else
+					fprintf(fp,
+						"server-tls 188.34.161.210:853 -host-name root.hagezi.org -tls-host-verify root.hagezi.org\n");
+					fprintf(fp,
+						"server-tls 159.69.155.94:853 -host-name wurzn.hagezi.org -tls-host-verify wurzn.hagezi.org\n");
+					fprintf(fp,
+						"server-tls 95.217.163.17:853 -host-name juuri.hagezi.org -tls-host-verify juuri.hagezi.org\n");
+		#endif
+				}
+	#endif
 				fprintf(fp, "server 188.34.161.210\n");
 				fprintf(fp, "server 159.69.155.94\n");
 				fprintf(fp, "server 95.217.163.17\n");
