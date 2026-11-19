@@ -539,3 +539,7 @@
 #define NGX_HTTP_UPSTREAM_SID  1
 #endif
 
+#ifndef NGX_HTTP_V2
+#define NGX_HTTP_V2  1
+#endif
+
