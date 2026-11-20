@@ -1,4 +1,4 @@
-pptpd-configure:
+pptpd-configure: nvram libutils
 	cd pptpd && libtoolize
 	cd pptpd && aclocal
 	cd pptpd && autoconf
@@ -12,7 +12,7 @@ else
 endif
 	@true
 
-pptpd:
+pptpd: nvram libutils
 ifeq ($(CONFIG_PPTPD),y)
 ifeq ($(CONFIG_PPTP_ACCEL),y)
 	$(MAKE) -C pptpd-accel
