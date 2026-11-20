@@ -241,4 +241,3 @@ php8-install:
 	printf "output_buffering = Off\n" >>$(INSTALLDIR)/php8/etc/php.ini
 	printf "extension_dir = /etc/php/modules\n" >>$(INSTALLDIR)/php8/etc/php.ini
 	printf "extension = openssl.so\n" >>$(INSTALLDIR)/php8/etc/php.ini
-	printf "zend_extension = opcache.so\n" >>$(INSTALLDIR)/php8/etc/php.ini
