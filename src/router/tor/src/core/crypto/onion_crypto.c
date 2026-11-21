@@ -289,6 +289,7 @@ relay_process_subproto_ext(const trn_extension_t *ext,
       // with this extension, we _must_ reject when it appears.
       goto done;
     }
+    prev = cur;
   }
 
   res = 0;

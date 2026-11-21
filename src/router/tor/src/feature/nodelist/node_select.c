@@ -344,6 +344,15 @@ router_pick_directory_server_impl(dirinfo_type_t type, int flags,
       continue;
     if (requireother && router_digest_is_me(node->identity))
       continue;
+    /* When we're ignoring reachability (because the request will indirect
+     * via a circuit), we will extend to the relay's primary IPv4 ORPort; a
+     * routerstatus without one is useless for that, whatever its flags.
+     * If we ever start supporting relays with ORPort 0 (see bugs 7349,
+     * 41476) we can take out this check -- and remove the corresponding
+     * tor_assert from directory_initiate_request(). */
+    if (!fascistfirewall &&
+        !tor_addr_port_is_valid(&status->ipv4_addr, status->ipv4_orport, 0))
+      continue;
 
     SKIP_MISSING_TRUSTED_EXTRAINFO(type, node->identity);
 

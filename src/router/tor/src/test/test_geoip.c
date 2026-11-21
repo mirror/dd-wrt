@@ -27,10 +27,11 @@
     }                                           \
   } while (0)
 
-  /* Make sure that country ID actually works. */
+  /* Make sure that country ID actually works. The fake IPv6 addresses differ
+   * in their /64 because that is what the client history tracks. */
 #define SET_TEST_IPV6(i) \
   do {                                                          \
-    set_uint32(in6.s6_addr + 12, htonl((uint32_t) (i)));        \
+    set_uint32(in6.s6_addr + 4, htonl((uint32_t) (i)));         \
   } while (0)
 #define CHECK_COUNTRY(country, val) do {                                \
     /* test ipv4 country lookup */                                      \
@@ -111,12 +112,12 @@ test_geoip(void *arg)
   tt_int_op(0,OP_EQ, geoip_parse_entry("\"200\",\"250\",\"AB\"", AF_INET));
 
   /* Populate the IPv6 DB equivalently with fake IPs in the same range */
-  tt_int_op(0,OP_EQ, geoip_parse_entry("::a,::32,AB", AF_INET6));
-  tt_int_op(0,OP_EQ, geoip_parse_entry("::34,::5a,XY", AF_INET6));
-  tt_int_op(0,OP_EQ, geoip_parse_entry("::5f,::64,AB", AF_INET6));
-  tt_int_op(0,OP_EQ, geoip_parse_entry("::69,::8c,ZZ", AF_INET6));
-  tt_int_op(0,OP_EQ, geoip_parse_entry("::96,::be,XY", AF_INET6));
-  tt_int_op(0,OP_EQ, geoip_parse_entry("::c8,::fa,AB", AF_INET6));
+  tt_int_op(0,OP_EQ, geoip_parse_entry("0:0:0:a::,0:0:0:32::,AB", AF_INET6));
+  tt_int_op(0,OP_EQ, geoip_parse_entry("0:0:0:34::,0:0:0:5a::,XY", AF_INET6));
+  tt_int_op(0,OP_EQ, geoip_parse_entry("0:0:0:5f::,0:0:0:64::,AB", AF_INET6));
+  tt_int_op(0,OP_EQ, geoip_parse_entry("0:0:0:69::,0:0:0:8c::,ZZ", AF_INET6));
+  tt_int_op(0,OP_EQ, geoip_parse_entry("0:0:0:96::,0:0:0:be::,XY", AF_INET6));
+  tt_int_op(0,OP_EQ, geoip_parse_entry("0:0:0:c8::,0:0:0:fa::,AB", AF_INET6));
 
   /* We should have 4 countries: ??, ab, xy, zz. */
   tt_int_op(4,OP_EQ, geoip_get_n_countries());

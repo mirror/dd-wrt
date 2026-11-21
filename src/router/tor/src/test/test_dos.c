@@ -123,6 +123,65 @@ test_dos_conn_creation(void *arg)
   monotime_disable_test_mocking();
 }
 
+/** Test that the DoS subsystem tracks IPv6 clients by /64. */
+static void
+test_dos_ipv6_prefix(void *arg)
+{
+  /* The time Marty McFly set to get back to the future in the parking lot. */
+  const time_t now = 499163040; /* 1985-10-26 01:24:00 PDT */
+  clientmap_entry_t *ent_a = NULL, *ent_b = NULL, *ent_c = NULL;
+  tor_addr_t addr_a, addr_b, addr_c;
+  or_connection_t or_conn;
+
+  (void) arg;
+
+  MOCK(get_param_cc_enabled, mock_enable_dos_protection);
+  MOCK(get_param_conn_enabled, mock_enable_dos_protection);
+  dos_init();
+
+  /* The first two share a /64, the third one is in the next /64. */
+  tt_int_op(AF_INET6, OP_EQ, tor_addr_parse(&addr_a, "2001:db8:1:2::1"));
+  tt_int_op(AF_INET6, OP_EQ,
+            tor_addr_parse(&addr_b, "2001:db8:1:2:ffff:ffff:ffff:ffff"));
+  tt_int_op(AF_INET6, OP_EQ, tor_addr_parse(&addr_c, "2001:db8:1:3::1"));
+
+  geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &addr_a, NULL, now);
+  geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &addr_b, NULL, now);
+  geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &addr_c, NULL, now);
+
+  /* Same /64, same entry. */
+  ent_a = geoip_lookup_client(&addr_a, NULL, GEOIP_CLIENT_CONNECT);
+  ent_b = geoip_lookup_client(&addr_b, NULL, GEOIP_CLIENT_CONNECT);
+  ent_c = geoip_lookup_client(&addr_c, NULL, GEOIP_CLIENT_CONNECT);
+  tt_assert(ent_a);
+  tt_assert(ent_c);
+  tt_ptr_op(ent_a, OP_EQ, ent_b);
+  tt_ptr_op(ent_a, OP_NE, ent_c);
+
+  /* Connections from the same /64 add up on the same counter. */
+  memset(&or_conn, 0, sizeof(or_conn));
+  tor_addr_copy(&TO_CONN(&or_conn)->addr, &addr_a);
+  dos_new_client_conn(&or_conn, NULL);
+  or_conn.tracked_for_dos_mitigation = 0;
+  tor_addr_copy(&TO_CONN(&or_conn)->addr, &addr_b);
+  dos_new_client_conn(&or_conn, NULL);
+  or_conn.tracked_for_dos_mitigation = 0;
+  tor_addr_copy(&TO_CONN(&or_conn)->addr, &addr_c);
+  dos_new_client_conn(&or_conn, NULL);
+
+  tt_uint_op(ent_a->dos_stats.conn_stats.concurrent_count, OP_EQ, 2);
+  tt_uint_op(ent_c->dos_stats.conn_stats.concurrent_count, OP_EQ, 1);
+
+  /* And closing one from that /64 takes it off the same counter. */
+  tor_addr_copy(&TO_CONN(&or_conn)->addr, &addr_b);
+  dos_close_client_conn(&or_conn);
+  tt_uint_op(ent_a->dos_stats.conn_stats.concurrent_count, OP_EQ, 1);
+  tt_uint_op(ent_c->dos_stats.conn_stats.concurrent_count, OP_EQ, 1);
+
+ done:
+  dos_free_all();
+}
+
 /** Helper mock: Place a fake IP addr for this channel in <b>addr_out</b> */
 static int
 mock_channel_get_addr_if_possible(const channel_t *chan, tor_addr_t *addr_out)
@@ -615,6 +674,7 @@ test_dos_begindir_limit(void *arg)
 
 struct testcase_t dos_tests[] = {
   { "conn_creation", test_dos_conn_creation, TT_FORK, NULL, NULL },
+  { "ipv6_prefix", test_dos_ipv6_prefix, TT_FORK, NULL, NULL },
   { "circuit_creation", test_dos_circuit_creation, TT_FORK, NULL, NULL },
   { "bucket_refill", test_dos_bucket_refill, TT_FORK, NULL, NULL },
   { "known_relay" , test_known_relay, TT_FORK,

@@ -901,16 +901,21 @@ test_cfmt_resolved_cells(void *arg)
   CLEAR_ADDRS();
 
 #define LONG_NAME \
-  "this-hostname-has-255-characters.in-order-to-test-whether-very-long.ho" \
+  "tis-hostname-has-254-characters.in-order-to-test-whether-very-long.ho" \
   "stnames-are-accepted.i-am-putting-it-in-a-macro-because-although.this-" \
   "function-is-already-very-full.of-copy-and-pasted-stuff.having-this-app" \
-  "ear-more-than-once-would-bother-me-somehow.is"
+  "ear-more-than-once-would-bother-me-somehow.x."
 
-  tt_int_op(strlen(LONG_NAME), OP_EQ, 255);
-  SET_CELL("\x00\xff"
+  // Note that the actual DNS encoding will be one byte longer, since
+  // DNS encodes names ending with a final empty label.  That means that
+  // even though our RESOLVED cells can hold a 255 byte hostname, there is no
+  // valid 255-byte hostname that they can hold.  254 will have to do.
+
+  tt_int_op(strlen(LONG_NAME), OP_EQ, 254);
+  SET_CELL("\x00\xfe"
            LONG_NAME
            "\x00\01\x00\x00");
-  tt_int_op(msg.length, OP_EQ, 261);
+  tt_int_op(msg.length, OP_EQ, 260);
   r = resolved_cell_parse(&msg, addrs, &errcode);
   tt_int_op(errcode, OP_EQ, 0);
   tt_int_op(r, OP_EQ, 0);
@@ -1034,16 +1039,16 @@ test_cfmt_resolved_cells(void *arg)
 
   /* Full cell */
 #define LONG_NAME2 \
-  "this-name-has-231-characters.so-that-it-plus-LONG_NAME-can-completely-" \
-  "fill-up-the-payload-of-a-cell.its-important-to-check-for-the-full-thin" \
+  "this-name-has-232-characters.so-that-it-plus.LONG-NAME-can-completely." \
+  "fill-up-the-payload-of-a-cell.its-important-to-check-for.the-full-thin" \
   "g-case.to-avoid-off-by-one-errors.where-full-things-are-misreported-as" \
-  ".overflowing-by-one.z"
+  ".overflowing-by-one.zz"
 
-  tt_int_op(strlen(LONG_NAME2), OP_EQ, 231);
-  SET_CELL("\x00\xff"
+  tt_int_op(strlen(LONG_NAME2), OP_EQ, 232);
+  SET_CELL("\x00\xfe"
            LONG_NAME
            "\x00\01\x00\x00"
-           "\x00\xe7"
+           "\x00\xe8"
            LONG_NAME2
            "\x00\01\x00\x00");
   tt_int_op(msg.length, OP_EQ, RELAY_PAYLOAD_SIZE);

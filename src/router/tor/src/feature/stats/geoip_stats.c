@@ -178,6 +178,32 @@ clientmap_entry_free_(clientmap_entry_t *ent)
   tor_free(ent);
 }
 
+/** Number of leading bytes of an IPv6 address that identify a client in the
+ * clientmap, that is a /64. */
+#define CLIENTMAP_IPV6_PREFIX_BYTES 8
+
+/** Set <b>key_out</b> to the address under which a client connecting from
+ * <b>addr</b> is tracked in the clientmap.
+ *
+ * An IPv4 client is tracked by its /32.
+ * An IPv6 client is tracked by its /64 (see CLIENTMAP_IPV6_PREFIX_BYTES) */
+static void
+clientmap_get_key_addr(const tor_addr_t *addr, tor_addr_t *key_out)
+{
+  uint8_t bytes[16];
+
+  if (tor_addr_family(addr) != AF_INET6) {
+    tor_addr_copy(key_out, addr);
+    return;
+  }
+
+  /* Extract the IPv6 prefix. */
+  memcpy(bytes, tor_addr_to_in6_addr8(addr), sizeof(bytes));
+  memset(bytes + CLIENTMAP_IPV6_PREFIX_BYTES, 0,
+         sizeof(bytes) - CLIENTMAP_IPV6_PREFIX_BYTES);
+  tor_addr_from_ipv6_bytes(key_out, bytes);
+}
+
 /* Return a newly allocated clientmap entry with the given action and address
  * that are mandatory. The transport_name can be optional. This can't fail. */
 static clientmap_entry_t *
@@ -192,7 +218,7 @@ clientmap_entry_new(geoip_client_action_t action, const tor_addr_t *addr,
 
   entry = tor_malloc_zero(sizeof(clientmap_entry_t));
   entry->action = action;
-  tor_addr_copy(&entry->addr, addr);
+  clientmap_get_key_addr(addr, &entry->addr);
   if (transport_name) {
     entry->transport_name = tor_strdup(transport_name);
   }
@@ -310,7 +336,7 @@ geoip_lookup_client(const tor_addr_t *addr, const char *transport_name,
   tor_assert(addr);
 
   /* We always look for a client connection with no transport. */
-  tor_addr_copy(&lookup.addr, addr);
+  clientmap_get_key_addr(addr, &lookup.addr);
   lookup.action = action;
   lookup.transport_name = (char *) transport_name;
 

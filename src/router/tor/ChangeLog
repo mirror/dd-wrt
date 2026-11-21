@@ -1,3 +1,57 @@
+Changes in version 0.4.9.17 - 2026-11-13
+  This is yet another emergency release affecting mostly relays with an
+  important fix related to the DoS defenses IPv6 handling. Also, "maatuska"
+  directory authority changed IP address. There are also a series of minor
+  bugfixes. If you are a relay operator, please upgrade as soon as possible.
+
+  o Directory authority changes (bastet):
+    - Remove the keys for bastet due to a potential compromise. It can
+      be reinstated with new keys later.
+
+  o Major bugfixes (DoS mitigation):
+    - Track IPv6 clients by their /64 prefix instead of their individual
+      address. TROVE-2026-031. Fixes bug 41344; bugfix on 0.3.3.2-alpha.
+
+  o Minor feature (dirauth):
+    - Change IP addresses for maatuska directory authority. Closes 41487.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on November 13, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/11/13.
+
+  o Minor features (statistics):
+    - The unique client counts that relays and bridges report in their
+      extra-info document now count an IPv6 /64 as a single client
+      rather than counting every address. Part of ticket 41344.
+
+  o Minor bugfixes (security):
+    - Reject any RESOLVED cell containing a hostname record that is not
+      a valid dns name. Fixes bug 41464; bugfix on 0.1.1.1-alpha.
+      Tracked as TROVE-2026-075.
+
+  o Minor bugfixes (client directory fetches):
+    - Avoid a latent client-side assert that could happen if we try to
+      make an indirect begin_dir directory request to a V2Dir relay with
+      ORPort 0. (The consensus doesn't include any relays like that
+      currently.) Fixes bug 41476; bugfix on 0.2.8.2-alpha.
+
+  o Minor bugfixes (client stream isolation):
+    - Stop truncating the recorded length of HTTPTunnelPort stream
+      isolation header values to 8 bits. Previously, two different X-
+      Tor-Stream-Isolation (or Tor-Stream-Isolation) values longer than
+      251 bytes whose lengths agreed modulo 256 could be treated as
+      equal for ISO_SOCKSAUTH purposes and share a circuit. Fixes bug
+      41474; bugfix on 0.3.2.1-alpha.
+
+  o Minor bugfixes (relay, circuit handshake):
+    - Actually reject ntor-v3 subproto_request extensions whose entries
+      are not sorted and deduplicated, as intended. Fixes bug 41475;
+      bugfix on 0.4.9.3-alpha.
+
+
 Changes in version 0.4.9.16 - 2026-11-04
   This is an emergency release affecting only directory authorities. It
   includes fixes to address the thundering herd caused by the new required

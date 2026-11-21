@@ -674,9 +674,10 @@ directory_choose_address_routerstatus(const routerstatus_t *status,
 
   /* ORPort connections */
   if (indirection == DIRIND_ANONYMOUS) {
-    if (!tor_addr_is_null(&status->ipv4_addr)) {
+    if (tor_addr_port_is_valid(&status->ipv4_addr, status->ipv4_orport, 0)) {
       /* Since we're going to build a 3-hop circuit and ask the 2nd relay
-       * to extend to this address, always use the primary (IPv4) OR address */
+       * to extend to this address, always use the primary (IPv4) OR address.
+       * If it has an ORPort of 0, skip it (see bug 41476). */
       tor_addr_copy(&use_or_ap->addr, &status->ipv4_addr);
       use_or_ap->port = status->ipv4_orport;
       have_or = 1;

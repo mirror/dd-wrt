@@ -1223,6 +1223,14 @@ resolved_cell_parse(const relay_msg_t *msg, smartlist_t *addresses_out,
       }
       addr = tor_malloc_zero(sizeof(*addr));
       addr->hostname = tor_memdup_nulterm(cp, answer_len);
+      if (! name_is_valid_for_dns(addr->hostname)) {
+        log_fn(LOG_PROTOCOL_WARN, LD_NET,
+               "Invalid hostname %s in RESOLVED_TYPE_HOSTNAME",
+               escaped_safe_str(addr->hostname));
+        tor_free(addr->hostname);
+        tor_free(addr);
+        goto err;
+      }
       cp += answer_len;
       addr->ttl = ntohl(get_uint32(cp));
       cp += 4;

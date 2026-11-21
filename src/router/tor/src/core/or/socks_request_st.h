@@ -74,7 +74,7 @@ struct socks_request_t {
   /** Number of bytes in username; 0 if username is NULL */
   size_t usernamelen;
   /** Number of bytes in password; 0 if password is NULL */
-  uint8_t passwordlen;
+  size_t passwordlen;
   /** The negotiated username value if any (for socks5), or the entire
    * authentication string (for socks4).  This value is NOT nul-terminated;
    * see usernamelen for its length. */
