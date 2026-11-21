@@ -22,16 +22,11 @@ libzfs_core_la_CPPFLAGS += -Iinclude/os/freebsd/zfs
 
 libzfs_core_la_SOURCES += \
 	%D%/os/freebsd/libzfs_core_ioctl.c
-
-nodist_libzfs_core_la_SOURCES = \
-	module/os/freebsd/zfs/zfs_ioctl_compat.c
 endif
 
 libzfs_core_la_LIBADD = \
 	libnvpair.la \
 	libspl.la
-
-libzfs_core_la_LIBADD += $(LTLIBINTL)
 
 libzfs_core_la_LDFLAGS = -version-info 3:0:0
 

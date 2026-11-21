@@ -9,7 +9,7 @@ install: modules_install data_install
 uninstall: modules_uninstall data_uninstall
 check:
 
-.PHONY: all distclean maintainer-clean install uninstall check distdir \
+.PHONY: all distclean maintainer-clean install uninstall check distdir gitrev \
 	modules modules-Linux modules-FreeBSD modules-unknown \
 	clean clean-Linux clean-FreeBSD \
 	modules_install modules_install-Linux modules_install-FreeBSD \
@@ -51,9 +51,20 @@ endif
 
 FMAKE = env -u MAKEFLAGS make $(FMAKEFLAGS)
 
-modules-Linux:
+gitrev:
+	$(MAKE) -C "@abs_top_builddir@" gitrev
+
+modules-Linux: gitrev
 	mkdir -p $(sort $(dir $(spl-objs) $(spl-)))
 	mkdir -p $(sort $(dir $(zfs-objs) $(zfs-)))
+	# Pre-6.10 kernel builds didn't need to copy over the source files to the
+	# build directory. We need to do it though post-6.10 due to these commits:
+	#
+	# b1992c3 kbuild: use $(src) instead of $(srctree)/$(src) for source dir
+	# 9a0ebe5 kbuild: use $(obj)/ instead of $(src)/ for common pattern rules
+	if [ "@abs_srcdir@" != "@abs_builddir@" ]; then \
+		cp -rsf "@abs_srcdir@"/*/ "@abs_builddir@"; \
+	fi
 	$(MAKE) -C @LINUX_OBJ@ $(if @KERNEL_CC@,CC=@KERNEL_CC@) \
 		$(if @KERNEL_LD@,LD=@KERNEL_LD@) $(if @KERNEL_LLVM@,LLVM=@KERNEL_LLVM@) \
 		$(if @KERNEL_CROSS_COMPILE@,CROSS_COMPILE=@KERNEL_CROSS_COMPILE@) \
@@ -61,7 +72,7 @@ modules-Linux:
 		$(if @OBJTOOL_DISABLE_WERROR@,objtool=@abs_top_builddir@/scripts/objtool-wrapper) \
 		M="$$PWD" @KERNEL_MAKE@ CONFIG_ZFS=m MODPROBE=true KBUILD_MODPOST_WARN=1 modules
 
-modules-FreeBSD:
+modules-FreeBSD: gitrev
 	+$(FMAKE)
 
 modules-unknown:
@@ -176,4 +187,4 @@ gen-zstd-symbols:
 	for obj in $(addprefix zstd/,$(ZSTD_UPSTREAM_OBJS)); do echo; echo "/* $${obj#zstd/}: */"; @OBJDUMP@ -t $$obj | awk '$$2 == "g" && !/ zfs_/ {print "#define\t" $$6 " zfs_" $$6}' | sort; done >> zstd/include/zstd_compat_wrapper.h
 
 check-zstd-symbols:
-	@OBJDUMP@ -t $(addprefix zstd/,$(ZSTD_UPSTREAM_OBJS)) | awk '/file format/ {print}  $$2 == "g" && (!/ zfs_/ && !/ __pfx_zfs_/) {++ret; print}  END {exit ret}'
+	@OBJDUMP@ -t $(addprefix zstd/,$(ZSTD_UPSTREAM_OBJS)) | awk '/file format/ {print}  $$2 == "g" && (!/ zfs_/ && !/ __pfx_zfs_/ && !/ __cfi_zfs_/) {++ret; print}  END {exit ret}'

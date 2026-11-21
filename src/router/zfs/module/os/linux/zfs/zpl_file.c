@@ -38,28 +38,55 @@
 #endif
 
 /*
- * Per-open-file state, hung off file->private_data.  Allocated lazily the
- * first time a Direct I/O read on this handle hits a benign checksum verify
- * failure -- a recycled O_DIRECT buffer whose buffered re-read then succeeded.
- * Its presence makes zpl_iter_read route subsequent reads through the uncached
- * buffered path for the remaining lifetime of the handle, which stops the
- * verify-failure / re-read storm without disabling the verify itself (so
- * mirror/raidz self-heal for genuine corruption is unaffected).
+ * Per-open-file state, hung off file->private_data.  zpl_file_data_get()
+ * allocates it the first time one of the flags below is set, and a flag
+ * stays set until the handle is released.
+ *
+ * zfd_dio_read_declined: a Direct I/O read on this handle hit a benign
+ * checksum verify failure, a recycled O_DIRECT buffer whose buffered re-read
+ * then succeeded.  zpl_iter_read sends later reads through the uncached
+ * buffered path.  That stops the verify-failure and re-read storm without
+ * disabling the verify itself, so mirror and raidz self-heal for genuine
+ * corruption still runs.
+ *
+ * zfd_dio_write_bounce: a Direct I/O write on this handle failed its
+ * checksum verify because the caller changed the buffer while the write was
+ * in flight.  zpl_iter_write has later Direct I/O writes issued from a
+ * private copy of the data, so the checksum covers the bytes written.
  */
 typedef struct zpl_file_data {
 	boolean_t	zfd_dio_read_declined;
+	boolean_t	zfd_dio_write_bounce;
 } zpl_file_data_t;
+
+static zpl_file_data_t *
+zpl_file_data_get(struct file *filp)
+{
+	zpl_file_data_t *zfd = atomic_load_ptr(&filp->private_data);
+	if (zfd != NULL)
+		return (zfd);
+
+	zfd = kmem_zalloc(sizeof (*zfd), KM_SLEEP);
+	zpl_file_data_t *old = atomic_cas_ptr(&filp->private_data, NULL, zfd);
+	if (old == NULL)
+		return (zfd);
+
+	kmem_free(zfd, sizeof (*zfd));
+	return (old);
+}
 
 static void
 zpl_dio_read_decline(struct file *filp)
 {
-	if (atomic_load_ptr(&filp->private_data) != NULL)
-		return;
+	zpl_file_data_t *zfd = zpl_file_data_get(filp);
+	atomic_store_32(&zfd->zfd_dio_read_declined, B_TRUE);
+}
 
-	zpl_file_data_t *zfd = kmem_zalloc(sizeof (*zfd), KM_SLEEP);
-	zfd->zfd_dio_read_declined = B_TRUE;
-	if (atomic_cas_ptr(&filp->private_data, NULL, zfd) != NULL)
-		kmem_free(zfd, sizeof (*zfd));
+static void
+zpl_dio_write_bounce(struct file *filp)
+{
+	zpl_file_data_t *zfd = zpl_file_data_get(filp);
+	atomic_store_32(&zfd->zfd_dio_write_bounce, B_TRUE);
 }
 
 /*
@@ -269,7 +296,7 @@ zpl_iter_read(struct kiocb *kiocb, struct iov_iter *to)
 	 * verify failure; keep taking the uncached buffered path.
 	 */
 	zpl_file_data_t *zfd = atomic_load_ptr(&filp->private_data);
-	if (zfd != NULL && zfd->zfd_dio_read_declined)
+	if (zfd != NULL && atomic_load_32(&zfd->zfd_dio_read_declined))
 		uio.uio_extflg |= UIO_DIO_DENY;
 
 	crhold(cr);
@@ -331,6 +358,14 @@ zpl_iter_write(struct kiocb *kiocb, struct iov_iter *from)
 	zfs_uio_iov_iter_init(&uio, from, kiocb->ki_pos, count);
 	uio.uio_extflg |= zfs_uio_flags(kiocb);
 
+	/*
+	 * A Direct I/O write on this handle already failed its checksum
+	 * verify; keep writing from a private copy of the data.
+	 */
+	zpl_file_data_t *zfd = atomic_load_ptr(&filp->private_data);
+	if (zfd != NULL && atomic_load_32(&zfd->zfd_dio_write_bounce))
+		uio.uio_extflg |= UIO_DIO_BOUNCE;
+
 	crhold(cr);
 	cookie = spl_fstrans_mark();
 
@@ -339,6 +374,14 @@ zpl_iter_write(struct kiocb *kiocb, struct iov_iter *from)
 
 	spl_fstrans_unmark(cookie);
 	crfree(cr);
+
+	/*
+	 * A Direct I/O write failed its checksum verify because the caller
+	 * changed the buffer in flight.  Copy the data for every later
+	 * Direct I/O write on this handle.
+	 */
+	if (uio.uio_extflg & UIO_DIO_CKSUM_RETRIED)
+		zpl_dio_write_bounce(filp);
 
 	if (ret < 0)
 		return (ret);
@@ -786,7 +829,14 @@ zpl_fallocate_common(struct inode *ip, int mode, loff_t offset, loff_t len)
 		flock64_t bf;
 
 		if (mode & FALLOC_FL_KEEP_SIZE) {
-			if (offset > olen)
+			/*
+			 * At EOF the clamp below makes len zero,
+			 * which zfs_space() treats as a truncate
+			 * to offset. That would discard a
+			 * concurrent extending write that grew
+			 * the file after olen was read.
+			 */
+			if (offset >= olen)
 				goto out_unmark;
 
 			if (offset + len > olen)
@@ -832,11 +882,11 @@ zpl_fallocate_common(struct inode *ip, int mode, loff_t offset, loff_t len)
 				goto out_unmark;
 
 			/*
-			 * extend file: log=TRUE drives z_seq bump,
-			 * mtime/ctime advance, and TX_TRUNCATE ZIL
-			 * record; matches zfs_space().
+			 * zfs_extend() never shrinks the file, so it
+			 * keeps a concurrent extending write that
+			 * already grew the file past offset + len.
 			 */
-			error = -zfs_freesp(zp, offset + len, 0, 0, TRUE);
+			error = -zfs_extend(zp, offset + len, B_TRUE);
 			zfs_exit(zfsvfs, FTAG);
 		}
 	}
@@ -870,7 +920,7 @@ zpl_fadvise(struct file *filp, loff_t offset, loff_t len, int advice)
 	struct inode *ip = file_inode(filp);
 	znode_t *zp = ITOZ(ip);
 	zfsvfs_t *zfsvfs = ITOZSB(ip);
-	objset_t *os = zfsvfs->z_os;
+	objset_t *os;
 	int error = 0;
 
 	if (S_ISFIFO(ip->i_mode))
@@ -881,6 +931,8 @@ zpl_fadvise(struct file *filp, loff_t offset, loff_t len, int advice)
 
 	if ((error = zpl_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
 		return (error);
+
+	os = zfsvfs->z_os;
 
 	if (advice == POSIX_FADV_WILLNEED) {
 		loff_t rlen = len ? len : i_size_read(ip) - offset;
@@ -1247,12 +1299,58 @@ zpl_ioctl_rewrite(struct file *filp, void __user *arg)
 	return (err);
 }
 
+#ifndef HAVE_SUPER_SET_UUID
+/*
+ * Linux 6.9 added FS_IOC_GETFSUUID, together with super_set_uuid(), and
+ * serves the ioctl in the VFS, from sb->s_uuid, before it calls the
+ * ioctl handler of the filesystem.  On older kernels ZFS must serve the
+ * ioctl itself, from the same field, which zfs_domount() sets, unless
+ * the field is null (zfs_sb_uuid=0).  The headers of those kernels do
+ * not have the definitions, so supply them here.
+ *
+ * The handler covers the files and directories of the filesystem.  The
+ * .zfs control directory has its own file operations without an ioctl
+ * handler, so the ioctl fails with ENOTTY there, where the VFS of newer
+ * kernels serves it.
+ */
+#ifndef FS_IOC_GETFSUUID
+struct fsuuid2 {
+	__u8	len;
+	__u8	uuid[16];
+};
+
+#define	FS_IOC_GETFSUUID	_IOR(0x15, 0, struct fsuuid2)
+#endif
+
+static int
+zpl_ioctl_getfsuuid(struct file *filp, void __user *arg)
+{
+	struct super_block *sb = file_inode(filp)->i_sb;
+	struct fsuuid2 fu = { .len = sizeof (sb->s_uuid) };
+
+	/* No UUID (zfs_sb_uuid=0): fail like the VFS of newer kernels. */
+	if (uuid_is_null(&sb->s_uuid))
+		return (-ENOTTY);
+
+	memcpy(fu.uuid, &sb->s_uuid, sizeof (sb->s_uuid));
+
+	if (copy_to_user(arg, &fu, sizeof (fu)))
+		return (-EFAULT);
+
+	return (0);
+}
+#endif /* !HAVE_SUPER_SET_UUID */
+
 static long
 zpl_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	switch (cmd) {
 	case FS_IOC_GETVERSION:
 		return (zpl_ioctl_getversion(filp, (void *)arg));
+#ifndef HAVE_SUPER_SET_UUID
+	case FS_IOC_GETFSUUID:
+		return (zpl_ioctl_getfsuuid(filp, (void *)arg));
+#endif
 	case FS_IOC_GETFLAGS:
 		return (zpl_ioctl_getflags(filp, (void *)arg));
 	case FS_IOC_SETFLAGS:
@@ -1286,6 +1384,11 @@ zpl_compat_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	case FS_IOC32_SETFLAGS:
 		cmd = FS_IOC_SETFLAGS;
 		break;
+#ifndef HAVE_SUPER_SET_UUID
+	case FS_IOC_GETFSUUID:
+		/* The ioctl is the same in 32-bit and 64-bit mode. */
+		break;
+#endif
 	default:
 		return (-ENOTTY);
 	}

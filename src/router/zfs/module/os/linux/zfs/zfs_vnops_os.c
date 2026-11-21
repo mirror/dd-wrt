@@ -221,8 +221,6 @@ zfs_close(struct inode *ip, int flag, cred_t *cr)
 	return (0);
 }
 
-#if defined(_KERNEL)
-
 static int zfs_fillpage(struct inode *ip, struct page *pp);
 
 /*
@@ -354,8 +352,6 @@ mappedread(znode_t *zp, int nbytes, zfs_uio_t *uio)
 
 	return (error);
 }
-#endif /* _KERNEL */
-
 static unsigned long zfs_delete_blocks = DMU_MAX_DELETEBLKCNT;
 
 /*
@@ -622,8 +618,8 @@ zfs_create_idmap(znode_t *dzp, char *name, vattr_t *vap, int excl,
 	zfs_dirlock_t	*dl;
 	dmu_tx_t	*tx;
 	int		error;
-	uid_t		uid;
-	gid_t		gid;
+	uid_t		uid = crgetuid(cr);
+	gid_t		gid = crgetgid(cr);
 	zfs_acl_ids_t   acl_ids;
 	boolean_t	fuid_dirtied;
 	boolean_t	have_acl = B_FALSE;
@@ -634,10 +630,6 @@ zfs_create_idmap(znode_t *dzp, char *name, vattr_t *vap, int excl,
 	 * If we have an ephemeral id, ACL, or XVATTR then
 	 * make sure file system is at proper version
 	 */
-
-	gid = crgetgid(cr);
-	uid = crgetuid(cr);
-
 	if (zfsvfs->z_use_fuids == B_FALSE &&
 	    (vsecp || IS_EPHEMERAL(uid) || IS_EPHEMERAL(gid)))
 		return (SET_ERROR(EINVAL));
@@ -657,8 +649,8 @@ zfs_create_idmap(znode_t *dzp, char *name, vattr_t *vap, int excl,
 	}
 
 	if (vap->va_mask & ATTR_XVATTR) {
-		if ((error = secpolicy_xvattr((xvattr_t *)vap,
-		    crgetuid(cr), cr, vap->va_mode)) != 0) {
+		if ((error = secpolicy_xvattr((xvattr_t *)vap, uid, cr,
+		    vap->va_mode)) != 0) {
 			zfs_exit(zfsvfs, FTAG);
 			return (error);
 		}
@@ -839,17 +831,18 @@ out:
 	if (dl)
 		zfs_dirent_unlock(dl);
 
-	if (error) {
-		if (zp)
-			zrele(zp);
-	} else {
+	if (error == 0) {
 		zfs_znode_update_vfs(dzp);
 		zfs_znode_update_vfs(zp);
-		*zpp = zp;
+
+		if (zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
+			error = zil_commit(zilog, 0);
 	}
 
-	if (error == 0 && zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
-		error = zil_commit(zilog, 0);
+	if (error == 0)
+		*zpp = zp;
+	else if (zp != NULL)
+		zrele(zp);
 
 	zfs_exit(zfsvfs, FTAG);
 	return (error);
@@ -873,8 +866,8 @@ zfs_tmpfile_idmap(struct inode *dip, vattr_t *vap, int excl,
 	objset_t	*os;
 	dmu_tx_t	*tx;
 	int		error;
-	uid_t		uid;
-	gid_t		gid;
+	uid_t		uid = crgetuid(cr);
+	gid_t		gid = crgetgid(cr);
 	zfs_acl_ids_t   acl_ids;
 	uint64_t	projid = ZFS_DEFAULT_PROJID;
 	boolean_t	fuid_dirtied;
@@ -885,10 +878,6 @@ zfs_tmpfile_idmap(struct inode *dip, vattr_t *vap, int excl,
 	 * If we have an ephemeral id, ACL, or XVATTR then
 	 * make sure file system is at proper version
 	 */
-
-	gid = crgetgid(cr);
-	uid = crgetuid(cr);
-
 	if (zfsvfs->z_use_fuids == B_FALSE &&
 	    (vsecp || IS_EPHEMERAL(uid) || IS_EPHEMERAL(gid)))
 		return (SET_ERROR(EINVAL));
@@ -898,8 +887,8 @@ zfs_tmpfile_idmap(struct inode *dip, vattr_t *vap, int excl,
 	os = zfsvfs->z_os;
 
 	if (vap->va_mask & ATTR_XVATTR) {
-		if ((error = secpolicy_xvattr((xvattr_t *)vap,
-		    crgetuid(cr), cr, vap->va_mode)) != 0) {
+		if ((error = secpolicy_xvattr((xvattr_t *)vap, uid, cr,
+		    vap->va_mode)) != 0) {
 			zfs_exit(zfsvfs, FTAG);
 			return (error);
 		}
@@ -1265,7 +1254,7 @@ zfs_mkdir_idmap(znode_t *dzp, char *dirname, vattr_t *vap, znode_t **zpp,
 	dmu_tx_t	*tx;
 	int		error;
 	int		zf = ZNEW;
-	uid_t		uid;
+	uid_t		uid = crgetuid(cr);
 	gid_t		gid = crgetgid(cr);
 	zfs_acl_ids_t   acl_ids;
 	boolean_t	fuid_dirtied;
@@ -1277,8 +1266,6 @@ zfs_mkdir_idmap(znode_t *dzp, char *dirname, vattr_t *vap, znode_t **zpp,
 	 * If we have an ephemeral id, ACL, or XVATTR then
 	 * make sure file system is at proper version
 	 */
-
-	uid = crgetuid(cr);
 	if (zfsvfs->z_use_fuids == B_FALSE &&
 	    (vsecp || IS_EPHEMERAL(uid) || IS_EPHEMERAL(gid)))
 		return (SET_ERROR(EINVAL));
@@ -1304,8 +1291,8 @@ zfs_mkdir_idmap(znode_t *dzp, char *dirname, vattr_t *vap, znode_t **zpp,
 		zf |= ZCILOOK;
 
 	if (vap->va_mask & ATTR_XVATTR) {
-		if ((error = secpolicy_xvattr((xvattr_t *)vap,
-		    crgetuid(cr), cr, vap->va_mode)) != 0) {
+		if ((error = secpolicy_xvattr((xvattr_t *)vap, uid, cr,
+		    vap->va_mode)) != 0) {
 			zfs_exit(zfsvfs, FTAG);
 			return (error);
 		}
@@ -1400,8 +1387,6 @@ top:
 	if (fuid_dirtied)
 		zfs_fuid_sync(zfsvfs, tx);
 
-	*zpp = zp;
-
 	txtype = zfs_log_create_txtype(Z_DIR, vsecp, vap);
 	if (flags & FIGNORECASE)
 		txtype |= TX_CI;
@@ -1415,16 +1400,19 @@ out:
 
 	zfs_dirent_unlock(dl);
 
-	if (error != 0) {
-		zrele(zp);
-	} else {
+	if (error == 0) {
 		zfs_znode_update_vfs(dzp);
 		zfs_znode_update_vfs(zp);
 
 		if (zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
 			error = zil_commit(zilog, 0);
-
 	}
+
+	if (error == 0)
+		*zpp = zp;
+	else
+		zrele(zp);
+
 	zfs_exit(zfsvfs, FTAG);
 	return (error);
 }
@@ -1773,16 +1761,66 @@ zfs_getattr_fast(zidmap_t *idmap, u32 request_mask, struct inode *ip,
 		sp->blksize = zfsvfs->z_max_blksz;
 	}
 
+#ifdef STATX_CHANGE_COOKIE
+	if (request_mask & STATX_CHANGE_COOKIE) {
+		/*
+		 * knfsd uses the STATX_CHANGE_COOKIE to surface to clients
+		 * change_info4 data, which is used to implement NFS client
+		 * name caching (see RFC 8881 Section 10.8). This number
+		 * should always increase with changes and should not be
+		 * reused. We cannot simply present ctime here because
+		 * ZFS uses a coarse timer to set them, which may cause
+		 * clients to fail to detect changes and invalidate cache.
+		 *
+		 * z_seq is a per-file 64-bit counter bumped on every change
+		 * and persisted across znode eviction, so it is presented
+		 * directly as a monotonic change cookie. Files that predate
+		 * persistence are seeded from ctime on load so the cookie
+		 * never moves backward across the upgrade.
+		 *
+		 * STATX_ATTR_CHANGE_MONOTONIC is advertised
+		 * to prevent knfsd from generating the change cookie
+		 * based on ctime. C.f. nfsd4_change_attribute in
+		 * fs/nfsd/nfsfh.c.
+		 *
+		 * The cookie is read here, under z_lock and the teardown
+		 * lock. setattr, ACL changes and link/unlink store their
+		 * changes and bump z_seq under z_lock, so the cookie
+		 * returned always matches the attributes returned with it.
+		 */
+		sp->change_cookie = atomic_load_64(&zp->z_seq);
+		sp->attributes |= STATX_ATTR_CHANGE_MONOTONIC;
+		sp->result_mask |= STATX_CHANGE_COOKIE;
+	}
+#endif
+
 	mutex_exit(&zp->z_lock);
+
+#ifdef STATX_BTIME
+	if (request_mask & STATX_BTIME) {
+		sp->btime = zp->z_btime;
+		sp->result_mask |= STATX_BTIME;
+	}
+#endif
 
 	/*
 	 * Required to prevent NFS client from detecting different inode
 	 * numbers of snapshot root dentry before and after snapshot mount.
+	 * Likewise report the snapshot creation time as the birth time,
+	 * matching the unmounted '.zfs/snapshot/<name>' directory.
 	 */
 	if (zfsvfs->z_issnap) {
-		if (ip->i_sb->s_root->d_inode == ip)
+		if (ip->i_sb->s_root->d_inode == ip) {
 			sp->ino = ZFSCTL_INO_SNAPDIRS -
 			    dmu_objset_id(zfsvfs->z_os);
+#ifdef STATX_BTIME
+			if (request_mask & STATX_BTIME) {
+				sp->btime.tv_sec = dsl_get_creation(
+				    dmu_objset_ds(zfsvfs->z_os));
+				sp->btime.tv_nsec = 0;
+			}
+#endif
+		}
 	}
 
 	zfs_exit(zfsvfs, FTAG);
@@ -1823,7 +1861,7 @@ zfs_setattr_dir(znode_t *dzp)
 	while ((err = zap_cursor_retrieve(&zc, zap)) == 0) {
 		count = 0;
 		if (zap->za_integer_length != 8 || zap->za_num_integers != 1) {
-			err = ENXIO;
+			err = SET_ERROR(ENXIO);
 			break;
 		}
 
@@ -2102,8 +2140,12 @@ top:
 		 * block if there are locks present... this
 		 * should be addressed in openat().
 		 */
-		/* XXX - would it be OK to generate a log record here? */
-		err = zfs_freesp(zp, vap->va_size, 0, 0, FALSE);
+		/*
+		 * Log the size change as TX_TRUNCATE under the range lock
+		 * that covers it, not in TX_SETATTR below: a write logged in
+		 * between would be cut off when TX_SETATTR is replayed.
+		 */
+		err = zfs_freesp(zp, vap->va_size, 0, 0, TRUE);
 		if (err)
 			goto out3;
 	}
@@ -2124,8 +2166,8 @@ top:
 		int	idmask = (mask & (ATTR_UID|ATTR_GID));
 		int	take_owner;
 		int	take_group;
-		uid_t	uid;
-		gid_t	gid;
+		uid_t	owner;
+		gid_t	group;
 
 		/*
 		 * NOTE: even if a new mode is being set,
@@ -2139,13 +2181,13 @@ top:
 		 * Take ownership or chgrp to group we are a member of
 		 */
 
-		uid = zfs_uid_to_vfsuid(idmap, zfs_i_user_ns(ip),
+		owner = zfs_uid_to_vfsuid(idmap, zfs_i_user_ns(ip),
 		    vap->va_uid);
-		gid = zfs_gid_to_vfsgid(idmap, zfs_i_user_ns(ip),
+		group = zfs_gid_to_vfsgid(idmap, zfs_i_user_ns(ip),
 		    vap->va_gid);
-		take_owner = (mask & ATTR_UID) && (uid == crgetuid(cr));
+		take_owner = (mask & ATTR_UID) && (owner == crgetuid(cr));
 		take_group = (mask & ATTR_GID) &&
-		    zfs_groupmember(zfsvfs, gid, cr);
+		    zfs_groupmember(zfsvfs, group, cr);
 
 		/*
 		 * If both ATTR_UID and ATTR_GID are set then take_owner and
@@ -2354,7 +2396,7 @@ top:
 		    zfs_id_overquota(zfsvfs, DMU_PROJECTUSED_OBJECT, projid)) {
 			if (attrzp)
 				zrele(attrzp);
-			err = EDQUOT;
+			err = SET_ERROR(EDQUOT);
 			goto out2;
 		}
 	}
@@ -2367,7 +2409,7 @@ top:
 
 		if (ZTOZSB(zp)->z_acl_mode == ZFS_ACL_RESTRICTED &&
 		    !(zp->z_pflags & ZFS_ACL_TRIVIAL)) {
-			err = EPERM;
+			err = SET_ERROR(EPERM);
 			goto out;
 		}
 
@@ -2613,10 +2655,18 @@ top:
 		zfs_fuid_sync(zfsvfs, tx);
 
 	if (mask != 0) {
-		zfs_log_setattr(zilog, tx, TX_SETATTR, zp, vap, mask, fuidp);
 		/*
-		 * ATTR_MODE bumps via zfs_aclset_common -> tstamp_update_setup;
-		 * ATTR_SIZE goes through zfs_freesp(log=FALSE) which does not.
+		 * zfs_freesp() has logged the size.  Log the mtime that
+		 * ATTR_SIZE set above as ATTR_MTIME.
+		 */
+		uint_t log_mask = mask;
+
+		if (log_mask & ATTR_SIZE)
+			log_mask = (log_mask & ~ATTR_SIZE) | ATTR_MTIME;
+		zfs_log_setattr(zilog, tx, TX_SETATTR, zp, vap, log_mask,
+		    fuidp);
+		/*
+		 * ATTR_MODE bumps via zfs_aclset_common -> tstamp_update_setup.
 		 */
 		if (!(mask & ATTR_MODE))
 			atomic_inc_64(&zp->z_seq);
@@ -2981,7 +3031,7 @@ top:
 			rw_exit(&sdzp->z_name_lock);
 
 		if (strcmp(snm, "..") == 0)
-			serr = EINVAL;
+			serr = SET_ERROR(EINVAL);
 		zfs_exit(zfsvfs, FTAG);
 		return (serr);
 	}
@@ -2993,7 +3043,7 @@ top:
 			rw_exit(&sdzp->z_name_lock);
 
 		if (strcmp(tnm, "..") == 0)
-			terr = EINVAL;
+			terr = SET_ERROR(EINVAL);
 		zfs_exit(zfsvfs, FTAG);
 		return (terr);
 	}
@@ -3321,6 +3371,7 @@ commit_link_szp:
 		VERIFY0(zfs_drop_nlink(szp, tx, NULL));
 	goto commit;
 }
+
 int
 zfs_rename(znode_t *sdzp, char *snm, znode_t *tdzp, char *tnm,
     cred_t *cr, int flags, uint64_t rflags, vattr_t *wo_vap)
@@ -3489,14 +3540,13 @@ top:
 
 	zfs_dirent_unlock(dl);
 
-	if (error == 0) {
-		*zpp = zp;
+	if (error == 0 && zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
+		error = zil_commit(zilog, 0);
 
-		if (zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
-			error = zil_commit(zilog, 0);
-	} else {
+	if (error == 0)
+		*zpp = zp;
+	else
 		zrele(zp);
-	}
 
 	zfs_exit(zfsvfs, FTAG);
 	return (error);
@@ -3861,7 +3911,7 @@ zfs_putpage(struct inode *ip, struct page *pp, struct writeback_control *wbc,
 	    (zp->z_projid != ZFS_DEFAULT_PROJID &&
 	    zfs_id_overblockquota(zfsvfs, DMU_PROJECTUSED_OBJECT,
 	    zp->z_projid))) {
-		err = EDQUOT;
+		err = SET_ERROR(EDQUOT);
 	}
 #endif
 
@@ -4481,7 +4531,6 @@ zfs_fid(struct inode *ip, fid_t *fidp)
 	return (0);
 }
 
-#if defined(_KERNEL)
 EXPORT_SYMBOL(zfs_open);
 EXPORT_SYMBOL(zfs_close);
 EXPORT_SYMBOL(zfs_lookup);
@@ -4507,4 +4556,3 @@ EXPORT_SYMBOL(zfs_map);
 
 module_param(zfs_delete_blocks, ulong, 0644);
 MODULE_PARM_DESC(zfs_delete_blocks, "Delete files larger than N blocks async");
-#endif

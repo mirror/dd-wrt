@@ -1,0 +1,382 @@
+#!/usr/bin/env bash
+
+######################################################################
+# 3) install dependencies for compiling and loading
+#
+# qemu-3-deps-vm.sh [--poweroff] OS_NAME [FEDORA_VERSION]
+#
+# --poweroff: Power off the VM after installing dependencies
+# OS_NAME: OS name (like 'fedora41')
+# FEDORA_VERSION: (optional) Experimental Fedora kernel version, like "6.14" to
+#     install instead of Fedora defaults.
+######################################################################
+
+set -eu
+
+function alpine() {
+  echo "##[group]Shrink the initramfs"
+  # /boot is a small FAT partition, "kms" makes the initramfs too big.
+  sudo sed -i 's/ kms / /' /etc/mkinitfs/mkinitfs.conf
+  echo "##[endgroup]"
+
+  echo "##[group]Install Development Tools"
+  sudo apk add \
+    acl alpine-sdk attr autoconf automake bash build-base clang22 coreutils \
+    cpio cryptsetup curl curl-dev dhcpcd diffutils eudev eudev-dev eudev-libs \
+    findutils fio gawk gdb gettext-dev git grep jq libaio libaio-dev \
+    libcap-utils libcurl libtirpc-dev libtool libunwind libunwind-dev \
+    linux-headers linux-pam-dev linux-tools linux-stable linux-stable-dev \
+    lsscsi m4 make \
+    nfs-utils openssl-dev parted pax procps py3-cffi py3-distlib py3-packaging \
+    py3-setuptools python3 python3-dev qemu-guest-agent rng-tools rsync samba \
+    samba-server sed strace sysstat tzdata util-linux util-linux-dev wget \
+    words xfsprogs xxhash zlib-dev pamtester@testing
+  echo "##[endgroup]"
+
+  echo "##[group]Switch to eudev"
+  sudo setup-devd udev
+  echo "##[endgroup]"
+
+  echo "##[group]Boot the -stable kernel instead of -virt"
+  # -virt lacks CONFIG_SCSI_DEBUG, which several ZTS tests need.  Takes
+  # effect on the next boot, after this step powers off.  Limine has a
+  # static entry and no kernel hooks, so edit it.
+  sudo sed -i -e 's#/vmlinuz-virt#/vmlinuz-stable#' \
+    -e 's#/initramfs-virt#/initramfs-stable#' /boot/limine/limine.conf
+  echo "##[endgroup]"
+
+  echo "##[group]Install ksh93 from Source"
+  # Build the actively-maintained "1.0" branch instead of the
+  # default "dev" branch for a reproducible, stable build.
+  git clone --depth 1 --branch 1.0 https://github.com/ksh93/ksh.git /tmp/ksh
+  cd /tmp/ksh
+  ./bin/package make
+  sudo ./bin/package install /
+  echo "##[endgroup]"
+}
+
+function archlinux() {
+  echo "##[group]Running pacman -Syu"
+  sudo btrfs filesystem resize max /
+  sudo pacman -Syu --noconfirm
+  echo "##[endgroup]"
+
+  echo "##[group]Install Development Tools"
+  sudo pacman -Sy --noconfirm base-devel bc cpio cryptsetup dhclient dkms \
+    fakeroot fio gdb inetutils jq less linux linux-headers lsscsi nfs-utils \
+    parted pax perf python-packaging python-setuptools qemu-guest-agent ksh \
+    samba strace sysstat rng-tools rsync wget xxhash
+  echo "##[endgroup]"
+}
+
+function debian() {
+  export DEBIAN_FRONTEND="noninteractive"
+
+  echo "##[group]Wait for cloud-init to finish"
+  cloud-init status --wait
+  echo "##[endgroup]"
+
+  echo "##[group]Running apt-get update+upgrade"
+  sudo sed -i '/[[:alpha:]]-backports/d' /etc/apt/sources.list
+  sudo apt-get update -y
+  sudo apt-get upgrade -y
+  echo "##[endgroup]"
+
+  echo "##[group]Install Development Tools"
+  "$(dirname "${BASH_SOURCE[0]}")/debian-user-deps.sh" \
+    acl alien attr bc cpio cryptsetup curl dbench dh-python dkms \
+    fakeroot fio gdb gdebi git ksh lcov isc-dhcp-client jq libacl1-dev \
+    libaio-dev libattr1-dev libcurl4-openssl-dev libdevmapper-dev \
+    libelf-dev libffi-dev libmount-dev libpam0g-dev libselinux-dev \
+    libtool-bin libudev-dev linux-headers-$(uname -r) \
+    lsscsi nfs-kernel-server pamtester parted python3 python3-all-dev \
+    python3-cffi python3-dev python3-distlib python3-packaging \
+    python3-setuptools python3-sphinx qemu-guest-agent rng-tools rpm2cpio \
+    rsync samba strace sysstat watchdog wget xfslibs-dev xxhash
+  echo "##[endgroup]"
+}
+
+function freebsd() {
+  export ASSUME_ALWAYS_YES="YES"
+
+  echo "##[group]Install Development Tools"
+  sudo pkg install -y autoconf automake autotools base64 checkbashisms fio \
+    gdb gettext gettext-runtime git gmake gsed jq ksh lcov libtool lscpu \
+    pkgconf python python3 pamtester pamtester qemu-guest-agent rsync xxhash
+  sudo pkg install -xy \
+    '^samba4[[:digit:]]+$' \
+    '^py3[[:digit:]]+-cffi$' \
+    '^py3[[:digit:]]+-sysctl$' \
+    '^py3[[:digit:]]+-setuptools$' \
+    '^py3[[:digit:]]+-packaging$'
+  echo "##[endgroup]"
+}
+
+# common packages for: almalinux, centos, redhat
+function rhel() {
+  echo "##[group]Running dnf update"
+  echo "max_parallel_downloads=10" | sudo -E tee -a /etc/dnf/dnf.conf
+  sudo dnf clean all
+  sudo dnf update -y --setopt=fastestmirror=1 --refresh
+  echo "##[endgroup]"
+
+  echo "##[group]Install Development Tools"
+
+  # Alma wants "Development Tools", Fedora 41 wants "development-tools"
+  if ! sudo dnf group install -y "Development Tools" ; then
+    echo "Trying 'development-tools' instead of 'Development Tools'"
+    sudo dnf group install -y development-tools
+  fi
+
+  sudo dnf install -y \
+    acl attr bc bzip2 cryptsetup curl dbench dkms elfutils-libelf-devel fio \
+    gdb git jq kernel-rpm-macros ksh libacl-devel libaio-devel \
+    libargon2-devel libattr-devel libblkid-devel libcurl-devel libffi-devel \
+    ncompress libselinux-devel libtirpc-devel libtool libudev-devel \
+    libuuid-devel lsscsi mdadm nfs-utils openssl-devel pam-devel pamtester \
+    parted perf python3 python3-cffi python3-devel python3-packaging \
+    kernel-devel python3-setuptools qemu-guest-agent rng-tools rpcgen \
+    rpm-build rsync samba strace sysstat systemd watchdog wget xfsprogs-devel \
+    xxhash zlib-devel
+
+  # These are needed for building Lustre.  We only install these on EL VMs since
+  # we don't plan to test build Lustre on other platforms.
+  sudo dnf install -y libnl3-devel libyaml-devel libmount-devel
+
+  echo "##[endgroup]"
+}
+
+function tumbleweed() {
+  echo "##[group]Running zypper is TODO!"
+  sleep 23456
+  echo "##[endgroup]"
+}
+
+# $1: Kernel version to install (like '6.14rc7')
+function install_fedora_experimental_kernel {
+
+  our_version="$1"
+  sudo dnf -y copr enable @kernel-vanilla/stable
+  sudo dnf -y copr enable @kernel-vanilla/mainline
+  all="$(sudo dnf list --showduplicates kernel-* python3-perf* perf* bpftool*)"
+  echo "Available versions:"
+  echo "$all"
+
+  # You can have a bunch of minor variants of the version we want '6.14'.
+  # Pick the newest variant (sorted by version number).
+  specific_version=$(echo "$all" | grep $our_version | awk '{print $2}' | sort -V | tail -n 1)
+  list="$(echo "$all" | grep $specific_version | grep -Ev 'kernel-rt|kernel-selftests|kernel-debuginfo' | sed 's/.x86_64//g' | awk '{print $1"-"$2}')"
+  sudo dnf install -y $list
+  sudo dnf -y copr disable @kernel-vanilla/stable
+  sudo dnf -y copr disable @kernel-vanilla/mainline
+}
+
+POWEROFF=""
+if [ "$1" == "--poweroff" ] ; then
+        POWEROFF=1
+        shift
+fi
+
+# Install dependencies
+case "$1" in
+  almalinux8)
+    echo "##[group]Enable epel and powertools repositories"
+    sudo dnf config-manager -y --set-enabled powertools
+    sudo dnf install -y epel-release
+    echo "##[endgroup]"
+    rhel
+    echo "##[group]Install kernel-abi-whitelists"
+    sudo dnf install -y kernel-abi-whitelists
+    echo "##[endgroup]"
+    ;;
+  almalinux9|almalinux10*|centos-stream9|centos-stream10)
+    echo "##[group]Enable epel and crb repositories"
+    sudo dnf config-manager -y --set-enabled crb
+    sudo dnf install -y epel-release
+    echo "##[endgroup]"
+    rhel
+    echo "##[group]Install kernel-abi-stablelists"
+    sudo dnf install -y kernel-abi-stablelists
+    echo "##[endgroup]"
+    ;;
+  alpine*)
+    alpine
+    ;;
+  archlinux)
+    archlinux
+    ;;
+  debian*)
+    echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections
+    debian
+    echo "##[group]Install Debian specific"
+    sudo apt-get install -yq linux-perf dh-sequence-dkms
+    echo "##[endgroup]"
+    ;;
+  fedora*)
+    rhel
+    sudo dnf install -y libunwind-devel
+
+    # Fedora 42+ moves /usr/bin/script from 'util-linux' to 'util-linux-script'
+    sudo dnf install -y util-linux-script || true
+
+    # Optional: Install an experimental kernel ($2 = kernel version)
+    if [ -n "${2:-}" ] ; then
+      install_fedora_experimental_kernel "$2"
+    fi
+    ;;
+  freebsd*)
+    freebsd
+    ;;
+  tumbleweed)
+    tumbleweed
+    ;;
+  ubuntu22|ubuntu24)
+    debian
+    echo "##[group]Install Ubuntu specific"
+    sudo apt-get install -yq linux-tools-common
+    # The runners (ONLY_DEPS) do not need linux-modules-extra
+    if [ -z "${ONLY_DEPS:-}" ] ; then
+      sudo apt-get install -yq linux-modules-extra-$(uname -r)
+    fi
+    sudo apt-get install -yq dh-sequence-dkms
+
+    echo "##[endgroup]"
+    echo "##[group]Delete Ubuntu OpenZFS modules"
+    for i in $(find /lib/modules -name zfs -type d); do sudo rm -rvf $i; done
+    echo "##[endgroup]"
+    ;;
+  ubuntu26)
+    debian
+    echo "##[group]Install Ubuntu specific"
+    # Skip linux-modules-extra which is already installed
+    sudo apt-get install -yq linux-tools-common
+    sudo apt-get install -yq dh-sequence-dkms
+
+    # Replace sudo-rs with sudo for now because the Rust version
+    # does not support -E to preserve the entire environment
+    sudo update-alternatives --set sudo /usr/bin/sudo.ws
+
+    echo "##[endgroup]"
+    echo "##[group]Delete Ubuntu OpenZFS modules"
+    for i in $(find /lib/modules -name zfs -type d); do sudo rm -rvf $i; done
+    echo "##[endgroup]"
+    ;;
+esac
+
+# This script is used for checkstyle + zloop deps also.
+# Install only the needed packages and exit - when used this way.
+test -z "${ONLY_DEPS:-}" || exit 0
+
+# Start services
+echo "##[group]Enable services"
+case "$1" in
+  alpine*)
+    sudo -E rc-update add qemu-guest-agent
+    sudo -E rc-update add nfs
+    sudo -E rc-update add samba
+    # Remove services related to cloud-init.
+    sudo -E rc-update del cloud-init-local boot
+    sudo -E rc-update del cloud-init default
+    sudo -E rc-update del cloud-final default
+    sudo -E rc-update del cloud-config default
+    ;;
+  freebsd*)
+    # add virtio things
+    echo 'virtio_load="YES"' | sudo -E tee -a /boot/loader.conf
+    for i in balloon blk console random scsi; do
+      echo "virtio_${i}_load=\"YES\"" | sudo -E tee -a /boot/loader.conf
+    done
+    echo "fdescfs /dev/fd fdescfs rw 0 0" | sudo -E tee -a /etc/fstab
+    sudo -E mount /dev/fd
+    sudo -E touch /etc/zfs/exports
+    sudo -E sysrc mountd_flags="/etc/zfs/exports"
+    echo '[global]' | sudo -E tee /usr/local/etc/smb4.conf >/dev/null
+    sudo -E service nfsd enable
+    sudo -E service qemu-guest-agent enable
+    sudo -E service samba_server enable
+    ;;
+  debian*|ubuntu*)
+    sudo -E systemctl enable nfs-kernel-server
+    sudo -E systemctl enable smbd
+
+    # enable usershares (disabled by default on ubuntu 26.04)
+    sudo -E sed -i '/usershare max shares/s/^#//' /etc/samba/smb.conf
+
+    # add systemd drop-in to allow the service to be enabled
+    sudo -E mkdir -p /etc/systemd/system/qemu-guest-agent.service.d/
+    sudo -E tee /etc/systemd/system/qemu-guest-agent.service.d/override.conf <<EOF
+[Install]
+WantedBy=multi-user.target
+EOF
+    sudo -E systemctl daemon-reload
+    sudo -E systemctl enable qemu-guest-agent
+    ;;
+  *)
+    # All other linux distros
+    sudo -E systemctl enable nfs-server
+    sudo -E systemctl enable qemu-guest-agent
+    sudo -E systemctl enable smb
+    ;;
+esac
+echo "##[endgroup]"
+
+# Setup Kernel cmdline
+CMDLINE="console=tty0 console=ttyS0,115200n8"
+CMDLINE="$CMDLINE selinux=0"
+CMDLINE="$CMDLINE random.trust_cpu=on"
+CMDLINE="$CMDLINE no_timer_check"
+case "$1" in
+  almalinux*|centos*|fedora*)
+    GRUB_CFG="/boot/grub2/grub.cfg"
+    GRUB_MKCONFIG="grub2-mkconfig"
+    CMDLINE="$CMDLINE biosdevname=0 net.ifnames=0"
+    echo 'GRUB_SERIAL_COMMAND="serial --speed=115200"' \
+      | sudo tee -a /etc/default/grub >/dev/null
+    # Force GRUB itself onto the serial console.  These VMs have no display,
+    # and without this grub2-mkconfig can emit 'terminal_output gfxterm',
+    # which leaves GRUB stuck before the kernel starts on a headless VM.
+    sudo sed -i -e '/^GRUB_TERMINAL_INPUT/d' -e '/^GRUB_TERMINAL_OUTPUT/d' /etc/default/grub
+    echo 'GRUB_TERMINAL_INPUT="serial console"' | sudo tee -a /etc/default/grub >/dev/null
+    echo 'GRUB_TERMINAL_OUTPUT="serial console"' | sudo tee -a /etc/default/grub >/dev/null
+    ;;
+  ubuntu24|ubuntu26)
+    GRUB_CFG="/boot/grub/grub.cfg"
+    GRUB_MKCONFIG="grub-mkconfig"
+    echo 'GRUB_DISABLE_OS_PROBER="false"' \
+      | sudo tee -a /etc/default/grub >/dev/null
+    ;;
+  *)
+    GRUB_CFG="/boot/grub/grub.cfg"
+    GRUB_MKCONFIG="grub-mkconfig"
+    ;;
+esac
+
+case "$1" in
+  alpine*)
+    # kmemleak on and CPU mitigations off by default. The -nokmemleak
+    # and -mitigations suffixes keep the kernel's defaults instead.
+    kmemleak=on mitigations=off
+    [[ "$1" == *-nokmemleak* ]] && kmemleak=off
+    [[ "$1" == *-mitigations* ]] && mitigations=auto
+    opts="kmemleak=$kmemleak mitigations=$mitigations"
+    sudo sed -i "/^\s*cmdline:/s/\$/ $opts/" /boot/limine/limine.conf
+    ;;
+  archlinux|freebsd*)
+    true
+    ;;
+  *)
+    echo "##[group]Edit kernel cmdline"
+    sudo sed -i -e '/^GRUB_CMDLINE_LINUX/d' /etc/default/grub || true
+    echo "GRUB_CMDLINE_LINUX=\"$CMDLINE\"" \
+      | sudo tee -a /etc/default/grub >/dev/null
+    sudo $GRUB_MKCONFIG -o $GRUB_CFG
+    echo "##[endgroup]"
+    ;;
+esac
+
+# reset cloud-init configuration and poweroff
+sudo cloud-init clean --logs
+if [ "$POWEROFF" == "1" ] ; then
+        sleep 2 && sudo poweroff &
+fi
+exit 0

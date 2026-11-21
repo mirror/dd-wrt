@@ -462,6 +462,19 @@ out:
 	return (error);
 }
 
+/*
+ * Report an error block whose datasets could not be checked.
+ */
+static int
+copyout_unresolved(uint64_t dataset, zbookmark_err_phys_t *zep, void *uaddr,
+    uint64_t *count)
+{
+	zbookmark_phys_t zb;
+
+	zep_to_zb(dataset, zep, &zb);
+	return (copyout_entry(&zb, uaddr, count));
+}
+
 static int
 process_error_block(spa_t *spa, uint64_t head_ds, zbookmark_err_phys_t *zep,
     void *uaddr, uint64_t *count)
@@ -473,15 +486,8 @@ process_error_block(spa_t *spa, uint64_t head_ds, zbookmark_err_phys_t *zep,
 	 * the key is not loaded. In this case do not proceed to
 	 * check_filesystem(), instead do the accounting here.
 	 */
-	if (zep->zb_birth == 0 || head_ds == 0) {
-		zbookmark_phys_t zb;
-		zep_to_zb(head_ds, zep, &zb);
-		int error = copyout_entry(&zb, uaddr, count);
-		if (error != 0) {
-			return (error);
-		}
-		return (0);
-	}
+	if (zep->zb_birth == 0 || head_ds == 0)
+		return (copyout_unresolved(head_ds, zep, uaddr, count));
 
 	uint64_t top_affected_fs;
 	uint64_t init_count = *count;
@@ -512,6 +518,21 @@ process_error_block(spa_t *spa, uint64_t head_ds, zbookmark_err_phys_t *zep,
 
 		list_destroy(&clones_list);
 	}
+
+	/*
+	 * ENOMEM and EFAULT concern the userland buffer and must be returned.
+	 * Any other failure to check the datasets, e.g. because the key is not
+	 * loaded or a snapshot was destroyed, must not hide the other entries:
+	 * report the block as above unless check_filesystem() already copied
+	 * out part of it, and leave the entry in the log.
+	 */
+	if (error != 0 && error != ENOMEM && error != EFAULT) {
+		if (init_count == *count)
+			error = copyout_unresolved(head_ds, zep, uaddr, count);
+		else
+			error = 0;
+	}
+
 	if (error == 0 && init_count == *count) {
 		/*
 		 * If we reach this point, no errors have been detected
@@ -1024,16 +1045,57 @@ process_error_log(spa_t *spa, uint64_t obj, void *uaddr, uint64_t *count)
 	return (0);
 }
 
-static int
-process_error_list(spa_t *spa, avl_tree_t *list, void *uaddr, uint64_t *count)
+/*
+ * Copy the entries of the in-core error lists, so that they can be
+ * processed without spa_errlist_lock.  Processing them can read from the
+ * pool, and a read that fails needs spa_errlist_lock to post its ereport
+ * (zfs_ereport_start()), which can be done by the same ZIO interrupt
+ * thread that our read's completion is waiting for.  The caller frees
+ * *entsp, of *sizep entries.
+ */
+static uint64_t
+copy_error_lists(spa_t *spa, spa_error_entry_t **entsp, uint64_t *sizep)
 {
-	spa_error_entry_t *se;
+	spa_error_entry_t *ents = NULL;
+	uint64_t size = 0, n;
 
+	/* Don't allocate memory while holding spa_errlist_lock. */
+	for (;;) {
+		mutex_enter(&spa->spa_errlist_lock);
+		n = avl_numnodes(&spa->spa_errlist_scrub) +
+		    avl_numnodes(&spa->spa_errlist_last);
+		if (n <= size)
+			break;
+		mutex_exit(&spa->spa_errlist_lock);
+		if (ents != NULL)
+			vmem_free(ents, size * sizeof (*ents));
+		size = n;
+		ents = vmem_alloc(size * sizeof (*ents), KM_SLEEP);
+	}
+
+	uint64_t i = 0;
+	for (spa_error_entry_t *se = avl_first(&spa->spa_errlist_scrub);
+	    se != NULL; se = AVL_NEXT(&spa->spa_errlist_scrub, se))
+		ents[i++] = *se;
+	for (spa_error_entry_t *se = avl_first(&spa->spa_errlist_last);
+	    se != NULL; se = AVL_NEXT(&spa->spa_errlist_last, se))
+		ents[i++] = *se;
+	mutex_exit(&spa->spa_errlist_lock);
+	ASSERT3U(i, ==, n);
+
+	*entsp = ents;
+	*sizep = size;
+	return (n);
+}
+
+static int
+process_error_list(spa_t *spa, spa_error_entry_t *ents, uint64_t n,
+    void *uaddr, uint64_t *count)
+{
 	if (!spa_feature_is_enabled(spa, SPA_FEATURE_HEAD_ERRLOG)) {
-		for (se = avl_first(list); se != NULL;
-		    se = AVL_NEXT(list, se)) {
+		for (uint64_t i = 0; i < n; i++) {
 			int error =
-			    copyout_entry(&se->se_bookmark, uaddr, count);
+			    copyout_entry(&ents[i].se_bookmark, uaddr, count);
 			if (error != 0) {
 				return (error);
 			}
@@ -1041,7 +1103,8 @@ process_error_list(spa_t *spa, avl_tree_t *list, void *uaddr, uint64_t *count)
 		return (0);
 	}
 
-	for (se = avl_first(list); se != NULL; se = AVL_NEXT(list, se)) {
+	for (uint64_t i = 0; i < n; i++) {
+		spa_error_entry_t *se = &ents[i];
 		uint64_t head_ds = 0;
 		int error = get_head_ds(spa, se->se_bookmark.zb_objset,
 		    &head_ds);
@@ -1072,7 +1135,7 @@ process_error_list(spa_t *spa, avl_tree_t *list, void *uaddr, uint64_t *count)
  * generated, we have two separate locks: one for the error log and one for the
  * in-core error lists.  We only need the error list lock to log and error, so
  * we grab the error log lock while we read the on-disk logs, and only pick up
- * the error list lock when we are finished.
+ * the error list lock when we are finished, to copy the in-core lists.
  */
 int
 spa_get_errlog(spa_t *spa, void *uaddr, uint64_t *count)
@@ -1095,14 +1158,14 @@ spa_get_errlog(spa_t *spa, void *uaddr, uint64_t *count)
 		ret = process_error_log(spa, spa->spa_errlog_last, uaddr,
 		    count);
 
-	mutex_enter(&spa->spa_errlist_lock);
-	if (!ret)
-		ret = process_error_list(spa, &spa->spa_errlist_scrub, uaddr,
-		    count);
-	if (!ret)
-		ret = process_error_list(spa, &spa->spa_errlist_last, uaddr,
-		    count);
-	mutex_exit(&spa->spa_errlist_lock);
+	if (!ret) {
+		spa_error_entry_t *ents;
+		uint64_t size;
+		uint64_t n = copy_error_lists(spa, &ents, &size);
+		ret = process_error_list(spa, ents, n, uaddr, count);
+		if (ents != NULL)
+			vmem_free(ents, size * sizeof (*ents));
+	}
 
 	mutex_exit(&spa->spa_errlog_lock);
 	dsl_pool_config_exit(spa->spa_dsl_pool, FTAG);
@@ -1462,7 +1525,6 @@ spa_swap_errlog(spa_t *spa, uint64_t new_head_ds, uint64_t old_head_ds,
 	mutex_exit(&spa->spa_errlog_lock);
 }
 
-#if defined(_KERNEL)
 /* error handling */
 EXPORT_SYMBOL(spa_log_error);
 EXPORT_SYMBOL(spa_approx_errlog_size);
@@ -1480,7 +1542,6 @@ EXPORT_SYMBOL(find_top_affected_fs);
 EXPORT_SYMBOL(find_birth_txg);
 EXPORT_SYMBOL(zep_to_zb);
 EXPORT_SYMBOL(name_to_errphys);
-#endif
 
 ZFS_MODULE_PARAM(zfs_spa, spa_, upgrade_errlog_limit, UINT, ZMOD_RW,
 	"Limit the number of errors which will be upgraded to the new "

@@ -30,6 +30,7 @@
 #include <sys/zfs_refcount.h>
 #include <sys/rrwlock.h>
 #include <sys/dsl_crypt.h>
+#include <sys/wmsum.h>
 #include <zfeature_common.h>
 
 #ifdef	__cplusplus
@@ -214,6 +215,21 @@ typedef struct dsl_dataset {
 	list_node_t ds_synced_link;
 
 	/*
+	 * Space accounting deltas of this txg, applied by
+	 * dsl_dataset_apply_deltas().  The first group counts blocks
+	 * referenced only by this dataset, the second blocks moved to the
+	 * deadlist, i.e. now owned by ds_prev.  Non-snapshots only.
+	 */
+	wmsum_t ds_unique_delta;
+	wmsum_t ds_unique_comp_delta;
+	wmsum_t ds_unique_uncomp_delta;
+	wmsum_t ds_dead_delta;
+	wmsum_t ds_dead_comp_delta;
+	wmsum_t ds_dead_uncomp_delta;
+	wmsum_t ds_snap_xfer_delta;
+	wmsum_t ds_prev_unique_delta;
+
+	/*
 	 * ds_phys->ds_<accounting> is also protected by ds_lock.
 	 * Protected by ds_lock:
 	 */
@@ -394,6 +410,7 @@ void dsl_dataset_block_born(dsl_dataset_t *ds, const blkptr_t *bp,
     dmu_tx_t *tx);
 int dsl_dataset_block_kill(dsl_dataset_t *ds, const blkptr_t *bp,
     dmu_tx_t *tx, boolean_t async);
+void dsl_dataset_apply_deltas(dsl_dataset_t *ds, dmu_tx_t *tx);
 void dsl_dataset_block_remapped(dsl_dataset_t *ds, uint64_t vdev,
     uint64_t offset, uint64_t size, uint64_t birth, dmu_tx_t *tx);
 int dsl_dataset_snap_lookup(dsl_dataset_t *ds, const char *name,
@@ -431,6 +448,8 @@ void get_clones_stat(dsl_dataset_t *ds, nvlist_t *nv);
 void dsl_dataset_stats(dsl_dataset_t *os, nvlist_t *nv);
 
 void dsl_dataset_fast_stat(dsl_dataset_t *ds, dmu_objset_stats_t *stat);
+int dsl_dataset_snapshot_list_next(dsl_dataset_t *ds, int namelen,
+    char *name, uint64_t *idp, uint64_t *offp, boolean_t *case_conflict);
 void dsl_dataset_space(dsl_dataset_t *ds,
     uint64_t *refdbytesp, uint64_t *availbytesp,
     uint64_t *usedobjsp, uint64_t *availobjsp);

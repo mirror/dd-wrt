@@ -355,6 +355,29 @@ typedef enum bp_embedded_type {
 #define	SPA_SYNC_MIN_VDEVS 3		/* min vdevs to update during sync */
 
 /*
+ * Get number of data block pointers an indirect block could point to (given
+ * the block level and block size shift).
+ *
+ * For example, an L1 block with a blocksize of 128kb could point to:
+ *
+ * BP_SPANB(17, 1) = 1024 L0 block pointers
+ */
+#define	BP_SPANB(indblkshift, level) \
+	(((uint64_t)1) << ((level) * ((indblkshift) - SPA_BLKPTRSHIFT)))
+
+/*
+ * Helper function to lookup the byte range covered by a block pointer of any
+ * level (L0, L1, L2 ... etc).
+ *
+ * For example if you have an L1 block, and your blocksize is 128kb (shift 17),
+ * then your block can cover this many bytes:
+ *
+ * BP_BYTE_RANGE(17, 1) = 134217728 bytes
+ */
+#define	BP_BYTE_RANGE(indblkshift, level) \
+	(BP_SPANB(indblkshift, level) * ((uint64_t)1 << indblkshift))
+
+/*
  * A block is a hole when it has either 1) never been written to, or
  * 2) is zero-filled. In both cases, ZFS can return all zeroes for all reads
  * without physically allocating disk space. Holes are represented in the
@@ -893,6 +916,7 @@ extern int spa_config_parse(spa_t *spa, vdev_t **vdp, nvlist_t *nv,
 
 /* Namespace manipulation */
 extern spa_t *spa_lookup(const char *name);
+extern boolean_t spa_lookup_would_wait(const char *name);
 extern spa_t *spa_add(const char *name, nvlist_t *config, const char *altroot);
 extern void spa_remove(spa_t *spa);
 extern spa_t *spa_next(spa_t *prev);
@@ -939,6 +963,7 @@ typedef struct spa_stats {
 	spa_history_kstat_t	guid;		/* pool guid */
 	spa_history_kstat_t	iostats;
 	spa_history_kstat_t	log_spacemaps;
+	spa_history_kstat_t	misc;
 } spa_stats_t;
 
 typedef enum txg_state {
@@ -1058,6 +1083,9 @@ extern spa_log_state_t spa_get_log_state(spa_t *spa);
 extern void spa_set_log_state(spa_t *spa, spa_log_state_t state);
 extern int spa_reset_logs(spa_t *spa);
 extern void spa_log_sm_stats_update(spa_t *spa);
+extern void spa_misc_stats_bump_suspended_ioerr(spa_t *spa);
+extern void spa_misc_stats_bump_suspended_mmp(spa_t *spa);
+extern void spa_misc_stats_bump_resumed(spa_t *spa);
 
 /* Log claim callback */
 extern void spa_claim_notify(zio_t *zio);
@@ -1081,9 +1109,12 @@ extern uint64_t spa_first_txg(spa_t *spa);
 extern uint64_t spa_open_txg(spa_t *spa);
 extern uint64_t spa_syncing_txg(spa_t *spa);
 extern uint64_t spa_final_dirty_txg(spa_t *spa);
+extern uint64_t spa_load_max_txg(spa_t *spa);
+extern uint64_t spa_current_txg(spa_t *spa);
 extern uint64_t spa_version(spa_t *spa);
 extern pool_state_t spa_state(spa_t *spa);
 extern spa_load_state_t spa_load_state(spa_t *spa);
+extern uint64_t spa_load_txg(spa_t *spa);
 extern uint64_t spa_freeze_txg(spa_t *spa);
 extern uint64_t spa_get_worst_case_asize(spa_t *spa, uint64_t lsize);
 extern void spa_get_min_alloc_range(spa_t *spa, uint64_t *min, uint64_t *max);
@@ -1101,6 +1132,7 @@ extern metaslab_class_t *spa_special_embedded_log_class(spa_t *spa);
 extern metaslab_class_t *spa_dedup_class(spa_t *spa);
 extern metaslab_class_t *spa_preferred_class(spa_t *spa, const zio_t *zio);
 extern boolean_t spa_special_has_ddt(spa_t *spa);
+extern boolean_t spa_dynamic_gang_header(spa_t *spa);
 
 extern void spa_evicting_os_register(spa_t *, objset_t *os);
 extern void spa_evicting_os_deregister(spa_t *, objset_t *os);
@@ -1149,16 +1181,21 @@ extern boolean_t spa_has_spare(spa_t *, uint64_t guid);
 extern uint64_t dva_get_dsize_sync(spa_t *spa, const dva_t *dva);
 extern uint64_t bp_get_dsize_sync(spa_t *spa, const blkptr_t *bp);
 extern uint64_t bp_get_dsize(spa_t *spa, const blkptr_t *bp);
+extern boolean_t bp_rewrite_is_current(spa_t *spa, const blkptr_t *bp,
+    const struct zio_prop *zp, uint64_t txg);
 extern boolean_t spa_has_dedup(spa_t *spa);
 extern boolean_t spa_has_slogs(spa_t *spa);
 extern boolean_t spa_has_special(spa_t *spa);
 extern boolean_t spa_is_root(spa_t *spa);
 extern boolean_t spa_writeable(spa_t *spa);
+extern boolean_t spa_self_heal_allowed(spa_t *spa);
 extern boolean_t spa_has_pending_synctask(spa_t *spa);
 extern int spa_maxblocksize(spa_t *spa);
 extern int spa_maxdnodesize(spa_t *spa);
 extern boolean_t spa_has_checkpoint(spa_t *spa);
+extern uint64_t spa_checkpoint_txg(spa_t *spa);
 extern boolean_t spa_importing_readonly_checkpoint(spa_t *spa);
+extern boolean_t spa_importing_checkpoint(spa_t *spa);
 extern boolean_t spa_suspend_async_destroy(spa_t *spa);
 extern uint64_t spa_min_claim_txg(spa_t *spa);
 extern boolean_t zfs_dva_valid(spa_t *spa, const dva_t *dva,

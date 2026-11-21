@@ -68,6 +68,7 @@
 #include <sys/dirent.h>
 #include <sys/policy.h>
 #include <sys/queue.h>
+#include <sys/tsd.h>
 #include <sys/fs/zfs.h>
 #include <sys/zfs_ioctl.h>
 #include <sys/zil.h>
@@ -502,6 +503,16 @@ zvol_geom_bio_getattr(struct bio *bp)
 
 	if (g_handleattr_int(bp, "GEOM::candelete", 1))
 		return (0);
+
+	if (strcmp(bp->bio_attribute, "GEOM::physpath") == 0) {
+		mutex_enter(&zv->zv_state_lock);
+		if (g_handleattr_str(bp, "GEOM::physpath", zv->zv_name)) {
+			mutex_exit(&zv->zv_state_lock);
+			return (0);
+		}
+		mutex_exit(&zv->zv_state_lock);
+	}
+
 	if (strcmp(bp->bio_attribute, "blocksavail") == 0) {
 		dmu_objset_space(zv->zv_objset, &refd, &avail,
 		    &usedobjs, &availobjs);
@@ -1316,8 +1327,8 @@ zvol_os_rename_minor(zvol_state_t *zv, const char *newname)
  * request queue and generic disk structures for the block device.
  */
 static int
-zvol_alloc(const char *name, uint64_t volsize, uint64_t volblocksize,
-    zvol_state_t **zvp)
+zvol_alloc(const char *name, uint64_t dsobj, uint64_t volsize,
+    uint64_t volblocksize, zvol_state_t **zvp)
 {
 	zvol_state_t *zv;
 	uint64_t volmode;
@@ -1382,6 +1393,7 @@ zvol_alloc(const char *name, uint64_t volsize, uint64_t volblocksize,
 		knlist_init_sx(&zsd->zsd_selinfo.si_note, &zv->zv_state_lock);
 	}
 	(void) strlcpy(zv->zv_name, name, MAXPATHLEN);
+	zv->zv_dsobj = dsobj;
 	rw_init(&zv->zv_suspend_lock, NULL, RW_DEFAULT, NULL);
 	zfs_rangelock_init(&zv->zv_rangelock, NULL, NULL);
 
@@ -1503,7 +1515,8 @@ zvol_os_create_minor(const char *name)
 	if (error)
 		goto out_dmu_objset_disown;
 
-	error = zvol_alloc(name, volsize, doi->doi_data_block_size, &zv);
+	error = zvol_alloc(name, dmu_objset_id(os), volsize,
+	    doi->doi_data_block_size, &zv);
 	if (error || zv == NULL)
 		goto out_dmu_objset_disown;
 

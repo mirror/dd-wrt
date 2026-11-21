@@ -972,9 +972,9 @@ dmu_tx_delay(dmu_tx_t *tx, uint64_t dirty)
 	    zfs_dirty_data_max * zfs_delay_min_dirty_percent / 100;
 	if (dirty >= zfs_dirty_data_max) {
 		/*
-		 * The caller has already waited until the dirty data is
-		 * under the max, but the sync context reservations added
-		 * on top of it may push the sum beyond it.
+		 * The sync context reservations added on top of the dirty
+		 * data may push the sum beyond the max, as may the dirty
+		 * data itself growing after the caller has checked it.
 		 */
 		tx_time = zfs_delay_max_ns;
 	} else if (dirty > delay_min_bytes) {
@@ -1238,6 +1238,7 @@ dmu_tx_unassign(dmu_tx_t *tx)
 int
 dmu_tx_assign(dmu_tx_t *tx, dmu_tx_flag_t flags)
 {
+	spa_t *spa = tx->tx_pool->dp_spa;
 	int err;
 
 	ASSERT0(tx->tx_txg);
@@ -1270,13 +1271,13 @@ dmu_tx_assign(dmu_tx_t *tx, dmu_tx_flag_t flags)
 				 * suspend, so treat it as a normal retry.
 				 */
 				err = SET_ERROR(ERESTART);
-			else if ((flags & DMU_TX_WAIT) &&
-			    spa_get_failmode(tx->tx_pool->dp_spa) ==
+			else if (spa_get_failmode(spa) ==
 			    ZIO_FAILURE_MODE_CONTINUE)
 				/*
-				 * Caller wants to wait, but pool config is
-				 * overriding that, so return EIO to be
-				 * propagated back to userspace.
+				 * Pool config says not to block,
+				 * so return EIO to be propagated
+				 * back to userspace, whatever the
+				 * caller's flags.
 				 */
 				err = SET_ERROR(EIO);
 			else
@@ -1289,6 +1290,14 @@ dmu_tx_assign(dmu_tx_t *tx, dmu_tx_flag_t flags)
 		 * want to block.
 		 */
 		if (err != ERESTART || !(flags & DMU_TX_WAIT)) {
+			/*
+			 * A NOWAIT caller answers ERESTART with
+			 * dmu_tx_wait(). On a suspended pool, that
+			 * must block until resume, or the caller
+			 * spins.
+			 */
+			if (suspended && err == ERESTART)
+				tx->tx_break_on_suspend = B_FALSE;
 			ASSERT(err == EDQUOT || err == ENOSPC ||
 			    err == ERESTART || err == EIO);
 			return (err);
@@ -1357,15 +1366,26 @@ dmu_tx_wait(dmu_tx_t *tx)
 		/*
 		 * dmu_tx_try_assign() has determined that we need to wait
 		 * because we've consumed much or all of the dirty buffer
-		 * space.
+		 * space.  The hard limit though is rarely reached, so check
+		 * it unlocked, taking the lock only if we may have to wait.
 		 */
-		mutex_enter(&dp->dp_lock);
-		if (dp->dp_dirty_total >= zfs_dirty_data_max)
+		if (dp->dp_dirty_total >= zfs_dirty_data_max) {
 			DMU_TX_STAT_BUMP(dmu_tx_dirty_over_max);
-		while (dp->dp_dirty_total >= zfs_dirty_data_max)
-			cv_wait(&dp->dp_spaceavail_cv, &dp->dp_lock);
+			mutex_enter(&dp->dp_lock);
+			/*
+			 * Register before loading dp_dirty_total, since
+			 * dsl_pool_dirty_delta() only signals when it sees
+			 * dp_dirty_waiters.  See the comment there about
+			 * ordering.
+			 */
+			dp->dp_dirty_waiters++;
+			membar_sync();
+			while (dp->dp_dirty_total >= zfs_dirty_data_max)
+				cv_wait(&dp->dp_spaceavail_cv, &dp->dp_lock);
+			dp->dp_dirty_waiters--;
+			mutex_exit(&dp->dp_lock);
+		}
 		dirty = dp->dp_dirty_total + dp->dp_sync_reserve_total;
-		mutex_exit(&dp->dp_lock);
 
 		dmu_tx_delay(tx, dirty);
 
@@ -1686,7 +1706,6 @@ dmu_tx_fini(void)
 	}
 }
 
-#if defined(_KERNEL)
 EXPORT_SYMBOL(dmu_tx_create);
 EXPORT_SYMBOL(dmu_tx_hold_write);
 EXPORT_SYMBOL(dmu_tx_hold_write_by_dnode);
@@ -1709,4 +1728,3 @@ EXPORT_SYMBOL(dmu_tx_do_callbacks);
 EXPORT_SYMBOL(dmu_tx_hold_spill);
 EXPORT_SYMBOL(dmu_tx_hold_sa_create);
 EXPORT_SYMBOL(dmu_tx_hold_sa);
-#endif

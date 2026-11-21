@@ -25,7 +25,7 @@
 #define	TF(E, N) \
 	extern void ASMABI E(uint32_t s[8], const void *, size_t); \
 	static inline void N(uint32_t s[8], const void *d, size_t b) { \
-	kfpu_begin(); E(s, d, b); kfpu_end(); \
+	kfpu_ctx_t kctx; kfpu_begin(&kctx); E(s, d, b); kfpu_end(&kctx); \
 }
 
 #if defined(__x86_64) || defined(__aarch64__) || defined(__arm__) || \
@@ -114,9 +114,16 @@ const sha256_ops_t sha256_shani_impl = {
 
 #elif defined(__aarch64__) || defined(__arm__)
 extern void zfs_sha256_block_armv7(uint32_t s[8], const void *, size_t);
+
+static inline void
+tf_sha256_armv7(uint32_t s[8], const void *d, size_t b)
+{
+	zfs_sha256_block_armv7(s, d, b);
+}
+
 const sha256_ops_t sha256_armv7_impl = {
 	.is_supported = sha2_is_supported,
-	.transform = zfs_sha256_block_armv7,
+	.transform = tf_sha256_armv7,
 	.name = "armv7"
 };
 

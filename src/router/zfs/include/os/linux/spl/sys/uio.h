@@ -46,10 +46,16 @@
  * file handle that already hit a benign DIO read verify failure).
  * UIO_DIO_CKSUM_RETRIED: set by zfs_read when a DIO read verify failed but the
  * buffered re-read succeeded -- a recycled O_DIRECT buffer, not an on-disk
- * error.
+ * error.  dmu_write_uio_direct sets it when a DIO write verify failed and it
+ * writes the range again from a private copy.
+ * UIO_DIO_BOUNCE: issue DIO writes from a private copy of the data instead of
+ * the user pages.  The zpl caller sets it for a file handle that already
+ * failed a DIO write verify; dmu_write_uio_direct sets it for the rest of the
+ * request after a failure.
  */
 #define	UIO_DIO_DENY		0x0004
 #define	UIO_DIO_CKSUM_RETRIED	0x0008
+#define	UIO_DIO_BOUNCE		0x0010
 
 #if defined(HAVE_FAULT_IN_IOV_ITER_READABLE)
 #define	iov_iter_fault_in_readable(a, b)	fault_in_iov_iter_readable(a, b)
@@ -79,8 +85,8 @@ typedef struct {
 
 typedef struct zfs_uio {
 	union {
-		const struct iovec	*uio_iov;
-		const struct bio_vec	*uio_bvec;
+		struct iovec		*uio_iov;
+		struct bio_vec		*uio_bvec;
 		struct iov_iter		*uio_iter;
 	};
 	int		uio_iovcnt;	/* Number of iovecs */
@@ -101,6 +107,7 @@ typedef struct zfs_uio {
 #define	zfs_uio_segflg(u)		(u)->uio_segflg
 #define	zfs_uio_offset(u)		(u)->uio_loffset
 #define	zfs_uio_resid(u)		(u)->uio_resid
+#define	zfs_uio_iov(u)			(u)->uio_iov
 #define	zfs_uio_iovcnt(u)		(u)->uio_iovcnt
 #define	zfs_uio_iovlen(u, idx)		(u)->uio_iov[(idx)].iov_len
 #define	zfs_uio_iovbase(u, idx)		(u)->uio_iov[(idx)].iov_base
@@ -132,7 +139,7 @@ zfs_uio_advance(zfs_uio_t *uio, ssize_t size)
 }
 
 static inline void
-zfs_uio_iovec_init(zfs_uio_t *uio, const struct iovec *iov,
+zfs_uio_iovec_init(zfs_uio_t *uio, struct iovec *iov,
     unsigned long nr_segs, offset_t offset, zfs_uio_seg_t seg, ssize_t resid,
     size_t skip)
 {

@@ -43,12 +43,14 @@
 #define	UIO_DIRECT	0x0001	/* Direct I/O requset */
 #define	UIO_UNCACHED	0x0002	/* Caller will not reuse the data */
 /*
- * See the Linux spl uio.h for how these are used; the common zfs_read path
- * sets/checks them, but nothing drives them on FreeBSD yet (VOP_READ has no
- * open file to key the per-handle decline on).
+ * See the Linux spl uio.h for how these are used; the common zfs_read and
+ * dmu write paths set/check them, but nothing keeps them across requests on
+ * FreeBSD yet (VOP_READ and VOP_WRITE have no open file to key per-handle
+ * state on).
  */
 #define	UIO_DIO_DENY		0x0004
 #define	UIO_DIO_CKSUM_RETRIED	0x0008
+#define	UIO_DIO_BOUNCE		0x0010
 
 typedef	struct iovec	iovec_t;
 typedef	enum uio_seg	zfs_uio_seg_t;
@@ -73,6 +75,7 @@ typedef struct zfs_uio {
 #define	zfs_uio_segflg(u)	GET_UIO_STRUCT(u)->uio_segflg
 #define	zfs_uio_offset(u)	GET_UIO_STRUCT(u)->uio_offset
 #define	zfs_uio_resid(u)	GET_UIO_STRUCT(u)->uio_resid
+#define	zfs_uio_iov(u)		GET_UIO_STRUCT(u)->uio_iov
 #define	zfs_uio_iovcnt(u)	GET_UIO_STRUCT(u)->uio_iovcnt
 #define	zfs_uio_iovlen(u, idx)	GET_UIO_STRUCT(u)->uio_iov[(idx)].iov_len
 #define	zfs_uio_iovbase(u, idx)	GET_UIO_STRUCT(u)->uio_iov[(idx)].iov_base

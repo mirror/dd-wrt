@@ -124,6 +124,8 @@ struct receive_writer_arg {
 	boolean_t raw;   /* DMU_BACKUP_FEATURE_RAW set */
 	boolean_t spill; /* DRR_FLAG_SPILL_BLOCK set */
 	boolean_t full;  /* this is a full send stream */
+	uint64_t resume_object; /* where a resumed stream starts */
+	uint64_t resume_offset;
 	uint64_t featureflags; /* from DRR_BEGIN */
 	uint64_t last_object;
 	uint64_t last_offset;
@@ -392,6 +394,11 @@ recv_begin_check_existing_impl(dmu_recv_begin_arg_t *drba, dsl_dataset_t *ds,
 	boolean_t encrypted = ds->ds_dir->dd_crypto_obj != 0;
 	boolean_t raw = (featureflags & DMU_BACKUP_FEATURE_RAW) != 0;
 	boolean_t embed = (featureflags & DMU_BACKUP_FEATURE_EMBED_DATA) != 0;
+
+	if (!drba->drba_cookie->drc_heal &&
+	    dsl_dir_namelen(ds->ds_dir) + 1 + strlen(recv_clone_name) >=
+	    ZFS_MAX_DATASET_NAME_LEN)
+		return (SET_ERROR(ENAMETOOLONG));
 
 	/* Temporary clone name must not exist. */
 	error = zap_lookup(dp->dp_meta_objset,
@@ -1363,6 +1370,15 @@ dmu_recv_begin(const char *tofs, const char *tosnap,
 		return (SET_ERROR(EINVAL));
 	}
 
+	/*
+	 * The BEGIN record comes from userland, and drr_toname is not
+	 * guaranteed to be NUL-terminated.  Terminate it before it is used
+	 * as a string.  The checksum above already covers the record as it
+	 * was sent.
+	 */
+	drc->drc_drrb->drr_toname[sizeof (drc->drc_drrb->drr_toname) - 1] =
+	    '\0';
+
 	drc->drc_fp = fp;
 	drc->drc_voff = *voffp;
 	drc->drc_featureflags =
@@ -1481,6 +1497,41 @@ corrective_read_done(zio_t *zio)
 }
 
 /*
+ * Determine the compression level to use when recompressing a block for
+ * a corrective receive.  The objset being healed is a snapshot, and
+ * dmu_objset_open_impl() does not register the compression property
+ * callbacks for snapshots, so os_complevel is not valid here.  Instead,
+ * look up the effective compression property of the dataset (which for
+ * a snapshot is inherited from its head).  If the property does not name
+ * the algorithm the block was written with, fall back to the default
+ * level for that algorithm.  If the chosen level does not match the level
+ * the block was originally written with, the recompressed data will not
+ * match the block's checksum and the block will not be healed.
+ */
+static uint8_t
+corrective_recv_complevel(objset_t *os, enum zio_compress compress)
+{
+	dsl_pool_t *dp = dmu_objset_pool(os);
+	uint64_t val;
+	int err;
+
+	/* Only zstd takes its level from the caller; see zio_compress_data() */
+	if (compress != ZIO_COMPRESS_ZSTD)
+		return (ZIO_COMPLEVEL_DEFAULT);
+
+	dsl_pool_config_enter(dp, FTAG);
+	err = dsl_prop_get_int_ds(os->os_dsl_dataset,
+	    zfs_prop_to_name(ZFS_PROP_COMPRESSION), &val);
+	dsl_pool_config_exit(dp, FTAG);
+
+	if (err != 0 || ZIO_COMPRESS_ALGO(val) != compress)
+		return (ZIO_COMPLEVEL_DEFAULT);
+
+	return (zio_complevel_select(os->os_spa, compress,
+	    ZIO_COMPRESS_LEVEL(val), ZIO_COMPLEVEL_DEFAULT));
+}
+
+/*
  * zio_rewrite the data pointed to by bp with the data from the rrd's abd.
  */
 static int
@@ -1491,6 +1542,10 @@ do_corrective_recv(struct receive_writer_arg *rwa, struct drr_write *drrw,
 	zio_t *io;
 	zbookmark_phys_t zb;
 	dnode_t *dn;
+	/*
+	 * The caller frees rrd->abd once we return, so rrd->abd must be
+	 * updated whenever abd is swapped for a new buffer below.
+	 */
 	abd_t *abd = rrd->abd;
 	zio_cksum_t bp_cksum = bp->blk_cksum;
 	zio_flag_t flags = ZIO_FLAG_SPECULATIVE | ZIO_FLAG_DONT_RETRY |
@@ -1521,19 +1576,47 @@ do_corrective_recv(struct receive_writer_arg *rwa, struct drr_write *drrw,
 		/* Swap in the newly decompressed data into the abd */
 		abd_free(abd);
 		abd = dabd;
+		rrd->abd = abd;
 	}
 
 	if (!rwa->raw && BP_GET_COMPRESS(bp) != ZIO_COMPRESS_OFF) {
-		/* Recompress the data */
-		abd_t *cabd = abd_alloc_linear(BP_GET_PSIZE(bp),
-		    B_FALSE);
-		uint64_t csize = zio_compress_data(BP_GET_COMPRESS(bp),
-		    abd, &cabd, abd_get_size(abd), BP_GET_PSIZE(bp),
-		    rwa->os->os_complevel);
-		abd_zero_off(cabd, csize, BP_GET_PSIZE(bp) - csize);
+		/*
+		 * Recompress the data.  The output of some compressors
+		 * depends on the size of the destination buffer (e.g. the
+		 * zstd early abort heuristic), so use the same maximum size
+		 * as zio_write_compress() did when the block was written.
+		 */
+		spa_t *spa = rwa->os->os_spa;
+		enum zio_compress compress = BP_GET_COMPRESS(bp);
+		uint64_t lsize = abd_get_size(abd);
+		uint64_t psize = BP_GET_PSIZE(bp);
+		abd_t *tabd = abd_alloc_linear(lsize, B_FALSE);
+		uint64_t csize = zio_compress_data(compress, abd, &tabd,
+		    lsize, zio_get_compression_max_size(compress,
+		    spa->spa_gcd_alloc, spa->spa_min_alloc, lsize),
+		    corrective_recv_complevel(rwa->os, compress));
+
+		/*
+		 * If the data did not compress into the on-disk physical
+		 * size, it cannot reproduce the original block, so it cannot
+		 * be used to heal it.
+		 */
+		if (csize > psize) {
+			abd_free(tabd);
+			/* abd may have been swapped above; caller frees it */
+			rrd->abd = abd;
+			if (zfs_recv_best_effort_corrective != 0)
+				return (0);
+			return (SET_ERROR(ECKSUM));
+		}
+		abd_t *cabd = abd_alloc_linear(psize, B_FALSE);
+		abd_copy(cabd, tabd, csize);
+		abd_zero_off(cabd, csize, psize - csize);
+		abd_free(tabd);
 		/* Swap in newly compressed data into the abd */
 		abd_free(abd);
 		abd = cabd;
+		rrd->abd = abd;
 		flags |= ZIO_FLAG_RAW_COMPRESS;
 	}
 
@@ -1557,8 +1640,16 @@ do_corrective_recv(struct receive_writer_arg *rwa, struct drr_write *drrw,
 		zio_crypt_decode_mac_bp(bp, mac);
 
 		dsl_pool_config_enter(dp, FTAG);
+		/*
+		 * dmu_recv_begin_check() only allows a non-raw healing
+		 * receive with the key loaded, and the receive owns the
+		 * snapshot being healed with DS_HOLD_FLAG_DECRYPT, which
+		 * keeps the key mapped, so neither the hold nor the key
+		 * lookup below should fail.
+		 */
 		err = dsl_dataset_hold_flags(dp, rwa->tofs,
 		    DS_HOLD_FLAG_DECRYPT, FTAG, &ds);
+		ASSERT0(err);
 		if (err != 0) {
 			dsl_pool_config_exit(dp, FTAG);
 			abd_free(eabd);
@@ -1568,6 +1659,7 @@ do_corrective_recv(struct receive_writer_arg *rwa, struct drr_write *drrw,
 		/* Look up the key from the spa's keystore */
 		err = spa_keystore_lookup_key(rwa->os->os_spa,
 		    zb.zb_objset, FTAG, &dck);
+		ASSERT0(err);
 		if (err != 0) {
 			dsl_dataset_rele_flags(ds, DS_HOLD_FLAG_DECRYPT,
 			    FTAG);
@@ -1585,6 +1677,7 @@ do_corrective_recv(struct receive_writer_arg *rwa, struct drr_write *drrw,
 		dsl_pool_config_exit(dp, FTAG);
 
 		ASSERT0(no_crypt);
+		ASSERT0(err);
 		if (err != 0) {
 			abd_free(eabd);
 			return (err);
@@ -1592,6 +1685,7 @@ do_corrective_recv(struct receive_writer_arg *rwa, struct drr_write *drrw,
 		/* Swap in the newly encrypted data into the abd */
 		abd_free(abd);
 		abd = eabd;
+		rrd->abd = abd;
 
 		/*
 		 * We want to prevent zio_rewrite() from trying to
@@ -1599,7 +1693,6 @@ do_corrective_recv(struct receive_writer_arg *rwa, struct drr_write *drrw,
 		 */
 		flags |= ZIO_FLAG_RAW_ENCRYPT;
 	}
-	rrd->abd = abd;
 
 	io = zio_rewrite(NULL, rwa->os->os_spa, BP_GET_BIRTH(bp), bp,
 	    abd, BP_GET_PSIZE(bp), NULL, NULL, ZIO_PRIORITY_SYNC_WRITE, flags,
@@ -2567,6 +2660,12 @@ recv_check_drr_write_embedded(const struct drr_write_embedded *drrwe,
 	if (err != 0)
 		return (err);
 
+	/* logical block size must be at least SPA_MINBLOCKSIZE */
+	err = recv_check_drr_size_min(drrwe->drr_length, SPA_MINBLOCKSIZE,
+	    errbuf, errbuflen, "DRR_WRITE_EMBEDDED length");
+	if (err != 0)
+		return (err);
+
 	/* logical block size must not exceed pool maximum */
 	err = recv_check_drr_size_max(drrwe->drr_length,
 	    limits.rcl_maxblocksize, errbuf, errbuflen,
@@ -2583,6 +2682,12 @@ recv_check_drr_write_embedded(const struct drr_write_embedded *drrwe,
 		    (u_longlong_t)drrwe->drr_length));
 	}
 
+	/* compressed logical size must be at least SPA_MINBLOCKSIZE */
+	err = recv_check_drr_size_min(drrwe->drr_lsize, SPA_MINBLOCKSIZE,
+	    errbuf, errbuflen, "DRR_WRITE_EMBEDDED logical size");
+	if (err != 0)
+		return (err);
+
 	/* compressed logical size must not exceed pool maximum */
 	err = recv_check_drr_size_max(drrwe->drr_lsize, limits.rcl_maxblocksize,
 	    errbuf, errbuflen, "DRR_WRITE_EMBEDDED logical size");
@@ -2595,8 +2700,18 @@ recv_check_drr_write_embedded(const struct drr_write_embedded *drrwe,
 	if (err != 0)
 		return (err);
 
-	/* compression algorithm must be within ZIO_COMPRESS_FUNCTIONS */
-	if (drrwe->drr_compression >= ZIO_COMPRESS_FUNCTIONS) {
+	/*
+	 * Embedded data is always compressed with a real algorithm:
+	 * zio_write_compress() embeds a block only after compressing it
+	 * into the block pointer, so never with ZIO_COMPRESS_OFF or
+	 * ZIO_COMPRESS_EMPTY, and INHERIT and ON are property values, not
+	 * algorithms.  Only an algorithm with a decompressor can be written
+	 * as an embedded block pointer (encode_embedded_bp_compressed()
+	 * asserts comp >= ZIO_COMPRESS_OFF) or read back
+	 * (decode_embedded_bp() VERIFYs that the payload decompresses).
+	 */
+	if (drrwe->drr_compression >= ZIO_COMPRESS_FUNCTIONS ||
+	    zio_compress_table[drrwe->drr_compression].ci_decompress == NULL) {
 		return (recv_check_fail(EINVAL, errbuf, errbuflen,
 		    "DRR_WRITE_EMBEDDED has invalid compression type %u",
 		    drrwe->drr_compression));
@@ -2607,27 +2722,21 @@ recv_check_drr_write_embedded(const struct drr_write_embedded *drrwe,
 	if (err != 0)
 		return (err);
 
-	/* uncompressed embedded data has matching logical and payload sizes */
-	if (drrwe->drr_compression == ZIO_COMPRESS_OFF &&
-	    drrwe->drr_lsize != drrwe->drr_psize) {
-		return (recv_check_fail(EINVAL, errbuf, errbuflen,
-		    "DRR_WRITE_EMBEDDED logical size %u must equal payload "
-		    "size %u when compression is off",
-		    drrwe->drr_lsize, drrwe->drr_psize));
-	}
-
-	/* compressed lsize must be at least the on-wire compressed size */
-	if (drrwe->drr_compression != ZIO_COMPRESS_OFF &&
-	    drrwe->drr_lsize < drrwe->drr_psize) {
+	/* lsize must be at least the on-wire compressed size */
+	if (drrwe->drr_lsize < drrwe->drr_psize) {
 		return (recv_check_fail(EINVAL, errbuf, errbuflen,
 		    "DRR_WRITE_EMBEDDED logical size %u < payload size %u",
 		    drrwe->drr_lsize, drrwe->drr_psize));
 	}
 
-	/* uncompressed payload must fit in the logical block */
-	if (drrwe->drr_lsize > drrwe->drr_length) {
+	/*
+	 * The sender always sets the length to the embedded BP's logical
+	 * size (see dump_write_embedded()), and the payload decompresses
+	 * into exactly that many bytes.
+	 */
+	if (drrwe->drr_lsize != drrwe->drr_length) {
 		return (recv_check_fail(EINVAL, errbuf, errbuflen,
-		    "DRR_WRITE_EMBEDDED logical size %u exceeds length %llu",
+		    "DRR_WRITE_EMBEDDED logical size %u must equal length %llu",
 		    drrwe->drr_lsize, (u_longlong_t)drrwe->drr_length));
 	}
 
@@ -2639,8 +2748,8 @@ recv_check_drr_write_embedded(const struct drr_write_embedded *drrwe,
 		    (u_longlong_t)drrwe->drr_length));
 	}
 
-	/* embedded block type must be within NUM_BP_EMBEDDED_TYPES */
-	if (drrwe->drr_etype >= NUM_BP_EMBEDDED_TYPES) {
+	/* BP_EMBEDDED_TYPE_DATA is the only one this record can have */
+	if (drrwe->drr_etype != BP_EMBEDDED_TYPE_DATA) {
 		return (recv_check_fail(EINVAL, errbuf, errbuflen,
 		    "DRR_WRITE_EMBEDDED has invalid embedded type %u",
 		    drrwe->drr_etype));
@@ -3106,6 +3215,21 @@ receive_handle_existing_object(struct receive_writer_arg *rwa,
 			 * loaded.
 			 */
 			do_free_range = B_TRUE;
+		} else if (drro->drr_object == rwa->resume_object &&
+		    rwa->resume_offset != 0) {
+			/*
+			 * The resumed stream starts inside this object and
+			 * does not resend the blocks before the resume
+			 * offset, so keep them and the block size, whatever
+			 * the object type.  recv_check_large_blocks() refuses
+			 * a resume that drops -L, so the block size can only
+			 * grow.  At offset 0 the object is sent whole, and
+			 * its OBJECT record may not have been applied.
+			 */
+			if (drro->drr_blksz <
+			    doi->doi_data_block_size)
+				return (SET_ERROR(EINVAL));
+			*new_blksz = doi->doi_data_block_size;
 		} else if (rwa->full) {
 			/*
 			 * This is a full send stream, so it always
@@ -3942,6 +4066,8 @@ receive_write_embedded(struct receive_writer_arg *rwa,
     struct drr_write_embedded *drrwe, void *data)
 {
 	dmu_tx_t *tx;
+	dnode_t *dn;
+	abd_t *abd = NULL;
 
 	/* Re-validate; stream errors are reported only by the reader. */
 	int err = recv_check_drr_write_embedded(drrwe, dmu_objset_spa(rwa->os),
@@ -3952,24 +4078,92 @@ receive_write_embedded(struct receive_writer_arg *rwa,
 	if (drrwe->drr_object > rwa->max_object)
 		rwa->max_object = drrwe->drr_object;
 
+	if (dnode_hold(rwa->os, drrwe->drr_object, FTAG, &dn) != 0)
+		return (SET_ERROR(EINVAL));
+
+	/*
+	 * An embedded block pointer can only describe exactly one block of
+	 * the object, so its logical size must be the object's block size.
+	 * The record may not match the object's block size if this is an
+	 * incremental large-block stream received into a dataset that
+	 * previously did a non-large-block receive: in that case
+	 * receive_handle_existing_object() keeps the smaller block size.
+	 * Writing the embedded BP as-is would put a BP whose LSIZE exceeds
+	 * the block size into a single block of the object, silently losing
+	 * the rest of the record's contents and leaving a BP that later
+	 * trips assertions in dmu_send.  Instead, decode and decompress the
+	 * payload and do a normal dmu_write(), which splits it across the
+	 * object's blocks, as flush_write_batch_impl() does for DRR_WRITE.
+	 *
+	 * recv_check_drr_write_embedded() has already rejected raw streams
+	 * and checked that drr_lsize == drr_length and that both are within
+	 * the pool's block size limits, so the payload decompresses into
+	 * exactly the record's length.
+	 */
+	if (drrwe->drr_lsize != dn->dn_datablksz ||
+	    drrwe->drr_offset % dn->dn_datablksz != 0) {
+		abd_t cabd;
+
+		/*
+		 * Embedded data is always compressed: no sender embeds a
+		 * ZIO_COMPRESS_OFF block, and the validator rejects such
+		 * records (their lsize is below SPA_MINBLOCKSIZE, and OFF
+		 * has no decompressor), which recv_embedded_uncompressed_neg
+		 * and recv_embedded_compress_neg check.
+		 */
+		abd = abd_alloc_linear(drrwe->drr_lsize, B_FALSE);
+		abd_zero(abd, drrwe->drr_lsize);
+		abd_get_from_buf_struct(&cabd, data, drrwe->drr_psize);
+		err = zio_decompress_data(drrwe->drr_compression, &cabd, abd,
+		    drrwe->drr_psize, drrwe->drr_lsize, NULL);
+		abd_free(&cabd);
+		if (err != 0) {
+			abd_free(abd);
+			dnode_rele(dn, FTAG);
+			return (SET_ERROR(EINVAL));
+		}
+
+		/*
+		 * The embedded payload is in the sender's byte order, which
+		 * the embedded BP would have recorded; convert it now.
+		 */
+		if (rwa->byteswap) {
+			dmu_object_byteswap_t byteswap =
+			    DMU_OT_BYTESWAP(dn->dn_type);
+			dmu_ot_byteswap[byteswap].ob_func(abd_to_buf(abd),
+			    drrwe->drr_lsize);
+		}
+	}
+
 	tx = dmu_tx_create(rwa->os);
 
-	dmu_tx_hold_write(tx, drrwe->drr_object,
-	    drrwe->drr_offset, drrwe->drr_length);
+	dmu_tx_hold_write_by_dnode(tx, dn, drrwe->drr_offset,
+	    drrwe->drr_lsize);
 	err = dmu_tx_assign(tx, DMU_TX_WAIT);
 	if (err != 0) {
 		dmu_tx_abort(tx);
+		if (abd != NULL)
+			abd_free(abd);
+		dnode_rele(dn, FTAG);
 		return (err);
 	}
 
-	dmu_write_embedded(rwa->os, drrwe->drr_object,
-	    drrwe->drr_offset, data, drrwe->drr_etype,
-	    drrwe->drr_compression, drrwe->drr_lsize, drrwe->drr_psize,
-	    rwa->byteswap ^ ZFS_HOST_BYTEORDER, tx);
+	if (abd != NULL) {
+		dmu_write_by_dnode(dn, drrwe->drr_offset, drrwe->drr_lsize,
+		    abd_to_buf(abd), tx,
+		    DMU_READ_NO_PREFETCH | DMU_UNCACHEDIO);
+		abd_free(abd);
+	} else {
+		dmu_write_embedded(rwa->os, drrwe->drr_object,
+		    drrwe->drr_offset, data, drrwe->drr_etype,
+		    drrwe->drr_compression, drrwe->drr_lsize,
+		    drrwe->drr_psize, rwa->byteswap ^ ZFS_HOST_BYTEORDER, tx);
+	}
 
 	/* See comment in restore_write. */
 	save_resume_state(rwa, drrwe->drr_object, drrwe->drr_offset, tx);
 	dmu_tx_commit(tx);
+	dnode_rele(dn, FTAG);
 	return (0);
 }
 
@@ -4029,7 +4223,7 @@ receive_spill(struct receive_writer_arg *rwa, struct drr_spill *drrs,
 	if (db_spill->db_size != drrs->drr_length) {
 		dmu_buf_will_fill(db_spill, tx, B_FALSE);
 		VERIFY0(dbuf_spill_set_blksz(db_spill,
-		    drrs->drr_length, tx));
+		    drrs->drr_length, B_FALSE, tx));
 	}
 
 	arc_buf_t *abuf;
@@ -4769,6 +4963,143 @@ receive_process_record(struct receive_writer_arg *rwa,
 }
 
 /*
+ * A raw receive can't account for the objects that it changes or frees,
+ * because their owners and sizes are encrypted.  If the dataset already has
+ * user accounting, it is now incorrect, so we throw all of it away.  This
+ * leaves the dataset as a full raw receive does, with no accounting objects
+ * and no accounted flags. When it is next mounted, the accounting will be
+ * rebuilt.
+ *
+ * Each block of dnodes that has accounted flags is rewritten raw with the
+ * crypt params it already has, since its MAC doesn't cover the flags, and
+ * dnode_sync() clears the flags of the dnodes dirtied in a raw receive.
+ * The accounting objects are then freed like any other object.
+ *
+ * If this is interrupted, the receive is not complete, so the dataset can't
+ * be mounted; a resumed receive does it again.
+ */
+static int
+receive_reset_accounting(objset_t *os)
+{
+	dnode_t *mdn = DMU_META_DNODE(os);
+	int epbs = mdn->dn_datablkshift - DNODE_SHIFT;
+	dmu_tx_t *tx = NULL;
+	uint64_t txblk = 0;
+	uint64_t obj = 0;
+	uint64_t txg;
+	int err;
+
+	if (DMU_USERUSED_DNODE(os) == NULL ||
+	    DMU_USERUSED_DNODE(os)->dn_type == DMU_OT_NONE)
+		return (0);
+
+	zfs_dbgmsg("resetting user accounting of objset %llu after raw "
+	    "receive", (u_longlong_t)dmu_objset_id(os));
+
+	/*
+	 * The dnode blocks' cached crypt params must be the ones on disk.
+	 * The receive's txs are all committed, so they are in txgs no later
+	 * than the one a new tx is assigned to.
+	 */
+	tx = dmu_tx_create(os);
+	err = dmu_tx_assign(tx, DMU_TX_WAIT | DMU_TX_NOTHROTTLE);
+	if (err != 0) {
+		dmu_tx_abort(tx);
+		return (err);
+	}
+	txg = dmu_tx_get_txg(tx);
+	dmu_tx_commit(tx);
+	tx = NULL;
+	txg_wait_synced(dmu_objset_pool(os), txg);
+
+	while ((err = dmu_object_next(os, &obj, B_FALSE, 0)) == 0) {
+		dnode_t *dn;
+		uint64_t flags;
+
+		if (tx != NULL && (obj >> epbs) != txblk) {
+			dmu_tx_commit(tx);
+			tx = NULL;
+		}
+		if (issig()) {
+			err = SET_ERROR(EINTR);
+			break;
+		}
+
+		err = dnode_hold(os, obj, FTAG, &dn);
+		if (err != 0)
+			break;
+		mutex_enter(&dn->dn_mtx);
+		flags = dn->dn_phys->dn_flags;
+		mutex_exit(&dn->dn_mtx);
+		if (!(flags & (DNODE_FLAG_USERUSED_ACCOUNTED |
+		    DNODE_FLAG_USEROBJUSED_ACCOUNTED))) {
+			dnode_rele(dn, FTAG);
+			continue;
+		}
+
+		if (tx == NULL) {
+			dmu_buf_t *db;
+
+			tx = dmu_tx_create(os);
+			dmu_tx_hold_bonus(tx, obj);
+			err = dmu_tx_assign(tx, DMU_TX_WAIT);
+			if (err != 0) {
+				dmu_tx_abort(tx);
+				tx = NULL;
+				dnode_rele(dn, FTAG);
+				break;
+			}
+			txblk = obj >> epbs;
+			err = dmu_buf_hold_by_dnode(mdn,
+			    txblk << mdn->dn_datablkshift, FTAG, &db,
+			    DMU_READ_NO_PREFETCH | DMU_READ_NO_DECRYPT);
+			if (err == 0) {
+				err = dmu_buf_will_rewrite_raw(db, tx);
+				dmu_buf_rele(db, FTAG);
+			}
+			if (err != 0) {
+				dnode_rele(dn, FTAG);
+				break;
+			}
+		}
+		dnode_setdirty(dn, tx);
+		dnode_rele(dn, FTAG);
+	}
+	if (tx != NULL)
+		dmu_tx_commit(tx);
+	if (err != ESRCH)
+		return (err);
+
+	dnode_t *used[] = { DMU_USERUSED_DNODE(os), DMU_GROUPUSED_DNODE(os),
+	    DMU_PROJECTUSED_DNODE(os) };
+
+	tx = dmu_tx_create(os);
+	for (int i = 0; i < ARRAY_SIZE(used); i++) {
+		if (used[i] != NULL && used[i]->dn_type != DMU_OT_NONE) {
+			dmu_tx_hold_free_by_dnode(tx, used[i], 0,
+			    DMU_OBJECT_END);
+		}
+	}
+	dmu_tx_mark_netfree(tx);
+	err = dmu_tx_assign(tx, DMU_TX_WAIT);
+	if (err != 0) {
+		dmu_tx_abort(tx);
+		return (err);
+	}
+	for (int i = 0; i < ARRAY_SIZE(used); i++) {
+		if (used[i] != NULL && used[i]->dn_type != DMU_OT_NONE) {
+			dnode_free_range(used[i], 0, DMU_OBJECT_END, tx);
+			dnode_free(used[i], tx);
+		}
+	}
+	os->os_flags &= ~(OBJSET_FLAG_USERACCOUNTING_COMPLETE |
+	    OBJSET_FLAG_USEROBJACCOUNTING_COMPLETE |
+	    OBJSET_FLAG_PROJECTQUOTA_COMPLETE);
+	dmu_tx_commit(tx);
+	return (0);
+}
+
+/*
  * dmu_recv_stream's worker thread; pull records off the queue, and then call
  * receive_process_record  When we're done, signal the main thread and exit.
  */
@@ -4835,7 +5166,8 @@ receive_writer_thread(void *arg)
 }
 
 static int
-resume_check(dmu_recv_cookie_t *drc, nvlist_t *begin_nvl)
+resume_check(dmu_recv_cookie_t *drc, nvlist_t *begin_nvl,
+    uint64_t *resume_objp, uint64_t *resume_offp)
 {
 	uint64_t val;
 	objset_t *mos = dmu_objset_pool(drc->drc_os)->dp_meta_objset;
@@ -4857,6 +5189,8 @@ resume_check(dmu_recv_cookie_t *drc, nvlist_t *begin_nvl)
 	if (resume_off != val)
 		return (SET_ERROR(EINVAL));
 
+	*resume_objp = resume_obj;
+	*resume_offp = resume_off;
 	return (0);
 }
 
@@ -4897,6 +5231,12 @@ dmu_recv_stream(dmu_recv_cookie_t *drc, offset_t *voffp)
 	ASSERT0(drc->drc_os->os_encrypted &&
 	    (drc->drc_featureflags & DMU_BACKUP_FEATURE_EMBED_DATA));
 
+	/*
+	 * Set this before the key payload creates a new dataset's objset,
+	 * so that user accounting is never enabled for it.
+	 */
+	drc->drc_os->os_raw_receive = drc->drc_raw;
+
 	/* handle DSL encryption key payload */
 	if (drc->drc_featureflags & DMU_BACKUP_FEATURE_RAW) {
 		nvlist_t *keynvl = NULL;
@@ -4933,7 +5273,8 @@ dmu_recv_stream(dmu_recv_cookie_t *drc, offset_t *voffp)
 	}
 
 	if (drc->drc_featureflags & DMU_BACKUP_FEATURE_RESUMING) {
-		err = resume_check(drc, drc->drc_begin_nvl);
+		err = resume_check(drc, drc->drc_begin_nvl,
+		    &rwa->resume_object, &rwa->resume_offset);
 		if (err != 0)
 			goto out;
 	}
@@ -4970,7 +5311,6 @@ dmu_recv_stream(dmu_recv_cookie_t *drc, offset_t *voffp)
 	rwa->spill = drc->drc_spill;
 	rwa->featureflags = drc->drc_featureflags;
 	rwa->full = (drc->drc_drr_begin->drr_u.drr_begin.drr_fromguid == 0);
-	rwa->os->os_raw_receive = drc->drc_raw;
 	if (drc->drc_heal) {
 		rwa->heal_pio = zio_root(drc->drc_os->os_spa, NULL, NULL,
 		    ZIO_FLAG_GODFATHER);
@@ -5073,6 +5413,8 @@ dmu_recv_stream(dmu_recv_cookie_t *drc, offset_t *voffp)
 	avl_destroy(&rwa->defer_ranges);
 	if (err == 0)
 		err = rwa->err;
+	if (err == 0 && drc->drc_raw && !drc->drc_heal)
+		err = receive_reset_accounting(rwa->os);
 
 out:
 	/*

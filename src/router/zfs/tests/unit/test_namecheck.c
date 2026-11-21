@@ -124,10 +124,64 @@ test_dataset_namecheck(const MunitParameter params[], void *data)
 	check_invalid(dataset_namecheck, "tank/../home", NAME_ERR_PARENT_REF);
 	check_invalid(dataset_namecheck, "tank/fs!", NAME_ERR_INVALCHAR);
 
+	/* A component is still a reference when a delimiter follows it. */
+	check_invalid(dataset_namecheck, "tank/.@snap", NAME_ERR_SELF_REF);
+	check_invalid(dataset_namecheck, "tank/..@snap", NAME_ERR_PARENT_REF);
+
 	/* A bookmark delimiter does not belong in a dataset name. */
 	check_invalid(dataset_namecheck, "tank/fs#bm", NAME_ERR_INVALCHAR);
 
 	check_longname_invalid(dataset_namecheck);
+
+	return (MUNIT_OK);
+}
+
+/* clone_namecheck: a dataset name without '@' or '%'. */
+static MunitResult
+test_clone_namecheck(const MunitParameter params[], void *data)
+{
+	(void) params, (void) data;
+
+	namecheck_err_t why = (namecheck_err_t)-1;
+	char what = '\0';
+
+	/* A path of random, independently-valid components is accepted. */
+	char path[64];
+	unit_rand_str(path, sizeof (path));
+	path[20] = path[40] = '/';
+	check_valid(clone_namecheck, path);
+
+	check_valid(clone_namecheck, "tank/home");
+	check_valid(clone_namecheck, "tank/a-b_c.d:e f");
+
+	/*
+	 * dataset_namecheck() accepts these, but a new clone can't be a
+	 * snapshot, and '%' is reserved for the temporary clones of online
+	 * recv.  'what' names the character.
+	 */
+	unit_err(clone_namecheck("tank/home@snap", &why, &what), -1);
+	unit_eq(why, NAME_ERR_INVALCHAR);
+	unit_eq(what, '@');
+	unit_err(clone_namecheck("tank/%recv", &why, &what), -1);
+	unit_eq(why, NAME_ERR_INVALCHAR);
+	unit_eq(what, '%');
+	unit_err(clone_namecheck("tank/fs/bad%name", &why, &what), -1);
+	unit_eq(why, NAME_ERR_INVALCHAR);
+	unit_eq(what, '%');
+
+	/* The callers that only need the result pass NULL for why/what. */
+	unit_err(clone_namecheck("tank/%recv", NULL, NULL), -1);
+	unit_ok(clone_namecheck("tank/home", NULL, NULL));
+
+	/* The dataset_namecheck() rules still apply. */
+	check_invalid(clone_namecheck, "/tank", NAME_ERR_LEADING_SLASH);
+	check_invalid(clone_namecheck, "tank/", NAME_ERR_TRAILING_SLASH);
+	check_invalid(clone_namecheck, "", NAME_ERR_EMPTY_COMPONENT);
+	check_invalid(clone_namecheck, "tank/../home", NAME_ERR_PARENT_REF);
+	check_invalid(clone_namecheck, "tank/fs#bm", NAME_ERR_INVALCHAR);
+	check_invalid(clone_namecheck, "tank/bad*name", NAME_ERR_INVALCHAR);
+
+	check_longname_invalid(clone_namecheck);
 
 	return (MUNIT_OK);
 }
@@ -155,6 +209,9 @@ test_snapshot_namecheck(const MunitParameter params[], void *data)
 	check_invalid(snapshot_namecheck, "tank@snap/x",
 	    NAME_ERR_TRAILING_SLASH);
 
+	/* The filesystem the snapshot belongs to is checked as well. */
+	check_invalid(snapshot_namecheck, "tank/.@snap", NAME_ERR_SELF_REF);
+
 	return (MUNIT_OK);
 }
 
@@ -172,6 +229,9 @@ test_bookmark_namecheck(const MunitParameter params[], void *data)
 
 	/* Without a '#' it is not a bookmark. */
 	check_invalid(bookmark_namecheck, "tank/home", NAME_ERR_NO_POUND);
+
+	/* The filesystem the bookmark belongs to is checked as well. */
+	check_invalid(bookmark_namecheck, "tank/.#bm", NAME_ERR_SELF_REF);
 
 	return (MUNIT_OK);
 }
@@ -290,6 +350,7 @@ test_dataset_depth(const MunitParameter params[], void *data)
 static const MunitTest namecheck_tests[] = {
 	UNIT_TEST("pool",	test_pool_namecheck),
 	UNIT_TEST("dataset",	test_dataset_namecheck),
+	UNIT_TEST("clone",	test_clone_namecheck),
 	UNIT_TEST("snapshot",	test_snapshot_namecheck),
 	UNIT_TEST("bookmark",	test_bookmark_namecheck),
 	UNIT_TEST("component",	test_component_namecheck),

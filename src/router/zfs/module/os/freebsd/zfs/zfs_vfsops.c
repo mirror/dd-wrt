@@ -1046,14 +1046,14 @@ zfsvfs_create_hold(const char *osname, zfsvfs_t **zfvp)
 
 	zfsvfs = kmem_zalloc(sizeof (zfsvfs_t), KM_SLEEP);
 
-	error = dmu_objset_hold(osname, zfsvfs, &os);
+	error = dmu_objset_hold_flags(osname, B_TRUE, zfsvfs, &os);
 	if (error != 0) {
 		kmem_free(zfsvfs, sizeof (zfsvfs_t));
 		return (error);
 	}
 
 	if (dmu_objset_type(os) != DMU_OST_ZFS) {
-		dmu_objset_rele(os, zfsvfs);
+		dmu_objset_rele_flags(os, B_TRUE, zfsvfs);
 		kmem_free(zfsvfs, sizeof (zfsvfs_t));
 		return (EINVAL);
 	}
@@ -1087,7 +1087,7 @@ zfsvfs_create_impl(zfsvfs_t **zfvp, zfsvfs_t *zfsvfs, objset_t *os)
 	error = zfsvfs_init(zfsvfs, os);
 	if (error != 0) {
 		if (zfsvfs->z_use_hold)
-			dmu_objset_rele(os, zfsvfs);
+			dmu_objset_rele_flags(os, B_TRUE, zfsvfs);
 		else
 			dmu_objset_disown(os, B_TRUE, zfsvfs);
 		*zfvp = NULL;
@@ -1278,7 +1278,7 @@ zfs_domount(vfs_t *vfsp, char *osname)
 	vfsp->mnt_kern_flag |= MNTK_NOMSYNC;
 	vfsp->mnt_kern_flag |= MNTK_VMSETSIZE_BUG;
 
-#if defined(_KERNEL) && !defined(KMEM_DEBUG)
+#if !defined(KMEM_DEBUG)
 	vfsp->mnt_kern_flag |= MNTK_FPLOOKUP;
 #endif
 	/*
@@ -1612,7 +1612,7 @@ zfs_root(vfs_t *vfsp, int flags, vnode_t **vpp)
 	if (error == 0) {
 		error = vn_lock(*vpp, flags);
 		if (error != 0) {
-			VN_RELE(*vpp);
+			vrele(*vpp);
 			*vpp = NULL;
 		}
 	}
@@ -2112,10 +2112,8 @@ bail:
 		 * Since we couldn't setup the sa framework, try to force
 		 * unmount this file system.
 		 */
-		if (vn_vfswlock(zfsvfs->z_vfs->vfs_vnodecovered) == 0) {
-			vfs_ref(zfsvfs->z_vfs);
-			(void) dounmount(zfsvfs->z_vfs, MS_FORCE, curthread);
-		}
+		vfs_ref(zfsvfs->z_vfs);
+		(void) dounmount(zfsvfs->z_vfs, MS_FORCE, curthread);
 	}
 	return (err);
 }
@@ -2416,7 +2414,6 @@ zfs_get_vfs_flag_unmounted(objset_t *os)
 	return (unmounted);
 }
 
-#ifdef _KERNEL
 void
 zfsvfs_update_fromname(const char *oldname, const char *newname)
 {
@@ -2446,7 +2443,6 @@ zfsvfs_update_fromname(const char *oldname, const char *newname)
 	}
 	mtx_unlock(&mountlist_mtx);
 }
-#endif
 
 /*
  * Find a prison with ZFS info.

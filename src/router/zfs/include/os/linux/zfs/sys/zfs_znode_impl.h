@@ -18,10 +18,6 @@
 #ifndef	_SYS_ZFS_ZNODE_IMPL_H
 #define	_SYS_ZFS_ZNODE_IMPL_H
 
-#ifndef _KERNEL
-#error "no user serviceable parts within"
-#endif
-
 #include <sys/isa_defs.h>
 #include <sys/types32.h>
 #include <sys/list.h>
@@ -65,6 +61,7 @@ extern "C" {
 	filemap_range_has_page(ZTOI(zp)->i_mapping, start, end)
 
 #define	zn_flush_cached_data(zp, sync)	write_inode_now(ZTOI(zp), sync)
+#define	zn_zero_eof_page(zp, lr, end)	zfs_zero_eof_page(zp, lr, end)
 #define	zn_rlimit_fsize(size)		(0)
 #define	zn_rlimit_fsize_uio(zp, uio)	(0)
 
@@ -151,6 +148,8 @@ extern void	zfs_inode_free(struct inode *);
 extern void	zfs_inode_destroy(struct inode *);
 extern void	zfs_mark_inode_dirty(struct inode *);
 extern boolean_t zfs_relatime_need_update(const struct inode *);
+extern void	zfs_zero_eof_page(struct znode *, struct zfs_locked_range *,
+    uint64_t);
 extern zil_replay_func_t *const zfs_replay_vector[TX_MAX_TYPE];
 
 #ifdef	__cplusplus

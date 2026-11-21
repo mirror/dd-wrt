@@ -494,7 +494,7 @@ sa_resize_spill(sa_handle_t *hdl, uint32_t size, dmu_tx_t *tx)
 		blocksize = P2ROUNDUP_TYPED(size, SPA_MINBLOCKSIZE, uint32_t);
 	}
 
-	error = dbuf_spill_set_blksz(hdl->sa_spill, blocksize, tx);
+	error = dbuf_spill_set_blksz(hdl->sa_spill, blocksize, B_TRUE, tx);
 	ASSERT0(error);
 	return (error);
 }
@@ -2253,7 +2253,6 @@ sa_handle_unlock(sa_handle_t *hdl)
 	mutex_exit(&hdl->sa_lock);
 }
 
-#ifdef _KERNEL
 EXPORT_SYMBOL(sa_handle_get);
 EXPORT_SYMBOL(sa_handle_get_from_db);
 EXPORT_SYMBOL(sa_handle_destroy);
@@ -2286,4 +2285,3 @@ EXPORT_SYMBOL(sa_handle_lock);
 EXPORT_SYMBOL(sa_handle_unlock);
 EXPORT_SYMBOL(sa_lookup_uio);
 EXPORT_SYMBOL(sa_add_projid);
-#endif /* _KERNEL */

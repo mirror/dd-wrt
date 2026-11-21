@@ -444,16 +444,17 @@ static inline void
 fletcher_4_native_impl(const void *buf, uint64_t size, zio_cksum_t *zcp)
 {
 	fletcher_4_ctx_t ctx;
+	kfpu_ctx_t kctx;
 	const fletcher_4_ops_t *ops = fletcher_4_impl_get();
 
 	if (ops->uses_fpu == B_TRUE) {
-		kfpu_begin();
+		kfpu_begin(&kctx);
 	}
 	ops->init_native(&ctx);
 	ops->compute_native(&ctx, buf, size);
 	ops->fini_native(&ctx, zcp);
 	if (ops->uses_fpu == B_TRUE) {
-		kfpu_end();
+		kfpu_end(&kctx);
 	}
 }
 
@@ -500,16 +501,17 @@ static inline void
 fletcher_4_byteswap_impl(const void *buf, uint64_t size, zio_cksum_t *zcp)
 {
 	fletcher_4_ctx_t ctx;
+	kfpu_ctx_t kctx;
 	const fletcher_4_ops_t *ops = fletcher_4_impl_get();
 
 	if (ops->uses_fpu == B_TRUE) {
-		kfpu_begin();
+		kfpu_begin(&kctx);
 	}
 	ops->init_byteswap(&ctx);
 	ops->compute_byteswap(&ctx, buf, size);
 	ops->fini_byteswap(&ctx, zcp);
 	if (ops->uses_fpu == B_TRUE) {
-		kfpu_end();
+		kfpu_end(&kctx);
 	}
 }
 
@@ -670,7 +672,6 @@ fletcher_4_kstat_addr(kstat_t *ksp, loff_t n)
 	fletcher_4_fastest_impl.init_ ## type = src->init_ ## type;	  \
 	fletcher_4_fastest_impl.fini_ ## type = src->fini_ ## type;	  \
 	fletcher_4_fastest_impl.compute_ ## type = src->compute_ ## type; \
-	fletcher_4_fastest_impl.uses_fpu = src->uses_fpu;		  \
 }
 
 #define	FLETCHER_4_BENCH_NS	(MSEC2NSEC(1))		/* 1ms */
@@ -767,6 +768,16 @@ fletcher_4_benchmark(void)
 	fletcher_4_benchmark_impl(B_FALSE, databuf, data_size);
 	fletcher_4_benchmark_impl(B_TRUE, databuf, data_size);
 
+	/*
+	 * The native and byteswap winners may differ, and uses_fpu covers
+	 * both, so it must be set if either winner uses the FPU.
+	 */
+	struct fletcher_4_kstat *fastest_stat =
+	    &fletcher_4_stat_data[fletcher_4_supp_impls_cnt];
+	fletcher_4_fastest_impl.uses_fpu =
+	    fletcher_4_supp_impls[fastest_stat->native]->uses_fpu ||
+	    fletcher_4_supp_impls[fastest_stat->byteswap]->uses_fpu;
+
 	vmem_free(databuf, data_size);
 #else
 	/*
@@ -793,7 +804,6 @@ fletcher_4_init(void)
 	fletcher_4_kstat = kstat_create("zfs", 0, "fletcher_4_bench", "misc",
 	    KSTAT_TYPE_RAW, 0, KSTAT_FLAG_VIRTUAL);
 	if (fletcher_4_kstat != NULL) {
-		fletcher_4_kstat->ks_data = NULL;
 		fletcher_4_kstat->ks_ndata = UINT32_MAX;
 		kstat_set_raw_ops(fletcher_4_kstat,
 		    fletcher_4_kstat_headers,
@@ -823,11 +833,13 @@ fletcher_4_fini(void)
 static void
 abd_fletcher_4_init(zio_abd_checksum_data_t *cdp)
 {
+	fletcher_4_abd_priv_t *priv = cdp->acd_private;
 	const fletcher_4_ops_t *ops = fletcher_4_impl_get();
-	cdp->acd_private = (void *) ops;
 
+	ASSERT3P(priv, !=, NULL);
+	priv->fap_ops = ops;
 	if (ops->uses_fpu == B_TRUE) {
-		kfpu_begin();
+		kfpu_begin(priv->fap_kctx);
 	}
 	if (cdp->acd_byteorder == ZIO_CHECKSUM_NATIVE)
 		ops->init_native(cdp->acd_ctx);
@@ -839,7 +851,8 @@ abd_fletcher_4_init(zio_abd_checksum_data_t *cdp)
 static void
 abd_fletcher_4_fini(zio_abd_checksum_data_t *cdp)
 {
-	fletcher_4_ops_t *ops = (fletcher_4_ops_t *)cdp->acd_private;
+	fletcher_4_abd_priv_t *priv = cdp->acd_private;
+	const fletcher_4_ops_t *ops = priv->fap_ops;
 
 	ASSERT(ops);
 
@@ -849,7 +862,7 @@ abd_fletcher_4_fini(zio_abd_checksum_data_t *cdp)
 		ops->fini_byteswap(cdp->acd_ctx, cdp->acd_zcp);
 
 	if (ops->uses_fpu == B_TRUE) {
-		kfpu_end();
+		kfpu_end(priv->fap_kctx);
 	}
 }
 
@@ -863,7 +876,8 @@ abd_fletcher_4_simd2scalar(boolean_t native, void *data, size_t size,
 	ASSERT3U(size, <, FLETCHER_MIN_SIMD_SIZE);
 
 	abd_fletcher_4_fini(cdp);
-	cdp->acd_private = (void *)&fletcher_4_scalar_ops;
+	((fletcher_4_abd_priv_t *)cdp->acd_private)->fap_ops =
+	    &fletcher_4_scalar_ops;
 
 	if (native)
 		fletcher_4_incremental_native(data, size, zcp);
@@ -876,7 +890,8 @@ abd_fletcher_4_iter(void *data, size_t size, void *private)
 {
 	zio_abd_checksum_data_t *cdp = (zio_abd_checksum_data_t *)private;
 	fletcher_4_ctx_t *ctx = cdp->acd_ctx;
-	fletcher_4_ops_t *ops = (fletcher_4_ops_t *)cdp->acd_private;
+	const fletcher_4_ops_t *ops =
+	    ((fletcher_4_abd_priv_t *)cdp->acd_private)->fap_ops;
 	boolean_t native = cdp->acd_byteorder == ZIO_CHECKSUM_NATIVE;
 	uint64_t asize = P2ALIGN_TYPED(size, FLETCHER_MIN_SIMD_SIZE, uint64_t);
 

@@ -1,0 +1,47 @@
+<!--- Please fill out the following template, which will help other contributors review your Pull Request. -->
+
+<!--- Provide a general summary of your changes in the Title above -->
+
+### Motivation and Context
+<!--- Why is this change required? What problem does it solve? -->
+<!--- If it fixes an open issue, please link to the issue here. -->
+
+### Description
+<!--- Describe your changes in detail -->
+
+### How Has This Been Tested?
+<!--- Please describe in detail how you tested your changes. -->
+<!--- Include details of your testing environment, and the tests you ran to -->
+<!--- see how your change affects other areas of the code, etc. -->
+<!--- If your change is a performance enhancement, please provide benchmarks here. -->
+<!--- Please think about using the draft PR feature if appropriate -->
+
+### Types of Changes
+<!--- What types of changes does your code introduce? Put an `x` in all the boxes that apply: -->
+<!--- The boxes ticked set the type labels of a PR that has none, unless an issue it closes has some; Breaking change and Library ABI change set theirs on any PR. A maintainer may change them. -->
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Performance enhancement (non-breaking change which improves efficiency)
+- [ ] Code cleanup (non-breaking change which makes code smaller or more readable)
+- [ ] Quality assurance (non-breaking change which makes the code more robust against bugs)
+- [ ] Breaking change (fix or feature that would cause existing functionality to change)
+- [ ] Library ABI change (libzfs, libzfs\_core, libnvpair and libzfsbootenv)
+- [ ] Documentation (a change to man pages or other documentation)
+
+### Priority
+<!--- How soon should this be merged, whatever its type? Put an `x` in one box. -->
+<!--- It sets the priority label of a PR that has none; a maintainer may change it. -->
+- [ ] Critical (now: data loss or corruption, a security issue, or the build or CI broken for every PR)
+- [ ] High (for the next release: a panic, hang or unimportable pool in normal use, a regression, a test that fails other PRs, or a feature planned for the release)
+- [ ] Medium (a later release is fine: a fix for an uncommon setup, a new feature, a performance gain, a test or CI improvement)
+- [ ] Low (whenever convenient: messages, documentation, cleanups, debug-only issues)
+
+### Checklist
+<!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
+<!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
+- [ ] My code follows the OpenZFS [code style requirements](https://github.com/openzfs/zfs/blob/master/.github/CONTRIBUTING.md#coding-conventions).
+- [ ] I have updated the documentation accordingly.
+- [ ] I have read the [**contributing** document](https://github.com/openzfs/zfs/blob/master/.github/CONTRIBUTING.md).
+- [ ] I have added [tests](https://github.com/openzfs/zfs/tree/master/tests) to cover my changes.
+- [ ] I have run the ZFS Test Suite with this change applied.
+- [ ] All commit messages are properly formatted and contain [`Signed-off-by`](https://github.com/openzfs/zfs/blob/master/.github/CONTRIBUTING.md#signed-off-by).

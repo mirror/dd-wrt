@@ -46,7 +46,7 @@ show_vdev_stats(const char *desc, const char *ctype, nvlist_t *nv, int indent)
 	char used[6], avail[6];
 	char rops[6], wops[6], rbytes[6], wbytes[6], rerr[6], werr[6], cerr[6];
 
-	v0 = umem_zalloc(sizeof (*v0), UMEM_NOFAIL);
+	v0 = kmem_zalloc(sizeof (*v0), KM_SLEEP);
 
 	if (indent == 0 && desc != NULL) {
 		(void) printf("                           "
@@ -98,7 +98,7 @@ show_vdev_stats(const char *desc, const char *ctype, nvlist_t *nv, int indent)
 		    vs->vs_space ? 6 : 0, vs->vs_space ? avail : "",
 		    rops, wops, rbytes, wbytes, rerr, werr, cerr);
 	}
-	umem_free(v0, sizeof (*v0));
+	kmem_free(v0, sizeof (*v0));
 
 	if (nvlist_lookup_nvlist_array(nv, ctype, &child, &children) != 0)
 		return;
@@ -113,12 +113,12 @@ show_vdev_stats(const char *desc, const char *ctype, nvlist_t *nv, int indent)
 		    nvlist_lookup_string(cnv, ZPOOL_CONFIG_TYPE, &cname))
 			cname = "<unknown>";
 		len = strlen(cname) + 2;
-		tname = umem_zalloc(len, UMEM_NOFAIL);
+		tname = kmem_zalloc(len, KM_SLEEP);
 		(void) strlcpy(tname, cname, len);
 		if (nvlist_lookup_uint64(cnv, ZPOOL_CONFIG_NPARITY, &np) == 0)
 			tname[strlen(tname)] = '0' + np;
 		show_vdev_stats(tname, ctype, cnv, indent + 2);
-		umem_free(tname, len);
+		kmem_free(tname, len);
 	}
 }
 
@@ -274,9 +274,6 @@ pool_active(void *unused, const char *name, uint64_t guid, boolean_t *isactive)
 	(void) unused, (void) guid;
 	zfs_iocparm_t zp;
 	zfs_cmd_t *zc = NULL;
-#ifdef ZFS_LEGACY_SUPPORT
-	zfs_cmd_legacy_t *zcl = NULL;
-#endif
 	unsigned long request;
 	int ret;
 
@@ -290,48 +287,18 @@ pool_active(void *unused, const char *name, uint64_t guid, boolean_t *isactive)
 	 * therefore we manually craft the stats command.  Note that the command
 	 * ID is identical between the openzfs and legacy ioctl() formats.
 	 */
-	int ver = ZFS_IOCVER_NONE;
-	size_t ver_size = sizeof (ver);
+	zc = kmem_zalloc(sizeof (zfs_cmd_t), KM_SLEEP);
 
-	sysctlbyname("vfs.zfs.version.ioctl", &ver, &ver_size, NULL, 0);
+	(void) strlcpy(zc->zc_name, name, sizeof (zc->zc_name));
+	zp.zfs_cmd = (uint64_t)(uintptr_t)zc;
+	zp.zfs_cmd_size = sizeof (zfs_cmd_t);
+	zp.zfs_ioctl_version = ZFS_IOCVER_OZFS;
 
-	switch (ver) {
-	case ZFS_IOCVER_OZFS:
-		zc = umem_zalloc(sizeof (zfs_cmd_t), UMEM_NOFAIL);
+	request = _IOWR('Z', ZFS_IOC_POOL_STATS, zfs_iocparm_t);
+	ret = ioctl(fd, request, &zp);
 
-		(void) strlcpy(zc->zc_name, name, sizeof (zc->zc_name));
-		zp.zfs_cmd = (uint64_t)(uintptr_t)zc;
-		zp.zfs_cmd_size = sizeof (zfs_cmd_t);
-		zp.zfs_ioctl_version = ZFS_IOCVER_OZFS;
-
-		request = _IOWR('Z', ZFS_IOC_POOL_STATS, zfs_iocparm_t);
-		ret = ioctl(fd, request, &zp);
-
-		free((void *)(uintptr_t)zc->zc_nvlist_dst);
-		umem_free(zc, sizeof (zfs_cmd_t));
-
-		break;
-#ifdef ZFS_LEGACY_SUPPORT
-	case ZFS_IOCVER_LEGACY:
-		zcl = umem_zalloc(sizeof (zfs_cmd_legacy_t), UMEM_NOFAIL);
-
-		(void) strlcpy(zcl->zc_name, name, sizeof (zcl->zc_name));
-		zp.zfs_cmd = (uint64_t)(uintptr_t)zcl;
-		zp.zfs_cmd_size = sizeof (zfs_cmd_legacy_t);
-		zp.zfs_ioctl_version = ZFS_IOCVER_LEGACY;
-
-		request = _IOWR('Z', ZFS_IOC_POOL_STATS, zfs_iocparm_t);
-		ret = ioctl(fd, request, &zp);
-
-		free((void *)(uintptr_t)zcl->zc_nvlist_dst);
-		umem_free(zcl, sizeof (zfs_cmd_legacy_t));
-
-		break;
-#endif
-	default:
-		fprintf(stderr, "unrecognized zfs ioctl version %d", ver);
-		exit(1);
-	}
+	free((void *)(uintptr_t)zc->zc_nvlist_dst);
+	kmem_free(zc, sizeof (zfs_cmd_t));
 
 	(void) close(fd);
 
@@ -352,13 +319,13 @@ pool_active(void *unused, const char *name, uint64_t guid,
 	/*
 	 * Use ZFS_IOC_POOL_STATS to check if a pool is active.
 	 */
-	zfs_cmd_t *zcp = umem_zalloc(sizeof (zfs_cmd_t), UMEM_NOFAIL);
+	zfs_cmd_t *zcp = kmem_zalloc(sizeof (zfs_cmd_t), KM_SLEEP);
 	(void) strlcpy(zcp->zc_name, name, sizeof (zcp->zc_name));
 
 	int ret = ioctl(fd, ZFS_IOC_POOL_STATS, zcp);
 
 	free((void *)(uintptr_t)zcp->zc_nvlist_dst);
-	umem_free(zcp, sizeof (zfs_cmd_t));
+	kmem_free(zcp, sizeof (zfs_cmd_t));
 
 	(void) close(fd);
 

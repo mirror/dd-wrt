@@ -54,8 +54,6 @@ ZCP_SOURCES = \
 	module/zfs/zcp_synctask.c
 
 nodist_libzpool_la_SOURCES = \
-	module/os/linux/zfs/zio_crypt.c \
-	\
 	module/zcommon/cityhash.c \
 	module/zcommon/simd_stat.c \
 	module/zcommon/zfeature_common.c \
@@ -157,6 +155,7 @@ nodist_libzpool_la_SOURCES = \
 	module/zfs/vdev_label.c \
 	module/zfs/vdev_mirror.c \
 	module/zfs/vdev_missing.c \
+	module/zfs/vdev_anyraid.c \
 	module/zfs/vdev_queue.c \
 	module/zfs/vdev_raidz.c \
 	module/zfs/vdev_raidz_math.c \
@@ -194,6 +193,8 @@ nodist_libzpool_la_SOURCES = \
 	module/zfs/zio.c \
 	module/zfs/zio_checksum.c \
 	module/zfs/zio_compress.c \
+	module/zfs/zio_crypt.c \
+	module/zfs/zio_crypt_os_icp.c \
 	module/zfs/zio_inject.c \
 	module/zfs/zle.c \
 	module/zfs/zrlock.c \

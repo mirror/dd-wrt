@@ -53,9 +53,6 @@
 #include <sys/zvol.h>
 #include <sys/policy.h>
 #include <sys/objlist.h>
-#ifdef _KERNEL
-#include <sys/zfs_vfsops.h>
-#endif
 
 /* Set this tunable to TRUE to replace corrupt data with 0x2f5baddb10c */
 static int zfs_send_corrupt_data = B_FALSE;
@@ -836,6 +833,24 @@ send_do_embed(const blkptr_t *bp, uint64_t featureflags)
 		return (B_FALSE);
 
 	/*
+	 * Spill blocks (DMU_OT_SA) are sent as DRR_SPILL, not
+	 * DRR_WRITE_EMBEDDED.
+	 */
+	if (BP_GET_TYPE(bp) == DMU_OT_SA)
+		return (B_FALSE);
+
+	/*
+	 * Without DMU_BACKUP_FEATURE_LARGE_BLOCKS the object's block size is
+	 * clamped to SPA_OLD_MAXBLOCKSIZE in the DRR_OBJECT record (see
+	 * dump_dnode()), so a larger embedded block cannot be represented on
+	 * the receiving side. Decline it here and let do_dump() split it
+	 * into SPA_OLD_MAXBLOCKSIZE chunks.
+	 */
+	if (BP_GET_LSIZE(bp) > SPA_OLD_MAXBLOCKSIZE &&
+	    !(featureflags & DMU_BACKUP_FEATURE_LARGE_BLOCKS))
+		return (B_FALSE);
+
+	/*
 	 * Compression function must be legacy, or explicitly enabled.
 	 */
 	if ((BP_GET_COMPRESS(bp) >= ZIO_COMPRESS_LEGACY_FUNCTIONS &&
@@ -918,7 +933,7 @@ do_dump(dmu_send_cookie_t *dscp, struct send_range *range)
 		ASSERT(range->object > dscp->dsc_resume_object ||
 		    (range->object == dscp->dsc_resume_object &&
 		    (range->start_blkid == DMU_SPILL_BLKID ||
-		    range->start_blkid * srdp->datablksz >=
+		    (range->start_blkid + 1) * srdp->datablksz >
 		    dscp->dsc_resume_offset)));
 		/* it's a level-0 block of a regular object */
 
@@ -973,12 +988,18 @@ do_dump(dmu_send_cookie_t *dscp, struct send_range *range)
 		if (srdp->datablksz > SPA_OLD_MAXBLOCKSIZE &&
 		    !(dscp->dsc_featureflags &
 		    DMU_BACKUP_FEATURE_LARGE_BLOCKS)) {
+			uint64_t resume_off = 0;
+			if (range->object == dscp->dsc_resume_object)
+				resume_off = dscp->dsc_resume_offset;
 			while (srdp->datablksz > 0 && err == 0) {
 				int n = MIN(srdp->datablksz,
 				    SPA_OLD_MAXBLOCKSIZE);
-				err = dmu_dump_write(dscp, srdp->obj_type,
-				    range->object, offset, n, n, NULL, B_FALSE,
-				    data);
+				if (offset >= resume_off) {
+					err = dmu_dump_write(dscp,
+					    srdp->obj_type,
+					    range->object, offset, n,
+					    n, NULL, B_FALSE, data);
+				}
 				offset += n;
 				/*
 				 * When doing dry run, data==NULL is used as a
@@ -1200,7 +1221,7 @@ send_traverse_thread(void *arg)
 
 	err = traverse_dataset_resume(st_arg->os->os_dsl_dataset,
 	    st_arg->fromtxg, &st_arg->resume,
-	    st_arg->flags | TRAVERSE_LOGICAL, send_cb, st_arg);
+	    st_arg->flags, send_cb, st_arg);
 
 	if (err != EINTR)
 		st_arg->error_code = err;
@@ -1664,6 +1685,19 @@ issue_data_read(struct send_reader_thread_arg *srta, struct send_range *range)
 	    arc_getbuf_func, &srdp->abuf, ZIO_PRIORITY_ASYNC_READ,
 	    zioflags, &aflags, &zb);
 	/*
+	 * The ARC only honors a request for compressed data if the header
+	 * is compressed, which is not the case for cached blocks when
+	 * zfs_compressed_arc_enabled=0.  Such a buffer holds the logical
+	 * data, while the record is sent with the block's compression and
+	 * psize, so read the block from disk instead.
+	 */
+	if (arc_err == 0 && srdp->io_compressed &&
+	    arc_get_compression(srdp->abuf) != BP_GET_COMPRESS(bp)) {
+		arc_buf_destroy(srdp->abuf, &srdp->abuf);
+		srdp->abuf = NULL;
+		arc_err = SET_ERROR(ENOENT);
+	}
+	/*
 	 * If the data is not already cached in the ARC, we read directly
 	 * from zio.  This avoids the performance overhead of adding a new
 	 * entry to the ARC, and we also avoid polluting the ARC cache with
@@ -2101,6 +2135,14 @@ setup_to_thread(struct send_thread_arg *to_arg, objset_t *to_os,
 	to_arg->flags = TRAVERSE_PRE | TRAVERSE_PREFETCH_METADATA;
 	if (rawok)
 		to_arg->flags |= TRAVERSE_NO_DECRYPT;
+	/*
+	 * zfs rewrite -P keeps a block's logical birth, but gives an encrypted
+	 * block a new IV and MAC.  The dnode block MACs in a raw stream
+	 * authenticate that MAC, so a raw send of an encrypted dataset has to
+	 * compare the physical birth to include such blocks.
+	 */
+	if (!(rawok && to_os->os_encrypted))
+		to_arg->flags |= TRAVERSE_LOGICAL;
 	if (zfs_send_corrupt_data)
 		to_arg->flags |= TRAVERSE_HARD;
 	to_arg->num_blocks_visited = &dssp->dss_blocks;

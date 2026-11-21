@@ -75,13 +75,34 @@ else
 	mntopts="-t $fstype"
 fi
 
+#
+# Track whether we have a file system mounted on $TESTDIR ourselves.
+# ismounted() cannot be used for this, because for ext* it only checks
+# the type of the file system containing the path, which may be the
+# root file system when $TESTDIR is left as a bare directory by earlier
+# tests.
+#
+typeset mounted=
+
+function mount_testdir
+{
+	log_must mount $mntopts "$@" $TESTDIR
+	mounted=1
+}
+
+function umount_testdir
+{
+	log_must umount $TESTDIR
+	mounted=
+}
+
 function cleanup
 {
+	if [[ -n $mounted ]]; then
+		umount_testdir
+	fi
 	if [[ -n $lodev ]]; then
 		detach_img
-	fi
-	if ismounted $TESTDIR $fstype; then
-		log_must umount $TESTDIR
 	fi
 	cleanup_pool $POOL
 }
@@ -92,6 +113,7 @@ typeset volume=$POOL/zvol
 typeset volsize=256m
 typeset image=$BACKDIR/zvol.img
 typeset image1=$BACKDIR/zvol1.img
+typeset incr=$BACKDIR/incr.zsend
 typeset -i maxsz=$((1 << 20)) # 1MiB
 
 function exercise_volume
@@ -99,7 +121,7 @@ function exercise_volume
 	typeset -i j
 
 	block_device_wait $ZVOL_DEVDIR/$volume
-	log_must mount $mntopts $ZVOL_DEVDIR/$volume $TESTDIR
+	mount_testdir $ZVOL_DEVDIR/$volume
 	for (( j = 0; j < 20; j++ )); do
 		typeset f=$TESTDIR/file-$RANDOM
 		log_must mkfile -n $maxsz $f
@@ -115,7 +137,7 @@ function exercise_volume
 	(( start = RANDOM % (len - 1) ))
 	(( num = 1 + RANDOM % (len - start - 1) ))
 	log_must randfree_file -l $len -s $start -n $num $TESTDIR/free-$RANDOM
-	log_must umount $TESTDIR
+	umount_testdir
 	block_device_wait $ZVOL_DEVDIR/$volume
 }
 
@@ -126,16 +148,16 @@ function compare_files
 
 	block_device_wait $snapdev
 	log_must fsck -n $snapdev
-	log_must mount $mntopts -o ro $snapdev $TESTDIR
+	mount_testdir -o ro $snapdev
 	typeset volcksum=$(cat $TESTDIR/* | xxh128digest)
-	log_must umount $TESTDIR
+	umount_testdir
 
 	log_must chmod -w $img
 	attach_img $img
 	log_must fsck -n $lodev
-	log_must mount $mntopts -o ro $lodev $TESTDIR
+	mount_testdir -o ro $lodev
 	typeset imgcksum=$(cat $TESTDIR/* | xxh128digest)
-	log_must umount $TESTDIR
+	umount_testdir
 	detach_img
 	log_must chmod +w $img
 
@@ -162,9 +184,12 @@ log_note "Single incremental send"
 # 4. Add changes to the zvol and verify an incremental stream
 exercise_volume
 log_must zfs snapshot $volume@snapshot1
-# Use a single buffer to exercise disabling write coalescing.
-log_must eval "guid=\$(zfs send -ceL -i @snapshot $volume@snapshot1 |
-    zstream raw -b 1 -g $guid $image)"
+# Use a single buffer to exercise disabling write coalescing.  Name the
+# stream on the command line instead of piping it in, to verify that
+# zstream raw accepts a trailing filename.
+log_must eval "zfs send -ceL -i @snapshot $volume@snapshot1 > $incr"
+log_must eval "guid=\$(zstream raw -b 1 -g $guid $image $incr)"
+log_must rm $incr
 compare_files $ZVOL_DEVDIR/$volume@snapshot1 $image
 
 # 5. Repeat for a stream package with multiple intermediary snapshots

@@ -7,15 +7,15 @@
 # Build targets for RPM packages.
 ###############################################################################
 
-PHONY += srpm srpms srpm-kmod srpm-dkms srpm-utils
-PHONY += rpm rpms rpm-kmod rpm-dkms rpm-utils rpm-utils-initramfs
+PHONY += srpm srpms srpm-kmod srpm-dkms srpm-utils srpm-akmod
+PHONY += rpm rpms rpm-kmod rpm-dkms rpm-utils rpm-utils-initramfs rpm-akmod
 PHONY += srpm-common rpm-common rpm-local
 
-srpm-kmod srpm-dkms srpm-utils: dist
+srpm-kmod srpm-dkms srpm-utils srpm-akmod: dist
 
 srpm-kmod:
 	$(MAKE) $(AM_MAKEFLAGS) pkg="${PACKAGE}-kmod" \
-		def='${SRPM_DEFINE_COMMON} ${SRPM_DEFINE_KMOD}' srpm-common
+		def='${SRPM_DEFINE_COMMON} ${SRPM_DEFINE_KMOD} --with devel' srpm-common
 
 srpm-dkms:
 	$(MAKE) $(AM_MAKEFLAGS) pkg="${PACKAGE}-dkms" \
@@ -25,12 +25,17 @@ srpm-utils:
 	$(MAKE) $(AM_MAKEFLAGS) pkg="${PACKAGE}" \
 		def='${SRPM_DEFINE_COMMON} ${SRPM_DEFINE_UTIL}' srpm-common
 
+srpm-akmod:
+	$(MAKE) $(AM_MAKEFLAGS) pkg="${PACKAGE}-kmod" \
+		def='${SRPM_DEFINE_COMMON} --define "_wrong_version_format_terminate_build 0" --define "_enable_akmod 1"' \
+		RPM_SPEC_DIR="rpm/generic" srpm-common
+
 srpm: srpm-kmod srpm-dkms srpm-utils
 srpms: srpm-kmod srpm-dkms srpm-utils
 
 rpm-kmod: srpm-kmod
 	$(MAKE) $(AM_MAKEFLAGS) pkg="${PACKAGE}-kmod" \
-		def='${RPM_DEFINE_COMMON} ${RPM_DEFINE_KMOD}' rpm-common
+		def='${RPM_DEFINE_COMMON} ${RPM_DEFINE_KMOD} --with devel' rpm-common
 
 rpm-dkms: srpm-dkms
 	$(MAKE) $(AM_MAKEFLAGS) pkg="${PACKAGE}-dkms" \
@@ -51,6 +56,11 @@ rpm-utils: srpm-utils
 rpm-utils-initramfs: srpm-utils
 	$(MAKE) $(AM_MAKEFLAGS) pkg="${PACKAGE}" \
 		def='${RPM_DEFINE_COMMON} ${RPM_DEFINE_UTIL} ${RPM_DEFINE_INITRAMFS}' rpm-common
+
+rpm-akmod: srpm-akmod
+	$(MAKE) $(AM_MAKEFLAGS) pkg="${PACKAGE}-kmod" \
+		def='${RPM_DEFINE_COMMON} --define "_wrong_version_format_terminate_build 0" --define "_enable_akmod 1"' \
+		RPM_SPEC_DIR="rpm/generic" rpm-common
 
 rpm: rpm-kmod rpm-dkms rpm-utils
 rpms: rpm-kmod rpm-dkms rpm-utils
@@ -94,7 +104,7 @@ srpm-common:
 	cp $$rpmbuild/SRPMS/$$rpmpkg . || exit 1; \
 	rm -R $$rpmbuild)
 
-rpm-common: 
+rpm-common: $(RPM_CONFCACHE)
 	@(dist=`$(RPM) --eval %{?dist}`; \
 	rpmpkg=$(pkg)-$(VERSION)-$(RELEASE)$$dist*src.rpm; \
 	rpmspec=$(pkg).spec; \
@@ -114,3 +124,17 @@ rpm-common:
 		$(def) --rebuild $$rpmpkg || exit 1; \
 	cp $$rpmbuild/RPMS/*/* . || exit 1; \
 	rm -R $$rpmbuild)
+
+# configure is very sensitive about its "precious" variables. So do not
+# include them in the configure cache. Actually a superset is excluded,
+# but that's fine as the extra excludes aren't expensive to generate.
+
+$(RPM_CONFCACHE)::
+	$(AM_V_GEN)SRC_CONFCACHE="$(abs_builddir)/config.cache"; \
+	if test -f "$(RPM_CONFCACHE)"; then \
+		SRC_CONFCACHE="$(RPM_CONFCACHE)~"; \
+		mv -f "$(RPM_CONFCACHE)" "$$SRC_CONFCACHE"; \
+	fi; \
+	grep -vE -e "[^=]*(build|host|target)[^=]*=" \
+		-e "^ac_cv_env_" \
+		"$$SRC_CONFCACHE" > $(RPM_CONFCACHE)

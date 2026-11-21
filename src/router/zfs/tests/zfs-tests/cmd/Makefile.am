@@ -2,7 +2,8 @@
 scripts_zfs_tests_bindir = $(datadir)/$(PACKAGE)/zfs-tests/bin
 
 
-scripts_zfs_tests_bin_PROGRAMS  = %D%/chg_usr_exec
+scripts_zfs_tests_bin_PROGRAMS  = %D%/append_only_ops
+scripts_zfs_tests_bin_PROGRAMS += %D%/chg_usr_exec
 scripts_zfs_tests_bin_PROGRAMS += %D%/clonefile
 scripts_zfs_tests_bin_PROGRAMS += %D%/clone_mmap_cached
 scripts_zfs_tests_bin_PROGRAMS += %D%/clone_mmap_write
@@ -61,6 +62,11 @@ scripts_zfs_tests_bin_PROGRAMS += %D%/file_append %D%/file_check %D%/file_trunc 
 %C%_randwritecomp_SOURCES = %D%/file/randwritecomp.c
 
 
+scripts_zfs_tests_bin_PROGRAMS += %D%/ioctl_unterminated
+%C%_ioctl_unterminated_LDADD = \
+	libzfs_core.la \
+	libnvpair.la
+
 scripts_zfs_tests_bin_PROGRAMS += %D%/libzfs_input_check
 %C%_libzfs_input_check_LDADD = \
 	libzfs_core.la \
@@ -73,13 +79,11 @@ scripts_zfs_tests_bin_PROGRAMS += %D%/libzfs_mnttab_cache_check
 scripts_zfs_tests_bin_PROGRAMS += %D%/manipulate_user_buffer
 
 scripts_zfs_tests_bin_PROGRAMS += %D%/mkbusy %D%/mkfile %D%/mkfiles %D%/mktree
-%C%_mkfile_LDADD = $(LTLIBINTL)
-
 
 scripts_zfs_tests_bin_PROGRAMS += \
 	%D%/mmap_exec %D%/mmap_ftruncate %D%/mmap_seek \
 	%D%/mmap_sync %D%/mmapwrite %D%/readmmap %D%/mmap_write_sync \
-	%D%/mmap_read_truncate
+	%D%/mmap_read_truncate %D%/mmap_eof_extend %D%/mmap_stale_check
 
 if WANT_MMAP_LIBAIO
 scripts_zfs_tests_bin_PROGRAMS += %D%/mmap_libaio
@@ -135,16 +139,20 @@ scripts_zfs_tests_bin_PROGRAMS += %D%/edonr_test %D%/skein_test \
 %C%_blake3_test_LDADD = $(%C%_skein_test_LDADD)
 
 if BUILD_LINUX
+scripts_zfs_tests_bin_PROGRAMS += %D%/getfsuuid
 scripts_zfs_tests_bin_PROGRAMS += %D%/getversion
 scripts_zfs_tests_bin_PROGRAMS += %D%/user_ns_exec
 scripts_zfs_tests_bin_PROGRAMS += %D%/makedir
 scripts_zfs_tests_bin_PROGRAMS += %D%/mount_null_source
+scripts_zfs_tests_bin_PROGRAMS += %D%/open_by_fid
 scripts_zfs_tests_bin_PROGRAMS += %D%/renameat2
 scripts_zfs_tests_bin_PROGRAMS += %D%/statx
+scripts_zfs_tests_bin_PROGRAMS += %D%/statfs_nomount
 scripts_zfs_tests_bin_PROGRAMS += %D%/xattrtest
 scripts_zfs_tests_bin_PROGRAMS += %D%/zed_fd_spill-zedlet
 scripts_zfs_tests_bin_PROGRAMS += %D%/idmap_util
 scripts_zfs_tests_bin_PROGRAMS += %D%/setlease
+scripts_zfs_tests_bin_PROGRAMS += %D%/dio_append_fallocate
 
 %C%_idmap_util_LDADD = libspl.la
 
