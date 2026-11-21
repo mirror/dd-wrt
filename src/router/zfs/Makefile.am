@@ -26,7 +26,7 @@ include $(srcdir)/%D%/contrib/Makefile.am
 include $(srcdir)/%D%/etc/Makefile.am
 include $(srcdir)/%D%/lib/Makefile.am
 include $(srcdir)/%D%/man/Makefile.am
-include $(srcdir)/%D%/tests/Makefile.am
+#include $(srcdir)/%D%/tests/Makefile.am
 if BUILD_LINUX
 include $(srcdir)/%D%/udev/Makefile.am
 endif
