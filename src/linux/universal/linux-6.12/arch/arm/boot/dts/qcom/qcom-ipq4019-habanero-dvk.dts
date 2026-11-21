@@ -287,10 +287,14 @@
 				label = "cfg";
 				reg = <0x00180000 0x00040000>;
 			};
-			partition@1c0000 {
-				label = "firmware";
+			partition9@1a0000 {
+				label = "linux";
 				compatible = "denx,fit";
-				reg = <0x001c0000 0x01e40000>;
+				reg = <0x001c0000 0x01e20000>;
+			};
+			partition11@1fe0000 {
+				label = "nvram";
+				reg = <0x01fe0000 0x020000>;
 			};
 		};
 	};
