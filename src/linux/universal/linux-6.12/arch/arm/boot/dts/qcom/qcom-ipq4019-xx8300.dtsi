@@ -181,36 +181,38 @@
 			};
 
 			partition@780000 {
-				label = "kernel";
+				label = "linux";
 				reg = <0x780000 0x5800000>;
 			};
 
 			partition@c80000 {
 				label = "rootfs";
 				reg = <0xc80000 0x5300000>;
-				linux,rootfs;
 			};
 
 			partition@5f80000 {
-				label = "alt_kernel";
-				reg = <0x5f80000 0x5800000>;
+				label = "linux2";
+				reg = <0x5f80000 0x5700000>;
 			};
 
 			partition@6480000 {
-				label = "alt_rootfs";
-				reg = <0x6480000 0x5300000>;
+				label = "rootfs2";
+				reg = <0x6480000 0x5200000>;
+			};
+
+			partition@b680000 {
+				label = "nvram";
+				reg = <0xb680000 0x100000>;
 			};
 
 			partition@b780000 {
-				label = "sysdiag";
+				label = "oops";
 				reg = <0xb780000 0x100000>;
-				read-only;
 			};
 
 			partition@b880000 {
-				label = "syscfg";
+				label = "ddwrt";
 				reg = <0xb880000 0x4680000>;
-				read-only;
 			};
 		};
 	};
