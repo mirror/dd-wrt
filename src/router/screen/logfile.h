@@ -45,7 +45,7 @@ struct Log {
 
 /*
  * open a logfile, The second argument must be NULL, when the named file
- * is already a logfile or must be a appropriatly opened file pointer
+ * is already a logfile or must be a appropriately opened file pointer
  * otherwise.
  * example: l = logfopen(name, islogfile(name) : NULL ? fopen(name, "a"));
  */

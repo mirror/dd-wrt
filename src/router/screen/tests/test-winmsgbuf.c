@@ -56,7 +56,7 @@ int main(void)
 		ASSERT(*wmb_contents(wmb) == '\0');
 		/* TODO: rendition state */
 
-		/* buffer shall be expandable to accomodate a minimum number of bytes */
+		/* buffer shall be expandable to accommodate a minimum number of bytes */
 		size_t old = wmb_size(wmb);
 		size_t want = old + 3;
 		ASSERT_REALLOC(>= want, ASSERT(wmb_expand(wmb, want) >= want));

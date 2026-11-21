@@ -175,7 +175,7 @@ static bool _wmbc_expand(WinMsgBufContext *wmbc, size_t size)
  * dynamically resized as needed. */
 void wmbc_putchar(WinMsgBufContext *wmbc, char c)
 {
-	/* attempt to accomodate this character, but bail out silenty if it cannot
+	/* attempt to accommodate this character, but bail out silently if it cannot
 	 * fit */
 	if (!wmbc_bytesleft(wmbc)) {
 		if (!_wmbc_expand(wmbc, wmbc->buf->size + 1)) {
@@ -187,7 +187,7 @@ void wmbc_putchar(WinMsgBufContext *wmbc, char c)
 }
 
 /* Copies a string into the buffer, dynamically resizing the buffer as needed to
- * accomodate length N. If S is shorter than N characters in length, the
+ * accommodate length N. If S is shorter than N characters in length, the
  * remaining bytes are filled will nulls. The context pointer is adjusted to the
  * terminating null byte. A pointer to the first copied character in the buffer
  * is returned; it shall not be used to modify the buffer. */
@@ -195,7 +195,7 @@ const char *wmbc_strncpy(WinMsgBufContext *wmbc, const char *s, size_t n)
 {
 	size_t l = wmbc_bytesleft(wmbc);
 
-	/* silently fail in the event that we cannot accomodate */
+	/* silently fail in the event that we cannot accommodate */
 	if (l < n) {
 		size_t size = wmbc->buf->size + (n - l);
 		if (!_wmbc_expand(wmbc, size)) {
@@ -211,8 +211,8 @@ const char *wmbc_strncpy(WinMsgBufContext *wmbc, const char *s, size_t n)
 }
 
 /* Copies a string into the buffer, dynamically resizing the buffer as needed to
- * accomodate the length of the string sans its terminating null byte. The
- * context pointer is adjusted to the the terminiating null byte. A pointer to
+ * accommodate the length of the string sans its terminating null byte. The
+ * context pointer is adjusted to the the terminating null byte. A pointer to
  * the first copied character in the destination buffer is returned; it shall
  * not be used to modify the buffer. */
 const char *wmbc_strcpy(WinMsgBufContext *wmbc, const char *s)
@@ -221,7 +221,7 @@ const char *wmbc_strcpy(WinMsgBufContext *wmbc, const char *s)
 }
 
 /* Write data to the buffer using a printf-style format string. If needed, the
- * buffer will be automatically expanded to accomodate the resulting string and
+ * buffer will be automatically expanded to accommodate the resulting string and
  * is therefore protected against overflows. */
 int wmbc_printf(WinMsgBufContext *wmbc, const char *fmt, ...)
 {
@@ -236,7 +236,7 @@ int wmbc_printf(WinMsgBufContext *wmbc, const char *fmt, ...)
 	va_end(ap);
 
 	/* more space is needed if vsnprintf returns a larger number than our max,
-	 * in which case we should accomodate by dynamically resizing the buffer and
+	 * in which case we should accommodate by dynamically resizing the buffer and
 	 * trying again */
 	if (n > max) {
 		if (!_wmbc_expand(wmbc, wmb_size(wmbc->buf) + n - max)) {

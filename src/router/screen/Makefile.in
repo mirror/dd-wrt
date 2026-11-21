@@ -22,7 +22,7 @@ bindir  = $(exec_prefix)/bin
 VERSION = @PACKAGE_VERSION@
 SCREEN = screen-$(VERSION)
 
-DATE_FMT = %Y-%m-%d %H:%m:%S
+DATE_FMT = %Y-%m-%d %H:%M:%S
 ifdef SOURCE_DATE_EPOCH
     BUILD_DATE := $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)"  2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u "+$(DATE_FMT)")
 else
@@ -59,6 +59,7 @@ OFILES=$(CFILES:c=o)
 
 TESTCFILES := $(wildcard tests/test-*.c)
 TESTBIN := $(TESTCFILES:.c=)
+TESTSTANDALONE := tests/test-detach-cli
 
 all:	screen
 
@@ -68,13 +69,20 @@ screen: $(OFILES)
 .c.o:
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
-check: $(TESTBIN)
-	for f in $(TESTBIN); do \
+check: $(TESTBIN) $(TESTSTANDALONE)
+	for f in $(TESTBIN) $(TESTSTANDALONE); do \
 		echo "$$f"; \
-		"$$f" || exit $$?; \
+		"$$f"; rc=$$?; \
+		if [ $$rc -eq 77 ]; then \
+			echo "$$f skipped"; \
+		elif [ $$rc -ne 0 ]; then \
+			exit $$rc; \
+		fi; \
 	done
 tests/test-%: tests/test-%.c %.o tests/mallocmock.o tests/macros.h tests/signature.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -o $@ $*.o tests/mallocmock.o
+tests/test-detach-cli: tests/integration-detach.c tests/macros.h screen
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 install_bin: screen installdirs
 	-if [ -f $(DESTDIR)$(bindir)/$(SCREEN) ] && [ ! -f $(DESTDIR)$(bindir)/$(SCREEN).old ]; \

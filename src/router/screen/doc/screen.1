@@ -1,5 +1,8 @@
 .\" vi:set wm=5
-.TH SCREEN 1 "May 2025" "GNU Screen 5.0.1"
+.\" t
+.TH SCREEN 1 "Jul 2026" "GNU Screen 5.0.2"
+.ds Q \(dq
+.ds U \(dq
 .
 .
 .SH NAME
@@ -384,8 +387,12 @@ sets the title (a.\|k.\|a.) for the default shell or specified program.
 See also the \*Qshelltitle\*U .screenrc command.
 .TP 5
 .BI "\-T " term
-Set the $TERM environment variable using the specified term as
-opposed to the default setting of \fBscreen\fP.
+Set the $TERM environment variable for new windows to the specified
+term, overriding Screen's automatic terminal-name selection.
+By default, Screen first tries \*Qscreen.<term>\*U (where <term> is the
+current value of $TERM), then falls back to \*Qscreen\*U (or
+\*Qscreen\-w\*U on wide terminals), and finally to \*Qvt100\*U if no
+suitable entry is found.
 .TP 5
 .B \-U
 Run screen in UTF-8 mode. This option tells screen that your terminal
@@ -969,8 +976,6 @@ what happened. Permission is checked for initiator of the \*Qat\*U command,
 not for the owners of the affected display(s).
 Note that the '#' character works as a comment introducer when it is preceded by
 whitespace. This can be escaped by prefixing a '\e'. 
-Permission is checked for the initiator of the \*Qat\*U command, not for the
-owners of the affected display(s).
 .PP
 Caveat: 
 When matching against windows, the command is executed at least 
@@ -1943,7 +1948,7 @@ _
 The following is an example of what \*Qdisplays\*U could look like:
 .RS
 .nf
-\fC
+\f(CW
 xterm 80x42 jnweiger@/dev/ttyp4     0(m11)   &rWx
 facit 80x24 mlschroe@/dev/ttyhf nb 11(tcsh)   rwx
 xterm 80x42 jnhollma@/dev/ttyp5     0(m11)   &R.x
@@ -4813,7 +4818,7 @@ Ps = \fB40\fP	(A)
 Background Black
 .TP 27
 Ps = \fB...\fP
-...
+\&...
 .TP 27
 Ps = \fB49\fP	(A)
 Background Default
@@ -5188,8 +5193,8 @@ Window number of a window (at creation time).
 
 .SH FILES
 .PD 0
-.IP .../screen-5.0.1/etc/screenrc 34
-.IP .../screen-5.0.1/etc/etcscreenrc
+.IP .../screen-5.0.2/etc/screenrc 34
+.IP .../screen-5.0.2/etc/etcscreenrc
 Examples in the 
 .I screen
 distribution package for private and global initialization files.
@@ -5234,7 +5239,7 @@ and Alexander Naumov <alexander_naumov@opensuse.org>.
 
 .SH COPYLEFT
 .nf
-Copyright (c) 2025
+Copyright (c) 2025-2026
 	Alexander Naumov <alexander_naumov@opensuse.org>
 Copyright (c) 2018-2024
 	Alexander Naumov <alexander_naumov@opensuse.org>

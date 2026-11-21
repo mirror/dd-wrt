@@ -44,7 +44,7 @@ static void InpRedisplayLine(int, int, int, int);
 
 struct inpline {
 	char buf[MAXSTR + 1];	/* text buffer */
-	size_t len;		/* length of the editible string */
+	size_t len;		/* length of the editable string */
 	size_t pos;		/* cursor position in editable string */
 	struct inpline *next, *prev;
 };

@@ -18,7 +18,7 @@ vbell_msg "   Wuff  ----  Wuff!!  "
 
 # all termcap entries are now duplicated as terminfo entries.
 # only difference should be the slightly modified syntax, and check for
-# terminfo entries, that are already corected in the database.
+# terminfo entries, that are already corrected in the database.
 # 
 # G0 	we have a SEMI-GRAPHICS-CHARACTER-MODE
 # WS	this sequence resizes our window.

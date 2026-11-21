@@ -61,7 +61,7 @@ static void changed_logfile(Log *l)
 /*
  * Requires fd to be open and need_fd to be closed.
  * If possible, need_fd will be open afterwards and refer to
- * the object originally reffered by fd. fd will be closed then.
+ * the object originally referred by fd. fd will be closed then.
  * Works just like ``fcntl(fd, DUPFD, need_fd); close(fd);''
  *
  * need_fd is returned on success, else -1 is returned.

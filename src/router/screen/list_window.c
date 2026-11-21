@@ -546,7 +546,7 @@ static void WListUpdate(Window *p, ListData *ldata)
 
 	/* OK, so we keep the window in the list. Update the ordering.
 	 * First, find the row where this window should go to. Then, either create
-	 * a new row for that window, or move the exising row for the window to the
+	 * a new row for that window, or move the existing row for the window to the
 	 * correct place. */
 	before = NULL;
 	if (wdata->order == WLIST_MRU) {

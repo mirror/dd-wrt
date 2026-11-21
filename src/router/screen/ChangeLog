@@ -1,3 +1,17 @@
+Version 5.0.2 (12/07/26):
+  * Add %* escape to output caret character literal ("^")
+  * Add portable PAM conversation callback prototype (for Solaris)
+
+  * Fixes:
+	- type in screen on big-endian systems
+	- UTF-8 combining sequences
+	- typos
+	- buffer overflow in SendCmdMessage()
+	- detaching fail with empty terminfo and leave the session
+	  attached
+	- eliminates the TOCTOU race
+	- manpage fixes
+
 Version 5.0.1 (12/05/25):
   * Fixes:
 	- CVE-2025-46805: do NOT send signals with root privileges
@@ -77,7 +91,7 @@ Version 4.7.0 (02/10/2019):
 
 Version 4.6.2 (23/10/2017):
   * Fixes:
-	- revert changes to cursor position restore behavour (bug #51832)
+	- revert changes to cursor position restore behavior (bug #51832)
 	- set freed pointer to NULL (bug #52133)
 	- documentation fixes
 	- fix windowlist crashes (bug #43054 & #51500)
@@ -294,7 +308,7 @@ patchlevel.h and newer changes are only documented there.
 
 * Made a superb configure script.
 
-* BROKEN_PIPE, SOCK_NOT_IN_FS added for braindamaged systems.
+* BROKEN_PIPE, SOCK_NOT_IN_FS added for brain damaged systems.
 
 * multi display, multi user support.
 

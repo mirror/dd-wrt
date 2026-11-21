@@ -431,7 +431,12 @@ void SendCmdMessage(char *sty, char *match, char **av, int query)
 			sty[FILENAME_MAX] = 0;
 		if (strlen(sty) > 2 * MAXSTR - 1)
 			sty[2 * MAXSTR - 1] = 0;
-		sprintf(SocketPath + strlen(SocketPath), "/%s", sty);
+
+        size_t used = strlen(SocketPath);
+        if (used + 1 + strlen(sty) >= sizeof(SocketPath))
+            Panic(0, "Socket path too long.");
+        snprintf(SocketPath + used, sizeof(SocketPath) - used, "/%s", sty);
+
 		if ((s = MakeClientSocket(1)) == -1)
 			exit(1);
 	}

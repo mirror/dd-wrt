@@ -957,7 +957,7 @@ static void DoCommandMultiinput(struct action *act)
 			if (p)
 				p->w_miflag = p->w_miflag ? 0 : 1;
 			else
-				ShowWindows(n);
+				ShowWindows(act, n);
 		}
 	}
 
@@ -1353,7 +1353,7 @@ static void DoCommandAt(struct action *act)
 					 * while looping through windows, we have fore AND
 					 * display context. This will confuse users who try to
 					 * set up loops inside of loops, but often allows to do
-					 * what you mean, even when you adress your context wrong.
+					 * what you mean, even when you address your context wrong.
 					 */
 					i = 0;
 					/* XXX: other displays? */
@@ -1570,7 +1570,7 @@ static void DoCommandWindows(struct action *act)
 	if (args[0])
 		ShowWindowsX(args[0]);
 	else
-		ShowWindows(-1);
+		ShowWindows(act, -1);
 }
 
 static void DoCommandVersion(struct action *act)
@@ -5297,7 +5297,7 @@ void DoCommand(char **argv, int *argl)
 	const char *cmd = *argv;
 
 	act.quiet = 0;
-	/* For now, we actually treat both 'supress error' and 'suppress normal message' as the
+	/* For now, we actually treat both 'suppress error' and 'suppress normal message' as the
 	 * same, and ignore all messages on either flag. If we wanted to do otherwise, we would
 	 * need to change the definition of 'OutputMsg' slightly. */
 	if (*cmd == '@') {	/* Suppress error */
@@ -5778,7 +5778,7 @@ int IsNumColon(char *s, char *p, int psize)
 void SwitchWindow(Window *window)
 {
 	if (window == NULL) {
-		ShowWindows(-1);
+		ShowWindows(NULL, -1);
 		return;
 	}
 	if (display == NULL) {
@@ -6009,7 +6009,7 @@ char *AddWindows(WinMsgBufContext *wmbc, int len, int flags, int where)
 	cur = GetWindowByNumber(where);
 
 	for (win = (flags & 4) ? cur->w_next : first_window; win; win = win->w_next) {
-		int rend = -1;
+		uint64_t rend = 0;
 		if (win == cur && ss == buf)
 			ss = s;
 		if (win == NULL)
@@ -6041,7 +6041,7 @@ char *AddWindows(WinMsgBufContext *wmbc, int len, int flags, int where)
 		else if ((win->w_silence == SILENCE_FOUND || win->w_silence == SILENCE_DONE)
 			 && renditions[REND_SILENCE] != 0)
 			rend = renditions[REND_SILENCE];
-		if (rend != -1)
+		if (rend != 0)
 			AddWinMsgRend(wmbc->buf, s, rend);
 		sprintf(s, "%d", win->w_number);
 		s += strlen(s);
@@ -6051,7 +6051,7 @@ char *AddWindows(WinMsgBufContext *wmbc, int len, int flags, int where)
 		*s++ = ' ';
 		strncpy(s, cmd, l);
 		s += l;
-		if (rend != -1)
+		if (rend != 0)
 			AddWinMsgRend(wmbc->buf, s, 0);
 	}
 	*s = 0;
@@ -6133,7 +6133,7 @@ char *AddOtherUsers(char *buf, int len, Window *p)
 /* Display window list as a message.  WHERE denotes the active window
  * number; if -1, then the active window will be determined using the
  * current foreground window, if available. */
-void ShowWindows(int where)
+void ShowWindows(struct action *act, int where)
 {
 	const char *buf, *s, *ss;
 
@@ -6159,7 +6159,10 @@ void ShowWindows(int where)
 		}
 	} else
 		ss = buf;
-	Msg(0, "%s", ss);
+	if (!act || !act->quiet)
+	    Msg(0, "%s", ss);
+	else if (queryflag >= 0)
+	    QueryMsg(0, "%s", ss);
 
 	wmbc_free(wmbc);
 	wmb_free(wmb);

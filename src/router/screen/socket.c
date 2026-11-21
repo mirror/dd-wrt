@@ -83,6 +83,7 @@
 #include "utmp.h"
 
 static int CheckPid(pid_t);
+static int ValidateDetachRequest(Message *);
 static void ExecCreate(Message *);
 static void DoCommandMsg(Message *);
 static void FinishAttach(Message *);
@@ -193,7 +194,9 @@ int FindSocket(int *fdp, int *nfoundp, int *notherp, char *match)
 			} else
 				cmatch = (*(n + matchlen) == 0);
 		}
-		sprintf(SocketPath + sdirlen, "/%s", name);
+        if (sdirlen + 1 + strlen(name) >= sizeof(SocketPath))
+            continue;   /* skip entry — path would be too long */
+        snprintf(SocketPath + sdirlen, sizeof(SocketPath) - sdirlen, "/%s", name);
 
 		errno = 0;
 		if (stat(SocketPath, &st)) {
@@ -573,6 +576,20 @@ static int CheckPid(pid_t pid)
 	return UserStatus();
 }
 
+static int ValidateDetachRequest(Message *m)
+{
+	pid_t pid;
+
+	if (m->type != MSG_DETACH && m->type != MSG_POW_DETACH)
+		return -1;
+	pid = m->m.detach.dpid;
+	if (CheckPid(pid)) {
+		Msg(0, "Detach attempt with bad pid(%d)!", pid);
+		return -1;
+	}
+	return 0;
+}
+
 static int CreateTempDisplay(Message *m, int recvfd, Window *win)
 {
 	pid_t pid;
@@ -865,12 +882,15 @@ void ReceiveMsg(void)
 		break;
 	case MSG_DETACH:
 	case MSG_POW_DETACH:
-		if (CreateTempDisplay(&m, recvfd, NULL))
-			break;
-		if (do_auth)
+		if (do_auth) {
+			if (CreateTempDisplay(&m, recvfd, NULL))
+				break;
 			AskPassword(&m);
-		else
-			FinishAttach(&m);
+		} else {
+			if (ValidateDetachRequest(&m))
+				break;
+			FinishDetach(&m);
+		}
 		break;
 	case MSG_QUERY:
 		{
@@ -1069,7 +1089,7 @@ static void FinishAttach(Message *m)
 	Activate(0);
 	ResetIdle();
 	if (!D_fore && !noshowwin)
-		ShowWindows(-1);
+		ShowWindows(NULL, -1);
 	if (displays->d_next == NULL && console_window) {
 		if (TtyGrabConsole(console_window->w_ptyfd, true, "reattach") == 0)
 			Msg(0, "console %s is on window %d", HostName, console_window->w_number);
@@ -1154,7 +1174,12 @@ static void AskPassword(Message *m)
 }
 
 #if ENABLE_PAM
-static int screen_conv(int num_msg, const struct pam_message **msg,
+#if defined(_sun) || defined(__sun_)    /* Solaris */
+# define PAM_MSG_CONST
+#else                                   /* Linux, BSD, etc. */
+# define PAM_MSG_CONST const
+#endif
+static int screen_conv(int num_msg, PAM_MSG_CONST struct pam_message **msg,
 		struct pam_response **resp, void *data)
 {
 	(void)num_msg;	/* unused */

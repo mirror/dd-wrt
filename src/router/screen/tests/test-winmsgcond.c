@@ -26,13 +26,13 @@
 #include "signature.h"
 #include "macros.h"
 
-SIGNATURE_CHECK(wmc_init, void, (WinMsgCond *, char *));
+SIGNATURE_CHECK(wmc_init, void, (WinMsgCond *, int));
 SIGNATURE_CHECK(wmc_set, void, (WinMsgCond *));
 SIGNATURE_CHECK(wmc_clear, void, (WinMsgCond *));
 SIGNATURE_CHECK(wmc_is_active, bool, (const WinMsgCond *));
 SIGNATURE_CHECK(wmc_is_set, bool, (const WinMsgCond *));
-SIGNATURE_CHECK(wmc_else, char *, (WinMsgCond *, char *, bool *));
-SIGNATURE_CHECK(wmc_end, char *, (const WinMsgCond *, char *, bool *));
+SIGNATURE_CHECK(wmc_else, int, (WinMsgCond *, int, bool *));
+SIGNATURE_CHECK(wmc_end, int, (const WinMsgCond *, int, bool *));
 SIGNATURE_CHECK(wmc_deinit, void, (WinMsgCond *));
 
 int main(void)
@@ -40,7 +40,7 @@ int main(void)
 	/* simple test with no "else" */
 	{
 		WinMsgCond wmc;
-		char *pos = "test";
+		int pos = 0;
 		bool chg;
 
 		wmc_init(&wmc, pos);
@@ -75,14 +75,14 @@ int main(void)
 		wmc_deinit(&wmc);
 		ASSERT(wmc_is_active(&wmc) == false);
 		ASSERT(wmc_is_set(&wmc) == false);
-		ASSERT(wmc_end(&wmc, pos + 1, &chg) == NULL);
+		ASSERT(wmc_end(&wmc, pos + 1, &chg) == 0);
 		ASSERT(chg);
 		wmc_set(&wmc);
 		ASSERT(wmc_is_set(&wmc) == false);
-		ASSERT(wmc_end(&wmc, pos + 1, &chg) == NULL);
+		ASSERT(wmc_end(&wmc, pos + 1, &chg) == 0);
 		ASSERT(chg);
 		wmc_clear(&wmc);
-		ASSERT(wmc_end(&wmc, pos + 1, &chg) == NULL);
+		ASSERT(wmc_end(&wmc, pos + 1, &chg) == 0);
 		ASSERT(chg);
 
 		/* after deinitializing when active, ending should not return given
@@ -93,15 +93,15 @@ int main(void)
 		ASSERT(!chg);
 		wmc_deinit(&wmc);
 		ASSERT(wmc_is_set(&wmc) == false);
-		ASSERT(wmc_end(&wmc, pos + 1, &chg) == NULL);
+		ASSERT(wmc_end(&wmc, pos + 1, &chg) == 0);
 		ASSERT(chg);
 	}
 
 	/* "else" condition */
 	{
 		WinMsgCond wmc;
-		char *pos = "test";
-		char *epos = pos + 2;
+		int pos = 0;
+		int epos = pos + 2;
 		bool chg;
 
 		/* if the first condition is never set, then the else condition shall
@@ -127,7 +127,7 @@ int main(void)
 		wmc_deinit(&wmc);
 		ASSERT(wmc_is_active(&wmc) == false);
 		ASSERT(wmc_is_set(&wmc) == false);
-		ASSERT(wmc_end(&wmc, epos + 1, &chg) == NULL);
+		ASSERT(wmc_end(&wmc, epos + 1, &chg) == 0);
 		ASSERT(chg);
 
 		/* in the case of a truthful first condition, "else" shall never
@@ -141,7 +141,7 @@ int main(void)
 
 		/* and deinit shall still work the same */
 		wmc_deinit(&wmc);
-		ASSERT(wmc_end(&wmc, epos + 1, &chg) == NULL);
+		ASSERT(wmc_end(&wmc, epos + 1, &chg) == 0);
 		ASSERT(chg);
 	}
 
@@ -150,7 +150,7 @@ int main(void)
 	 * is still meaningful */
 	{
 		WinMsgCond wmc;
-		char *pos = "test";
+		int pos = 0;
 		bool chg;
 
 		/* encounter "else" at the same position; we should still have a change,
@@ -161,7 +161,7 @@ int main(void)
 		wmc_end(&wmc, pos, &chg);
 		ASSERT(!chg);
 
-		/* similarily, test the reverse---else branch taken */
+		/* similarly, test the reverse---else branch taken */
 		wmc_init(&wmc, pos);
 		wmc_set(&wmc);
 		wmc_else(&wmc, pos, &chg);

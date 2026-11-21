@@ -12,7 +12,7 @@
 /* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
 
-/* Define to 1 if you have the `execvpe' function. */
+/* Define to 1 if you have the 'execvpe' function. */
 #undef HAVE_EXECVPE
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -33,16 +33,16 @@
 /* Define to 1 if you have the <pty.h> header file. */
 #undef HAVE_PTY_H
 
-/* Define to 1 if you have the `setegid' function. */
+/* Define to 1 if you have the 'setegid' function. */
 #undef HAVE_SETEGID
 
-/* Define to 1 if you have the `seteuid' function. */
+/* Define to 1 if you have the 'seteuid' function. */
 #undef HAVE_SETEUID
 
-/* Define to 1 if you have the `setresuid' function. */
+/* Define to 1 if you have the 'setresuid' function. */
 #undef HAVE_SETRESUID
 
-/* Define to 1 if you have the `setreuid' function. */
+/* Define to 1 if you have the 'setreuid' function. */
 #undef HAVE_SETREUID
 
 /* Define to 1 if you have the <stdint.h> header file. */
@@ -117,7 +117,7 @@
 /* Path to socket directory */
 #undef SOCKET_DIR
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
@@ -125,7 +125,7 @@
 /* Path to system screenrc */
 #undef SYSTEM_SCREENRC
 
-/* Enable extensions on AIX 3, Interix.  */
+/* Enable extensions on AIX, Interix, z/OS.  */
 #ifndef _ALL_SOURCE
 # undef _ALL_SOURCE
 #endif
@@ -186,11 +186,15 @@
 #ifndef __STDC_WANT_IEC_60559_DFP_EXT__
 # undef __STDC_WANT_IEC_60559_DFP_EXT__
 #endif
+/* Enable extensions specified by C23 Annex F.  */
+#ifndef __STDC_WANT_IEC_60559_EXT__
+# undef __STDC_WANT_IEC_60559_EXT__
+#endif
 /* Enable extensions specified by ISO/IEC TS 18661-4:2015.  */
 #ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
 # undef __STDC_WANT_IEC_60559_FUNCS_EXT__
 #endif
-/* Enable extensions specified by ISO/IEC TS 18661-3:2015.  */
+/* Enable extensions specified by C23 Annex H and ISO/IEC TS 18661-3:2015.  */
 #ifndef __STDC_WANT_IEC_60559_TYPES_EXT__
 # undef __STDC_WANT_IEC_60559_TYPES_EXT__
 #endif

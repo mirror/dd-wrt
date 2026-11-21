@@ -43,7 +43,7 @@ echo "# by the newsyntax script." >> $1
 # termcap and terminfo lines can only be folded when there is no parameter
 # expansion in the codes. Parameters are denoted differently in 
 # termcap and termcap syntax. Everything else is identical, I assume.
-# Thus codes not containing '%' can be savely folded.
+# Thus codes not containing '%' can be safely folded.
 
 sed < $1.old > $1.dups \
 -e 's/^\([	 #]*\)aka/\1title/' \
@@ -54,7 +54,7 @@ sed < $1.old > $1.dups \
 
 # Oh, my bourne shell seems to gobble backslashes while reading.
 # Thus the sed above duplicates them in advance. 
-# Hope this is not just another silly bash featureism.
+# Hope this is not just another silly bash featurism.
 # It still zaps trailing blanks. I do not know why. But that is nice.
 
 exec < $1.dups

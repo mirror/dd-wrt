@@ -67,7 +67,7 @@ A:   Just  put  the following line in your ~/.screenrc:
 Q:   Start "screen emacs"  and  run   emacs   function   suspend-emacs
      (ctrl-z). The window containing emacs vanishes. 
  
-A:   This is a known  bug.  Unfortunatly  there   is   no   easy   fix
+A:   This is a known  bug.  Unfortunately  there   is   no   easy   fix
      because  this  is specified in the POSIX  standard.  When  a  new
      window is created Screen opens  up  a  new  session  because  the
      window    has    to  get   the  pty  as a controlling terminal (a

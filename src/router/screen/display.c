@@ -733,7 +733,7 @@ void GotoPos(int x2, int y2)
 
 	/* Calculate the cost to move the cursor to the right x position */
 	costx = EXPENSIVE;
-	if (x1 >= 0) {		/* relative x positioning only if we know where we are */
+	if (x1 >= 0) {		/* relativee x positioning only if we know where we are */
 		if (dx > 0) {
 			if (D_CRI && (dx > 1 || !D_ND)) {
 				costx = CalcCost(tgoto(D_CRI, 0, dx));

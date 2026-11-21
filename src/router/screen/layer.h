@@ -34,7 +34,7 @@
 #include <stdlib.h>
 
 /*
- * This is the overlay structure. It is used to create a seperate
+ * This is the overlay structure. It is used to create a separate
  * layer over the current windows.
  */
 

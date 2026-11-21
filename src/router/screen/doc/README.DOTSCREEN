@@ -106,7 +106,7 @@ bd_scroll on/off             # enables/disables scrolling
 bd_skip on/off               # skip/don't skip balnk lines
 bd_width <integer-value>     # number of braille cells that user want to use,
                              # this value is always <= total number of cells
-bd_ncrc <interger-value>     # number of cells displayed on the right side 
+bd_ncrc <integer-value>      # number of cells displayed on the right side
                              # of physical cursor (default = 1)   
 bd_info  <integer-value>     # displays braille/screen cursor position 
                              # depending on its value, (no info: 0, only 

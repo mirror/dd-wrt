@@ -5,7 +5,7 @@
 
 
 
-Short introduction to screen (Version 5.0.1)
+Short introduction to screen (Version 5.0.2)
 
 Send bugreports, fixes, enhancements, t-shirts, money, beer & pizza to 
                           screen-devel@gnu.org
@@ -49,7 +49,7 @@ possibly open more windows.
 
   C-a C-[	(copy)		Start copy mode.  Move cursor with h,j,k,l.
 				Set 2 marks with SPACE or y.  Abort with ESC.
-				(C-[ is ESC.)  Preceeding second mark with
+				(C-[ is ESC.)  Preceding second mark with
 				an a appends the text to the copy buffer.
 
   C-a C-]	(paste)		Output copy buffer to current window's stdin.

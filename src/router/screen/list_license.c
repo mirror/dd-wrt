@@ -46,7 +46,7 @@
 static char ListID[] = "license";
 
 static char license[] = {
-"Copyright (c) 2025 Alexander Naumov\n"
+"Copyright (c) 2025-2026 Alexander Naumov\n"
 "Copyright (c) 2018-2024 Alexander Naumov, Amadeusz Slawinski\n"
 "Copyright (c) 2015-2017 Juergen Weigert, Alexander Naumov, Amadeusz Slawinski\n"
 "Copyright (c) 2010-2014 Juergen Weigert, Sadrul Habib Chowdhury\n"

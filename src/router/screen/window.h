@@ -79,7 +79,7 @@ struct pseudowin {
 	char	p_cmd[MAXSTR];
 	char	p_tty[MAXSTR];
 	char	p_inbuf[IOSIZE];	/* buffered writing to p_ptyfd */
-	size_t	p_inlen;
+	int	p_inlen;
 };
 
 /* bits for fdpat: */
@@ -157,9 +157,9 @@ struct Window {
 	int	 w_poll_zombie_timeout;
 	int	 w_ptyfd;		/* fd of the master pty */
 	char	 w_inbuf[IOSIZE];
-	size_t	 w_inlen;
+	int	 w_inlen;
 	char	 w_outbuf[IOSIZE];
-	size_t	 w_outlen;
+	int	 w_outlen;
 	bool	 w_aflag;		/* (-a option) */
 	bool	 w_dynamicaka;		/* should we change name */
 	char	*w_title;		/* name of the window */
@@ -175,7 +175,7 @@ struct Window {
 	struct acluser *w_wlockuser;	/* NULL when unlocked or user who writes */
 	AclBits w_userbits[ACL_BITS_PER_WIN];
 	AclBits w_lio_notify;		/* whom to tell when lastio+seconds < time() */
-	AclBits w_mon_notify;		/* whom to tell monitor statis */
+	AclBits w_mon_notify;		/* whom to tell monitor status */
 
 	enum state_t w_state;		/* parser state */
 	enum string_t w_StringType;

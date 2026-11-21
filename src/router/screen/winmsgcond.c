@@ -69,7 +69,7 @@ bool wmc_is_set(const WinMsgCond *cond)
 	return cond->state;
 }
 
-/* "else" encounted */
+/* "else" encountered */
 int wmc_else(WinMsgCond *cond, int offset, bool *changed)
 {
 	assert(wmc_is_active(cond));

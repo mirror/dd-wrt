@@ -536,6 +536,12 @@ winmsg_esc_ex(WinTty, Window *win)
 
 }
 
+winmsg_esc_ex(WinCaret, Window *win)
+{
+	if (win && win->w_tty[0])
+		wmbc_printf(wmbc, "^");
+}
+
 winmsg_esc_ex(WinSize, Window *win)
 {
 	if (!win)
@@ -808,6 +814,9 @@ char *MakeWinMsgEv(WinMsgBuf *winmsg, char *str, Window *win,
 			break;
 		case WINESC_WIN_TTY:
 			WinMsgDoEscEx(WinTty, win);
+			break;
+		case WINESC_WIN_CARET:
+			WinMsgDoEscEx(WinCaret, win);
 			break;
 		}
 	}

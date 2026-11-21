@@ -33,6 +33,11 @@
 #include <sys/types.h>
 #include <stdint.h>
 
+/* to get index() declaration on Solaris */
+#if defined(_sun_)
+# include <strings.h>
+#endif
+
 #include "screen.h"
 
 #include "encoding.h"

@@ -8,7 +8,7 @@
 @finalout
 @setchapternewpage odd
 @c %**end of header
-@set version 5.0.1
+@set version 5.0.2
 
 @direntry
 * Screen: (screen).             Full-screen window manager.
@@ -25,7 +25,7 @@
 @ifinfo
 This file documents the @code{Screen} virtual terminal manager.
 
-Copyright (c) 1993-2025 Free Software Foundation, Inc.
+Copyright (c) 1993-2026 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -50,14 +50,14 @@ by the Foundation.
 @end ifinfo
 
 @titlepage
-@title Screen
+@title GNU Screen
 @subtitle The virtual terminal manager
 @subtitle for Version @value{version}
-@subtitle May 2025
+@subtitle Jul 2026
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1993-2025 Free Software Foundation, Inc.
+Copyright @copyright{} 1993-2026 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -74,50 +74,49 @@ except that this permission notice may be stated in a translation approved
 by the Foundation.
 @end titlepage
 
-@shortcontents
+@summarycontents
 @contents
 
-@node Top, Overview, (dir), (dir)
-
-@ifinfo
+@node Top
 @top Screen
+
 This file documents the @code{Screen} virtual terminal manager, version
 @value{version}.
-@end ifinfo
 
 @menu
-* Overview::                    Preliminary information.
-* Getting Started::             An introduction to @code{screen}.
-* Invoking Screen::             Command line options for @code{screen}.
-* Customization::               The @file{.screenrc} file.
-* Commands::                    List all of the commands.
-* New Window::                  Running a program in a new window.
-* Selecting::                   Selecting a window to display.
-* Session Management::          Suspend/detach, grant access, connect sessions.
-* Regions::			Split-screen commands.
-* Window Settings::             Titles, logging, etc.
-* Virtual Terminal::            Controlling the @code{screen} VT100 emulation.
-* Copy and Paste::              Exchanging text between windows and sessions.
-* Subprocess Execution::	I/O filtering with @code{exec}.
-* Key Binding::                 Binding commands to keys.
-* Flow Control::                Trap or pass flow control characters.
-* Termcap::                     Tweaking your terminal's termcap entry.
-* Message Line::                The @code{screen} message line.
-* Logging::                     Keeping a record of your session.
-* Startup::                     Functions only useful at @code{screen} startup.
-* Miscellaneous::               Various other commands.
-* String Escapes::              Inserting current information into strings
-* Environment::                 Environment variables used by @code{screen}.
-* Files::                       Files used by @code{screen}.
-* Credits::                     Who's who of @code{screen}.
-* Bugs::                        What to do if you find a bug.
-* Installation::                Getting @code{screen} running on your system.
-* Concept Index::               Index of concepts.
-* Command Index::               Index of all @code{screen} commands.
-* Keystroke Index::             Index of default key bindings.
+* Overview::              Preliminary information.
+* Installation::          Getting @code{screen} running on your system.
+* Getting Started::       An introduction to @code{screen}.
+* Invoking Screen::       Command line options for @code{screen}.
+* Customization::         The @file{.screenrc} file.
+* Commands::              List all of the commands.
+* New Window::            Running a program in a new window.
+* Selecting::             Selecting a window to display.
+* Session Management::    Suspend/detach, grant access, connect sessions.
+* Regions::               Split-screen commands.
+* Window Settings::       Titles, logging, etc.
+* Virtual Terminal::      Controlling the @code{screen} VT100 emulation.
+* Copy and Paste::        Exchanging text between windows and sessions.
+* Subprocess Execution::  I/O filtering with @code{exec}.
+* Key Binding::           Binding commands to keys.
+* Flow Control::          Trap or pass flow control characters.
+* Termcap::               Tweaking your terminal's termcap entry.
+* Message Line::          The @code{screen} message line.
+* Logging::               Keeping a record of your session.
+* Startup::               Functions only useful at @code{screen} startup.
+* Miscellaneous::         Various other commands.
+* String Escapes::        Inserting current information into strings
+* Environment::           Environment variables used by @code{screen}.
+* Files::                 Files used by @code{screen}.
+* Credits::               Who's who of @code{screen}.
+* Bugs::                  What to do if you find a bug.
+* Concept Index::         Index of concepts.
+* Command Index::         Index of all @code{screen} commands.
+* Keystroke Index::       Index of default key bindings.
 @end menu
 
-@node Overview, Getting Started, Top, Top
+@c ----------------------------------------------------------------
+@node Overview
 @chapter Overview
 @cindex overview
 
@@ -144,8 +143,9 @@ whole screen session is detached from the user's terminal.
 When a program terminates, @code{screen} (per default) kills the window
 that contained it.  If this window was in the foreground, the display
 switches to the previously displayed window; if none are left,
-@code{screen} exits. Shells usually distinguish between running as login-shell or sub-shell.
-Screen runs them as sub-shells, unless told otherwise (See @code{shell} .screenrc command).
+@code{screen} exits. Shells usually distinguish between running as
+login-shell or sub-shell. Screen runs them as sub-shells, unless told
+otherwise (See @code{shell} .screenrc command).
 
 Everything you type is sent to the program running in the current
 window.  The only exception to this is the one keystroke that is used to
@@ -156,8 +156,8 @@ Character}) and all the key bindings (@pxref{Key Binding}) can be fully
 customized to be anything you like, though they are always two
 characters in length.
 
-@code{Screen} does not understand the prefix @kbd{C-} to mean control, although
-this notation is used in this manual for readability.
+@code{Screen} does not understand the prefix @kbd{C-} to mean control,
+although this notation is used in this manual for readability.
 Please use the caret notation (@kbd{^A} instead of @kbd{C-a}) as arguments
 to e.g. the @code{escape} command or the @code{-e} option. @code{Screen}
 will also print out control characters in caret notation.
@@ -168,8 +168,8 @@ immediately, regardless of the state of the process running in the
 current window.  Similarly, you can create a new window with a custom
 command in it by first binding the command to a keystroke (in your
 @file{.screenrc} file or at the @kbd{C-a :} command line) and then using it 
-just like the @kbd{C-a c} command.  In addition, new windows can be created by 
-running a command like:
+just like the @kbd{C-a c} command.  In addition, new windows can be created
+by  running a command like:
 
 @example
 screen emacs prog.c
@@ -193,7 +193,84 @@ similar programs that use the utmp file to determine who you are. As
 long as @code{screen} is active on your terminal, the terminal's own
 record is removed from the utmp file.  @xref{Login}.
 
-@node Getting Started, Invoking Screen, Overview, Top
+
+@c ----------------------------------------------------------------
+@node Installation
+@chapter Installation
+@cindex installation
+
+@menu
+* Availability::       Where to find screen source code.
+* Socket Directory::   Where screen stores its handle.
+* Compiling Screen::   How to build official release.
+@end menu
+
+@node Availability
+@section Availability
+@cindex availability
+
+The latest official release of @code{screen} available via anonymous
+ftp server from @code{ftp.gnu.org/gnu/screen/}
+or any other @code{GNU} distribution site. The home page of @code{screen} is
+@center @code{https://www.gnu.org/software/screen/}.
+
+Since @code{screen} uses pseudo-ttys, the select system call, and
+UNIX-domain sockets/named pipes, it will not run under a system that
+does not include these features of 4.2 and 4.3 BSD UNIX.
+
+If you want to help, send a note to screen-devel@@gnu.org.
+@code{Screen} is available under the @code{GNU} copyleft.
+
+@node Socket Directory
+@section Socket Directory
+@cindex socket directory
+
+The socket directory defaults either to @file{$HOME/.screen} or simply to
+@file{/tmp/screens} or preferably to @file{/usr/local/screens} chosen at
+compile-time. If @code{screen} is installed
+setuid root, then the administrator should compile screen with an
+adequate (not NFS mounted) @code{SOCKDIR}. If @code{screen} is not
+running setuid-root, the user can specify any mode 700 directory in the
+environment variable @code{$SCREENDIR}.
+
+@node Compiling Screen
+@section Compiling Screen
+@cindex compiling screen
+
+To compile and install screen:
+
+The @code{screen} package comes with a @code{GNU Autoconf} configuration
+script. Before you compile the package run
+
+@center @code{sh ./configure}
+
+This will create a @file{config.h} and @file{Makefile} for your machine.
+If @code{configure} fails for some reason, then look at the examples and
+comments found in the @file{Makefile.in} and @file{config.h.in} templates.
+Rename @file{config.status} to @file{config.status.@var{machine}} when
+you want to keep configuration data for multiple architectures. Running
+@code{sh ./config.status.@var{machine}} recreates your configuration
+significantly faster than rerunning @code{configure}.
+@*
+Read through the "User Configuration" section of @file{config.h}, and verify
+that it suits your needs.
+A comment near the top of this section explains why it's best to
+install screen setuid to root.
+Check for the place for the global @file{screenrc}-file and for the socket
+directory.
+@*
+Check the compiler used in @file{Makefile}, the prefix path where to install
+@code{screen}. Then run
+
+@center @code{make}
+
+If @code{make} fails to produce one of the files @file{term.h}, @file{comm.h}
+or @file{tty.c}, then use @code{@var{filename.x}.dist} instead.
+For additional information about installation of @code{screen} refer to the
+file @file{INSTALL}, coming with this package.
+
+@c ----------------------------------------------------------------
+@node Getting Started
 @chapter Getting Started
 @cindex introduction
 
@@ -228,7 +305,8 @@ capability.
 @xref{Special Capabilities}, for more information about telling
 @code{screen} what kind of terminal you have.
 
-@node Invoking Screen, Customization, Getting Started, Top
+@c ----------------------------------------------------------------
+@node Invoking Screen
 @chapter Invoking @code{Screen}
 @cindex invoking
 @cindex options
@@ -449,8 +527,12 @@ This option is equivalent to the @code{shelltitle} command
 (@pxref{Shell}).
 
 @item -T @var{term}
-Set the $TERM enviroment variable using the specified @emph{term} as
-opposed to the default setting of @code{screen}.
+Set the $TERM enviroment variable for new windows to the specified
+@emph{term}, overriding Screen's automatic terminal-name selection.
+By default, Screen first tries @code{screen.@var{term}} (where
+@var{term} is the current value of @code{$TERM}), then falls back to
+@code{screen} (or @code{screen-w} on wide terminals), and finally to
+@code{vt100} if no suitable entry is found.
 
 @item -U
 Run screen in UTF-8 mode. This option tells screen that your terminal
@@ -483,7 +565,8 @@ command doesn't work if the session is password protected.
 
 @end table
 
-@node Customization, Commands, Invoking Screen, Top
+@c ----------------------------------------------------------------
+@node Customization
 @chapter Customizing @code{Screen}
 @cindex customization
 
@@ -497,7 +580,7 @@ to be executed at startup, or on the fly using the @code{colon} command.
 * Colon::                       Entering customization commands interactively.
 @end menu
 
-@node Startup Files, Source,  , Customization
+@node Startup Files
 @section The @file{.screenrc} file
 @cindex .screenrc
 @cindex screenrc
@@ -528,10 +611,10 @@ Two configuration files are shipped as examples with your screen
 distribution: @file{etc/screenrc} and @file{etc/etcscreenrc}. They
 contain a number of useful examples for various commands.
 
-@node Source, Colon, Startup Files, Customization
+@node Source
 @section Source
 @deffn Command source file
-(none)@*
+(@kbd{C-a :})@*
 Read and execute commands from file @var{file}. Source  commands
 may be nested to a maximum recursion level of ten. If @var{file}
 is not an absolute path and  screen  is already processing  a
@@ -544,7 +627,7 @@ at startup and reattach time, so they must be reached  via
 the default screenrc files to have an effect.
 @end deffn
 
-@node Colon,  , Source, Customization
+@node Colon
 @section Colon
 Customization can also be done online, with this command:
 
@@ -560,7 +643,8 @@ as of version 3.3.  Change default settings with commands starting with
 (@pxref{Copy and Paste}).
 @end deffn
 
-@node Commands, New Window, Customization, Top
+@c ----------------------------------------------------------------
+@node Commands
 @chapter Commands
 
 A command in @code{screen} can either be bound to a key, invoked from a
@@ -584,11 +668,11 @@ take an argument of @samp{on} or @samp{off}, which is indicated as
 @var{state} in the definition.
 
 @menu
-* Default Key Bindings::	@code{screen} keyboard commands.
-* Command Summary::             List of all commands.
+* Default Key Bindings::  @code{screen} keyboard commands.
+* Command Summary::       List of all commands.
 @end menu
 
-@node Default Key Bindings, Command Summary,  , Commands
+@node Default Key Bindings
 @section Default Key Bindings
 
 As mentioned previously, each keyboard command consists of a
@@ -618,7 +702,8 @@ Switch to window number 0@dots{}9, or the blank window.
 
 @item @kbd{C-a @key{Tab}}
 (focus)@*
-Switch the input focus to the next region.  @xref{Regions}.
+Switch the input focus to the next region.
+@xref{Regions}.
 
 @item @kbd{C-a C-a}
 (other)@*
@@ -628,7 +713,8 @@ longer exist, @code{other} has the same effect as @code{next}.
 
 @item @kbd{C-a a}
 (meta)@*
-Send the command character (C-a) to window. See @code{escape} command.
+Send the command character (C-a) to window.
+See @code{escape} command.
 @xref{Command Character}. 
 
 @item @kbd{C-a A}
@@ -655,29 +741,35 @@ Create a new window with a shell and switch to that window.
 
 @item @kbd{C-a C}
 (clear)@*
-Clear the screen.  @xref{Clear}.
+Clear the screen.
+@xref{Clear}.
 
 @item @kbd{C-a d}
 @itemx @kbd{C-a C-d}
 (detach)@*
-Detach @code{screen} from this terminal.  @xref{Detach}.
+Detach @code{screen} from this terminal.
+@xref{Detach}.
 
 @item @kbd{C-a D D}
 (pow_detach)@*
-Detach and logout.  @xref{Power Detach}.
+Detach and logout.
+@xref{Power Detach}.
 
 @item @kbd{C-a f}
 @itemx @kbd{C-a C-f}
 (flow)@*
-Cycle flow among @samp{on}, @samp{off} or @samp{auto}.  @xref{Flow}.
+Cycle flow among @samp{on}, @samp{off} or @samp{auto}.
+@xref{Flow}.
 
 @item @kbd{C-a F}
 (fit)@*
-Resize the window to the current region size.  @xref{Fit}.
+Resize the window to the current region size.
+@xref{Fit}.
 
 @item @kbd{C-a C-g}
 (vbell)@*
-Toggle visual bell mode.  @xref{Bell}.
+Toggle visual bell mode.
+@xref{Bell}.
 
 @item @kbd{C-a h}
 (hardcopy)@*
@@ -692,21 +784,25 @@ Toggle logging of the current window to the file ``screenlog.@var{n}''.
 @item @kbd{C-a i}
 @itemx @kbd{C-a C-i}
 (info)@*
-Show info about the current window.  @xref{Info}.
+Show info about the current window.
+@xref{Info}.
 
 @item @kbd{C-a k}
 @itemx @kbd{C-a C-k}
 (kill)@*
-Destroy the current window.  @xref{Kill}.
+Destroy the current window.
+@xref{Kill}.
 
 @item @kbd{C-a l}
 @itemx @kbd{C-a C-l}
 (redisplay)@*
-Fully refresh the current window.  @xref{Redisplay}.
+Fully refresh the current window.
+@xref{Redisplay}.
 
 @item @kbd{C-a L}
 (login)@*
-Toggle the current window's login state.  @xref{Login}.
+Toggle the current window's login state.
+@xref{Login}.
 
 @item @kbd{C-a m}
 @itemx @kbd{C-a C-m}
@@ -716,17 +812,20 @@ Repeat the last message displayed in the message line.
 
 @item @kbd{C-a M}
 (monitor)
-Toggle monitoring of the current window.  @xref{Monitor}.
+Toggle monitoring of the current window.
+@xref{Monitor}.
 
 @item @kbd{C-a @key{SPC}}
 @itemx @kbd{C-a n}
 @itemx @kbd{C-a C-n}
 (next)@*
-Switch to the next window.  @xref{Selecting}.
+Switch to the next window.
+@xref{Selecting}.
 
 @item @kbd{C-a N}
 (number)@*
-Show the number (and title) of the current window.  @xref{Number}.
+Show the number (and title) of the current window.
+@xref{Number}.
 
 @item @kbd{C-a p}
 @itemx @kbd{C-a C-p}
@@ -739,26 +838,31 @@ Switch to the previous window (opposite of @kbd{C-a n}).
 @item @kbd{C-a q}
 @itemx @kbd{C-a C-q}
 (xon)@*
-Send a ^Q (ASCII XON) to the current window.  @xref{XON/XOFF}.
+Send a ^Q (ASCII XON) to the current window.
+@xref{XON/XOFF}.
 
 @item @kbd{C-a Q}
 (only)@*
-Delete all regions but the current one.  @xref{Regions}.
+Delete all regions but the current one.
+@xref{Regions}.
 
 @item @kbd{C-a r}
 @itemx @kbd{C-a C-r}
 (wrap)@*
-Toggle the current window's line-wrap setting (turn the current window's
-automatic margins on or off).  @xref{Wrap}.
+Toggle the current window's line-wrap setting
+(turn the current window's automatic margins on or off).
+@xref{Wrap}.
 
 @item @kbd{C-a s}
 @itemx @kbd{C-a C-s}
 (xoff)@*
-Send a ^S (ASCII XOFF) to the current window.  @xref{XON/XOFF}.
+Send a ^S (ASCII XOFF) to the current window.
+@xref{XON/XOFF}.
 
 @item @kbd{C-a S}
 (split)@*
-Split the current region horizontally into two new ones.  @xref{Regions}.
+Split the current region horizontally into two new ones.
+@xref{Regions}.
 
 @item @kbd{C-a u}
 @itemx @kbd{C-a C-u}
@@ -768,34 +872,41 @@ Switch to the parent window.
 
 @item @kbd{C-a v}
 (version)@*
-Display the version and compilation date.  @xref{Version}.
+Display the version and compilation date.
+@xref{Version}.
 
 @item @kbd{C-a C-v}
 (digraph)@*
-Enter digraph.  @xref{Digraph}.
+Enter digraph.
+@xref{Digraph}.
 
 @item @kbd{C-a w}
 @itemx @kbd{C-a C-w}
 (windows)@*
-Show a list of active windows.  @xref{Windows}.
+Show a list of active windows.
+@xref{Windows}.
 
 @item @kbd{C-a W}
 (width)@*
-Toggle between 80 and 132 columns.  @xref{Window Size}.
+Toggle between 80 and 132 columns.
+@xref{Window Size}.
 
 @item @kbd{C-a x}
 @itemx @kbd{C-a C-x}
 (lockscreen)@*
-Lock your terminal.  @xref{Lock}.
+Lock your terminal.
+@xref{Lock}.
 
 @item @kbd{C-a X}
 (remove)@*
-Kill the current region.  @xref{Regions}.
+Kill the current region.
+@xref{Regions}.
 
 @item @kbd{C-a z}
 @itemx @kbd{C-a C-z}
 (suspend)@*
-Suspend @code{screen}.  @xref{Suspend}.
+Suspend @code{screen}.
+@xref{Suspend}.
 
 @item @kbd{C-a Z}
 (reset)@*
@@ -804,36 +915,43 @@ Reset the virtual terminal to its ``power-on'' values.
 
 @item @kbd{C-a .}
 (dumptermcap)@*
-Write out a @file{.termcap} file.  @xref{Dump Termcap}.
+Write out a @file{.termcap} file.
+@xref{Dump Termcap}.
 
 @item @kbd{C-a ?}
 (help)@*
-Show key bindings.  @xref{Help}.
+Show key bindings.
+@xref{Help}.
 
 @item @kbd{C-a \}
 (quit)@*
-Kill all windows and terminate @code{screen}.  @xref{Quit}.
+Kill all windows and terminate @code{screen}.
+@xref{Quit}.
 
 @item @kbd{C-a :}
 (colon)@*
-Enter a command line.  @xref{Colon}.
+Enter a command line.
+@xref{Colon}.
 
 @item @kbd{C-a [}
 @itemx @kbd{C-a C-[}
 @itemx @kbd{C-a @key{ESC}}
 (copy)@*
-Enter copy/scrollback mode.  @xref{Copy}.
+Enter copy/scrollback mode.
+@xref{Copy}.
 
 @item @kbd{C-a ]}
 @itemx @kbd{C-a C-]}
 (paste .)@*
 Write the contents of the paste buffer to the stdin queue of the
-current window.  @xref{Paste}.
+current window.
+@xref{Paste}.
 
 @item @kbd{C-a @{}
 @itemx @kbd{C-a @}}
 (history)@*
-Copy and paste a previous (command) line.  @xref{History}.
+Copy and paste a previous (command) line.
+@xref{History}.
 
 @item @kbd{C-a >}
 (writebuf)@*
@@ -847,420 +965,812 @@ Read the screen-exchange file into the paste buffer.
 
 @item @kbd{C-a =}
 (removebuf)@*
-Delete the screen-exchange file.  @xref{Screen Exchange}.
+Delete the screen-exchange file.
+@xref{Screen Exchange}.
 
 @item @kbd{C-a _}
 (silence)@*
-Start/stop monitoring the current window for inactivity. @xref{Monitor}.
+Start/stop monitoring the current window for inactivity.
+@xref{Monitor}.
 
 @item @kbd{C-a |}
 (split -v)@*
-Split the current region vertically into two new ones.  @xref{Regions}.
+Split the current region vertically into two new ones.
+@xref{Regions}.
 
 @item @kbd{C-a ,}
 (license)@*
-Show the copyright page.  @xref{License}.
+Show the copyright page.
+@xref{License}.
 
 @item @kbd{C-a *}
 (displays)@*
-Show the listing of attached displays.  @xref{Displays}.
+Show the listing of attached displays.
+@xref{Displays}.
+
 @end table
 
-@node Command Summary,  , Default Key Bindings, Commands
+@node Command Summary
 @section Command Summary
 @cindex command summary 
 
 @table @code
 @item acladd @var{usernames}
-Allow other users in this session.  @xref{Multiuser Session}.
+Allow other users in this session.
+@xref{Multiuser Session}.
+
 @item aclchg @var{usernames permbits list}
-Change a user's permissions.  @xref{Multiuser Session}.
+Change a user's permissions.
+@xref{Multiuser Session}.
+
 @item acldel @var{username}
-Disallow other user in this session.  @xref{Multiuser Session}.
+Disallow other user in this session.
+@xref{Multiuser Session}.
+
 @item aclgrp @var{usrname} [@var{groupname}]
-Inherit permissions granted to a group leader. @xref{Multiuser Session}.
+Inherit permissions granted to a group leader.
+@xref{Multiuser Session}.
+
 @item aclumask [@var{users}]+/-@var{bits} ...
-Predefine access to new windows. @xref{Umask}.
+Predefine access to new windows.
+@xref{Umask}.
+
 @item activity @var{message}
-Set the activity notification message.  @xref{Monitor}.
+Set the activity notification message.
+@xref{Monitor}.
+
 @item addacl @var{usernames}
-Synonym to @code{acladd}.  @xref{Multiuser Session}.
+Synonym to @code{acladd}.
+@xref{Multiuser Session}.
+
 @item allpartial @var{state}
-Set all windows to partial refresh.  @xref{Redisplay}.
+Set all windows to partial refresh.
+@xref{Redisplay}.
+
 @item altscreen @var{state}
-Enables support for the "alternate screen" terminal capability.  @xref{Redisplay}.
+Enables support for the "alternate screen" terminal capability.
+@xref{Redisplay}.
+
 @item at [@var{ident}][@kbd{#}@var{|}@kbd{*}@var{|}@kbd{%}] @var{command} [@var{args}]
-Execute a command at other displays or windows.  @xref{At}.
+Execute a command at other displays or windows.
+@xref{At}.
+
 @item attrcolor @var{attrib} [@var{attribute/color-modifier}]
-Map attributes to colors.  @xref{Attrcolor}.
+Map attributes to colors.
+@xref{Attrcolor}.
+
 @item auth @var{state}
 This command enables/disables password protection for the screen session.
 It is off by default (authentication is disabled).
+
 @item autodetach @var{state}
-Automatically detach the session on SIGHUP.  @xref{Detach}.
+Automatically detach the session on SIGHUP.
+@xref{Detach}.
+
 @item autonuke @var{state}
-Enable a clear screen to discard unwritten output.  @xref{Autonuke}.
+Enable a clear screen to discard unwritten output.
+@xref{Autonuke}.
+
 @item backtick @var{id} @var{lifespan} @var{autorefresh} @var{command} [@var{args}]
-Define a command for the backtick string escape.  @xref{Backtick}.
+Define a command for the backtick string escape.
+@xref{Backtick}.
+
 @item bce [@var{state}]
-Change background color erase.  @xref{Character Processing}.
+Change background color erase.
+@xref{Character Processing}.
+
 @item bell_msg [@var{message}]
-Set the bell notification message.  @xref{Bell}.
+Set the bell notification message.
+@xref{Bell}.
+
 @item bind [-c @var{class}] @var{key} [@var{command} [@var{args}]]
-Bind a command to a key.  @xref{Bind}.
+Bind a command to a key.
+@xref{Bind}.
+
 @item bindkey [@var{opts}] [@var{string} [@var{cmd args}]]
-Bind a string to a series of keystrokes. @xref{Bindkey}.
+Bind a string to a series of keystrokes.
+@xref{Bindkey}.
+
 @item blanker
-Blank the screen.  @xref{Screen Saver}.
+Blank the screen.
+@xref{Screen Saver}.
+
 @item blankerprg
-Define a blanker program.  @xref{Screen Saver}.
+Define a blanker program.
+@xref{Screen Saver}.
+
 @item break [@var{duration}]
-Send a break signal to the current window.  @xref{Break}.
+Send a break signal to the current window.
+@xref{Break}.
+
 @item breaktype [@var{tcsendbreak} | @var{TCSBRK} | @var{TIOCSBRK}]
-Specify how to generate breaks.  @xref{Break}.
+Specify how to generate breaks.
+@xref{Break}.
+
 @item bufferfile [@var{exchange-file}]
-Select a file for screen-exchange.  @xref{Screen Exchange}.
+Select a file for screen-exchange.
+@xref{Screen Exchange}.
+
 @item bumpleft
-Swaps window with previous one on window list.  @xref{Bumpleft}.
+Swaps window with previous one on window list.
+@xref{Bumpleft}.
+
 @item bumpright
-Swaps window with previous one on window list.  @xref{Bumpright}.
+Swaps window with previous one on window list.
+@xref{Bumpright}.
+
 @item c1 [@var{state}]
-Change c1 code processing.  @xref{Character Processing}.
+Change c1 code processing.
+@xref{Character Processing}.
+
 @item caption @var{mode} [@var{string}]
-Change caption mode and string.  @xref{Regions}.
+Change caption mode and string.
+@xref{Regions}.
+
 @item chacl @var{usernames permbits list}
-Synonym to @code{aclchg}. @xref{Multiuser Session}.
+Synonym to @code{aclchg}.
+@xref{Multiuser Session}.
+
 @item charset @var{set}
-Change character set slot designation.  @xref{Character Processing}.
+Change character set slot designation.
+@xref{Character Processing}.
+
 @item chdir [@var{directory}]
-Change the current directory for future windows.  @xref{Chdir}.
+Change the current directory for future windows.
+@xref{Chdir}.
+
 @item cjkwidth
-Treat ambiguous width characters as full/half width.  @xref{Character Processing}.
+Treat ambiguous width characters as full/half width.
+@xref{Character Processing}.
+
 @item clear
-Clear the window screen.  @xref{Clear}.
+Clear the window screen.
+@xref{Clear}.
+
 @item colon
-Enter a @code{screen} command.  @xref{Colon}.
+Enter a @code{screen} command.
+@xref{Colon}.
+
 @item collapse
-Reorders window on window list, removing number gaps between them.  @xref{Collapse}.
+Reorders window on window list, removing number gaps between them.
+@xref{Collapse}.
+
 @item command [-c @var{class}]
-Simulate the screen escape key.  @xref{Command Character}.
+Simulate the screen escape key.
+@xref{Command Character}.
+
 @item compacthist [@var{state}]
-Selects compaction of trailing empty lines.  @xref{Scrollback}.
+Selects compaction of trailing empty lines.
+@xref{Scrollback}.
+
 @item console [@var{state}]
-Grab or ungrab console output.  @xref{Console}.
+Grab or ungrab console output.
+@xref{Console}.
+
 @item copy
-Enter copy mode.  @xref{Copy}.
+Enter copy mode.
+@xref{Copy}.
+
 @item copy_reg [@var{key}]
-Removed. Use @code{paste} instead.  @xref{Registers}.
+Removed. Use @code{paste} instead.
+@xref{Registers}.
+
 @item crlf @var{state}
-Select line break behavior for copying.  @xref{Line Termination}.
+Select line break behavior for copying.
+@xref{Line Termination}.
+
 @item defautonuke @var{state}
-Select default autonuke behavior.  @xref{Autonuke}.
+Select default autonuke behavior.
+@xref{Autonuke}.
+
 @item defbce @var{state}
-Select background color erase.  @xref{Character Processing}.
+Select background color erase.
+@xref{Character Processing}.
+
 @item defbreaktype [@var{tcsendbreak} | @var{TCSBRK} | @var{TIOCSBRK}]
-Specify the default for generating breaks.  @xref{Break}.
+Specify the default for generating breaks.
+@xref{Break}.
+
 @item defc1 @var{state}
-Select default c1 processing behavior.  @xref{Character Processing}.
+Select default c1 processing behavior.
+@xref{Character Processing}.
+
 @item defcharset [@var{set}]
-Change defaul character set slot designation.  @xref{Character Processing}.
+Change defaul character set slot designation.
+@xref{Character Processing}.
+
 @item defencoding @var{enc}
-Select default window encoding.  @xref{Character Processing}.
+Select default window encoding.
+@xref{Character Processing}.
+
 @item defescape @var{xy}
-Set the default command and @code{meta} characters.  @xref{Command Character}.
+Set the default command and @code{meta} characters.
+@xref{Command Character}.
+
 @item defflow @var{fstate}
-Select default flow control behavior.  @xref{Flow}.
+Select default flow control behavior.
+@xref{Flow}.
+
 @item defgr @var{state}
-Select default GR processing behavior.  @xref{Character Processing}.
+Select default GR processing behavior.
+@xref{Character Processing}.
+
 @item defhstatus [@var{status}]
-Select default window hardstatus line.  @xref{Hardstatus}.
+Select default window hardstatus line.
+@xref{Hardstatus}.
+
 @item deflog @var{state}
-Select default window logging behavior.  @xref{Log}.
+Select default window logging behavior.
+@xref{Log}.
+
 @item deflogin @var{state}
-Select default utmp logging behavior.  @xref{Login}.
+Select default utmp logging behavior.
+@xref{Login}.
+
 @item defmode @var{mode}
-Select default file mode for ptys.  @xref{Mode}.
+Select default file mode for ptys.
+@xref{Mode}.
+
 @item defmonitor @var{state}
-Select default activity monitoring behavior.  @xref{Monitor}.
+Select default activity monitoring behavior.
+@xref{Monitor}.
+
 @item defmousetrack @var{on}|@var{off}
-Select the default mouse tracking behavior.  @xref{Mousetrack}.
+Select the default mouse tracking behavior.
+@xref{Mousetrack}.
+
 @item defnonblock @var{state}|@var{numsecs}
-Select default nonblock mode.  @xref{Nonblock}.
+Select default nonblock mode.
+@xref{Nonblock}.
+
 @item defobuflimit @var{limit}
-Select default output buffer limit.  @xref{Obuflimit}.
+Select default output buffer limit.
+@xref{Obuflimit}.
+
 @item defscrollback @var{num}
-Set default lines of scrollback.  @xref{Scrollback}.
+Set default lines of scrollback.
+@xref{Scrollback}.
+
 @item defshell @var{command}
-Set the default program for new windows.  @xref{Shell}.
+Set the default program for new windows.
+@xref{Shell}.
+
 @item defsilence @var{state}
-Select default idle monitoring behavior.  @xref{Monitor}.
+Select default idle monitoring behavior.
+@xref{Monitor}.
+
 @item defslowpaste @var{msec}
-Select the default inter-character timeout when pasting.  @xref{Paste}.
+Select the default inter-character timeout when pasting.
+@xref{Paste}.
+
 @item defutf8 @var{state}
-Select default character encoding.  @xref{Character Processing}.
+Select default character encoding.
+@xref{Character Processing}.
+
 @item defwrap @var{state}
-Set default line-wrapping behavior.  @xref{Wrap}.
+Set default line-wrapping behavior.
+@xref{Wrap}.
+
 @item defwritelock @var{on|off|auto}
-Set default writelock behavior.  @xref{Multiuser Session}.
+Set default writelock behavior.
+@xref{Multiuser Session}.
+
 @item zombie_timeout [@var{seconds}]
-Try to reconnect dead windows after timeout.  @xref{Zombie}.
+Try to reconnect dead windows after timeout.
+@xref{Zombie}.
+
 @item detach [-h]
-Disconnect @code{screen} from the terminal.  @xref{Detach}.
+Disconnect @code{screen} from the terminal.
+@xref{Detach}.
+
 @item digraph [@var{preset} [@var{unicode-value}]]
-Enter a digraph sequence.  @xref{Digraph}.
+Enter a digraph sequence.
+@xref{Digraph}.
+
 @item dinfo
-Display terminal information.  @xref{Info}.
+Show terminal information.
+@xref{Info}.
+
 @item displays
-List currently active user interfaces. @xref{Displays}.
+List currently active user interfaces.
+@xref{Displays}.
+
 @item dumptermcap
-Write the window's termcap entry to a file.  @xref{Dump Termcap}.
+Write the window's termcap entry to a file.
+@xref{Dump Termcap}.
+
 @item echo [-n] @var{message}
-Display a message on startup.  @xref{Startup}.
+Show a startup message.
+@xref{Startup}.
+
 @item encoding @var{enc} [@var{denc}]
-Set the encoding of a window.  @xref{Character Processing}.
+Set the encoding of a window.
+@xref{Character Processing}.
+
 @item escape @var{xy}
-Set the command and @code{meta} characters.  @xref{Command Character}.
+Set the command and @code{meta} characters.
+@xref{Command Character}.
+
 @item eval @var{command1} [@var{command2} ...]
-Parse and execute each argument. @xref{Eval}.
+Parse and execute each argument.
+@xref{Eval}.
+
 @item exec [[@var{fdpat}] @var{command} [@var{args} ...]]
-Run a subprocess (filter).  @xref{Exec}.
+Run a subprocess (filter).
+@xref{Exec}.
+
 @item fit
-Change window size to current display size.  @xref{Window Size}.
+Change window size to current display size.
+@xref{Window Size}.
+
 @item flow [@var{fstate}]
-Set flow control behavior.  @xref{Flow}.
+Set flow control behavior.
+@xref{Flow}.
+
 @item focus [@code{next}|@code{prev}|@code{up}|@code{down}|@code{left}|@code{right}|@code{top}|@code{bottom}]
-Move focus to next region.  @xref{Regions}.
+Move focus to next region.
+@xref{Regions}.
+
 @item focusminsize
-Force the current region to a certain size.  @xref{Focusminsize}.
+Force the current region to a certain size.
+@xref{Focusminsize}.
+
 @item gr [@var{state}]
-Change GR charset processing.  @xref{Character Processing}.
+Change GR charset processing.
+@xref{Character Processing}.
+
 @item group [@var{grouptitle}]
-Change or show the group the current window belongs to.  @xref{Window Groups}.
+Change or show the group the current window belongs to.
+@xref{Window Groups}.
+
 @item hardcopy [-h] [@var{file}]
-Write out the contents of the current window.  @xref{Hardcopy}.
+Write out the contents of the current window.
+@xref{Hardcopy}.
+
 @item hardcopy_append @var{state}
-Append to hardcopy files.  @xref{Hardcopy}.
+Append to hardcopy files.
+@xref{Hardcopy}.
+
 @item hardcopydir @var{directory}
-Place, where to dump hardcopy files.  @xref{Hardcopy}.
+Place, where to dump hardcopy files.
+@xref{Hardcopy}.
+
 @item hardstatus [@var{state}]
-Use the hardware status line.  @xref{Hardware Status Line}.
+Use the hardware status line.
+@xref{Hardware Status Line}.
+
 @item height [@var{lines} [@var{cols}]]
-Set display height.  @xref{Window Size}.
+Set display height.
+@xref{Window Size}.
+
 @item help [-c @var{class}]
-Display current key bindings.  @xref{Help}.
+Show current key bindings.
+@xref{Help}.
+
 @item history
-Find previous command beginning @dots{}.  @xref{History}.
+Find previous command beginning @dots{}.
+@xref{History}.
+
 @item hstatus @var{status}
-Change the window's hardstatus line.  @xref{Hardstatus}.
+Change the window's hardstatus line.
+@xref{Hardstatus}.
+
 @item idle [@var{timeout} [@var{cmd} @var{args}]]
-Define a screen saver command.  @xref{Screen Saver}.
+Define a screen saver command.
+@xref{Screen Saver}.
+
 @item ignorecase [on|off]
-Ignore character case in searches.  @xref{Searching}.
+Ignore character case in searches.
+@xref{Searching}.
+
 @item info
-Display window settings.  @xref{Info}.
+Show window settings.
+@xref{Info}.
+
 @item ins_reg [@var{key}]
-Removed, use @code{paste} instead.  @xref{Registers}.
+Removed, use @code{paste} instead.
+@xref{Registers}.
+
 @item kill
-Destroy the current window.  @xref{Kill}.
+Destroy the current window.
+@xref{Kill}.
+
 @item lastmsg
-Redisplay the last message.  @xref{Last Message}.
+Redisplay the last message.
+@xref{Last Message}.
+
 @item layout new [@var{title}]
-Create a layout.  @xref{Layout}.
+Create a layout.
+@xref{Layout}.
+
 @item layout remove [@var{n}|@var{title}]
-Delete a layout.  @xref{Layout}.
+Delete a layout.
+@xref{Layout}.
+
 @item layout next
-Select the next layout.  @xref{Layout}.
+Select the next layout.
+@xref{Layout}.
+
 @item layout prev
-Select the previous layout.  @xref{Layout}.
+Select the previous layout.
+@xref{Layout}.
+
 @item layout select [@var{n}|@var{title}]
-Jump to a layout.  @xref{Layout}.
+Jump to a layout.
+@xref{Layout}.
+
 @item layout show
-List the available layouts.  @xref{Layout}.
+List the available layouts.
+@xref{Layout}.
+
 @item layout title [@var{title}]
-Show or set the title of a layout.  @xref{Layout}.
+Show or set the title of a layout.
+@xref{Layout}.
+
 @item layout number [@var{n}]
-Show or set the number of a layout.  @xref{Layout}.
+Show or set the number of a layout.
+@xref{Layout}.
+
 @item layout attach [@var{title}|:last]
-Show or set which layout to reattach to.  @xref{Layout}.
+Show or set which layout to reattach to.
+@xref{Layout}.
+
 @item layout save [@var{n}|@var{title}]
-Remember the organization of a layout.  @xref{Layout}.
+Remember the organization of a layout.
+@xref{Layout}.
+
 @item layout autosave [@var{on}|@var{off}]
-Show or set the status of layout saving.  @xref{Layout}.
+Show or set the status of layout saving.
+@xref{Layout}.
+
 @item layout dump [filename]
-Save the layout arrangement to a file.  @xref{Layout}.
+Save the layout arrangement to a file.
+@xref{Layout}.
+
 @item license
-Display licensing information.  @xref{Startup}.
+Display licensing information.
+@xref{Startup}.
+
 @item lockscreen
-Lock the controlling terminal.  @xref{Lock}.
+Lock the controlling terminal.
+@xref{Lock}.
+
 @item log [@var{state}]
-Log all output in the current window.  @xref{Log}.
+Log all output in the current window.
+@xref{Log}.
+
 @item logfile @var{filename}
-Place where to collect logfiles.  @xref{Log}.
+Place where to collect logfiles.
+@xref{Log}.
+
 @item login [@var{state}]
-Log the window in @file{/etc/utmp}.  @xref{Login}.
+Log the window in @file{/etc/utmp}.
+@xref{Login}.
+
 @item logtstamp [@var{state}]
-Configure logfile time-stamps.  @xref{Log}.
+Configure logfile time-stamps.
+@xref{Log}.
+
 @item mapdefault
-Use only the default mapping table for the next keystroke.  @xref{Bindkey Control}.
+Use only the default mapping table for the next keystroke.
+@xref{Bindkey Control}.
+
 @item mapnotnext
-Don't try to do keymapping on the next keystroke.  @xref{Bindkey Control}.
+Don't try to do keymapping on the next keystroke.
+@xref{Bindkey Control}.
+
 @item maptimeout @var{n}
-Set the inter-character timeout used for keymapping. @xref{Bindkey Control}.
+Set the inter-character timeout used for keymapping.
+@xref{Bindkey Control}.
+
 @item markkeys @var{string}
-Rebind keys in copy mode.  @xref{Copy Mode Keys}.
+Rebind keys in copy mode.
+@xref{Copy Mode Keys}.
+
 @item meta
-Insert the command character.  @xref{Command Character}.
+Insert the command character.
+@xref{Command Character}.
+
 @item monitor [@var{state}]
-Monitor activity in window.  @xref{Monitor}.
+Monitor activity in window.
+@xref{Monitor}.
+
 @item mousetrack [@var{on}|@var{off}]
-Enable selecting split regions with mouse clicks.  @xref{Mousetrack}.
+Enable selecting split regions with mouse clicks.
+@xref{Mousetrack}.
+
 @item msgminwait @var{sec}
-Set minimum message wait.  @xref{Message Wait}.
+Set minimum message wait.
+@xref{Message Wait}.
+
 @item msgwait @var{sec}
-Set default message wait.  @xref{Message Wait}.
+Set default message wait.
+@xref{Message Wait}.
+
 @item multiuser @var{state}
-Go into single or multi user mode. @xref{Multiuser Session}.
+Go into single or multi user mode.
+@xref{Multiuser Session}.
+
 @item next
-Switch to the next window.  @xref{Selecting}.
+Switch to the next window.
+@xref{Selecting}.
+
 @item nonblock [@var{state}|@var{numsecs}]
-Disable flow control to the current display. @xref{Nonblock}.|@var{numsecs}]
+Disable flow control to the current display.
+@xref{Nonblock}.|@var{numsecs}]
+
 @item number [@var{n}]
-Change/display the current window's number.  @xref{Number}.
+Change/display the current window's number.
+@xref{Number}.
+
 @item obuflimit [@var{limit}]
-Select output buffer limit.  @xref{Obuflimit}.
+Select output buffer limit.
+@xref{Obuflimit}.
+
 @item only
-Kill all other regions.  @xref{Regions}.
+Kill all other regions.
+@xref{Regions}.
+
 @item other
-Switch to the window you were in last.  @xref{Selecting}.
+Switch to the window you were in last.
+@xref{Selecting}.
+
 @item parent
-Switch to the parent window.  @xref{Selecting}.
+Switch to the parent window.
+@xref{Selecting}.
+
 @item partial @var{state}
-Set window to partial refresh.  @xref{Redisplay}.
+Set window to partial refresh.
+@xref{Redisplay}.
+
 @item paste [@var{src_regs} [@var{dest_reg}]]
-Paste contents of paste buffer or registers somewhere.  @xref{Paste}.
+Paste contents of paste buffer or registers somewhere.
+@xref{Paste}.
+
 @item pastefont [@var{state}]
-Include font information in the paste buffer.  @xref{Paste}.
+Include font information in the paste buffer.
+@xref{Paste}.
+
 @item pow_break
-Close and Reopen the window's terminal.  @xref{Break}.
+Close and Reopen the window's terminal.
+@xref{Break}.
+
 @item pow_detach
-Detach and hang up.  @xref{Power Detach}.
+Detach and hang up.
+@xref{Power Detach}.
+
 @item pow_detach_msg [@var{message}]
-Set message displayed on @code{pow_detach}.  @xref{Power Detach}.
+Set message displayed on @code{pow_detach}.
+@xref{Power Detach}.
+
 @item prev
-Switch to the previous window.  @xref{Selecting}.
+Switch to the previous window.
+@xref{Selecting}.
+
 @item printcmd [@var{cmd}]
-Set a command for VT100 printer port emulation.  @xref{Printcmd}.
+Set a command for VT100 printer port emulation.
+@xref{Printcmd}.
+
 @item process [@var{key}]
-Treat a register as input to @code{screen}.  @xref{Registers}.
+Treat a register as input to @code{screen}.
+@xref{Registers}.
+
 @item quit
-Kill all windows and exit.  @xref{Quit}.
+Kill all windows and exit.
+@xref{Quit}.
+
 @item readbuf [-e @var{encoding}] [@var{filename}]
-Read the paste buffer from the screen-exchange file.  @xref{Screen Exchange}.
+Read the paste buffer from the screen-exchange file.
+@xref{Screen Exchange}.
+
 @item readreg [-e @var{encoding}] [@var{reg} [@var{file}]]
-Load a register from paste buffer or file.  @xref{Registers}.
+Load a register from paste buffer or file.
+@xref{Registers}.
+
 @item redisplay
-Redisplay the current window.  @xref{Redisplay}.
+Redisplay the current window.
+@xref{Redisplay}.
+
 @item register [-e @var{encoding}] @var{key} @var{string}
-Store a string to a register.  @xref{Registers}.
+Store a string to a register.
+@xref{Registers}.
+
 @item remove
-Kill current region.  @xref{Regions}.
+Kill current region.
+@xref{Regions}.
+
 @item removebuf
-Delete the screen-exchange file.  @xref{Screen Exchange}.
+Delete the screen-exchange file.
+@xref{Screen Exchange}.
+
 @item rendition bell | monitor | silence | so @var{attr} [@var{color}]
-Change text attributes in caption for flagged windows.  @xref{Rendition}.
+Change text attributes in caption for flagged windows.
+@xref{Rendition}.
+
 @item reset
-Reset the terminal settings for the window.  @xref{Reset}.
+Reset the terminal settings for the window.
+@xref{Reset}.
+
 @item resize [(+/-)lines]
-Grow or shrink a region.  @xref{Resize}.
+Grow or shrink a region.
+@xref{Resize}.
+
 @item screen [@var{opts}] [@var{n}] [@var{cmd} [@var{args}] | //group]
-Create a new window.  @xref{Screen Command}.
+Create a new window.
+@xref{Screen Command}.
+
 @item scrollback @var{num}
-Set size of scrollback buffer.  @xref{Scrollback}.
+Set size of scrollback buffer.
+@xref{Scrollback}.
+
 @item select [@var{n}|-|.]
-Switch to a specified window.  @xref{Selecting}.
+Switch to a specified window.
+@xref{Selecting}.
+
 @item sessionname [@var{name}]
-Name this session.  @xref{Session Name}.
+Name this session.
+@xref{Session Name}.
+
 @item setenv [@var{var} [@var{string}]]
-Set an environment variable for new windows.  @xref{Setenv}.
+Set an environment variable for new windows.
+@xref{Setenv}.
+
 @item setsid @var{state}
-Controll process group creation for windows.  @xref{Setsid}.
+Control process group creation for windows.
+@xref{Setsid}.
+
 @item shell @var{command}
-Set the default program for new windows.  @xref{Shell}.
+Set the default program for new windows.
+@xref{Shell}.
+
 @item shelltitle @var{title}
-Set the default name for new windows.  @xref{Shell}.
+Set the default name for new windows.
+@xref{Shell}.
+
 @item silence [@var{state}|@var{seconds}]
-Monitor a window for inactivity.  @xref{Monitor}.
+Monitor a window for inactivity.
+@xref{Monitor}.
+
 @item silencewait @var{seconds}
-Default timeout to trigger an inactivity notify.  @xref{Monitor}.
+Default timeout to trigger an inactivity notify.
+@xref{Monitor}.
+
 @item sleep @var{num}
-Pause during startup.  @xref{Startup}.
+Pause during startup.
+@xref{Startup}.
+
 @item slowpaste @var{msec}
-Slow down pasting in windows.  @xref{Paste}.
+Slow down pasting in windows.
+@xref{Paste}.
+
 @item source @var{file}
-Run commands from a file.  @xref{Source}.
+Run commands from a file.
+@xref{Source}.
+
 @item sorendition [@var{attr} [@var{color}]]
-Deprecated. Use @code{rendition so} instead. @xref{Rendition}.
+Deprecated. Use @code{rendition so} instead.
+@xref{Rendition}.
+
 @item split
-Split region into two parts.  @xref{Regions}.
+Split region into two parts.
+@xref{Regions}.
+
 @item startup_message @var{state}
-Display copyright notice on startup.  @xref{Startup}.
+Display copyright notice on startup.
+@xref{Startup}.
+
 @item stuff [@var{string}]
-Stuff a string in the input buffer of a window.  @xref{Paste}.
+Stuff a string in the input buffer of a window.
+@xref{Paste}.
+
 @item su [@var{username} [@var{password} [@var{password2}]]]
-Identify a user. @xref{Multiuser Session}.
+Identify a user.
+@xref{Multiuser Session}.
+
 @item suspend
-Put session in background.  @xref{Suspend}.
+Put session in background.
+@xref{Suspend}.
+
 @item term @var{term}
-Set @code{$TERM} for new windows.  @xref{Term}.
+Set @code{$TERM} for new windows.
+@xref{Term}.
+
 @item termcap @var{term} @var{terminal-tweaks} [@var{window-tweaks}]
-Tweak termcap entries for best performance.  @xref{Termcap Syntax}.
+Tweak termcap entries for best performance.
+@xref{Termcap Syntax}.
+
 @item terminfo @var{term} @var{terminal-tweaks} [@var{window-tweaks}]
-Ditto, for terminfo systems.  @xref{Termcap Syntax}.
+Ditto, for terminfo systems.
+@xref{Termcap Syntax}.
+
 @item termcapinfo @var{term} @var{terminal-tweaks} [@var{window-tweaks}]
-Ditto, for both systems.  @xref{Termcap Syntax}.
+Ditto, for both systems.
+@xref{Termcap Syntax}.
+
 @item title [@var{windowtitle}]
-Set the name of the current window.  @xref{Title Command}.
+Set the name of the current window.
+@xref{Title Command}.
+
 @item umask [@var{users}]+/-@var{bits} ...
-Synonym to @code{aclumask}. @xref{Umask}.
+Synonym to @code{aclumask}.
+@xref{Umask}.
+
 @item unbindall
-Unset all keybindings. @xref{Bind}.
+Unset all keybindings.
+@xref{Bind}.
+
 @item unsetenv @var{var}
-Unset environment variable for new windows.  @xref{Setenv}.
+Unset environment variable for new windows.
+@xref{Setenv}.
+
 @item utf8 [@var{state} [@var{dstate}]]
-Select character encoding of the current window.  @xref{Character Processing}.
+Select character encoding of the current window.
+@xref{Character Processing}.
+
 @item vbell [@var{state}]
-Use visual bell.  @xref{Bell}.
+Use visual bell.
+@xref{Bell}.
+
 @item vbell_msg [@var{message}]
-Set vbell message.  @xref{Bell}.
+Set vbell message.
+@xref{Bell}.
+
 @item vbellwait @var{sec}
-Set delay for vbell message.  @xref{Bell}.
+Set delay for vbell message.
+@xref{Bell}.
+
 @item version
-Display @code{screen} version.  @xref{Version}.
+Print @code{screen} version.
+@xref{Version}.
+
 @item wall @var{message}
-Write a message to all displays.  @xref{Multiuser Session}.
+Write a message to all displays.
+@xref{Multiuser Session}.
+
 @item width [@var{cols} [@var{lines}]]
-Set the width of the window.  @xref{Window Size}.
+Set the width of the window.
+@xref{Window Size}.
+
 @item windowlist [[-b] [-m] [-g]] | string [@var{string}] | title [@var{title}]
-Present a list of all windows for selection.  @xref{Windowlist}.
+Present a list of all windows for selection.
+@xref{Windowlist}.
+
 @item windows
-List active windows.  @xref{Windows}.
+List active windows.
+@xref{Windows}.
+
 @item wrap [ on | off ]
-Control line-wrap behavior.  @xref{Wrap}.
+Control line-wrap behavior.
+@xref{Wrap}.
+
 @item writebuf [-e @var{encoding}] [@var{filename}]
-Write paste buffer to screen-exchange file.  @xref{Screen Exchange}.
+Write paste buffer to screen-exchange file.
+@xref{Screen Exchange}.
+
 @item writelock @var{on}|@var{off}|@var{auto}
-Grant exclusive write permission.  @xref{Multiuser Session}.
+Grant exclusive write permission.
+@xref{Multiuser Session}.
+
 @item xoff
-Send an XOFF character.  @xref{XON/XOFF}.
+Send an XOFF character.
+@xref{XON/XOFF}.
+
 @item xon
-Send an XON character.  @xref{XON/XOFF}.
+Send an XON character.
+@xref{XON/XOFF}.
+
 @item zmodem [off|auto|catch|pass]
-Define how screen treats zmodem requests.  @xref{Zmodem}.
+Define how screen treats zmodem requests.
+@xref{Zmodem}.
+
 @item zombie [@var{keys} [onerror] ]
-Keep dead windows.  @xref{Zombie}.
+Keep dead windows.
+@xref{Zombie}.
+
 @end table
 
-@node New Window, Selecting, Commands, Top
+@c ----------------------------------------------------------------
+@node New Window
 @chapter New Window
 
 This section describes the commands for creating a new window for
@@ -1279,7 +1789,7 @@ configuration parameter (which defaults to 40).
 * Window Groups::               Grouping windows together
 @end menu
 
-@node Chdir, Screen Command,  , New Window
+@node Chdir
 @section Chdir
 @deffn Command chdir [directory]
 (none)@*
@@ -1297,7 +1807,7 @@ in different default directories, but the last @code{chdir} value will
 affect all the windows you create interactively.
 @end deffn
 
-@node Screen Command, Setenv, Chdir, New Window
+@node Screen Command
 @section Screen Command
 @kindex c
 @kindex C-c
@@ -1341,7 +1851,7 @@ initialization is completed, @code{screen} switches to the last window
 specified in your .screenrc file or, if none, it opens default window
 #0.
 
-@node Setenv, Shell, Screen Command, New Window
+@node Setenv
 @section Setenv
 @deffn Command setenv var string
 (none)@*
@@ -1356,7 +1866,7 @@ and value. The environment is inherited by all subsequently forked shells.
 Unset an environment variable.
 @end deffn
 
-@node Shell, Term, Setenv, New Window
+@node Shell
 @section Shell
 @deffn Command shell command
 @deffnx Command defshell command
@@ -1378,7 +1888,7 @@ Set the title for all shells created during startup or by the C-a C-c
 command.  @xref{Naming Windows}, for details about what titles are.
 @end deffn
 
-@node Term, Window Types , Shell, New Window
+@node Term
 @section Term
 @deffn Command term term
 (none)@*
@@ -1394,7 +1904,7 @@ the next @code{screen rlogin othermachine} command. Use the command
 and resetting the default.
 @end deffn
 
-@node Window Types, Window Groups, Term, New Window
+@node Window Types
 @section Window Types
 @cindex window types
 Screen provides three different window types. New windows are created
@@ -1494,7 +2004,7 @@ For telnet windows, the command @code{break} sends the telnet code
 
 @end itemize
 
-@node Window Groups, , Window Types, New Window
+@node Window Groups
 @section Window Groups
 @cindex window groups
 Screen provides a method for grouping windows together. Windows can be
@@ -1522,10 +2032,11 @@ current group is displayed.
 Using groups in combination with layouts will help create a 
 multi-desktop experience. One group can be assigned for each
 layout made. Windows can be made, split, and organized within each
-group as desired. Afterwhich, switching between groups can be as easy
+group as desired, after which switching between groups can be as easy
 as switching layouts.
 
-@node Selecting, Session Management, New Window, Top
+@c ----------------------------------------------------------------
+@node Selecting
 @chapter Selecting a Window
 
 This section describes the commands for switching between windows in an
@@ -1539,7 +2050,7 @@ in that order by default (@pxref{New Window}).
 * Windowlist::                  Present a list of all windows for selection.
 @end menu
 
-@node Next and Previous, Other Window,  , Selecting
+@node Next and Previous
 @section Moving Back and Forth
 @kindex SPC
 @kindex n
@@ -1568,7 +2079,7 @@ Switch to the previous window (the opposite of @kbd{C-a n}).
 Switch to the parent window.
 @end deffn
 
-@node Other Window, Select, Next and Previous, Selecting
+@node Other Window
 @section Other Window
 @kindex C-a
 @deffn Command other
@@ -1579,7 +2090,7 @@ For instance, if you use the option @samp{-e]x},
 this command becomes @kbd{]]} (@pxref{Command Character}).
 @end deffn
 
-@node Select, Windowlist, Other Window, Selecting
+@node Select
 @section Select
 @kindex 0@dots{}9
 @kindex '
@@ -1600,7 +2111,7 @@ current window. The latter is useful if used with screen's
 
 @end deffn
 
-@node Windowlist, , Select, Selecting
+@node Windowlist
 @section Windowlist
 @kindex "
 @deffn Command windowlist [-b] [-m] [-g]
@@ -1692,8 +2203,9 @@ setting is @samp{Num Name%=Flags} for the title and
 wide and 6 characters high in order to display.
 @end deffn
 
-@node Session Management, Regions, Selecting, Top
-@chapter Session Management Commands
+@c ----------------------------------------------------------------
+@node Session Management
+@chapter Session Management
 
 Perhaps the most useful feature of @code{screen} is the way it allows
 the user to move a session between terminals, by detaching and
@@ -1701,16 +2213,16 @@ reattaching.  This also makes life easier for modem users who have to
 deal with unexpected loss of carrier.
 
 @menu
-* Detach::                      Disconnect @code{screen} from your terminal.
-* Power Detach::                Detach and log out.
-* Lock::                        Lock your terminal temporarily.
-* Multiuser Session::		Changing number of allowed users.
-* Session Name::                Rename your session for later reattachment.
-* Suspend::                     Suspend your session.
-* Quit::                        Terminate your session.
+* Detach::               Disconnect @code{screen} from your terminal.
+* Power Detach::         Detach and log out.
+* Lock::                 Lock your terminal temporarily.
+* Multiuser Session::    Changing number of allowed users.
+* Session Name::         Rename your session for later reattachment.
+* Suspend::              Suspend your session.
+* Quit::                 Terminate your session.
 @end menu
 
-@node Detach, Power Detach,  , Session Management
+@node Detach
 @section Detach
 
 @deffn Command autodetach state
@@ -1746,7 +2258,7 @@ encryption in the paste buffer.  Default is `none', which disables
 password checking.
 @end deffn
 
-@node Power Detach, Lock, Detach, Session Management
+@node Power Detach
 @section Power Detach
 
 @kindex D
@@ -1766,7 +2278,7 @@ baud rate, etc.
 Without a parameter, the current message is shown.
 @end deffn
 
-@node Lock, Multiuser Session, Power Detach, Session Management
+@node Lock
 @section Lock
 @kindex x
 @kindex C-x
@@ -1786,7 +2298,7 @@ unlocked shell. This feature should rather be called
 @code{lockterminal}.
 @end deffn
 
-@node Multiuser Session, Session Name, Lock, Session Management
+@node Multiuser Session
 @section Multiuser Session
 @cindex multiuser session 
 
@@ -1797,19 +2309,19 @@ specified as @code{username/sessionname} to the @code{-S} command line option.
 described here.
 
 @menu
-* Multiuser::			Enable / Disable multiuser mode.
-* Acladd::			Enable a specific user.
-* Aclchg::                      Change a users permissions.
-* Acldel::			Disable a specific user.
-* Aclgrp::			Grant a user permissions to other users.
-* Displays::			List all active users at their displays.
-* Umask::			Predefine access to new windows.
-* Wall::                        Write a message to all users.
-* Writelock::                   Grant exclusive window access.
-* Su::                          Substitute user.
+* Multiuser::       Enable / Disable multiuser mode.
+* Acladd::          Enable a specific user.
+* Aclchg::          Change a users permissions.
+* Acldel::          Disable a specific user.
+* Aclgrp::          Grant a user permissions to other users.
+* Displays::        List all active users at their displays.
+* Umask::           Predefine access to new windows.
+* Wall::            Write a message to all users.
+* Writelock::       Grant exclusive window access.
+* Su::              Substitute user.
 @end menu
 
-@node Multiuser, Acladd,  , Multiuser Session
+@node Multiuser
 @subsection Multiuser
 @deffn Command multiuser @var{state}
 (none)@*
@@ -1819,7 +2331,7 @@ single-user. In multi-user mode the commands @code{acladd}, @code{aclchg} and
 @code{screen}.  
 @end deffn
 
-@node Acladd, Aclchg, Multiuser, Multiuser Session
+@node Acladd
 @subsection Acladd
 @deffn Command acladd @var{usernames}
 @deffnx Command addacl @var{usernames}
@@ -1833,7 +2345,7 @@ use the @code{aclchg} command below.
 Multi-user mode only.
 @end deffn
 
-@node Aclchg, Acldel, Acladd, Multiuser Session
+@node Aclchg
 @subsection Aclchg
 @deffn Command aclchg @var{usernames permbits list}
 @deffnx Command chacl @var{usernames permbits list}
@@ -1859,7 +2371,7 @@ to regain write permission.
 Multi-user mode only.
 @end deffn
 
-@node Acldel, Aclgrp, Aclchg, Multiuser Session
+@node Acldel
 @subsection Acldel
 @deffn Command acldel @var{username}
 (none)@*
@@ -1868,7 +2380,7 @@ user's displays are detached from the session. He cannot attach again.
 Multi-user mode only.
 @end deffn
 
-@node Aclgrp, Displays, Acldel, Multiuser Session
+@node Aclgrp
 @subsection Aclgrp
 @deffn Command aclgrp @var{username} [@var{groupname}]
 (none)@*
@@ -1882,7 +2394,7 @@ is used for @var{groupname}. If the second parameter is omitted
 all groups the user is in are listed.
 @end deffn
 
-@node Displays, Umask, Aclgrp, Multiuser Session
+@node Displays
 @subsection Displays
 @kindex *
 @deffn Command displays
@@ -1968,7 +2480,7 @@ The legend is as follows:
 wide and 5 characters high in order to display.
 @end deffn
 
-@node Umask, Wall, Displays, Multiuser Session
+@node Umask
 @subsection aclumask
 @deffn Command aclumask [@var{users}]+/-@var{bits} ...
 @deffnx Command umask [@var{users}]+/-@var{bits} ...
@@ -1987,8 +2499,7 @@ be changed (see the @code{su} command).
 @code{Umask} is a synonym to @code{aclumask}.
 @end deffn
 
-
-@node Wall, Writelock, Umask, Multiuser Session
+@node Wall
 @subsection Wall
 @deffn Command wall @var{message}
 (none)@*
@@ -1996,7 +2507,8 @@ Write a message to all displays. The message will appear in the terminal's
 status line.
 @end deffn
 
-@node Writelock, Su , Wall, Multiuser Session
+
+@node Writelock
 @subsection Writelock
 @deffn Command writelock @var{on|off|auto}
 (none)@*
@@ -2016,7 +2528,7 @@ Sets the default writelock behavior for new windows. Initially all windows
 will be created with no writelocks.
 @end deffn
 
-@node Su,  , Writelock, Multiuser Session
+@node Su
 @subsection Su
 @deffn Command su [@var{username} [@var{password} [@var{password2}]]]
 (none)@*
@@ -2034,7 +2546,7 @@ access to the commands available for user @samp{nobody}. These are
 @code{displays}.
 @end deffn
 
-@node Session Name, Suspend, Multiuser Session, Session Management
+@node Session Name
 @section Session Name
 @deffn Command sessionname [@var{name}]
 (none)@*
@@ -2049,7 +2561,7 @@ discouraged. Use the @code{-S} command-line option if you want to
 name a new session.The default is constructed from the tty and host names.
 @end deffn
 
-@node Suspend, Quit, Session Name, Session Management
+@node Suspend
 @section Suspend
 @kindex z
 @kindex C-z
@@ -2060,7 +2572,7 @@ Suspend @code{screen}.  The windows are in the detached state while
 being able to do job control.
 @end deffn
 
-@node Quit,  , Suspend, Session Management
+@node Quit
 @section Quit
 @kindex \
 @deffn Command quit
@@ -2069,7 +2581,8 @@ Kill all windows and terminate @code{screen}.
 (@pxref{Key Binding}).
 @end deffn
 
-@node Regions, Window Settings, Session Management, Top
+@c ----------------------------------------------------------------
+@node Regions
 @chapter Regions
 @cindex regions
 Screen has the ability to display more than one window on the
@@ -2077,18 +2590,18 @@ user's display. This is done by splitting the screen in regions,
 which can contain different windows.
 
 @menu
-* Split::			Split a region into two
-* Focus::			Change to the next region
-* Only::			Delete all other regions
-* Remove::			Delete the current region
-* Resize::			Grow or shrink a region
-* Caption::			Control the window's caption
-* Fit::				Resize a window to fit the region
-* Focusminsize::		Force a minimum size on a current region
-* Layout::			Manage groups of regions
+* Split::           Split a region into two
+* Focus::           Change to the next region
+* Only::            Delete all other regions
+* Remove::          Delete the current region
+* Resize::          Grow or shrink a region
+* Caption::         Control the window's caption
+* Fit::             Resize a window to fit the region
+* Focusminsize::    Force a minimum size on a current region
+* Layout::          Manage groups of regions
 @end menu
 
-@node Split, Focus,  , Regions
+@node Split
 @section Split
 @kindex S
 @kindex |
@@ -2116,7 +2629,7 @@ that is not. This should be taken into consideration if you need
 to use system commands such as @code{cat} or @code{tail -f}.
 @end deffn
 
-@node Focus, Only, Split, Regions
+@node Focus
 @section Focus
 @kindex TAB
 @deffn Command focus [ @code{next|prev|up|down|left|right|top|bottom} ]
@@ -2130,8 +2643,8 @@ However, if that next region contains one or more layers, the first
 region in the highest layer is selected first. If you are at the
 last region of the current layer, @code{next} will move the focus
 to the next region in the lower layer (if there is a lower layer).
-@code{Prev} cycles in the opposite order. @xref{Split} for more
-information about layers.
+@code{Prev} cycles in the opposite order. For more information
+about layers, see @xref{Split}.
 
 The rest of the options (@code{up}, @code{down}, @code{left},
 @code{right}, @code{top}, and @code{bottom}) are more indifferent
@@ -2164,7 +2677,7 @@ bind b focus bottom
 Note that @samp{k} is traditionally bound to the @code{kill} command.
 @end deffn
 
-@node Only, Remove, Focus, Regions
+@node Only
 @section Only
 @kindex Q
 @deffn Command only
@@ -2172,7 +2685,7 @@ Note that @samp{k} is traditionally bound to the @code{kill} command.
 Kill all regions but the current one.
 @end deffn
 
-@node Remove, Resize, Only, Regions
+@node Remove
 @section Remove
 @kindex X
 @deffn Command remove
@@ -2180,7 +2693,7 @@ Kill all regions but the current one.
 Kill the current region. This is a no-op if there is only one region.
 @end deffn
 
-@node Resize, Caption, Remove, Regions
+@node Resize
 @section Resize
 @deffn Command resize [@code{-h|-v|-b|-l|-p}]  [ [+|-]@var{n}[@code{%}] | @code{=} | @code{max} | @code{min} | @code{_} | @code{0} ]
 (none)@*
@@ -2225,7 +2738,7 @@ See @code{focusminsize} if you want to restrict the minimun size a region can ha
 
 @end deffn
 
-@node Caption, Fit, Resize, Regions
+@node Caption
 @section Caption
 @deffn Command caption @code{always}|@code{splitonly} [string]
 @deffnx Command caption @code{string} [string]
@@ -2245,7 +2758,7 @@ You can mix both forms by providing the string as an additional
 argument.
 @end deffn
 
-@node Fit, Focusminsize, Caption, Regions
+@node Fit
 @section Fit
 @kindex F
 @deffn Command fit
@@ -2255,7 +2768,7 @@ command is needed because screen doesn't adapt the window size
 automatically if the window is displayed more than once.
 @end deffn
 
-@node Focusminsize, Layout, Fit, Regions
+@node Focusminsize
 @section Focusminsize
 @deffn Command focusminsize [ (width|@code{max}|@code{_})  (height|@code{max}|@code{_}) ]
 (none)@*
@@ -2271,7 +2784,7 @@ dimension of a region, but never below what is set with
 Without any parameters, the minimum width and height is shown.
 @end deffn
 
-@node Layout, , Focusminsize, Regions
+@node Layout
 @section Layout
 @cindex layout
 Using regions, and perhaps a large enough terminal, you can give
@@ -2365,7 +2878,7 @@ regions. This arrangement is restored when a @code{screen} session
 is reattached or switched back from a different layout. If the
 session ends or the @code{screen} process dies, the layout
 arrangements are lost. The @code{layout dump} command should help
-in this siutation. If a number
+in this situation. If a number
 or title is supplied, @code{screen} will remember the arrangement of
 that particular layout. Without any options, @code{screen} will
 remember the current layout.
@@ -2403,7 +2916,8 @@ layout dump /home/user/.screenrc
 will save or append the layout to the user's @file{.screenrc} file.
 @end deffn
 
-@node Window Settings, Virtual Terminal, Regions, Top
+@c ----------------------------------------------------------------
+@node Window Settings
 @chapter Window Settings
 
 These commands control the way @code{screen} treats individual windows
@@ -2411,17 +2925,18 @@ in a session.  @xref{Virtual Terminal}, for commands to control the
 terminal emulation itself.
 
 @menu
-* Naming Windows::		Control the name of the window
-* Console::			See the host's console messages
-* Kill::                        Destroy an unwanted window
-* Login::                       Control @file{/etc/utmp} logging
-* Mode::                        Control the file mode of the pty
-* Monitor::                     Watch for activity or inactivity in a window
-* Windows::			List the active windows
-* Hardstatus::			Set a window's hardstatus line
+* Naming Windows::  Control the name of the window
+* Console::         See the host's console messages
+* Kill::            Destroy an unwanted window
+* Login::           Control @file{/etc/utmp} logging
+* Mode::            Control the file mode of the pty
+* Monitor::         Watch for activity or inactivity in a window
+* Windows::         List the active windows
+* Hardstatus::      Set a window's hardstatus line
+* Mousetrack::      Set whether screen should track mouse events.
 @end menu
 
-@node Naming Windows, Console,  , Window Settings
+@node Naming Windows
 @section Naming Windows (Titles)
 @cindex title
 
@@ -2444,13 +2959,13 @@ name when typed.  You can also bind predefined names to keys with the
 @code{title} command to set things quickly without prompting.
 
 @menu
-* Title Command::                 The @code{title} command.
-* Dynamic Titles::                Make shell windows change titles dynamically.
-* Title Prompts::                 Set up your shell prompt for dynamic Titles.
-* Title Screenrc::                Set up Titles in your @file{.screenrc}.
+* Title Command::    The @code{title} command.
+* Dynamic Titles::   Make shell windows change titles dynamically.
+* Title Prompts::    Set up your shell prompt for dynamic Titles.
+* Title Screenrc::   Set up Titles in your @file{.screenrc}.
 @end menu
 
-@node Title Command, Dynamic Titles,  , Naming Windows
+@node Title Command
 @subsection Title Command
 @kindex A
 @deffn Command title [windowtitle]
@@ -2459,7 +2974,7 @@ Set the name of the current window to @var{windowtitle}. If no name is
 specified, screen prompts for one.
 @end deffn
 
-@node Dynamic Titles, Title Prompts, Title Command, Naming Windows
+@node Dynamic Titles
 @subsection Dynamic Titles
 @code{screen} has a shell-specific heuristic that is enabled by
 setting the window's name to @var{search|name} and arranging to have a
@@ -2485,7 +3000,7 @@ following line (if found) in preference to the just-found name.  This
 helps csh users get more accurate titles when using job control or
 history recall commands.
 
-@node Title Prompts, Title Screenrc, Dynamic Titles, Naming Windows
+@node Title Prompts
 @subsection Setting up your prompt for shell titles
 One thing to keep in mind when adding a null title-escape-sequence to your
 prompt is that some shells (like the csh) count all the non-control
@@ -2518,7 +3033,7 @@ PROMPT_COMMAND='printf "\033k\033\134"'
 
 (I used @samp{\134} to output a @samp{\} because of a bug in v1.04).
 
-@node Title Screenrc,  , Title Prompts, Naming Windows
+@node Title Screenrc
 @subsection Setting up shell titles in your @file{.screenrc}
 Here are some .screenrc examples:
 
@@ -2576,7 +3091,7 @@ a title when you type @kbd{C-a o}.  The second binding would clear an
 auto-titles current setting (C-a E).  The third binding would set the
 current window's title to @samp{(unknown)} (C-a u).
 
-@node Console, Kill, Naming Windows, Window Settings
+@node Console
 @section Console
 @deffn Command console [@var{state}]
 (none)@*
@@ -2587,7 +3102,7 @@ output. This command is only available if the host supports the ioctl
 @code{TIOCCONS}.
 @end deffn
 
-@node Kill, Login, Console, Window Settings
+@node Kill
 @section Kill
 
 @kindex k
@@ -2609,7 +3124,7 @@ reason, it is probably wise to use a different command character
 sequence, such as @kbd{C-a K} (@pxref{Key Binding}).
 @end deffn
 
-@node Login, Mode, Kill, Window Settings
+@node Login
 @section Login
 
 @deffn Command deflogin state
@@ -2631,7 +3146,7 @@ login off} will map these keys to be @kbd{C-a I} and @kbd{C-a O}
 (@pxref{Key Binding}).
 @end deffn
 
-@node Mode, Monitor, Login, Window Settings
+@node Mode
 @section Mode
 @deffn Command defmode mode
 (none)@*
@@ -2641,7 +3156,7 @@ windows which are logged in, 0600 for others (e.g. when @code{-ln} was
 specified for creation, @pxref{Screen Command}).
 @end deffn
 
-@node Monitor, Windows, Mode, Window Settings
+@node Monitor
 @section Monitoring
 
 @deffn Command activity message
@@ -2702,7 +3217,7 @@ Define the time that all windows monitored for silence should wait
 before displaying a message. Default is 30 seconds.
 @end deffn
 
-@node Windows, Hardstatus, Monitor, Window Settings
+@node Windows
 @section Windows
 @kindex w
 @kindex C-w
@@ -2732,7 +3247,7 @@ In this case, if the string parameter is passed, the maximum output
 size is unlimited (instead of 1024 bytes if no parameter is passed).
 @end deffn
 
-@node Hardstatus, Mousetrack, Windows, Window Settings
+@node Hardstatus
 @section Hardstatus
 
 @code{Screen} maintains a hardstatus line for every window. If a window
@@ -2763,7 +3278,7 @@ Per default the hardstatus line of new windows is empty.
 Changes the current window's hardstatus line to @var{status}.
 @end deffn
 
-@node Mousetrack, , Hardstatus, Window Settings
+@node Mousetrack
 @section Mousetrack
 
 @deffn Command mousetrack [ @code{on|off} ]
@@ -2782,7 +3297,8 @@ This command determines the default state of the @code{mousetrack}
 command, currently defaulting of @var{off}.
 @end deffn
 
-@node Virtual Terminal, Copy and Paste, Window Settings, Top
+@c ----------------------------------------------------------------
+@node Virtual Terminal
 @chapter Virtual Terminal
 
 Each window in a @code{screen} session emulates a VT100 terminal, with
@@ -2791,20 +3307,20 @@ terminal types can be emulated.
 The commands described here modify the terminal emulation.
 
 @menu
-* Control Sequences::           Details of the internal VT100 emulation.
-* Input Translation::           How keystrokes are remapped.
-* Digraph::			Entering digraph sequences.
-* Bell::                        Getting your attention.
-* Clear::                       Clear the window display.
-* Info::                        Terminal emulation statistics.
-* Redisplay::                   When the display gets confusing.
-* Wrap::                        Automatic margins.
-* Reset::                       Recovering from ill-behaved applications.
-* Window Size::                 Changing the size of your terminal.
-* Character Processing::	Change the effect of special characters.
+* Control Sequences::     Details of the internal VT100 emulation.
+* Input Translation::     How keystrokes are remapped.
+* Digraph::               Entering digraph sequences.
+* Bell::                  Getting your attention.
+* Clear::                 Clear the window display.
+* Info::                  Terminal emulation statistics.
+* Redisplay::             When the display gets confusing.
+* Wrap::                  Automatic margins.
+* Reset::                 Recovering from ill-behaved applications.
+* Window Size::           Changing the size of your terminal.
+* Character Processing::  Change the effect of special characters.
 @end menu
 
-@node Control Sequences, Input Translation,  , Virtual Terminal
+@node Control Sequences
 @section Control Sequences
 @cindex control sequences
 The following is a list of control sequences recognized by
@@ -2941,7 +3457,7 @@ ESC [ 6 n                       Send Cursor Position Report
 @end example
 
 
-@node Input Translation, Digraph, Control Sequences, Virtual Terminal
+@node Input Translation
 @section Input Translation
 @cindex input translation
 In order to do a full VT100 emulation @code{screen} has to detect
@@ -3030,7 +3546,7 @@ Keypad enter         fe         stuff \015
                                 stuff \033OM      (A)
 @end example
 
-@node Digraph, Bell, Input Translation, Virtual Terminal
+@node Digraph
 @section Digraph
 
 @kindex C-v
@@ -3122,7 +3638,7 @@ The following table is the builtin sequences.
      'A', '?'    195       Ã            U+00C3
      'A', '"'    196       Ä            U+00C4
      'A', ':'    196       Ä            U+00C4
-     'A', '@@'    197       Å            U+00C5
+     'A', '@@'   197       Å            U+00C5
      'A', 'A'    197       Å            U+00C5
      'A', 'E'    198       Æ            U+00C6
      'C', ','    199       Ç            U+00C7
@@ -3222,15 +3738,15 @@ The following table is the builtin sequences.
      '"', '['    196       Ä            U+00C4
      '"', '\'    214       Ö            U+00D6
      '"', ']'    220       Ü            U+00DC
-     '"', '@{'    228       ä            U+00E4
+     '"', '@{'   228       ä            U+00E4
      '"', '|'    246       ö            U+00F6
-     '"', '@}'    252       ü            U+00FC
+     '"', '@}'   252       ü            U+00FC
      '"', '~'    223       ß            U+00DF
 @end example 
 
 @end deffn
 
-@node Bell, Clear, Digraph, Virtual Terminal
+@node Bell
 @section Bell
 
 @deffn Command bell_msg [message]
@@ -3247,8 +3763,8 @@ The default message is
 'Bell in window %n'
 @end example
 
-An empty message can be supplied to the @code{bell_msg} command to suppress
-output of a message line (@code{bell_msg ""}).
+An empty message can be supplied to the @code{bell_msg} command to
+suppress output of a message line (@code{bell_msg ""}).
 Without a parameter, the current message is shown.
 @end deffn
 
@@ -3282,7 +3798,7 @@ Define a delay in seconds after each display of @code{screen} 's visual
 bell message. The default is 1 second.
 @end deffn
 
-@node Clear, Info, Bell, Virtual Terminal
+@node Clear
 @section Clear
 @kindex C
 @deffn Command clear
@@ -3290,7 +3806,7 @@ bell message. The default is 1 second.
 Clears the screen and saves its contents to the scrollback buffer.
 @end deffn
 
-@node Info, Redisplay, Clear, Virtual Terminal
+@node Info
 @section Info
 @kindex i
 @kindex C-i
@@ -3337,7 +3853,7 @@ Show what @code{screen} thinks about your terminal. Useful if you want to know
 why features like color or the alternate charset don't work.
 @end deffn
 
-@node Redisplay, Wrap, Info, Virtual Terminal
+@node Redisplay
 @section Redisplay
 
 @deffn Command allpartial state
@@ -3373,7 +3889,7 @@ Redisplay the current window.  Needed to get a full redisplay in
 partial redraw mode.
 @end deffn
 
-@node Wrap, Reset, Redisplay, Virtual Terminal
+@node Wrap
 @section Wrap
 
 @kindex r
@@ -3395,7 +3911,7 @@ windows is changed. Initially line-wrap is on and can be toggled with the
 @code{wrap} command (@kbd{C-a r}) or by means of "C-a : wrap on|off".
 @end deffn
 
-@node Reset, Window Size, Wrap, Virtual Terminal
+@node Reset
 @section Reset
 @kindex Z
 @deffn Command reset
@@ -3405,7 +3921,7 @@ settings (like scroll regions or graphics character set) are left over from
 an application.
 @end deffn
 
-@node Window Size, Character Processing, Reset, Virtual Terminal
+@node Window Size
 @section Window Size
 @kindex W
 @deffn Command width [@code{-w}|@code{-d}] [cols [lines]]
@@ -3426,7 +3942,7 @@ Set the display height to a specified number of lines. When no
 argument is given it toggles between 24 and 42 lines display.
 @end deffn
 
-@node Character Processing, ,Window Size, Virtual Terminal
+@node Character Processing
 @section Character Processing
 
 @deffn Command c1 [state]
@@ -3549,13 +4065,14 @@ with @samp{-U}, otherwise @code{off}.
 
 @deffn Command cjkwidth [state]
 (none)@*
-Toggle how ambiguoous characters are treated. If cjkwidth is on screen
+Toggle how ambiguous characters are treated. If cjkwidth is on screen
 interprets them as double (full) width characters. If off then they are seen
 as one cell (half) width characters.
 @end deffn
 
 
-@node Copy and Paste, Subprocess Execution, Virtual Terminal, Top
+@c ----------------------------------------------------------------
+@node Copy and Paste
 @chapter Copy and Paste
 @cindex copy and paste
 
@@ -3571,7 +4088,7 @@ systems.
 * History::                     Recalling previous input
 @end menu
 
-@node Copy, Paste,  , Copy and Paste
+@node Copy
 @section Copying
 @cindex marking
 @cindex scrollback
@@ -3597,7 +4114,7 @@ outlined below.
 * Specials::                    Other random keys
 @end menu
 
-@node Line Termination, Scrollback,  , Copy
+@node Line Termination
 @subsection CR/LF
 @deffn Command crlf [state]
 (none)@*
@@ -3608,7 +4125,7 @@ sequence @samp{CR}/@samp{LF}.  Otherwise only @samp{LF} is used.
 When no parameter is given, the state is toggled.
 @end deffn
 
-@node Scrollback, Copy Mode Keys, Line Termination, Copy
+@node Scrollback
 @subsection Scrollback
 To access and use the contents in the scrollback buffer, use the @code{copy} command. @xref{Copy}.
 @deffn Command defscrollback num
@@ -3631,7 +4148,7 @@ scrolling up text into the history buffer. Turn compacting @samp{on}
 to hold more useful lines in your scrollback buffer.
 @end deffn
 
-@node Copy Mode Keys, Movement, Scrollback, Copy
+@node Copy Mode Keys
 @subsection Markkeys
 @deffn Command markkeys string
 (none)@*
@@ -3648,7 +4165,7 @@ As shown in this example, multiple keys can be assigned to one function
 in a single statement.
 @end deffn
 
-@node Movement, Marking, Copy Mode Keys, Copy
+@node Movement
 @subsection Movement Keys
 
 @noindent
@@ -3698,7 +4215,7 @@ or last non-whitespace character on the line.
 
 @noindent
 @kbd{f}/@kbd{F}, @kbd{t}/@kbd{T} move the cursor forward/backward to the 
-next occurence of the target. (eg, '3fy' will move the cursor to the 3rd 
+next occurrence of the target. (eg, '3fy' will move the cursor to the 3rd
 'y' to the right.)
 
 @noindent
@@ -3720,7 +4237,7 @@ Note that Emacs-style movement keys can be specified by a .screenrc
 command. (@code{markkeys "h=^B:l=^F:$=^E"}) There is no simple method for
 a full emacs-style keymap, however, as this involves multi-character codes.
 
-@node Marking, Repeat count, Movement, Copy
+@node Marking
 @subsection Marking
 
 The copy range is specified by setting two marks. The text between these
@@ -3738,7 +4255,7 @@ start of line.
 @noindent
 @kbd{W} marks exactly one word. 
  
-@node Repeat count, Searching, Marking, Copy
+@node Repeat count
 @subsection Repeat Count
 
 Any command in copy mode can be prefixed with a number (by pressing
@@ -3749,7 +4266,7 @@ digits @kbd{0@dots{}9}) which is taken as a repeat count. Example:
 @noindent
 will copy lines 11 to 15 into the paste buffer.
 
-@node Searching, Specials, Repeat count, Copy
+@node Searching
 @subsection Searching
 
 @noindent
@@ -3777,7 +4294,7 @@ is toggled.
 @noindent
 @kbd{N} Repeat search in backward direction.
 
-@node Specials,  , Searching, Copy
+@node Specials
 @subsection Specials
 
 There are, however, some keys that act differently here from in
@@ -3849,7 +4366,7 @@ mode.
 @noindent
 All keys not described here exit copy mode.
 
-@node Paste, Registers, Copy, Copy and Paste
+@node Paste
 @section Paste
 
 @kindex ]
@@ -3920,7 +4437,7 @@ C-a : paste p
 @end example
 @end deffn
 
-@node Registers, Screen Exchange, Paste, Copy and Paste
+@node Registers
 @section Registers
 
 @deffn Command copy_reg [key]
@@ -3947,7 +4464,7 @@ Save the specified @var{string} to the register @var{key}.
 The encoding of the string can be specified via the @code{-e} option.
 @end deffn
 
-@node Screen Exchange, History, Registers, Copy and Paste
+@node Screen Exchange
 @section Screen Exchange
 
 @deffn Command bufferfile [@var{exchange-file}]
@@ -3992,7 +4509,7 @@ See also
 @kbd{C-a @key{ESC}} (@pxref{Copy}).
 @end deffn
 
-@node History,  , Screen Exchange, Copy and Paste
+@node History
 @section History
 
 @kindex @{
@@ -4010,7 +4527,8 @@ you have a crude command history (made up by the visible window and its
 scrollback buffer).
 @end deffn
 
-@node Subprocess Execution, Key Binding, Copy and Paste, Top
+@c ----------------------------------------------------------------
+@node Subprocess Execution
 @chapter Subprocess Execution
 Control Input or Output of a window by another filter process.
 Use with care!
@@ -4020,7 +4538,7 @@ Use with care!
 * Using Exec::                  Weird things that filters can do.
 @end menu
 
-@node Exec, Using Exec,  , Subprocess Execution
+@node Exec
 @section Exec
 @deffn Command exec [[@var{fdpat}] @var{newcommand} [@var{args} ... ]]
 (none)@*
@@ -4054,7 +4572,7 @@ The box marked `P' is the secondary pty that now has screen at its master
 side.
 @end deffn
 
-@node Using Exec,  , Exec, Subprocess Execution
+@node Using Exec
 @section Using Exec
 @noindent 
 Abbreviations:
@@ -4114,7 +4632,8 @@ This will cause 'Bell in window x' messages, whenever the string @samp{Error}
 appears in the window.
 @end table
 
-@node Key Binding, Flow Control, Subprocess Execution, Top
+@c ----------------------------------------------------------------
+@node Key Binding
 @chapter Key Binding
 @cindex key binding
 @cindex binding
@@ -4124,16 +4643,16 @@ You may disagree with some of the default bindings (I know I do).  The
 preferences.
 
 @menu
-* Bind::                        @code{bind} syntax.
-* Bind Examples::               Using @code{bind}.
-* Command Character::           The character used to start keyboard commands.
-* Help::                        Show current key bindings.
-* Bindkey::			@code{bindkey} syntax.
-* Bindkey Examples::		Some easy examples.
-* Bindkey Control::		How to control the bindkey mechanism.
+* Bind::               @code{bind} syntax.
+* Bind Examples::      Using @code{bind}.
+* Command Character::  The character used to start keyboard commands.
+* Help::               Show current key bindings.
+* Bindkey::            @code{bindkey} syntax.
+* Bindkey Examples::   Some easy examples.
+* Bindkey Control::    How to control the bindkey mechanism.
 @end menu
 
-@node Bind, Bind Examples,  , Key Binding
+@node Bind
 @section The @code{bind} command
 @deffn Command bind [-c class] key [command [args]]
 (none)@*
@@ -4165,7 +4684,7 @@ letting a console application run as a daemon. If, for some reason,
 it is necessary to bind commands after this, use 'screen -X'.
 @end deffn
 
-@node Bind Examples, Command Character, Bind, Key Binding
+@node Bind Examples
 @section Examples of the @code{bind} command
 @noindent
 Some examples:
@@ -4201,7 +4720,8 @@ bind - command -c demo2
 @end example
 makes @kbd{C-a - 0} select window 10, @kbd{C-a - 1} window 11, etc.
 
-@node Command Character, Help, Bind Examples, Key Binding
+@c ----------------------------------------------------------------
+@node Command Character
 @cindex escape character
 @cindex command character
 @section Command Character
@@ -4246,7 +4766,7 @@ If the @samp{-c} option is given, select the specified command class.
 @xref{Bind}, @xref{Bindkey}.
 @end deffn
 
-@node Help, Bindkey, Command Character, Key Binding
+@node Help
 @section Help
 @kindex ?
 @deffn Command help
@@ -4261,7 +4781,7 @@ specified command class.
 @xref{Default Key Bindings}.
 @end deffn
 
-@node Bindkey, Bindkey Examples, Help, Key Binding
+@node Bindkey
 @section Bindkey
 @deffn Command bindkey [@var{opts}] [@var{string} [@var{cmd} @var{args}]]
 (none)@*
@@ -4296,7 +4816,7 @@ number of @samp{args}. If @samp{cmd} is omitted the key-binding is
 removed from the table. 
 @end deffn
 
-@node Bindkey Examples, Bindkey Control,Bindkey, Key Binding
+@node Bindkey Examples
 @section Bindkey Examples
 @noindent
 Here are some examples of keyboard bindings:
@@ -4338,7 +4858,7 @@ bindkey -k F1 command
 Make the F11 (not F1!) key an alternative screen
 escape (besides @samp{C-a}).
 
-@node Bindkey Control, , Bindkey Examples, Key Binding
+@node Bindkey Control
 @section Bindkey Control
 @deffn Command mapdefault
 (none)@*
@@ -4356,7 +4876,8 @@ of @var{n} ms. The default timeout is 300ms. Maptimeout with no
 arguments shows the current setting.
 @end deffn
 
-@node Flow Control, Termcap, Key Binding, Top
+@c ----------------------------------------------------------------
+@node Flow Control
 @chapter Flow Control
 @cindex flow control
 
@@ -4371,7 +4892,7 @@ XON/XOFF flow control and you are running a program which wants to use
 * XON/XOFF::                    Sending XON or XOFF to the window
 @end menu
 
-@node Flow Control Summary, Flow,  , Flow Control
+@node Flow Control Summary
 @section About @code{screen} flow control settings
 Each window has a flow-control setting that determines how screen deals
 with the XON and XOFF characters (and perhaps the interrupt character).
@@ -4419,7 +4940,7 @@ enabled.  If your program's output is interrupted by mistake, a simple
 refresh of the screen with @kbd{C-a l} will restore it.  Give each mode
 a try, and use whichever mode you find more comfortable.
 
-@node Flow, XON/XOFF, Flow Control Summary, Flow Control
+@node Flow
 @section Flow
 @deffn Command defflow fstate [interrupt]
 (none)@*
@@ -4441,7 +4962,7 @@ Without parameters it cycles the current window's
 flow-control setting.  Default is set by `defflow'.
 @end deffn
 
-@node XON/XOFF,  , Flow, Flow Control
+@node XON/XOFF
 @section XON and XOFF
 @kindex q
 @kindex C-q
@@ -4458,7 +4979,8 @@ if flow control is set to @samp{off} or @samp{auto}.
 Send a ^S (ASCII XOFF) to the program in the current window.
 @end deffn
 
-@node Termcap, Message Line, Flow Control, Top
+@c ----------------------------------------------------------------
+@node Termcap
 @chapter Termcap
 
 @code{Screen} demands the most out of your terminal so that it can
@@ -4477,7 +4999,7 @@ and the one simulated by @code{screen}.
 * Character Translation::       Emulating fonts and charsets.
 @end menu
 
-@node Window Termcap, Dump Termcap,  , Termcap
+@node Window Termcap
 @section Choosing the termcap entry for a window
 Usually @code{screen} tries to emulate as much of the VT100/ANSI
 standard as possible. But if your terminal lacks certain capabilities
@@ -4573,7 +5095,7 @@ command-line option (@pxref{Invoking Screen}).
 The "alternate screen" capability is not enabled by default.
 Set the @code{altscreen} @file{.screenrc} command to enable it.
 
-@node Dump Termcap, Termcap Syntax, Window Termcap, Termcap
+@node Dump Termcap
 @section Write out the window's termcap entry
 @kindex .
 @deffn Command dumptermcap
@@ -4588,7 +5110,7 @@ to run a converter like @code{captoinfo} and then compile the entry with
 @code{tic}.
 @end deffn
 
-@node Termcap Syntax, Termcap Examples, Dump Termcap, Termcap
+@node Termcap Syntax
 @section The @code{termcap} command
 @deffn Command termcap term terminal-tweaks [window-tweaks]
 @deffnx Command terminfo term terminal-tweaks [window-tweaks]
@@ -4628,7 +5150,7 @@ to leave this unchanged (e.g. "").  The second (optional) tweak modifies
 all the window termcaps, and should contain definitions that screen
 understands (@pxref{Virtual Terminal}).
 
-@node Termcap Examples, Special Capabilities, Termcap Syntax, Termcap
+@node Termcap Examples
 @section Termcap Examples
 Some examples:
 
@@ -4685,7 +5207,7 @@ should instead set the @code{$SCREENCAP} variable prior to running
 @code{screen} terminal emulation.  @xref{Termcap},
 for more information on termcap definitions.
 
-@node Special Capabilities, Autonuke, Termcap Examples, Termcap
+@node Special Capabilities
 @section Special Terminal Capabilities
 @cindex terminal capabilities
 @cindex capabilities 
@@ -4796,7 +5318,7 @@ Terminal needs bold to display high-intensity colors (e.g. Eterm).
 Add missing capabilities to the termcap/info entry. (Set by default).
 @end table
 
-@node Autonuke, Obuflimit, Special Capabilities, Termcap
+@node Autonuke
 @section Autonuke
 @deffn Command autonuke @var{state}
 (none)@*
@@ -4813,7 +5335,7 @@ Note that you can use the special @code{AN} terminal capability if you
 want to have a terminal type dependent setting.
 @end deffn
 
-@node Obuflimit, Character Translation, Autonuke, Termcap
+@node Obuflimit
 @section Obuflimit
 @deffn Command obuflimit [@var{limit}]
 (none)@*
@@ -4832,7 +5354,7 @@ the special @code{OL} terminal capability if you want to have a terminal
 type dependent limit.
 @end deffn
 
-@node Character Translation, , Obuflimit, Termcap
+@node Character Translation
 @section Character Translation
 @code{Screen} has a powerful mechanism to translate characters to
 arbitrary strings depending on the current font and terminal type.
@@ -4900,8 +5422,9 @@ template is just @samp{%}, so the mapping is straightforward:
 @samp{[} to @samp{\304}, @samp{\} to @samp{\326}, and @samp{]} to
 @samp{\334}.
 
-@node Message Line, Logging, Termcap, Top
-@chapter The Message Line
+@c ----------------------------------------------------------------
+@node Message Line
+@chapter Message Line
 @cindex message line
 
 @code{Screen} displays informational messages and other diagnostics in a
@@ -4920,7 +5443,7 @@ type.
 * Message Wait::                Control how long messages are displayed.
 @end menu
 
-@node Privacy Message, Hardware Status Line,  , Message Line
+@node Privacy Message
 @section Using the message line from your program
 The message line facility can be used by an application running in the
 current window by means of the ANSI @dfn{Privacy message} control
@@ -4933,7 +5456,7 @@ echo "@value{esc}^Hello world from window $WINDOW@value{esc}\"
 where @samp{@value{esc}} is ASCII ESC and the @samp{^} that follows it
 is a literal caret or up-arrow.
 
-@node Hardware Status Line, Last Message, Privacy Message, Message Line
+@node Hardware Status Line
 @section Hardware Status Line
 @deffn Command hardstatus [state]
 @deffnx Command hardstatus [@code{always}]@code{firstline}|@code{lastline}|@code{message}|@code{ignore} [string]
@@ -4969,7 +5492,7 @@ You can mix the second and third form by providing the string as
 additional argument.
 @end deffn
 
-@node Last Message, Message Wait, Hardware Status Line, Message Line
+@node Last Message
 @section Display Last Message
 @kindex m
 @kindex C-m
@@ -4980,7 +5503,7 @@ typing when a message appears, because (unless your terminal has a
 hardware status line) the message goes away when you press a key.
 @end deffn
 
-@node Message Wait,  , Last Message, Message Line
+@node Message Wait
 @section Message Wait
 @deffn Command msgminwait sec
 (none)@*
@@ -4994,7 +5517,8 @@ Defines the time a message is displayed, if @code{screen} is not
 disturbed by other activity.  Defaults to 5 seconds.
 @end deffn
 
-@node Logging, Startup, Message Line, Top
+@c ----------------------------------------------------------------
+@node Logging
 @chapter Logging
 
 This section describes the commands for keeping a record of your session.
@@ -5004,7 +5528,7 @@ This section describes the commands for keeping a record of your session.
 * Log::                         Log the output of a window to a file
 @end menu
 
-@node Hardcopy, Log,  , Logging
+@node Hardcopy
 @section hardcopy
 @kindex h
 @deffn Command hardcopy [-h] [@var{file}]
@@ -5032,7 +5556,7 @@ If unset, hardcopys are dumped in screen's current working
 directory.
 @end deffn
 
-@node Log,  , Hardcopy, Logging
+@node Log
 @section log
 
 @deffn Command deflog state
@@ -5079,7 +5603,8 @@ string (@samp{-- %n:%t -- time-stamp -- %M/%d/%y %c:%s --\n} by
 default).
 @end deffn
 
-@node Startup, Miscellaneous, Logging, Top
+@c ----------------------------------------------------------------
+@node Startup
 @chapter Startup
 
 This section describes commands which are only useful in the
@@ -5091,7 +5616,7 @@ This section describes commands which are only useful in the
 * Startup Message::             Control display of the copyright notice.
 @end menu
 
-@node echo, sleep,  , Startup
+@node echo
 @section echo
 @deffn Command echo [@samp{-n}] message
 (none)@*
@@ -5102,7 +5627,7 @@ See also @code{sleep}.
 Echo is also useful for online checking of environment variables.
 @end deffn
 
-@node sleep, Startup Message, echo, Startup
+@node sleep
 @section sleep
 @deffn Command sleep num
 (none)@*
@@ -5111,7 +5636,7 @@ seconds.  Keyboard activity will end the sleep.  It may be used to give
 users a chance to read the messages output by @code{echo}.
 @end deffn
 
-@node Startup Message,  , sleep, Startup
+@node Startup Message
 @section Startup Message
 @deffn Command startup_message state
 (none)@*
@@ -5119,37 +5644,37 @@ Select whether you want to see the copyright notice during startup.
 Default is @samp{on}, as you probably noticed.
 @end deffn
 
-@node Miscellaneous, String Escapes, Startup, Top
+@c ----------------------------------------------------------------
+@node Miscellaneous
 @chapter Miscellaneous commands
 
 The commands described here do not fit well under any of the other
 categories.
 
 @menu
-* At::                          Execute a command at other displays or windows.
-* Break::                       Send a break signal to the window.
-* Bumpleft::			Swaps window with previous one on window list.
-* Bumpright::			Swaps window with next one on window list.
-* Collapse::			Collapses window list.
-* License::                     Display the disclaimer page.
-* Nonblock::			Disable flow-control to a display.
-* Number::                      Change the current window's number.
-* Verbose::                     Display window creation commands.
-* Version::                     Display the version of @code{screen}.
-* Zombie::                      Keep dead windows.
-* Printcmd::                    Set command for VT100 printer port emulation.
-* Rendition::			Change text attributes in caption for flagged windows.
-* Sorendition::			Change the text highlighting method.
-* Attrcolor::			Map attributes to colors.
-* Setsid::			Change process group management.
-* Eval::			Parse and execute arguments.
-* Backtick::			Program a command for a backtick string escape.
-* Screen Saver::		Define a screen safer.
-* Zmodem::			Define how screen treats zmodem requests.
-* Mousetrack::			Set whether screen should track mouse events.
+* At::              Execute a command at other displays or windows.
+* Break::           Send a break signal to the window.
+* Bumpleft::        Swaps window with previous one on window list.
+* Bumpright::       Swaps window with next one on window list.
+* Collapse::        Collapses window list.
+* License::         Display the disclaimer page.
+* Nonblock::        Disable flow-control to a display.
+* Number::          Change the current window's number.
+* Verbose::         Display window creation commands.
+* Version::         Display the version of @code{screen}.
+* Zombie::          Keep dead windows.
+* Printcmd::        Set command for VT100 printer port emulation.
+* Rendition::       Change text attributes in caption for flagged windows.
+* Sorendition::     Change the text highlighting method.
+* Attrcolor::       Map attributes to colors.
+* Setsid::          Change process group management.
+* Eval::            Parse and execute arguments.
+* Backtick::        Program a command for a backtick string escape.
+* Screen Saver::    Define a screen safer.
+* Zmodem::          Define how screen treats zmodem requests.
 @end menu
 
-@node At, Break,  , Miscellaneous
+@node At
 @section At
 @deffn Command at [identifier][#|*|%] command [args]
 (none)@*
@@ -5183,7 +5708,7 @@ that a display is associated with the target windows.  These commands may not
 work correctly under @code{at} looping over windows.
 @end deffn
 
-@node Break, Bumpleft, At, Miscellaneous
+@node Break
 @section Break
 @kindex b
 @kindex C-b
@@ -5225,7 +5750,7 @@ dependent, this also differs between serial board drivers.
 Calling @code{defbreaktype} with no parameter displays the current setting.
 @end deffn
 
-@node Bumpleft, Bumpright, Break, Miscellaneous
+@node Bumpleft
 @section Bumpleft
 @deffn Command bumpleft
 (none)@*
@@ -5233,7 +5758,7 @@ Exchanges windows positions on window list, with window having lower number
 (left to current one).
 @end deffn
 
-@node Bumpright, Collapse, Bumpleft, Miscellaneous
+@node Bumpright
 @section Bumpright
 @deffn Command bumpright
 (none)@*
@@ -5241,14 +5766,14 @@ Exchanges windows positions on window list, with window having bigger number
 (right to current one).
 @end deffn
 
-@node Collapse, License, Bumpright, Miscellaneous
+@node Collapse
 @section Collapse
 @deffn Command collapse
 (none)@*
 Changes windows numbers, so there is no gaps between them.
 @end deffn
 
-@node License, Collapse, Miscellaneous
+@node License
 @section License
 @kindex ,
 @deffn Command license
@@ -5257,7 +5782,7 @@ Display the disclaimer page. This is done whenever @code{screen} is
 started without options, which should be often enough.
 @end deffn
 
-@node Nonblock, Number, Miscellaneous
+@node Nonblock
 @section Nonblock
 @deffn Command nonblock [@var{state}|@var{numsecs}]
 Tell screen how to deal with user interfaces (displays) that cease to
@@ -5277,7 +5802,7 @@ Same as the @code{nonblock} command except that the default setting for
 displays is changed. Initial setting is @code{off}.
 @end deffn
 
-@node Number, Nonblock, Miscellaneous
+@node Number
 @section Number
 @kindex N
 @deffn Command number [[+|-]@var{n}]
@@ -5289,7 +5814,7 @@ plus (`+') or minus (`-') will change the window's number by the relative
 amount specified.
 @end deffn
 
-@node Verbose, Version, Miscellaneous
+@node Verbose
 @section Verbose
 @deffn Command verbose [on|off]
 If verbose is switched on, the command name is echoed, whenever a window
@@ -5297,7 +5822,7 @@ is created (or resurrected from zombie state). Default is off.
 Without a parameter, the current setting is shown.
 @end deffn
 
-@node Version, Zombie, Verbose, Miscellaneous
+@node Version
 @section Version
 @kindex v
 @deffn Command version
@@ -5305,7 +5830,7 @@ Without a parameter, the current setting is shown.
 Display the version and modification date in the message line.
 @end deffn
 
-@node Zombie, Printcmd, Version, Miscellaneous
+@node Zombie
 @section Zombie
 @deffn Command zombie [@var{keys} [onerror] ]
 @deffn Command zombie_timeout [@var{seconds}]
@@ -5335,7 +5860,7 @@ resurrect the window after the timeout.
 It only works if zombie keys are defined via @code{zombie} command.
 @end deffn
 
-@node Printcmd, Rendition, Zombie, Miscellaneous
+@node Printcmd
 @section Printcmd
 @deffn Command printcmd [@var{cmd}]
 (none)@*
@@ -5351,7 +5876,7 @@ Warning: Be careful with this command! If other user have write
 access to your terminal, they will be able to fire off print commands.
 @end deffn
 
-@node Rendition, Sorendition, Printcmd, Miscellaneous
+@node Rendition
 @section Rendition
 @deffn Command rendition bell | monitor | silence | so @var{attr} [@var{color}]
 (none)@*
@@ -5364,14 +5889,14 @@ active colors), for bell @samp{=ub} (underline, bold and active colors), and
 for silence @samp{=u}.
 @end deffn
 
-@node Sorendition, Attrcolor, Rendition, Miscellaneous
+@node Sorendition
 @section Sorendition
 @deffn Command sorendition [@var{attr} [@var{color}]]
 (none)@*
 This command has been deprecated. Use @code{rendition so} instead. 
 @end deffn
 
-@node Attrcolor, Setsid, Sorendition, Miscellaneous
+@node Attrcolor
 @section Attrcolor
 @deffn Command attrcolor @var{attrib} [@var{attribute/color-modifier}]
 (none)@*
@@ -5400,7 +5925,7 @@ Make bright colored text also bold.
 @end table
 @end deffn
 
-@node Setsid, Eval, Attrcolor, Miscellaneous
+@node Setsid
 @section Setsid
 @deffn Command setsid state
 (none)@*
@@ -5412,14 +5937,14 @@ The default is @code{on}, of course. This command is probably useful
 only in rare circumstances.
 @end deffn
 
-@node Eval, , Setsid, Miscellaneous
+@node Eval
 @section Eval
 @deffn Command eval @var{command1} [@var{command2} ...]
 (none)@*
 Parses and executes each argument as separate command.
 @end deffn
 
-@node Backtick, Screen Saver, , Miscellaneous
+@node Backtick
 @section Backtick
 @deffn Command backtick @var{id} @var{lifespan} @var{autorefresh} @var{command} [@var{args}]
 @deffnx Command backtick @var{id}
@@ -5446,7 +5971,7 @@ The second form of the command deletes the backtick command
 with the numerical id @var{id}.
 @end deffn
 
-@node Screen Saver, Zmodem, Backtick, Miscellaneous
+@node Screen Saver
 @section Screen Saver
 @deffn Command idle [@var{timeout} [@var{cmd} @var{args}]]
 (none)@*
@@ -5478,7 +6003,7 @@ arguments are given.
 
 @end deffn
 
-@node Zmodem, , Screen Saver, Miscellaneous
+@node Zmodem
 @section Zmodem
 @deffn Command zmodem [off|auto|catch|pass]
 @deffnx Command zmodem sendcmd [string]
@@ -5500,7 +6025,8 @@ via the second and the third form.
 Note also that this is an experimental feature.
 @end deffn
 
-@node String Escapes, Environment, Miscellaneous, Top
+@c ----------------------------------------------------------------
+@node String Escapes
 @chapter String Escapes
 @cindex string escapes
 Screen provides an escape mechanism to insert information like the
@@ -5513,6 +6039,8 @@ Here is the full list of supported escapes:
 @table @code
 @item %
 the escape character itself
+@item *
+caret character literal (@code{^})
 @item a
 either @code{am} or @code{pm}
 @item A
@@ -5551,6 +6079,8 @@ sets %? to true if the current region is in copy/paste mode
 session name
 @item t
 window title
+@item T
+current tty for window
 @item u
 all other users on this window
 @item w
@@ -5686,7 +6216,8 @@ Also use a red background if this is the active focus.
 Useful for @samp{caption string}.
 @end table
 
-@node Environment, Files, String Escapes, Top
+@c ----------------------------------------------------------------
+@node Environment
 @chapter Environment Variables
 @cindex environment
 
@@ -5737,13 +6268,14 @@ Terminal description.
 Window number of a window (at creation time).
 @end table
 
-@node Files, Credits, Environment, Top
+@c ----------------------------------------------------------------
+@node Files
 @chapter Files Referenced
 @cindex files
 
 @table @file
-@item .../screen-5.0.1/etc/screenrc
-@itemx .../screen-5.0.1/etc/etcscreenrc
+@item .../screen-5.0.2/etc/screenrc
+@itemx .../screen-5.0.2/etc/etcscreenrc
 Examples in the @code{screen} distribution package for private and
 global initialization files.
 
@@ -5788,70 +6320,71 @@ Login records
 Program for locking the terminal.
 @end table
 
-@node Credits, Bugs, Files, Top
+@c ----------------------------------------------------------------
+@node Credits
 @chapter Credits
 
-@noindent
-Authors @*
-=======
+@node Authors
+@section Authors
+@cindex authors
 
 Originally created by Oliver Laumann. For a long time maintained
 and developed by Juergen Weigert, Michael Schroeder, Micah Cowan
-and Sadrul Habib Chowdhury. Since 2015 maintained and developed
-by Amadeusz Slawinski <amade@@asmblr.net>
-and Alexander Naumov <alexander_naumov@@opensuse.org>.
+and Sadrul Habib Chowdhury.
 
-@noindent
-Contributors @*
-============
+Since 2015 maintained and developed by Amadeusz Slawinski
+<amade@@asmblr.net> and Alexander Naumov <alexander_naumov@@opensuse.org>.
+
+@node Contributors
+@section Contributors
+@cindex contributors
 
 @verbatim
-     Matthias Gerstner <matthias.gerstner@suse.de>,
-     Eric S. Raymond <esr@thyrsus.com>,
-     Thomas Renninger <treen@suse.com>,
-     Axel Beckert <abe@deuxchevaux.org>,
-     Ken Beal <kbeal@@amber.ssd.csd.harris.com>,
-     Rudolf Koenig <rfkoenig@@informatik.uni-erlangen.de>,
-     Toerless Eckert <eckert@@informatik.uni-erlangen.de>,
-     Wayne Davison <davison@@borland.com>,
-     Patrick Wolfe <pat@@kai.com, kailand!pat>,
-     Bart Schaefer <schaefer@@cse.ogi.edu>,
-     Nathan Glasser <nathan@@brokaw.lcs.mit.edu>,
-     Larry W. Virden <lvirden@@cas.org>,
-     Howard Chu <hyc@@hanauma.jpl.nasa.gov>,
-     Tim MacKenzie <tym@@dibbler.cs.monash.edu.au>,
-     Markku Jarvinen <mta@@@{cc,cs,ee@}.tut.fi>,
-     Marc Boucher <marc@@CAM.ORG>,
-     Doug Siebert <dsiebert@@isca.uiowa.edu>,
-     Ken Stillson <stillson@@tsfsrv.mitre.org>,
-     Ian Frechett <frechett@@spot.Colorado.EDU>,
-     Brian Koehmstedt <bpk@@gnu.ai.mit.edu>,
-     Don Smith <djs6015@@ultb.isc.rit.edu>,
-     Frank van der Linden <vdlinden@@fwi.uva.nl>,
-     Martin Schweikert <schweik@@cpp.ob.open.de>,
-     David Vrona <dave@@sashimi.lcu.com>,
-     E. Tye McQueen <tye%spillman.UUCP@@uunet.uu.net>,
-     Matthew Green <mrg@@eterna.com.au>,
-     Christopher Williams <cgw@@pobox.com>,
-     Matt Mosley <mattm@@access.digex.net>,
-     Gregory Neil Shapiro <gshapiro@@wpi.WPI.EDU>,
-     Jason Merrill <jason@@jarthur.Claremont.EDU>,
-     Johannes Zellner <johannes@@zellner.org>,
-     Pablo Averbuj <pablo@@averbuj.com>.
+     Matthias Gerstner <matthias.gerstner@suse.de>
+     Eric S. Raymond <esr@thyrsus.com>
+     Thomas Renninger <treen@suse.com>
+     Axel Beckert <abe@@deuxchevaux.org>
+     Ken Beal <kbeal@amber.ssd.csd.harris.com>
+     Rudolf Koenig <rfkoenig@informatik.uni-erlangen.de>
+     Toerless Eckert <eckert@informatik.uni-erlangen.de>
+     Wayne Davison <davison@borland.com>
+     Patrick Wolfe <pat@kai.com, kailand!pat>
+     Bart Schaefer <schaefer@cse.ogi.edu>
+     Nathan Glasser <nathan@brokaw.lcs.mit.edu>
+     Larry W. Virden <lvirden@@cas.org>
+     Howard Chu <hyc@hanauma.jpl.nasa.gov>
+     Tim MacKenzie <tym@dibbler.cs.monash.edu.au>
+     Markku Jarvinen <mta@{cc,cs,ee}.tut.fi>
+     Marc Boucher <marc@CAM.ORG>
+     Doug Siebert <dsiebert@isca.uiowa.edu>
+     Ken Stillson <stillson@tsfsrv.mitre.org>
+     Ian Frechett <frechett@spot.Colorado.EDU>
+     Brian Koehmstedt <bpk@gnu.ai.mit.edu>
+     Don Smith <djs6015@ultb.isc.rit.edu>
+     Frank van der Linden <vdlinden@fwi.uva.nl>
+     Martin Schweikert <schweik@cpp.ob.open.de>
+     David Vrona <dave@sashimi.lcu.com>
+     E. Tye McQueen <tye%spillman.UUCP@uunet.uu.net>
+     Matthew Green <mrg@eterna.com.au>
+     Christopher Williams <cgw@pobox.com>
+     Matt Mosley <mattm@access.digex.net>
+     Gregory Neil Shapiro <gshapiro@wpi.WPI.EDU>
+     Jason Merrill <jason@jarthur.Claremont.EDU>
+     Johannes Zellner <johannes@zellner.org>
+     Pablo Averbuj <pablo@averbuj.com>
 @end verbatim
 
-@noindent
-Version @*
-=======
+@node Old Version
+@section Old Version
+@cindex old version
 
 This manual describes version @value{version} of the @code{screen}
 program. Its roots are a merge of a custom version 2.3PR7 by Wayne
 Davison and several enhancements to Oliver Laumann's version 2.0.
 Note that all versions numbered 2.x are copyright by Oliver Laumann.
 
-See also @xref{Availability}.
-
-@node Bugs, Installation, Credits, Top
+@c ----------------------------------------------------------------
+@node Bugs
 @chapter Bugs
 @cindex bugs
 
@@ -5865,7 +6398,7 @@ found a bug not mentioned here.
 * Availability::                Where to find the latest screen version.
 @end menu
 
-@node Known Bugs, Reporting Bugs,  , Bugs
+@node Known Bugs
 @section Known Bugs
 
 @itemize @bullet
@@ -5930,112 +6463,40 @@ A weird imagination is most useful to gain full advantage of all the
 features.
 @end itemize
 
-@node Reporting Bugs, Availability, Known Bugs, Bugs
+@node Reporting Bugs
 @section Reporting Bugs
 @cindex bug report
 
-If you find a bug in @code{Screen}, please send electronic mail to
-@w{@samp{screen-devel@@gnu.org}}.  Include the version number
-of @code{Screen} which you are using.  Also include in your message the
+If you find a bug in @code{Screen}, please send mail to
+@w{@samp{screen-devel@@gnu.org}}. Include the version number
+of @code{Screen} which you are using. Also include in your message the
 hardware and operating system, the compiler used to compile, a
 description of the bug behavior, and the conditions that triggered the
-bug. In case of security issue please send an mail to
-@w{@samp{alexander_naumov@opensuse.org}}.
+bug.
 
-@node Availability,  , Reporting Bugs, Bugs
-@section Availability
-@cindex availability
+In case of security issue please send mail to
+@w{@samp{alexander_naumov@@opensuse.org}}.
 
-@code{Screen} is available under the @code{GNU} copyleft.
-
-The latest official release of @code{screen} available via anonymous
-ftp from @samp{prep.ai.mit.edu}, @samp{nic.funet.fi} or any other
-@code{GNU} distribution site.  The home site of 
-@code{screen} is @samp{ftp.uni-erlangen.de
-(131.188.3.71)}, in the directory @file{pub/utilities/screen}.
-The subdirectory @samp{private} contains the latest beta testing release.
-If you want to help, send a note to screen-devel@@gnu.org.
-
-@node Installation, Concept Index, Bugs, Top
-@chapter Installation
-@cindex installation
-
-Since @code{screen} uses pseudo-ttys, the select system call, and
-UNIX-domain sockets/named pipes, it will not run under a system that
-does not include these features of 4.2 and 4.3 BSD UNIX.
-
-@menu
-* Socket Directory::		Where screen stores its handle.
-* Compiling Screen::
-@end menu
-
-@node Socket Directory,
-@section Socket Directory
-@cindex socket directory
-
-The socket directory defaults either to @file{$HOME/.screen} or simply to 
-@file{/tmp/screens} or preferably to @file{/usr/local/screens} chosen at 
-compile-time. If @code{screen} is installed
-setuid root, then the administrator should compile screen with an
-adequate (not NFS mounted) @code{SOCKDIR}. If @code{screen} is not
-running setuid-root, the user can specify any mode 700 directory in the
-environment variable @code{$SCREENDIR}.
-
-@node Compiling Screen,  , Socket Directory, Installation
-@section Compiling Screen
-@cindex compiling screen
-
-To compile and install screen:
-
-The @code{screen} package comes with a @code{GNU Autoconf} configuration 
-script. Before you compile the package run 
-
-@center @code{sh ./configure}
-
-This will create a @file{config.h} and @file{Makefile} for your machine.
-If @code{configure} fails for some reason, then look at the examples and
-comments found in the @file{Makefile.in} and @file{config.h.in} templates.
-Rename @file{config.status} to @file{config.status.@var{machine}} when
-you want to keep configuration data for multiple architectures. Running
-@code{sh ./config.status.@var{machine}} recreates your configuration 
-significantly faster than rerunning @code{configure}. 
-@*
-Read through the "User Configuration" section of @file{config.h}, and verify
-that it suits your needs.
-A comment near the top of this section explains why it's best to
-install screen setuid to root.
-Check for the place for the global @file{screenrc}-file and for the socket
-directory.
-@*
-Check the compiler used in @file{Makefile}, the prefix path where to install
-@code{screen}. Then run
-
-@center @code{make}
-
-If @code{make} fails to produce one of the files @file{term.h}, @file{comm.h}
-or @file{tty.c}, then use @code{@var{filename.x}.dist} instead.
-For additional information about installation of @code{screen} refer to the
-file @file{INSTALLATION}, coming with this package.
-
-@node Concept Index, Command Index, Installation, Top
+@c ----------------------------------------------------------------
+@node Concept Index
 @unnumbered Concept Index
 
 @printindex cp
 
-@node Command Index, Keystroke Index, Concept Index, Top
+@node Command Index
 @unnumbered Command Index
 
 This is a list of all the commands supported by @code{screen}.
 
 @printindex fn
 
-@node Keystroke Index,  , Command Index, Top
+@node Keystroke Index
 @unnumbered Keystroke Index
 
 This is a list of the default key bindings.
 
-The leading escape character (@pxref{Command Character}) has been omitted
-from the key sequences, since it is the same for all bindings.
+The leading escape character (@pxref{Command Character}) has been
+omitted from the key sequences, since it is the same for all bindings.
 
 @printindex ky
 

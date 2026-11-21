@@ -452,7 +452,7 @@ char *DoSu(struct acluser **up, char *name, char *pw1, char *pw2)
 	}
 
 	openlog("screen", LOG_PID, LOG_AUTHPRIV);
-	syslog(LOG_NOTICE, "%s: \"su %s\" %s for \"%s\"", SocketPath, name, sorry ? "failed" : "succeded", (*up)->u_name);
+	syslog(LOG_NOTICE, "%s: \"su %s\" %s for \"%s\"", SocketPath, name, sorry ? "failed" : "succeeded", (*up)->u_name);
 	closelog();
 
 	if (sorry)

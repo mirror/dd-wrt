@@ -497,7 +497,8 @@ void WriteString(Window *win, char *buf, size_t len)
 					}
 					win->w_rend.font = 0;
 				}
-				if (win->w_encoding == UTF8 && c >= 0x0300 && utf8_iscomb(c)) {
+				if (win->w_encoding == UTF8 && c >= 0x0300 && utf8_iscomb(c) &&
+				    (!display || D_encoding != UTF8)) {
 					int ox, oy;
 					struct mchar omc;
 

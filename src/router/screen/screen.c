@@ -774,7 +774,7 @@ int main(int argc, char **argv)
 			/* In case the pts device exists in another namespace we directly operate
 			 * on the symbolic link itself. However, this means that we need to keep
 			 * the fd open since we have no direct way of identifying the associated
-			 * pts device accross namespaces. This is ok though since keeping fds open
+			 * pts device across namespaces. This is ok though since keeping fds open
 			 * is done in the codebase already.
 			 */
 			if (attach_tty_is_in_new_ns)
@@ -852,10 +852,10 @@ int main(int argc, char **argv)
 					Panic(0, "Directory '%s' must have mode %03o.", SocketDir, n);
 			}
 			sprintf(SocketPath, "%s/S-%s", SocketDir, LoginName);
-			if (access(SocketPath, F_OK)) {
-				if (mkdir(SocketPath, 0700) == -1 && errno != EEXIST)
-					Panic(errno, "Cannot make directory '%s'", SocketPath);
-				(void)chown(SocketPath, real_uid, real_gid);
+			if (mkdir(SocketPath, 0700) == 0) {
+				(void)lchown(SocketPath, real_uid, real_gid);
+			} else if (errno != EEXIST) {
+				Panic(errno, "Cannot make directory '%s'", SocketPath);
 			}
 		}
 #endif

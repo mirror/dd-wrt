@@ -16,7 +16,7 @@
 		'-dmS:Start as daemon: Screen session in detached mode.' \
 		'-D:Detach and logout remote (with -r: reattach here).' \
 		'-e:Change command characters.' \
-		'-f-:Flow control on, -fn = off, -fa = auto.:((n\:Flow\ conrol\ off a\:Flow\ conrol\ auto))' \
+		'-f-:Flow control on, -fn = off, -fa = auto.:((n\:Flow\ control\ off a\:Flow\ control\ auto))' \
 		'-h:Set the size of the scrollback history buffer.' \
 		'-i[Interrupt output sooner when flow control is on.]' \
 		'-l[Login mode on (update /var/run/utmp), -ln = off.]' \

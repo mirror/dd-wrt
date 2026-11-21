@@ -344,7 +344,7 @@ static int rem(int x1, int y1, int x2, int y2, int redisplay, char *pt, int yend
 					*pt++ = ' ';
 				l++;
 				break;
-			case 3:	/* seperate by comma, for csh junkies */
+			case 3:	/* separate by comma, for csh junkies */
 				if (pt)
 					*pt++ = ',';
 				l++;
