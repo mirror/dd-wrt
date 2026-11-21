@@ -247,6 +247,12 @@
 				compatible = "linux,ubi";
 				reg = <0x00000000 0x08000000>;
 				label = "ubi";
+
+				volumes {
+					ubi_factory: ubi-volume-factory {
+						volname = "Factory";
+					};
+				};
 			};
 		};
 	};
