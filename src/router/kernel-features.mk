@@ -942,6 +942,7 @@ define kernelfeatures
 		echo "# CONFIG_BTRFS_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BTRFS_ASSERT is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BTRFS_FSREF_VERIFY is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BTRFS_FS_REF_VERIFY is not set" >> $(LINUXDIR)/.config; \
 	else \
 		sed -i 's/CONFIG_BTRFS_FS=m/\# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
 	fi
@@ -952,6 +953,11 @@ define kernelfeatures
 		echo "# CONFIG_XFS_RT is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_XFS_WARN is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_XFS_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_XFS_SUPPORT_V4 is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_XFS_SUPPORT_ASCII_CI is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_XFS_ONLINE_SCRUB=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_XFS_ONLINE_SCRUB_STATS=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_XFS_ONLINE_REPAIR=y" >> $(LINUXDIR)/.config; \
 	else \
 		sed -i 's/CONFIG_XFS_FS=m/\# CONFIG_XFS_FS is not set/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_USER_NS is not set" >> $(LINUXDIR)/.config; \
@@ -1061,9 +1067,11 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_MD is not set/CONFIG_MD=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_RAID6_PQ is not set/CONFIG_RAID6_PQ=y/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_MD=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_RAID6_PQ_BENCHMARK=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_BLK_DEV_MD=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_MD_AUTODETECT=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_MD_LINEAR=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_MD_BITMAP_FILE is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_MD_RAID0=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_MD_RAID1=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_MD_RAID10=m" >> $(LINUXDIR)/.config; \
@@ -1072,6 +1080,7 @@ define kernelfeatures
 		echo "CONFIG_MD_FAULTY=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_MD_CLUSTER=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_BCACHE=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_CLOSURES is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BCACHE_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BCACHE_ASYNC_REGISTRATION is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BCACHE_CLOSURES_DEBUG is not set" >> $(LINUXDIR)/.config; \
