@@ -282,8 +282,6 @@ out_err:
 	return err;
 }
 
-int add_mtd_partitions(struct mtd_info *, const struct mtd_partition *, int);
-
 /**
  * Create read-only MTD partition for rootfilesystem.
  * @return
@@ -312,19 +310,19 @@ static int create_rootfs_partition(struct mtd_info *mtd,
 	if (!part)
 		return 0;
 
-			    while((offset + 65536) < mtd->size)
-			    {
-			    int retlen;
-			    mtd_read(mtd,offset,4, &retlen, (u_char *)&buf);
-			    if (SQUASHFS_MAGIC == le32_to_cpu(buf) || SQUASHFS_MAGIC_SWAP == le32_to_cpu(buf))
-				    {
-				    	printk(KERN_INFO "\nfound squashfs at %X\n",offset);
-				    	mtd_add_partition(mtd, "rootfs", offset,  mtd->size - offset);
-					break;
-				    } 
-			    offset+= 65536;
-			    }
-//	mtd_device_register(mtd, part, 1);
+	while ((offset + 65536) < mtd->size) {
+		int retlen;
+		mtd_read(mtd, offset, 4, &retlen, (u_char *)&buf);
+		if (SQUASHFS_MAGIC == le32_to_cpu(buf) ||
+		    SQUASHFS_MAGIC_SWAP == le32_to_cpu(buf)) {
+			printk(KERN_INFO "\nfound squashfs at %X\n", offset);
+			mtd_add_partition(mtd, "rootfs", offset,
+					  mtd->size - offset);
+			break;
+		}
+		offset += 65536;
+	}
+	//	mtd_device_register(mtd, part, 1);
 
 	return 0;
 }
