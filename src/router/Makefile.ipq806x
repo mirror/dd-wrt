@@ -173,6 +173,7 @@ endif
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-TEW827-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-G10-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-EA8500-uImage;
+	-cp $(LINUXDIR)/arch/arm/boot/dts/qcom/*.dtb $(LINUXDIR)/arch/arm/boot/dts
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7500.dtb >> $(ARCH)-uclibc/ipq806x-R7500-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7500v2.dtb >> $(ARCH)-uclibc/ipq806x-R7500v2-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8065-r7800.dtb >> $(ARCH)-uclibc/ipq806x-R7800-uImage;
@@ -243,20 +244,21 @@ endif
 
 its:
 ifeq ($(CONFIG_ANTAIRA),y)
-	-./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-ars7235-dvk-c2.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+	-./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-ars7235-dvk-c2.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v $(KERNELRELEASE)
 else
-	-./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-habanero-dvk-c2.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+	-./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-habanero-dvk-c2.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v $(KERNELRELEASE)
 endif
 	gzip -f -9n -c $(LINUXDIR)/arch/arm/boot/Image > $(ARCH)-uclibc/Image.gz
 	-./tools/r7500/mkimage -f $(ARCH)-uclibc/habanero.itb.its $(ARCH)-uclibc/habanero.itb.new
 
-	cat $(LINUXDIR)/arch/arm/boot/Image | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > $(ARCH)-uclibc/Image.lzma
+#	cat $(LINUXDIR)/arch/arm/boot/zImage | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > $(ARCH)-uclibc/Image.lzma
+	cat $(LINUXDIR)/arch/arm/boot/zImage > $(ARCH)-uclibc/Image.lzma
 	# padded kernel image size
 	@SIZE=`wc -c $(ARCH)-uclibc/Image.lzma | awk '{print $$1}'`; \
 		PAD=`expr 64 - $${SIZE} % 64` ; \
 		dd if=/dev/zero count=1 bs=$${PAD} 2> /dev/null | tr \\000 \\377 >> $(ARCH)-uclibc/Image.lzma
 
-	./tools/ipq40xx/mkits.sh -D qcom-ipq40xx-ap.dkxx -o $(TOP)/$(ARCH)-uclibc/fit-qcom-ipq40xx-ap.dkxx.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4018-rt-ac58u.dtb -C lzma -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+	./tools/ipq40xx/mkits.sh -D qcom-ipq40xx-ap.dkxx -o $(TOP)/$(ARCH)-uclibc/fit-qcom-ipq40xx-ap.dkxx.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4018-rt-ac58u.dtb -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v $(KERNELRELEASE)
 	./tools/asus/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-qcom-ipq40xx-ap.dkxx.its $(TOP)/$(ARCH)-uclibc/asus-ac58u.img
 	( dd if=$(ARCH)-uclibc/asus-ac58u.img of=$(ARCH)-uclibc/asus-ac58u.img.new bs=64k conv=sync; )
 	cp -f $(ARCH)-uclibc/asus-ac58u.img.new $(ARCH)-uclibc/asus-ac58u.img
@@ -275,7 +277,7 @@ endif
 		RFSOFFSET=`expr 64 + $${KSIZE} + $${PAD2}` ; \
 		echo "PAD2: $${PAD2} RFSOFFSET: $${RFSOFFSET}" ; \
 	tools/asus/mkimage -A arm -O linux -T kernel -C lzma -a 0x80208000 -e 0x80208000 -r $${RFSOFFSET} \
-			-n RT-AC58U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
+			-n RT-AC58U -V "$(KERNELRELEASE)" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
 			-d $(TOP)/$(ARCH)-uclibc/asus-ac58u.img $(TOP)/$(ARCH)-uclibc/asus-ac58u.trx
 
 	./tools/ubi/ubinize-image-new.sh --rootfs $(ARCH)-uclibc/root.squashfs.new \
@@ -286,7 +288,7 @@ endif
 		    -o $(TOP)/$(ARCH)-uclibc/fit-linksys_ea8300.its \
 		    -k $(TOP)/$(ARCH)-uclibc/uImage \
 		    -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-ea8300.dtb \
-		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v $(KERNELRELEASE)
 
 	tools/r7500/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-linksys_ea8300.its $(TOP)/$(ARCH)-uclibc/linksys_ea8300.itb
 	dd if=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.itb of=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin bs=5120k conv=sync
@@ -296,7 +298,7 @@ endif
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin
 
 
-#	-./tools/ipq40xx/mkits.sh -D asus_ac56u -o $(ARCH)-uclibc/ac58u.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4018-asus-ac58u.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+#	-./tools/ipq40xx/mkits.sh -D asus_ac56u -o $(ARCH)-uclibc/ac58u.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4018-asus-ac58u.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v $(KERNELRELEASE)
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
@@ -368,6 +370,7 @@ endif
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-TEW827-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-G10-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-EA8500-uImage;
+	-cp $(LINUXDIR)/arch/arm/boot/dts/*dtb $(LINUXDIR)/arch/arm/boot/
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7500.dtb >> $(ARCH)-uclibc/ipq806x-R7500-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7500v2.dtb >> $(ARCH)-uclibc/ipq806x-R7500v2-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8065-r7800.dtb >> $(ARCH)-uclibc/ipq806x-R7800-uImage;
@@ -507,9 +510,9 @@ endif
 	
 	cp $(ARCH)-uclibc/ddwrt-ipq806x-EA8500-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-ea8500-squashfs-nand-factory.ubi
 ifeq ($(CONFIG_ANTAIRA),y)
-	-./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-ars7235-dvk-c2.dtb -C lzma -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+	-./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-ars7235-dvk-c2.dtb -C lzma -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v $(KERNELRELEASE)
 else
-	-./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-habanero-dvk-c2.dtb -C lzma -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+	-./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-habanero-dvk-c2.dtb -C lzma -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v $(KERNELRELEASE)
 endif
 	cat $(LINUXDIR)/arch/arm/boot/Image | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > $(ARCH)-uclibc/Image.lzma
 	gzip -f -9n -c $(LINUXDIR)/arch/arm/boot/Image > $(ARCH)-uclibc/Image.gz
@@ -532,13 +535,14 @@ endif
 	tools/cvimg/cvimg csys $(ARCH)-uclibc/ddwrt-ipq806x-G10-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-g10.img 0x1200000 0x70000 RN67
 
 ifeq ($(CONFIG_HABANERO),y)
-	cat $(LINUXDIR)/arch/arm/boot/Image | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > $(ARCH)-uclibc/Image.lzma
+#	cat $(LINUXDIR)/arch/arm/boot/Image | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > $(ARCH)-uclibc/Image.lzma
+	cat $(LINUXDIR)/arch/arm/boot/zImage > $(ARCH)-uclibc/Image.lzma
 	# padded kernel image size
 	@SIZE=`wc -c $(ARCH)-uclibc/Image.lzma | awk '{print $$1}'`; \
 		PAD=`expr 64 - $${SIZE} % 64` ; \
 		dd if=/dev/zero count=1 bs=$${PAD} 2> /dev/null | tr \\000 \\377 >> $(ARCH)-uclibc/Image.lzma
 
-	./tools/ipq40xx/mkits.sh -D qcom-ipq40xx-ap.dkxx -o $(TOP)/$(ARCH)-uclibc/fit-qcom-ipq40xx-ap.dkxx.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4018-rt-ac58u.dtb -C lzma -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+	./tools/ipq40xx/mkits.sh -D qcom-ipq40xx-ap.dkxx -o $(TOP)/$(ARCH)-uclibc/fit-qcom-ipq40xx-ap.dkxx.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4018-rt-ac58u.dtb -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v $(KERNELRELEASE)
 	./tools/asus/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-qcom-ipq40xx-ap.dkxx.its $(TOP)/$(ARCH)-uclibc/asus-ac58u.img
 	( dd if=$(ARCH)-uclibc/asus-ac58u.img of=$(ARCH)-uclibc/asus-ac58u.img.new bs=64k conv=sync; )
 	cp -f $(ARCH)-uclibc/asus-ac58u.img.new $(ARCH)-uclibc/asus-ac58u.img
@@ -556,8 +560,8 @@ ifeq ($(CONFIG_HABANERO),y)
 		PAD2=`expr $${ISIZE} - $${KSIZE} - $${RSIZE}` ; \
 		RFSOFFSET=`expr 64 + $${KSIZE} + $${PAD2}` ; \
 		echo "PAD2: $${PAD2} RFSOFFSET: $${RFSOFFSET}" ; \
-	tools/asus/mkimage -A arm -O linux -T kernel -C lzma -a 0x80208000 -e 0x80208000 -r $${RFSOFFSET} \
-			-n RT-AC58U -V "4.9" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
+	tools/asus/mkimage -A arm -O linux -T kernel -C none -a 0x80208000 -e 0x80208000 -r $${RFSOFFSET} \
+			-n RT-AC58U -V "$(KERNELRELEASE)" "0.4" "382" "52243-g06ac406" "0" "0" "0" "0" "0" "0" \
 			-d $(TOP)/$(ARCH)-uclibc/asus-ac58u.img $(TOP)/$(ARCH)-uclibc/asus-ac58u.trx
 
 	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/ac58.bin $(ARCH)-uclibc/asus-ac58u.img
@@ -566,7 +570,7 @@ ifeq ($(CONFIG_HABANERO),y)
 		    -o $(TOP)/$(ARCH)-uclibc/fit-linksys_ea8300.its \
 		    -k $(TOP)/$(ARCH)-uclibc/uImage \
 		    -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-ea8300.dtb \
-		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v $(KERNELRELEASE)
 
 	tools/r7500/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-linksys_ea8300.its $(TOP)/$(ARCH)-uclibc/linksys_ea8300.itb
 	dd if=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.itb of=$(TOP)/$(ARCH)-uclibc/linksys_ea8300.bin bs=5120k conv=sync
@@ -582,7 +586,7 @@ ifeq ($(CONFIG_HABANERO),y)
 		    -o $(TOP)/$(ARCH)-uclibc/fit-linksys_mr8300.its \
 		    -k $(TOP)/$(ARCH)-uclibc/uImage \
 		    -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-mr8300.dtb \
-		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v $(KERNELRELEASE)
 
 	tools/r7500/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-linksys_mr8300.its $(TOP)/$(ARCH)-uclibc/linksys_mr8300.itb
 	dd if=$(TOP)/$(ARCH)-uclibc/linksys_mr8300.itb of=$(TOP)/$(ARCH)-uclibc/linksys_mr8300.bin bs=5120k conv=sync
@@ -598,7 +602,7 @@ ifeq ($(CONFIG_HABANERO),y)
 		    -o $(TOP)/$(ARCH)-uclibc/fit-linksys_mr9000.its \
 		    -k $(TOP)/$(ARCH)-uclibc/uImage \
 		    -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-mr9000.dtb \
-		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+		    -C none -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v $(KERNELRELEASE)
 
 	tools/r7500/mkimage -f $(TOP)/$(ARCH)-uclibc/fit-linksys_mr9000.its $(TOP)/$(ARCH)-uclibc/linksys_mr9000.itb
 	dd if=$(TOP)/$(ARCH)-uclibc/linksys_mr9000.itb of=$(TOP)/$(ARCH)-uclibc/linksys_mr9000.bin bs=5120k conv=sync
