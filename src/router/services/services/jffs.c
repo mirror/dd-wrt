@@ -81,6 +81,7 @@ void start_jffs2(void)
 		f2fspart = "rootfs_1"; //unused anyway
 		break;
 	case ROUTER_ASUS_AC58U:
+		rwpart = "jffs2";
 		classic = 1;
 		break;
 	case ROUTER_ASUS_AX89X:
