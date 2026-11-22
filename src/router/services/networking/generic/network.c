@@ -838,14 +838,14 @@ void start_lan(void)
 	case ROUTER_LINKSYS_EA8300:
 	case ROUTER_HABANERO:
 		if (getSTA() || getWET() || CANBRIDGE()) {
-			nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1");
+			nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1");
 			PORTSETUPWAN("");
 		} else {
-			nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1");
-			PORTSETUPWAN("eth1");
+			nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1");
+			PORTSETUPWAN("wan");
 		}
-		nvram_set("wan_default", "eth1");
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		nvram_set("wan_default", "wan");
+		strncpy(ifr.ifr_name, "lan1", IFNAMSIZ);
 		break;
 	default:
 		if (getSTA() || getWET() || CANBRIDGE()) {
