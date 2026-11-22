@@ -29,6 +29,14 @@
 #include <services.h>
 #include <sys/stat.h>
 
+void start_gencert(void)
+{
+	if (nvram_invmatchi("https_enable", 0)) {
+		mkdir("/tmp/cert", 0700);
+		eval("gencert.sh", "-d", "/tmp/cert");
+	}
+}
+
 void start_httpd(void)
 {
 	int ret = 0;
@@ -37,9 +45,6 @@ void start_httpd(void)
 	char *lan_port = NULL;
 	char *ssl_lan_port = NULL;
 	stop_httpd();
-	mkdir("/tmp/cert", 0700);
-	system("rm -f /tmp/cert/*");
-	eval("gencert.sh", "-d", "/tmp/cert");
 	update_timezone();
 	chdir("/www");
 	if (nvram_invmatchi("http_enable", 0)) {
@@ -50,6 +55,8 @@ void start_httpd(void)
 	}
 #ifdef HAVE_HTTPS
 	if (nvram_invmatchi("https_enable", 0)) {
+		start_gencert();
+
 		do_ssl = 1;
 		if (nvram_invmatch("https_lanport", "")) {
 			ssl_lan_port = nvram_safe_get("https_lanport");
