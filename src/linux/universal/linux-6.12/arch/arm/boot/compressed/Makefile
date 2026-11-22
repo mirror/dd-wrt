@@ -15,7 +15,7 @@ OBJS	+= debug.o
 AFLAGS_head.o += -DDEBUG
 endif
 
-# string library code (-Os is enforced to keep it much smaller)
+# string library code (-Os is enf[5~orced to keep it much smaller)
 OBJS		+= string.o
 CFLAGS_string.o	:= -Os
 
@@ -96,7 +96,7 @@ KBUILD_CFLAGS += -DDISABLE_BRANCH_PROFILING
 
 ccflags-y := -fpic $(call cc-option,-mno-single-pic-base,) -fno-builtin \
 	     -I$(srctree)/scripts/dtc/libfdt -fno-stack-protector \
-	     -I$(obj) $(DISABLE_ARM_SSP_PER_TASK_PLUGIN) -O3
+	     -I$(obj) $(DISABLE_ARM_SSP_PER_TASK_PLUGIN)
 ccflags-remove-$(CONFIG_FUNCTION_TRACER) += -pg
 asflags-y := -DZIMAGE
 
