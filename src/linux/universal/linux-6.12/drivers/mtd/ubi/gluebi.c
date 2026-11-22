@@ -25,6 +25,9 @@
 #include <linux/mutex.h>
 #include <linux/mtd/ubi.h>
 #include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
+#include <linux/mtd/blktrans.h>
+#include <linux/magic.h>
 #include "ubi-media.h"
 
 #define err_msg(fmt, ...)                                   \
@@ -52,6 +55,19 @@ struct gluebi_device {
 /* List of all gluebi devices */
 static LIST_HEAD(gluebi_devices);
 static DEFINE_MUTEX(devices_mutex);
+
+/* additional mtd partition */
+static struct mtd_partition rootfs = {
+	.name = "rootfs",
+	.size = 0,
+	.offset = 0,
+	.mask_flags = MTD_WRITEABLE,
+}, rootfs2 = {
+	.name = "rootfs2",
+	.size = 0,
+	.offset = 0,
+	.mask_flags = MTD_WRITEABLE,
+};
 
 /**
  * find_gluebi_nolock - find a gluebi device.
@@ -266,6 +282,53 @@ out_err:
 	return err;
 }
 
+int add_mtd_partitions(struct mtd_info *, const struct mtd_partition *, int);
+
+/**
+ * Create read-only MTD partition for rootfilesystem.
+ * @return
+ * 	0:	success or nothing happen
+ *     -1:	invalid parameter
+ *     -2:	read image header failed.
+ */
+static int create_rootfs_partition(struct mtd_info *mtd,
+				   struct ubi_device_info *di,
+				   struct ubi_volume_info *vi)
+{
+	struct mtd_partition *part = NULL;
+	int i, r;
+
+	size_t retlen;
+	size_t offset = 0;
+	unsigned int buf;
+	if (!mtd || !di || !vi)
+		return -1;
+
+	if (!strcmp(vi->name, "linux"))
+		part = &rootfs;
+	if (!strcmp(vi->name, "linux2"))
+		part = &rootfs2;
+
+	if (!part)
+		return 0;
+
+			    while((offset + 65536) < mtd->size)
+			    {
+			    int retlen;
+			    mtd_read(mtd,offset,4, &retlen, (u_char *)&buf);
+			    if (SQUASHFS_MAGIC == le32_to_cpu(buf) || SQUASHFS_MAGIC_SWAP == le32_to_cpu(buf))
+				    {
+				    	printk(KERN_INFO "\nfound squashfs at %X\n",offset);
+				    	mtd_add_partition(mtd, "rootfs", offset,  mtd->size - offset);
+					break;
+				    } 
+			    offset+= 65536;
+			    }
+//	mtd_device_register(mtd, part, 1);
+
+	return 0;
+}
+
 /**
  * gluebi_create - create a gluebi device for an UBI volume.
  * @di: UBI device description object
@@ -280,12 +343,14 @@ static int gluebi_create(struct ubi_device_info *di,
 {
 	struct gluebi_device *gluebi, *g;
 	struct mtd_info *mtd;
+	struct mtd_partition *part = NULL;
 
 	gluebi = kzalloc(sizeof(struct gluebi_device), GFP_KERNEL);
 	if (!gluebi)
 		return -ENOMEM;
 
 	mtd = &gluebi->mtd;
+	printk(KERN_INFO "create %s\n", vi->name);
 	mtd->name = kmemdup(vi->name, vi->name_len + 1, GFP_KERNEL);
 	if (!mtd->name) {
 		kfree(gluebi);
@@ -330,10 +395,16 @@ static int gluebi_create(struct ubi_device_info *di,
 		kfree(gluebi);
 		return -ENFILE;
 	}
+	mtd->_get_device(mtd);
+	create_rootfs_partition(mtd, di, vi);
+//	mtd->_put_device(mtd);
+
+//	register_mtd_blktrans_devs();
 
 	mutex_lock(&devices_mutex);
 	list_add_tail(&gluebi->list, &gluebi_devices);
 	mutex_unlock(&devices_mutex);
+
 	return 0;
 }
 
