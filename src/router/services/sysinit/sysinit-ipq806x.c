@@ -844,11 +844,11 @@ void start_sysinit(void)
 		eval("ledtool", "20", "0");
 
 #endif /*HAVE_ANTAIRA */
-		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4");
+		/*		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 5");
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
-		eval("ifconfig", "eth1", "up");
+		eval("ifconfig", "eth1", "up");*/
 
 		break;
 	case ROUTER_ASROCK_G10:
@@ -875,27 +875,71 @@ void start_sysinit(void)
 		break;
 	}
 	switch (board) {
-	case ROUTER_ASUS_AC58U:
-		nvram_seti("sw_cpuport", 0);
-		nvram_seti("sw_wan", 5);
-		nvram_seti("sw_lan1", 4);
-		nvram_seti("sw_lan2", 3);
-		nvram_seti("sw_lan3", 2);
-		nvram_seti("sw_lan4", 1);
+	case ROUTER_ASUS_AC58U: {
+		char macaddr[32];
+		if (get_hwaddr("eth0", macaddr)) {
+			nvram_set("et0macaddr", macaddr);
+			nvram_set("et0macaddr_safe", macaddr);
+			set_hwaddr("wan", macaddr);
+			set_hwaddr("lan1", macaddr);
+			set_hwaddr("lan2", macaddr);
+			set_hwaddr("lan3", macaddr);
+			set_hwaddr("lan4", macaddr);
+		}
+
+		nvram_unset("sw_cpuport");
+		nvram_unset("sw_wancpuport");
+		nvram_unset("sw_lancpuport");
+		nvram_unset("sw_wan");
+		nvram_unset("sw_lan1");
+		nvram_unset("sw_lan2");
+		nvram_unset("sw_lan3");
+		nvram_unset("sw_lan4");
 		set_named_smp_affinity("eth0", 0, 1);
 		set_named_smp_affinity("eth1", 1, 1);
-		break;
-	case ROUTER_LINKSYS_EA8300:
-		nvram_seti("sw_cpuport", 0);
-		nvram_seti("sw_wan", 5);
-		nvram_seti("sw_lan1", 4);
-		nvram_seti("sw_lan2", 3);
-		nvram_seti("sw_lan3", 2);
-		nvram_seti("sw_lan4", 1);
+	} break;
+	case ROUTER_LINKSYS_EA8300: {
+		char macaddr[32];
+		if (get_hwaddr("eth0", macaddr)) {
+			nvram_set("et0macaddr", macaddr);
+			nvram_set("et0macaddr_safe", macaddr);
+			set_hwaddr("wan", macaddr);
+			set_hwaddr("lan1", macaddr);
+			set_hwaddr("lan2", macaddr);
+			set_hwaddr("lan3", macaddr);
+			set_hwaddr("lan4", macaddr);
+		}
+		nvram_unset("sw_cpuport");
+		nvram_unset("sw_wancpuport");
+		nvram_unset("sw_lancpuport");
+		nvram_unset("sw_wan");
+		nvram_unset("sw_lan1");
+		nvram_unset("sw_lan2");
+		nvram_unset("sw_lan3");
+		nvram_unset("sw_lan4");
 		set_named_smp_affinity("eth0", 0, 1);
 		set_named_smp_affinity("eth1", 1, 1);
-		break;
-	case ROUTER_HABANERO:
+	} break;
+	case ROUTER_HABANERO: {
+		char macaddr[32];
+		if (get_hwaddr("eth0", macaddr)) {
+			nvram_set("et0macaddr", macaddr);
+			nvram_set("et0macaddr_safe", macaddr);
+			set_hwaddr("wan", macaddr);
+			set_hwaddr("lan1", macaddr);
+			set_hwaddr("lan2", macaddr);
+			set_hwaddr("lan3", macaddr);
+			set_hwaddr("lan4", macaddr);
+		}
+		nvram_unset("sw_cpuport");
+		nvram_unset("sw_wancpuport");
+		nvram_unset("sw_lancpuport");
+		nvram_unset("sw_wan");
+		nvram_unset("sw_lan1");
+		nvram_unset("sw_lan2");
+		nvram_unset("sw_lan3");
+		nvram_unset("sw_lan4");
+
 #ifdef HAVE_ANTAIRA
 		eval("insmod", "i2c-gpio-custom", "bus2=2,11,10");
 		eval("insmod", "rtc-pcf8523");
@@ -908,7 +952,7 @@ void start_sysinit(void)
 #endif /*HAVE_ANTAIRA */
 		set_named_smp_affinity("eth0", 0, 1);
 		set_named_smp_affinity("eth1", 1, 1);
-		break;
+	} break;
 		/* routers with reverse port order */
 	case ROUTER_NETGEAR_R7800:
 	case ROUTER_NETGEAR_R7500V2:
@@ -1006,6 +1050,14 @@ void start_sysinit(void)
 	case ROUTER_HABANERO:
 	case ROUTER_ASUS_AC58U:
 	case ROUTER_LINKSYS_EA8300:
+		if (nvram_geti("nvram_ver") < 13) {
+			nvram_set("nvram_ver", "13");
+			nvram_set("wan_ifname2", "wan");
+			nvram_set("wan_ifname", "wan");
+			nvram_set("wan_ifnames", "wan");
+			nvram_set("wan_default", "wan");
+			nvram_set("wan_iface", "wan");
+		}
 		break;
 	default:
 		if (nvram_geti("nvram_ver") < 12) {
