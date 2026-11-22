@@ -9,7 +9,7 @@
 
 / {
 	model = "8devices Habanero DVK";
-	compatible = "8dev,habanero-dvk";
+	compatible = "8dev,habanero-dvk", "8dev,habanero", "qcom,ipq4019";
 
 	aliases {
 		led-boot = &led_status;

@@ -8,7 +8,7 @@
 
 / {
 	model = "ASUS RT-AC58U";
-	compatible = "asus,rt-ac58u";
+	compatible = "asus,rt-ac58u", "qcom,ipq4019";
 
 	memory {
 		device_type = "memory";
