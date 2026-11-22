@@ -244,40 +244,9 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				compatible = "linux,ubi";
-				reg = <0x00000000 0x08000000>;
 				label = "ubi";
-
-				volumes {
-					ubi_factory: ubi-volume-factory {
-						volname = "Factory";
-					};
-				};
+				reg = <0x00000000 0x08000000>;
 			};
-		};
-	};
-};
-
-&ubi_factory {
-	nvmem-layout {
-		compatible = "fixed-layout";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		precal_factory_1000: precal@1000 {
-			reg = <0x1000 0x2f20>;
-		};
-
-		macaddr_factory_1006: macaddr@1006 {
-			reg = <0x1006 0x6>;
-		};
-
-		precal_factory_5000: precal@5000 {
-			reg = <0x5000 0x2f20>;
-		};
-
-		macaddr_factory_5006: macaddr@5006 {
-			reg = <0x5006 0x6>;
 		};
 	};
 };
@@ -321,9 +290,6 @@
 
 &gmac {
 	status = "okay";
-
-	nvmem-cells = <&macaddr_factory_5006>;
-	nvmem-cell-names = "mac-address";
 };
 
 &switch {
@@ -348,20 +314,14 @@
 
 &swport5 {
 	status = "okay";
-	nvmem-cells = <&macaddr_factory_1006>;
-	nvmem-cell-names = "mac-address";
 };
 
 &wifi0 {
 	status = "okay";
-	nvmem-cell-names = "pre-calibration";
-	nvmem-cells = <&precal_factory_1000>;
 	qcom,calibration-variant = "RT-AC58U";
 };
 
 &wifi1 {
 	status = "okay";
-	nvmem-cell-names = "pre-calibration";
-	nvmem-cells = <&precal_factory_5000>;
 	qcom,calibration-variant = "RT-AC58U";
 };
