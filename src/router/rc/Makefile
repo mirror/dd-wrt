@@ -1244,6 +1244,14 @@ ifeq ($(CONFIG_IPQ6018),y)
 	install ldd.sh $(INSTALLDIR)/usr/sbin
 	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
 endif
+ifeq ($(CONFIG_QCA4019),y)
+	install ldd.sh $(INSTALLDIR)/usr/sbin
+	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
+endif
+ifeq ($(CONFIG_HABANERO),y)
+	install ldd.sh $(INSTALLDIR)/usr/sbin
+	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
+endif
 ifeq ($(CONFIG_VENICE),y)
 	install ldd.sh $(INSTALLDIR)/usr/sbin
 	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
