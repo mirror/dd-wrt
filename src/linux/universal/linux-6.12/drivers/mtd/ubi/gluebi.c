@@ -348,7 +348,6 @@ static int gluebi_create(struct ubi_device_info *di,
 		return -ENOMEM;
 
 	mtd = &gluebi->mtd;
-	printk(KERN_INFO "create %s\n", vi->name);
 	mtd->name = kmemdup(vi->name, vi->name_len + 1, GFP_KERNEL);
 	if (!mtd->name) {
 		kfree(gluebi);
