@@ -48,33 +48,33 @@
 #include <linux/platform_device.h>
 
 struct i2c_gpio_platform_data {
-	unsigned int	sda_pin;
-	unsigned int	scl_pin;
-	int		udelay;
-	int		timeout;
-	unsigned int	sda_is_open_drain:1;
-	unsigned int	scl_is_open_drain:1;
-	unsigned int	scl_is_output_only:1;
+	unsigned int sda_pin;
+	unsigned int scl_pin;
+	int udelay;
+	int timeout;
+	unsigned int sda_is_open_drain : 1;
+	unsigned int scl_is_open_drain : 1;
+	unsigned int scl_is_output_only : 1;
 };
 
-#define DRV_NAME	"i2c-gpio-custom"
-#define DRV_DESC	"Custom GPIO-based I2C driver"
-#define DRV_VERSION	"0.1.1"
+#define DRV_NAME "i2c-gpio-custom"
+#define DRV_DESC "Custom GPIO-based I2C driver"
+#define DRV_VERSION "0.1.1"
 
-#define PFX		DRV_NAME ": "
+#define PFX DRV_NAME ": "
 
-#define BUS_PARAM_ID		0
-#define BUS_PARAM_SDA		1
-#define BUS_PARAM_SCL		2
-#define BUS_PARAM_UDELAY	3
-#define BUS_PARAM_TIMEOUT	4
-#define BUS_PARAM_SDA_OD	5
-#define BUS_PARAM_SCL_OD	6
-#define BUS_PARAM_SCL_OO	7
+#define BUS_PARAM_ID 0
+#define BUS_PARAM_SDA 1
+#define BUS_PARAM_SCL 2
+#define BUS_PARAM_UDELAY 3
+#define BUS_PARAM_TIMEOUT 4
+#define BUS_PARAM_SDA_OD 5
+#define BUS_PARAM_SCL_OD 6
+#define BUS_PARAM_SCL_OO 7
 
-#define BUS_PARAM_REQUIRED	3
-#define BUS_PARAM_COUNT		8
-#define BUS_COUNT_MAX		4
+#define BUS_PARAM_REQUIRED 3
+#define BUS_PARAM_COUNT 8
+#define BUS_COUNT_MAX 4
 
 static unsigned int bus0[BUS_PARAM_COUNT] __initdata;
 static unsigned int bus1[BUS_PARAM_COUNT] __initdata;
@@ -83,8 +83,7 @@ static unsigned int bus3[BUS_PARAM_COUNT] __initdata;
 
 static unsigned int bus_nump[BUS_COUNT_MAX] __initdata;
 
-#define BUS_PARM_DESC \
-	" config -> id,sda,scl[,udelay,timeout,sda_od,scl_od,scl_oo]"
+#define BUS_PARM_DESC " config -> id,sda,scl[,udelay,timeout,sda_od,scl_od,scl_oo]"
 
 module_param_array(bus0, uint, &bus_nump[0], 0);
 MODULE_PARM_DESC(bus0, "bus0" BUS_PARM_DESC);

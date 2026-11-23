@@ -28,7 +28,6 @@
  * gpio 215 0x03 0x08 Buzzer
 */
 
-
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
@@ -42,9 +41,10 @@
 #define GPIO_BASE 200
 #define GPIO_NUM 16
 
-#define LOG(form, ...) \
-	printk(KERN_INFO "["MODNAME"]" "%s:%d " form "\n", \
-			__func__, __LINE__, ##__VA_ARGS__)
+#define LOG(form, ...)                       \
+	printk(KERN_INFO "[" MODNAME "]"     \
+			 "%s:%d " form "\n", \
+	       __func__, __LINE__, ##__VA_ARGS__)
 
 static inline int gpiochip_add(struct gpio_chip *chip)
 {
@@ -61,28 +61,32 @@ static inline struct antaira_gpiochip *to_antaira_gpiochip(struct gpio_chip *gc)
 	return container_of(gc, struct antaira_gpiochip, chip);
 }
 
-static int antairagpio_get(struct gpio_chip *gc, unsigned offset){
+static int antairagpio_get(struct gpio_chip *gc, unsigned offset)
+{
 	struct antaira_gpiochip *antaira_dev = to_antaira_gpiochip(gc);
 	unsigned byte = offset / 4;
 	int bit = (offset % 4);
 	int cur = i2c_smbus_read_byte_data(antaira_dev->client, byte);
 
-	if(((cur) & (1<<(bit)))) return 1;
+	if (((cur) & (1 << (bit))))
+		return 1;
 	return 0;
 }
-static void antairagpio_set(struct gpio_chip *gc, unsigned offset, int value){
+static void antairagpio_set(struct gpio_chip *gc, unsigned offset, int value)
+{
 	struct antaira_gpiochip *antaira_dev = to_antaira_gpiochip(gc);
 	unsigned byte = offset / 4;
 	int bit = (offset % 4);
 	int cur = i2c_smbus_read_byte_data(antaira_dev->client, byte);
 	int new = cur;
 
-	if(value == 0)
-		((new) &= ~(1<<(bit)));
+	if (value == 0)
+		((new) &= ~(1 << (bit)));
 	else
-		((new) |=  (1<<(bit)));
+		((new) |= (1 << (bit)));
 
-	if(new == cur) return;
+	if (new == cur)
+		return;
 	i2c_smbus_write_byte_data(antaira_dev->client, byte, new);
 }
 
@@ -92,7 +96,7 @@ static int antairagpio_probe(struct i2c_client *client)
 	antaira_dev = devm_kzalloc(&client->dev, sizeof(*antaira_dev), GFP_KERNEL);
 	if (!antaira_dev)
 		return -ENOMEM;
-	
+
 	antaira_dev->chip.label = client->name;
 	antaira_dev->chip.base = GPIO_BASE;
 	antaira_dev->chip.parent = &client->dev;
@@ -120,10 +124,7 @@ static void antairagpio_remove(struct i2c_client *client)
 	return;
 }
 
-static const struct i2c_device_id antairagpio_id[] = {
-	{ MODNAME , 0 },
-	{ }
-};
+static const struct i2c_device_id antairagpio_id[] = { { MODNAME, 0 }, {} };
 MODULE_DEVICE_TABLE(i2c, antairagpio_id);
 
 static struct i2c_driver antairagpio_driver = {
@@ -149,4 +150,4 @@ module_exit(antairagpio_exit);
 
 MODULE_AUTHOR("Björn Geschka");
 MODULE_LICENSE("GPL v2");
-MODULE_DESCRIPTION(MODNAME" i2c GPIO-Expander");
+MODULE_DESCRIPTION(MODNAME " i2c GPIO-Expander");
