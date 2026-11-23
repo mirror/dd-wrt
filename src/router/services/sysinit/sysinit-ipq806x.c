@@ -817,8 +817,6 @@ void start_sysinit(void)
 	switch (board) {
 	case ROUTER_ASUS_AC58U:
 		nvram_default_get("clkfreq", "716");
-		eval("swconfig", "dev", "switch0", "set", "reset", "1");
-		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 		sysprintf("echo netdev > /sys/devices/platform/leds/leds/blue:wan/trigger");
 		sysprintf("echo wan > /sys/devices/platform/leds/leds/blue:wan/device_name");
 
@@ -826,7 +824,7 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /sys/devices/platform/leds/leds/blue:wan/tx");
 		sysprintf("echo 1 > /sys/devices/platform/leds/leds/blue:wan/link");
 
-
+	    
 //		sysprintf("echo netdev > /sys/devices/platform/leds/leds/blue:lan/trigger");
 //		sysprintf("echo eth0 > /sys/devices/platform/leds/leds/blue:lan/device_name");
 //		sysprintf("echo \"link tx rx\" > /sys/devices/platform/leds/leds/blue:lan/mode");
@@ -834,8 +832,6 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_EA8300:
 		nvram_default_get("clkfreq", "716");
-		eval("swconfig", "dev", "switch0", "set", "reset", "1");
-		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 		break;
 	case ROUTER_HABANERO:
 		nvram_default_get("clkfreq", "716");
