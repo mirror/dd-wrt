@@ -93,6 +93,21 @@ mount -t sysfs sys ${R}sys
 #mount -o remount,ro /usr/local
 #umount /usr/local
 cp -av /dev ${R}/
+#copy ssh keys 
+cp -v /tmp/.rc_shutdown ${R}/tmp
+cp -av /tmp/root ${R}/tmp
+#move auto flash binary to new tmp
+mv -f /tmp/firmware.bin ${R}/tmp
+#copy https certs
+cp -av /tmp/cert ${R}/tmp
+cp -av /var ${R}/
+cp -av /tmp/var ${R}/tmp
+cp /tmp/fw_env.config ${R}/tmp
+#mount the usual suspects required for terminal, usb, and debugging
+mount -t devpts devpts ${R}/dev/pts
+mount -t usbfs usbfs ${R}/proc/bus/usb
+mount -t debugfs debugfs ${R}/sys/kernel/debug
+
 service samba3 stop
 service nfs stop
 service snmp stop
