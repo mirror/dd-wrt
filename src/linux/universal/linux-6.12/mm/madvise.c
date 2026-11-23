@@ -140,6 +140,7 @@ static int madvise_update_vma(struct vm_area_struct *vma,
 			      struct anon_vma_name *anon_name)
 {
 	struct mm_struct *mm = vma->vm_mm;
+	bool set_new_anon_name = new_flags == vma->vm_flags;
 	int error;
 	VMA_ITERATOR(vmi, mm, start);
 
@@ -157,6 +158,9 @@ static int madvise_update_vma(struct vm_area_struct *vma,
 
 	/* vm_flags is protected by the mmap_lock held in write mode. */
 	vma_start_write(vma);
+	if (set_new_anon_name)
+		return replace_anon_vma_name(vma, anon_name);
+
 	vm_flags_reset(vma, new_flags);
 	/*
 	 * If the vma become good for khugepaged to scan,
