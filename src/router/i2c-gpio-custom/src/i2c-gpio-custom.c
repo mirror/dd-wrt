@@ -47,7 +47,15 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 
-#include <linux/i2c-gpio.h>
+struct i2c_gpio_platform_data {
+	unsigned int	sda_pin;
+	unsigned int	scl_pin;
+	int		udelay;
+	int		timeout;
+	unsigned int	sda_is_open_drain:1;
+	unsigned int	scl_is_open_drain:1;
+	unsigned int	scl_is_output_only:1;
+};
 
 #define DRV_NAME	"i2c-gpio-custom"
 #define DRV_DESC	"Custom GPIO-based I2C driver"

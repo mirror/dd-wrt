@@ -1,3 +1,6 @@
+PWD:=$(shell pwd)
+
+
 EXTRA_KCONFIG:= \
 	CONFIG_I2C_GPIO_CUSTOM=m
 
@@ -8,6 +11,7 @@ EXTRA_CFLAGS:= \
 MAKE_OPTS:= \
 	CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" \
 	O=$(LINUXDIR) \
+	M=$(PWD)/src \
 	SUBDIRS="$(TOP)/i2c-gpio-custom/src" \
 	EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
 	$(EXTRA_KCONFIG)
