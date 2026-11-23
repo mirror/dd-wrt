@@ -2,7 +2,8 @@ PWD:=$(shell pwd)
 
 
 EXTRA_KCONFIG:= \
-	CONFIG_I2C_GPIO_CUSTOM=m
+	CONFIG_I2C_GPIO_CUSTOM=m \
+	CONFIG_I2C_GPIO_ANTAIRA=m
 
 EXTRA_CFLAGS:= \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(EXTRA_KCONFIG)))) \
