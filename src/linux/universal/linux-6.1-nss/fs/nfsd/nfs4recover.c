@@ -1047,13 +1047,6 @@ __nfsd4_init_cld_pipe(struct net *net)
 	}
 	spin_lock_init(&cn->cn_lock);
 	INIT_LIST_HEAD(&cn->cn_list);
-	cn->cn_has_legacy = false;
-
-	/*
-	 * The pipe's methods reach @cn through nn->cld_net, so set
-	 * it before the pipe can be opened.
-	 */
-	nn->cld_net = cn;
 
 	dentry = nfsd4_cld_register_net(net, cn->cn_pipe);
 	if (IS_ERR(dentry)) {
@@ -1062,10 +1055,11 @@ __nfsd4_init_cld_pipe(struct net *net)
 	}
 
 	cn->cn_pipe->dentry = dentry;
+	cn->cn_has_legacy = false;
+	nn->cld_net = cn;
 	return 0;
 
 err_destroy_data:
-	nn->cld_net = NULL;
 	rpc_destroy_pipe_data(cn->cn_pipe);
 err:
 	kfree(cn);
