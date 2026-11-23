@@ -58,6 +58,8 @@ mount -t sysfs sys ${R}sys
 cp -av /dev ${R}/
 #copy ssh keys 
 cp -v /tmp/.rc_shutdown ${R}/tmp
+#move auto flash binary to new tmp
+mv -f /tmp/firmware.bin ${R}/tmp
 cp -av /tmp/root ${R}/tmp
 cp -av /var ${R}/
 cp -av /tmp/var ${R}/tmp

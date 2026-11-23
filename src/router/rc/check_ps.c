@@ -403,6 +403,8 @@ again:;
 		int ret = 0;
 		eval("update-prepare.sh", "/tmp/firmware.bin", disk, "usefile", "reboot", "usedd");
 #else
+		eval("mount", "-f", "-o", "remount,ro", "/");
+		eval("update-prepare.mmc");
 		eval("fischecksum");
 		int ret = eval("write", "/tmp/firmware.bin", "linux");
 #endif
