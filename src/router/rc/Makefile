@@ -1248,6 +1248,14 @@ ifeq ($(CONFIG_QCA4019),y)
 	install ldd.sh $(INSTALLDIR)/usr/sbin
 	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
 endif
+ifeq ($(CONFIG_ALPINE),y)
+	install ldd.sh $(INSTALLDIR)/usr/sbin
+	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
+endif
+ifeq ($(CONFIG_MVEBU),y)
+	install ldd.sh $(INSTALLDIR)/usr/sbin
+	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
+endif
 ifeq ($(CONFIG_HABANERO),y)
 	install ldd.sh $(INSTALLDIR)/usr/sbin
 	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
