@@ -239,6 +239,11 @@ static const struct inode_operations shmem_special_inode_operations;
 static const struct vm_operations_struct shmem_vm_ops;
 static struct file_system_type shmem_fs_type;
 
+bool shmem_file(struct file *file)
+{
+	return file && file_inode(file)->i_fop == &shmem_file_operations;
+}
+
 bool vma_is_shmem(struct vm_area_struct *vma)
 {
 	return vma->vm_ops == &shmem_vm_ops;
@@ -782,18 +787,24 @@ static void shmem_delete_from_page_cache(struct folio *folio, void *radswap)
 }
 
 /*
- * Remove swap entry from page cache, free the swap and its page cache.
+ * Remove a swap entry or swapin-error marker at index.
+ * Return whether it was removed, counting freed swap pages in nr_swaps_freed.
  */
-static int shmem_free_swap(struct address_space *mapping,
-			   pgoff_t index, void *radswap)
+static bool shmem_free_swap(struct address_space *mapping,
+		pgoff_t index, void *radswap, long *nr_swaps_freed)
 {
+	const swp_entry_t swp = radix_to_swp_entry(radswap);
 	void *old;
 
 	old = xa_cmpxchg_irq(&mapping->i_pages, index, radswap, NULL, 0);
 	if (old != radswap)
-		return -ENOENT;
-	free_swap_and_cache(radix_to_swp_entry(radswap));
-	return 0;
+		return false;
+	/* A swapin-error marker holds no swap slot, so just drop it. */
+	if (!non_swap_entry(swp)) {
+		free_swap_and_cache(swp);
+		(*nr_swaps_freed)++;
+	}
+	return true;
 }
 
 /*
@@ -931,21 +942,18 @@ static void shmem_undo_range(struct inode *inode, loff_t lstart, loff_t lend,
 
 	folio_batch_init(&fbatch);
 	index = start;
-	while (index < end && find_lock_entries(mapping, index, end - 1,
+	while (index < end && find_lock_entries(mapping, &index, end - 1,
 			&fbatch, indices)) {
 		for (i = 0; i < folio_batch_count(&fbatch); i++) {
 			folio = fbatch.folios[i];
 
-			index = indices[i];
-
 			if (xa_is_value(folio)) {
 				if (unfalloc)
 					continue;
-				nr_swaps_freed += !shmem_free_swap(mapping,
-								index, folio);
+				shmem_free_swap(mapping, indices[i], folio,
+						&nr_swaps_freed);
 				continue;
 			}
-			index += folio_nr_pages(folio) - 1;
 
 			if (!unfalloc || !folio_test_uptodate(folio))
 				truncate_inode_folio(mapping, folio);
@@ -953,8 +961,7 @@ static void shmem_undo_range(struct inode *inode, loff_t lstart, loff_t lend,
 		}
 		folio_batch_remove_exceptionals(&fbatch);
 		folio_batch_release(&fbatch);
-		cond_resched();
-		index++;
+		cond_resched_tasks_rcu_qs();
 	}
 
 	/*
@@ -995,7 +1002,7 @@ whole_folios:
 
 	index = start;
 	while (index < end) {
-		cond_resched();
+		cond_resched_tasks_rcu_qs();
 
 		if (!find_get_entries(mapping, index, end - 1, &fbatch,
 				indices)) {
@@ -1013,12 +1020,12 @@ whole_folios:
 			if (xa_is_value(folio)) {
 				if (unfalloc)
 					continue;
-				if (shmem_free_swap(mapping, index, folio)) {
+				if (!shmem_free_swap(mapping, index, folio,
+						     &nr_swaps_freed)) {
 					/* Swap was replaced by page: retry */
 					index--;
 					break;
 				}
-				nr_swaps_freed++;
 				continue;
 			}
 
@@ -1034,7 +1041,16 @@ whole_folios:
 				VM_BUG_ON_FOLIO(folio_test_writeback(folio),
 						folio);
 
-				if (!folio_test_large(folio)) {
+				/*
+				 * A shared mapping can have dirty PTEs while
+				 * the folio is still clean. Mark the folio
+				 * dirty so a failed split cannot discard data
+				 * outside the range.
+				 */
+				if (!unfalloc && folio_test_large(folio))
+					folio_mark_dirty(folio);
+
+				if (unfalloc || !folio_test_large(folio)) {
 					truncate_inode_folio(mapping, folio);
 				} else if (truncate_inode_partial_folio(folio, lstart, lend)) {
 					/*
@@ -1050,6 +1066,15 @@ whole_folios:
 						index = start;
 						break;
 					}
+				} else if (folio->mapping) {
+					/*
+					 * Splitting failed, but the part in the
+					 * range is already zeroed. The folio
+					 * was not dropped, so skip it when
+					 * restarting the scan to avoid retrying
+					 * it forever.
+					 */
+					start = max(start, folio_next_index(folio));
 				}
 			}
 			index = folio->index + folio_nr_pages(folio) - 1;
@@ -1146,7 +1171,8 @@ static int shmem_setattr(struct user_namespace *mnt_userns,
 			if (oldsize > holebegin)
 				unmap_mapping_range(inode->i_mapping,
 							holebegin, 0, 1);
-			if (info->alloced)
+			/* Swapin-error markers are not counted in alloced. */
+			if (info->alloced || !mapping_empty(inode->i_mapping))
 				shmem_truncate_range(inode,
 							newsize, (loff_t)-1);
 			/* unmap again to remove racily COWed private pages */
@@ -1298,6 +1324,10 @@ static int shmem_unuse_inode(struct inode *inode, unsigned int type)
 		if (ret < 0)
 			break;
 
+		if (signal_pending(current)) {
+			ret = -ERESTARTSYS;
+			break;
+		}
 		start = indices[folio_batch_count(&fbatch) - 1];
 	} while (true);
 
@@ -1737,11 +1767,9 @@ static void shmem_set_folio_swapin_error(struct inode *inode, pgoff_t index,
 	delete_from_swap_cache(folio);
 	spin_lock_irq(&info->lock);
 	/*
-	 * Don't treat swapin error folio as alloced. Otherwise inode->i_blocks won't
-	 * be 0 when inode is released and thus trigger WARN_ON(inode->i_blocks) in
-	 * shmem_evict_inode.
+	 * Let shmem_recalc_inode() reduce alloced and release the block charge
+	 * for the freed swap pages.
 	 */
-	info->alloced--;
 	info->swapped--;
 	shmem_recalc_inode(inode);
 	spin_unlock_irq(&info->lock);

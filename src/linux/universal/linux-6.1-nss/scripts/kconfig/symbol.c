@@ -32,12 +32,6 @@ struct symbol symbol_no = {
 	.flags = SYMBOL_CONST|SYMBOL_VALID,
 };
 
-static struct symbol symbol_empty = {
-	.name = "",
-	.curr = { "", no },
-	.flags = SYMBOL_VALID,
-};
-
 struct symbol *modules_sym;
 static tristate modules_val;
 static int sym_warnings;
@@ -123,7 +117,12 @@ static long long sym_get_range_val(struct symbol *sym, int base)
 	return strtoll(sym->curr.val, NULL, base);
 }
 
-static void sym_validate_range(struct symbol *sym)
+/*
+ * Return the nearest range bound for an out-of-range default value.
+ * Return NULL if the value is valid or the symbol has no active range.
+ */
+static struct symbol *sym_get_near_range_bound(struct symbol *sym,
+					  const char *value)
 {
 	struct property *prop;
 	struct symbol *range_sym;
@@ -138,21 +137,31 @@ static void sym_validate_range(struct symbol *sym)
 		base = 16;
 		break;
 	default:
-		return;
+		return NULL;
 	}
 	prop = sym_get_range_prop(sym);
 	if (!prop)
-		return;
-	val = strtoll(sym->curr.val, NULL, base);
+		return NULL;
+	val = strtoll(value, NULL, base);
 	range_sym = prop->expr->left.sym;
 	val2 = sym_get_range_val(range_sym, base);
 	if (val >= val2) {
 		range_sym = prop->expr->right.sym;
 		val2 = sym_get_range_val(range_sym, base);
 		if (val <= val2)
-			return;
+			return NULL;
 	}
-	sym->curr.val = range_sym->curr.val;
+
+	return range_sym;
+}
+
+static void sym_validate_range(struct symbol *sym)
+{
+	struct symbol *range_sym;
+
+	range_sym = sym_get_near_range_bound(sym, sym->curr.val);
+	if (range_sym)
+		sym->curr.val = range_sym->curr.val;
 }
 
 static void sym_set_changed(struct symbol *sym)
@@ -355,15 +364,21 @@ void sym_calc_value(struct symbol *sym)
 
 	oldval = sym->curr;
 
+	newval.tri = no;
+
 	switch (sym->type) {
 	case S_INT:
+		newval.val = "0";
+		break;
 	case S_HEX:
+		newval.val = "0x0";
+		break;
 	case S_STRING:
-		newval = symbol_empty.curr;
+		newval.val = "";
 		break;
 	case S_BOOLEAN:
 	case S_TRISTATE:
-		newval = symbol_no.curr;
+		newval.val = "n";
 		break;
 	default:
 		sym->curr.val = sym->name;
@@ -709,14 +724,13 @@ bool sym_set_string_value(struct symbol *sym, const char *newval)
 const char *sym_get_string_default(struct symbol *sym)
 {
 	struct property *prop;
-	struct symbol *ds;
-	const char *str;
+	struct symbol *ds, *range_sym;
+	const char *str = "";
 	tristate val;
 
 	sym_calc_visibility(sym);
 	sym_calc_value(modules_sym);
 	val = symbol_no.curr.tri;
-	str = symbol_empty.curr.val;
 
 	/* If symbol has a default value look it up */
 	prop = sym_get_default_prop(sym);
@@ -728,11 +742,6 @@ const char *sym_get_string_default(struct symbol *sym)
 			val = EXPR_AND(expr_calc_value(prop->expr), prop->visible.tri);
 			break;
 		default:
-			/*
-			 * The following fails to handle the situation
-			 * where a default value is further limited by
-			 * the valid range.
-			 */
 			ds = prop_get_symbol(prop);
 			if (ds != NULL) {
 				sym_calc_value(ds);
@@ -766,14 +775,22 @@ const char *sym_get_string_default(struct symbol *sym)
 		case yes: return "y";
 		}
 	case S_INT:
+		if (!str[0])
+			str = "0";
+		break;
 	case S_HEX:
-		return str;
-	case S_STRING:
-		return str;
-	case S_UNKNOWN:
+		if (!str[0])
+			str = "0x0";
+		break;
+	default:
 		break;
 	}
-	return "";
+
+	range_sym = sym_get_near_range_bound(sym, str);
+	if (range_sym)
+		str = range_sym->curr.val;
+
+	return str;
 }
 
 const char *sym_get_string_value(struct symbol *sym)

@@ -352,6 +352,7 @@ mt7915_init_wiphy(struct ieee80211_hw *hw)
 	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_BEACON_RATE_HE);
 	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_UNSOL_BCAST_PROBE_RESP);
 	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_FILS_DISCOVERY);
+	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_ACK_SIGNAL_SUPPORT);
 
 	if (mt7915_eeprom_has_background_radar(phy->dev) &&
 	    (!mdev->dev->of_node ||
@@ -444,6 +445,29 @@ mt7915_mac_init_band(struct mt7915_dev *dev, u8 band)
 
 	/* mt7915: disable rx rate report by default due to hw issues */
 	mt76_clear(dev, MT_DMA_DCR0(band), MT_DMA_DCR0_RXD_G5_EN);
+
+	/* clear estimated value of EIFS for Rx duration & OBSS time */
+	mt76_wr(dev, MT_WF_RMAC_RSVD0(band), MT_WF_RMAC_RSVD0_EIFS_CLR);
+
+	/* clear backoff time for Rx duration  */
+	mt76_clear(dev, MT_WF_RMAC_MIB_AIRTIME1(band),
+		   MT_WF_RMAC_MIB_NONQOSD_BACKOFF);
+	mt76_clear(dev, MT_WF_RMAC_MIB_AIRTIME3(band),
+		   MT_WF_RMAC_MIB_QOS01_BACKOFF);
+	mt76_clear(dev, MT_WF_RMAC_MIB_AIRTIME4(band),
+		   MT_WF_RMAC_MIB_QOS23_BACKOFF);
+
+	/* clear backoff time and set software compensation for OBSS time */
+	mask = MT_WF_RMAC_MIB_OBSS_BACKOFF | MT_WF_RMAC_MIB_ED_OFFSET;
+	set = FIELD_PREP(MT_WF_RMAC_MIB_OBSS_BACKOFF, 0) |
+	      FIELD_PREP(MT_WF_RMAC_MIB_ED_OFFSET, 4);
+	mt76_rmw(dev, MT_WF_RMAC_MIB_AIRTIME0(band), mask, set);
+
+	/* filter out non-resp frames and get instanstaeous signal reporting */
+	mask = MT_WTBLOFF_TOP_RSCR_RCPI_MODE | MT_WTBLOFF_TOP_RSCR_RCPI_PARAM;
+	set = FIELD_PREP(MT_WTBLOFF_TOP_RSCR_RCPI_MODE, 0) |
+	      FIELD_PREP(MT_WTBLOFF_TOP_RSCR_RCPI_PARAM, 0x3);
+	mt76_rmw(dev, MT_WTBLOFF_TOP_RSCR(band), mask, set);
 }
 
 void mt7915_mac_init(struct mt7915_dev *dev)

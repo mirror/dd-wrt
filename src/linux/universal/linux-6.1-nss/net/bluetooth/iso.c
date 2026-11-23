@@ -178,8 +178,11 @@ static void iso_chan_del(struct sock *sk, int err)
 
 	parent = bt_sk(sk)->parent;
 	if (parent) {
+		/* Unlinking the child allows the parent to be freed. */
+		sock_hold(parent);
 		bt_accept_unlink(sk);
 		parent->sk_data_ready(parent);
+		sock_put(parent);
 	} else {
 		sk->sk_state_change(sk);
 	}
@@ -1536,7 +1539,6 @@ static void iso_conn_ready(struct iso_conn *conn)
 		if (parent->sk_state != BT_LISTEN ||
 		    sock_flag(parent, SOCK_ZAPPED)) {
 			release_sock(parent);
-			sock_put(parent);
 			return;
 		}
 

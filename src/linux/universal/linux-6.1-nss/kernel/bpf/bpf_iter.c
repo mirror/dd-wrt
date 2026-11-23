@@ -344,6 +344,13 @@ bool bpf_iter_prog_supported(struct bpf_prog *prog)
 	const char *prefix = BPF_ITER_FUNC_PREFIX;
 	int prefix_len = strlen(prefix);
 
+	/*
+	 * The attach function of a program that has a target program is a
+	 * function of that program, whatever its name is.
+	 */
+	if (prog->aux->dst_prog)
+		return -EINVAL;
+
 	if (strncmp(attach_fname, prefix, prefix_len))
 		return false;
 
