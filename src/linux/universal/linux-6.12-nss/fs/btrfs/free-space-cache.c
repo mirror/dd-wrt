@@ -274,7 +274,7 @@ int btrfs_remove_free_space_inode(struct btrfs_trans_handle *trans,
 	ret = btrfs_update_inode(trans, BTRFS_I(inode));
 	if (ret) {
 		btrfs_add_delayed_iput(BTRFS_I(inode));
-		return ret;
+		goto out;
 	}
 	/* One for the block groups ref */
 	spin_lock(&block_group->lock);
