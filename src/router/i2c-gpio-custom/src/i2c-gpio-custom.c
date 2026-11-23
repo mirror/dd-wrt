@@ -83,7 +83,8 @@ static unsigned int bus3[BUS_PARAM_COUNT] __initdata;
 
 static unsigned int bus_nump[BUS_COUNT_MAX] __initdata;
 
-#define BUS_PARM_DESC " config -> id,sda,scl[,udelay,timeout,sda_od,scl_od,scl_oo]"
+#define BUS_PARM_DESC \
+	" config -> id,sda,scl[,udelay,timeout,sda_od,scl_od,scl_oo]"
 
 module_param_array(bus0, uint, &bus_nump[0], 0);
 MODULE_PARM_DESC(bus0, "bus0" BUS_PARM_DESC);

@@ -93,7 +93,8 @@ static void antairagpio_set(struct gpio_chip *gc, unsigned offset, int value)
 static int antairagpio_probe(struct i2c_client *client)
 {
 	struct antaira_gpiochip *antaira_dev;
-	antaira_dev = devm_kzalloc(&client->dev, sizeof(*antaira_dev), GFP_KERNEL);
+	antaira_dev =
+		devm_kzalloc(&client->dev, sizeof(*antaira_dev), GFP_KERNEL);
 	if (!antaira_dev)
 		return -ENOMEM;
 
