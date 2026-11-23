@@ -502,6 +502,7 @@ static ssize_t bq24190_sysfs_show(struct device *dev,
 	else
 		count = sysfs_emit(buf, "%hhx\n", v);
 
+	pm_runtime_mark_last_busy(bdi->dev);
 	pm_runtime_put_autosuspend(bdi->dev);
 
 	return count;
@@ -532,6 +533,7 @@ static ssize_t bq24190_sysfs_store(struct device *dev,
 	if (ret)
 		count = ret;
 
+	pm_runtime_mark_last_busy(bdi->dev);
 	pm_runtime_put_autosuspend(bdi->dev);
 
 	return count;
@@ -558,6 +560,7 @@ static int bq24190_set_otg_vbus(struct bq24190_dev_info *bdi, bool enable)
 	else
 		ret = bq24190_charger_set_charge_type(bdi, &val);
 
+	pm_runtime_mark_last_busy(bdi->dev);
 	pm_runtime_put_autosuspend(bdi->dev);
 
 	return ret;
@@ -600,6 +603,7 @@ static int bq24296_set_otg_vbus(struct bq24190_dev_info *bdi, bool enable)
 	}
 
 out:
+	pm_runtime_mark_last_busy(bdi->dev);
 	pm_runtime_put_autosuspend(bdi->dev);
 
 	return ret;
@@ -632,6 +636,7 @@ static int bq24190_vbus_is_enabled(struct regulator_dev *dev)
 				BQ24190_REG_POC_CHG_CONFIG_MASK,
 				BQ24190_REG_POC_CHG_CONFIG_SHIFT, &val);
 
+	pm_runtime_mark_last_busy(bdi->dev);
 	pm_runtime_put_autosuspend(bdi->dev);
 
 	if (ret)
@@ -668,6 +673,7 @@ static int bq24296_vbus_is_enabled(struct regulator_dev *dev)
 				BQ24296_REG_POC_OTG_CONFIG_MASK,
 				BQ24296_REG_POC_OTG_CONFIG_SHIFT, &val);
 
+	pm_runtime_mark_last_busy(bdi->dev);
 	pm_runtime_put_autosuspend(bdi->dev);
 
 	if (ret)
@@ -1367,6 +1373,7 @@ static int bq24190_charger_get_property(struct power_supply *psy,
 		ret = -ENODATA;
 	}
 
+	pm_runtime_mark_last_busy(bdi->dev);
 	pm_runtime_put_autosuspend(bdi->dev);
 
 	return ret;
@@ -1408,6 +1415,7 @@ static int bq24190_charger_set_property(struct power_supply *psy,
 		ret = -EINVAL;
 	}
 
+	pm_runtime_mark_last_busy(bdi->dev);
 	pm_runtime_put_autosuspend(bdi->dev);
 
 	return ret;
@@ -1665,6 +1673,7 @@ static int bq24190_battery_get_property(struct power_supply *psy,
 		ret = -ENODATA;
 	}
 
+	pm_runtime_mark_last_busy(bdi->dev);
 	pm_runtime_put_autosuspend(bdi->dev);
 
 	return ret;
@@ -1695,6 +1704,7 @@ static int bq24190_battery_set_property(struct power_supply *psy,
 		ret = -EINVAL;
 	}
 
+	pm_runtime_mark_last_busy(bdi->dev);
 	pm_runtime_put_autosuspend(bdi->dev);
 
 	return ret;
@@ -1842,6 +1852,7 @@ static irqreturn_t bq24190_irq_handler_thread(int irq, void *data)
 		return IRQ_NONE;
 	}
 	bq24190_check_status(bdi);
+	pm_runtime_mark_last_busy(bdi->dev);
 	pm_runtime_put_autosuspend(bdi->dev);
 	bdi->irq_event = false;
 
@@ -2149,6 +2160,7 @@ static int bq24190_probe(struct i2c_client *client)
 	if (ret < 0)
 		goto out_charger;
 
+	pm_runtime_mark_last_busy(dev);
 	pm_runtime_put_autosuspend(dev);
 
 	return 0;
@@ -2222,6 +2234,26 @@ static __maybe_unused int bq24190_runtime_resume(struct device *dev)
 	return 0;
 }
 
+static __maybe_unused int bq24190_pm_suspend(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct bq24190_dev_info *bdi = i2c_get_clientdata(client);
+	int error;
+
+	error = pm_runtime_resume_and_get(bdi->dev);
+	if (error < 0)
+		dev_warn(bdi->dev, "pm_runtime_get failed: %i\n", error);
+
+	bq24190_register_reset(bdi);
+
+	if (error >= 0) {
+		pm_runtime_mark_last_busy(bdi->dev);
+		pm_runtime_put_autosuspend(bdi->dev);
+	}
+
+	return 0;
+}
+
 static __maybe_unused int bq24190_pm_resume(struct device *dev)
 {
 	struct i2c_client *client = to_i2c_client(dev);
@@ -2235,18 +2267,12 @@ static __maybe_unused int bq24190_pm_resume(struct device *dev)
 	if (error < 0)
 		dev_warn(bdi->dev, "pm_runtime_get failed: %i\n", error);
 
-	/*
-	 * The chip kept its configuration through the sleep: it is in host
-	 * mode with the i2c watchdog off, so nothing expired and nothing was
-	 * reset. Do not reset it here either -- a userspace setting such as
-	 * EN_HIZ or IINLIM would otherwise be silently lost on every resume.
-	 * Re-applying the probe-time configuration is idempotent and cheap,
-	 * and covers a part that did somehow fall back to default mode.
-	 */
+	bq24190_register_reset(bdi);
 	bq24190_set_config(bdi);
 	bq24190_read(bdi, BQ24190_REG_SS, &bdi->ss_reg);
 
 	if (error >= 0) {
+		pm_runtime_mark_last_busy(bdi->dev);
 		pm_runtime_put_autosuspend(bdi->dev);
 	}
 
@@ -2261,7 +2287,7 @@ static __maybe_unused int bq24190_pm_resume(struct device *dev)
 static const struct dev_pm_ops bq24190_pm_ops = {
 	SET_RUNTIME_PM_OPS(bq24190_runtime_suspend, bq24190_runtime_resume,
 			   NULL)
-	SET_SYSTEM_SLEEP_PM_OPS(NULL, bq24190_pm_resume)
+	SET_SYSTEM_SLEEP_PM_OPS(bq24190_pm_suspend, bq24190_pm_resume)
 };
 
 static const struct i2c_device_id bq24190_i2c_ids[] = {
