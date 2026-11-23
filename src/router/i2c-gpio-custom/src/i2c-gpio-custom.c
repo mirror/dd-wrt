@@ -96,7 +96,7 @@ module_param_array(bus3, uint, &bus_nump[3], 0);
 MODULE_PARM_DESC(bus3, "bus3" BUS_PARM_DESC);
 
 static struct platform_device *devices[BUS_COUNT_MAX];
-static unsigned int nr_devices;
+static unsigned int nr_devices = 0;
 
 static void i2c_gpio_custom_cleanup(void)
 {

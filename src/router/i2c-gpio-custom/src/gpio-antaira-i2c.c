@@ -38,7 +38,7 @@
 #include <linux/gpio.h>
 
 #define MODNAME "antairagpio"
-#define GPIO_BASE 200
+#define GPIO_BASE 200 + 512
 #define GPIO_NUM 16
 
 #define LOG(form, ...)                       \
