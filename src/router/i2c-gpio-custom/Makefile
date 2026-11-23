@@ -29,4 +29,5 @@ clean:
 
 install:
 	install -v -m 644 -D src/i2c-gpio-custom.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/i2c-gpio-custom.ko
+	install -v -m 644 -D src/gpio-antaira-i2c.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/gpio-antaira-i2c.ko
 
