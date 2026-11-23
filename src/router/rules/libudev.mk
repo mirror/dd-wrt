@@ -63,6 +63,8 @@ libudev-clean:
 
 libudev-install:
 	make -C libudev install DESTDIR=$(INSTALLDIR)/libudev
+	mkdir -p $(INSTALLDIR)/libudev/etc/udev
+	cp -f libudev/etc/udev.conf $(INSTALLDIR)/libudev/etc/udev
 	rm -rf $(INSTALLDIR)/libudev/usr/bin
 	rm -rf $(INSTALLDIR)/libudev/usr/etc
 	rm -rf $(INSTALLDIR)/libudev/usr/include
