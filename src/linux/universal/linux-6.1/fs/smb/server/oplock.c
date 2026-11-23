@@ -869,7 +869,7 @@ out:
 /**
  * smb2_lease_break_noti() - break lease when a new client request
  *			write lease
- * @opinfo:		conains lease state information
+ * @opinfo:		contains lease state information
  *
  * Return:	0 on success, otherwise error
  */
@@ -1175,7 +1175,7 @@ void smb_send_parent_lease_break_noti(struct ksmbd_file *fp,
 	struct oplock_info *opinfo;
 	struct ksmbd_inode *p_ci = NULL;
 
-	if (lctx->version != 2)
+	if (lctx && lctx->version != 2)
 		return;
 
 	p_ci = ksmbd_inode_lookup_lock(fp->filp->f_path.dentry->d_parent);
@@ -1188,9 +1188,10 @@ void smb_send_parent_lease_break_noti(struct ksmbd_file *fp,
 			continue;
 
 		if (opinfo->o_lease->state != SMB2_OPLOCK_LEVEL_NONE &&
-		    (!(lctx->flags & SMB2_LEASE_FLAG_PARENT_LEASE_KEY_SET_LE) ||
-		     !compare_guid_key(opinfo, fp->conn->ClientGUID,
-				      lctx->parent_lease_key))) {
+		    (!lctx ||
+		     (!(lctx->flags & SMB2_LEASE_FLAG_PARENT_LEASE_KEY_SET_LE) ||
+		      !compare_guid_key(opinfo, fp->conn->ClientGUID,
+			       lctx->parent_lease_key)))) {
 			if (!atomic_inc_not_zero(&opinfo->refcount))
 				continue;
 
@@ -1576,7 +1577,7 @@ void create_lease_buf(u8 *rbuf, struct lease *lease)
 }
 
 /**
- * parse_lease_state() - parse lease context containted in file open request
+ * parse_lease_state() - parse lease context contained in file open request
  * @open_req:	buffer containing smb2 file open(create) request
  * @is_dir:	whether leasing file is directory
  *

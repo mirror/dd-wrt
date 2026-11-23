@@ -651,7 +651,11 @@ union _form_spec_inf {
 	struct tgt_dev_vd vd_inf;
 };
 
-
+enum mpi3mr_dev_state {
+	MPI3MR_DEV_CREATED = 1,
+	MPI3MR_DEV_REMOVE_HS_STARTED = 2,
+	MPI3MR_DEV_DELETED = 3,
+};
 
 /**
  * struct mpi3mr_tgt_dev - target device data structure
@@ -675,6 +679,7 @@ union _form_spec_inf {
  * @enclosure_logical_id: Enclosure logical identifier
  * @dev_spec: Device type specific information
  * @ref_count: Reference count
+ * @state: device state
  */
 struct mpi3mr_tgt_dev {
 	struct list_head list;
@@ -696,6 +701,7 @@ struct mpi3mr_tgt_dev {
 	u64 enclosure_logical_id;
 	union _form_spec_inf dev_spec;
 	struct kref ref_count;
+	enum mpi3mr_dev_state state;
 };
 
 /**
@@ -1325,7 +1331,7 @@ void mpi3mr_pel_get_seqnum_complete(struct mpi3mr_ioc *mrioc,
 	struct mpi3mr_drv_cmd *drv_cmd);
 int mpi3mr_pel_get_seqnum_post(struct mpi3mr_ioc *mrioc,
 	struct mpi3mr_drv_cmd *drv_cmd);
-void mpi3mr_app_save_logdata(struct mpi3mr_ioc *mrioc, char *event_data,
+void mpi3mr_app_save_logdata_th(struct mpi3mr_ioc *mrioc, char *event_data,
 	u16 event_data_size);
 struct mpi3mr_enclosure_node *mpi3mr_enclosure_find_by_handle(
 	struct mpi3mr_ioc *mrioc, u16 handle);

@@ -58,21 +58,46 @@ enum {
 	TLS_NUM_PROTS,
 };
 
-#define CIPHER_SIZE_DESC(cipher) [cipher] = { \
+#define __CIPHER_DESC(ci) \
+	.iv_offset = offsetof(struct ci, iv), \
+	.key_offset = offsetof(struct ci, key), \
+	.salt_offset = offsetof(struct ci, salt), \
+	.rec_seq_offset = offsetof(struct ci, rec_seq), \
+	.crypto_info = sizeof(struct ci)
+
+#define CIPHER_DESC(cipher,ci,algname,_offloadable) [cipher - TLS_CIPHER_MIN] = {	\
+	.nonce = cipher ## _IV_SIZE, \
 	.iv = cipher ## _IV_SIZE, \
 	.key = cipher ## _KEY_SIZE, \
 	.salt = cipher ## _SALT_SIZE, \
 	.tag = cipher ## _TAG_SIZE, \
 	.rec_seq = cipher ## _REC_SEQ_SIZE, \
+	.cipher_name = algname,	\
+	.offloadable = _offloadable, \
+	__CIPHER_DESC(ci), \
 }
 
-const struct tls_cipher_size_desc tls_cipher_size_desc[] = {
-	CIPHER_SIZE_DESC(TLS_CIPHER_AES_GCM_128),
-	CIPHER_SIZE_DESC(TLS_CIPHER_AES_GCM_256),
-	CIPHER_SIZE_DESC(TLS_CIPHER_AES_CCM_128),
-	CIPHER_SIZE_DESC(TLS_CIPHER_CHACHA20_POLY1305),
-	CIPHER_SIZE_DESC(TLS_CIPHER_SM4_GCM),
-	CIPHER_SIZE_DESC(TLS_CIPHER_SM4_CCM),
+#define CIPHER_DESC_NONCE0(cipher,ci,algname,_offloadable) [cipher - TLS_CIPHER_MIN] = { \
+	.nonce = 0, \
+	.iv = cipher ## _IV_SIZE, \
+	.key = cipher ## _KEY_SIZE, \
+	.salt = cipher ## _SALT_SIZE, \
+	.tag = cipher ## _TAG_SIZE, \
+	.rec_seq = cipher ## _REC_SEQ_SIZE, \
+	.cipher_name = algname,	\
+	.offloadable = _offloadable, \
+	__CIPHER_DESC(ci), \
+}
+
+const struct tls_cipher_desc tls_cipher_desc[TLS_CIPHER_MAX + 1 - TLS_CIPHER_MIN] = {
+	CIPHER_DESC(TLS_CIPHER_AES_GCM_128, tls12_crypto_info_aes_gcm_128, "gcm(aes)", true),
+	CIPHER_DESC(TLS_CIPHER_AES_GCM_256, tls12_crypto_info_aes_gcm_256, "gcm(aes)", true),
+	CIPHER_DESC(TLS_CIPHER_AES_CCM_128, tls12_crypto_info_aes_ccm_128, "ccm(aes)", false),
+	CIPHER_DESC_NONCE0(TLS_CIPHER_CHACHA20_POLY1305, tls12_crypto_info_chacha20_poly1305, "rfc7539(chacha20,poly1305)", false),
+	CIPHER_DESC(TLS_CIPHER_SM4_GCM, tls12_crypto_info_sm4_gcm, "gcm(sm4)", false),
+	CIPHER_DESC(TLS_CIPHER_SM4_CCM, tls12_crypto_info_sm4_ccm, "ccm(sm4)", false),
+	CIPHER_DESC(TLS_CIPHER_ARIA_GCM_128, tls12_crypto_info_aria_gcm_128, "gcm(aria)", false),
+	CIPHER_DESC(TLS_CIPHER_ARIA_GCM_256, tls12_crypto_info_aria_gcm_256, "gcm(aria)", false),
 };
 
 static const struct proto *saved_tcpv6_prot;
@@ -661,7 +686,8 @@ static int do_tls_setsockopt_conf(struct sock *sk, sockptr_t optval,
 	struct tls_crypto_info *crypto_info;
 	struct tls_crypto_info *alt_crypto_info;
 	struct tls_context *ctx = tls_get_ctx(sk);
-	size_t optsize;
+	const struct tls_cipher_desc *cipher_desc;
+	union tls_crypto_context *crypto_ctx;
 	int rc = 0;
 	int conf;
 
@@ -680,12 +706,14 @@ static int do_tls_setsockopt_conf(struct sock *sk, sockptr_t optval,
 		return -EINVAL;
 
 	if (tx) {
-		crypto_info = &ctx->crypto_send.info;
+		crypto_ctx = &ctx->crypto_send;
 		alt_crypto_info = &ctx->crypto_recv.info;
 	} else {
-		crypto_info = &ctx->crypto_recv.info;
+		crypto_ctx = &ctx->crypto_recv;
 		alt_crypto_info = &ctx->crypto_send.info;
 	}
+
+	crypto_info = &crypto_ctx->info;
 
 	/* Currently we don't support set crypto info more than one time */
 	if (TLS_CRYPTO_INFO_READY(crypto_info))
@@ -713,52 +741,29 @@ static int do_tls_setsockopt_conf(struct sock *sk, sockptr_t optval,
 		}
 	}
 
-	switch (crypto_info->cipher_type) {
-	case TLS_CIPHER_AES_GCM_128:
-		optsize = sizeof(struct tls12_crypto_info_aes_gcm_128);
-		break;
-	case TLS_CIPHER_AES_GCM_256: {
-		optsize = sizeof(struct tls12_crypto_info_aes_gcm_256);
-		break;
+	cipher_desc = get_cipher_desc(crypto_info->cipher_type);
+	if (!cipher_desc) {
+		rc = -EINVAL;
+		goto err_crypto_info;
 	}
-	case TLS_CIPHER_AES_CCM_128:
-		optsize = sizeof(struct tls12_crypto_info_aes_ccm_128);
-		break;
-	case TLS_CIPHER_CHACHA20_POLY1305:
-		optsize = sizeof(struct tls12_crypto_info_chacha20_poly1305);
-		break;
-	case TLS_CIPHER_SM4_GCM:
-		optsize = sizeof(struct tls12_crypto_info_sm4_gcm);
-		break;
-	case TLS_CIPHER_SM4_CCM:
-		optsize = sizeof(struct tls12_crypto_info_sm4_ccm);
-		break;
+
+	switch (crypto_info->cipher_type) {
 	case TLS_CIPHER_ARIA_GCM_128:
-		if (crypto_info->version != TLS_1_2_VERSION) {
-			rc = -EINVAL;
-			goto err_crypto_info;
-		}
-		optsize = sizeof(struct tls12_crypto_info_aria_gcm_128);
-		break;
 	case TLS_CIPHER_ARIA_GCM_256:
 		if (crypto_info->version != TLS_1_2_VERSION) {
 			rc = -EINVAL;
 			goto err_crypto_info;
 		}
-		optsize = sizeof(struct tls12_crypto_info_aria_gcm_256);
 		break;
-	default:
+	}
+
+	if (optlen != cipher_desc->crypto_info) {
 		rc = -EINVAL;
 		goto err_crypto_info;
 	}
 
-	if (optlen != optsize) {
-		rc = -EINVAL;
-		goto err_crypto_info;
-	}
-
-	rc = copy_from_sockptr_offset(crypto_info + 1, optval,
-				      sizeof(*crypto_info),
+	rc = copy_from_sockptr_offset((u8 *)crypto_ctx + sizeof(*crypto_info),
+				      optval, sizeof(*crypto_info),
 				      optlen - sizeof(*crypto_info));
 	if (rc) {
 		rc = -EFAULT;
@@ -812,7 +817,7 @@ static int do_tls_setsockopt_conf(struct sock *sk, sockptr_t optval,
 	return 0;
 
 err_crypto_info:
-	memzero_explicit(crypto_info, sizeof(union tls_crypto_context));
+	memzero_explicit(crypto_ctx, sizeof(*crypto_ctx));
 	return rc;
 }
 

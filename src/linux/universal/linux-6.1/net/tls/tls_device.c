@@ -798,8 +798,15 @@ void tls_device_rx_resync_new_rec(struct sock *sk, u32 rcd_len, u32 seq)
 
 	if (tls_ctx->rx_conf != TLS_HW)
 		return;
+
+	/* The parser also runs in process context, without an RCU read lock.
+	 * Protect the driver's resync_async state before checking the flags:
+	 * device-down sets DEGRADED and waits for synchronize_net() before
+	 * freeing it, without taking the socket lock.
+	 */
+	rcu_read_lock();
 	if (unlikely(test_bit(TLS_RX_DEV_DEGRADED, &tls_ctx->flags)))
-		return;
+		goto out;
 
 	prot = &tls_ctx->prot_info;
 	rx_ctx = tls_offload_ctx_rx(tls_ctx);
@@ -814,11 +821,11 @@ void tls_device_rx_resync_new_rec(struct sock *sk, u32 rcd_len, u32 seq)
 
 		if (likely(!is_req_pending) || req_seq != seq ||
 		    !atomic64_try_cmpxchg(&rx_ctx->resync_req, &resync_req, 0))
-			return;
+			goto out;
 		break;
 	case TLS_OFFLOAD_SYNC_TYPE_CORE_NEXT_HINT:
 		if (likely(!rx_ctx->resync_nh_do_now))
-			return;
+			goto out;
 
 		/* head of next rec is already in, note that the sock_inq will
 		 * include the currently parsed message when called from parser
@@ -827,7 +834,7 @@ void tls_device_rx_resync_new_rec(struct sock *sk, u32 rcd_len, u32 seq)
 		if (sock_data > rcd_len) {
 			trace_tls_device_rx_resync_nh_delay(sk, sock_data,
 							    rcd_len);
-			return;
+			goto out;
 		}
 
 		rx_ctx->resync_nh_do_now = 0;
@@ -838,16 +845,18 @@ void tls_device_rx_resync_new_rec(struct sock *sk, u32 rcd_len, u32 seq)
 		resync_req = atomic64_read(&rx_ctx->resync_async->req);
 		is_req_pending = resync_req;
 		if (likely(!is_req_pending))
-			return;
+			goto out;
 
 		if (!tls_device_rx_resync_async(rx_ctx->resync_async,
 						resync_req, &seq, &rcd_delta))
-			return;
+			goto out;
 		tls_bigint_subtract(rcd_sn, rcd_delta);
 		break;
 	}
 
 	tls_device_resync_rx(tls_ctx, sk, seq, rcd_sn);
+out:
+	rcu_read_unlock();
 }
 
 static void tls_device_core_ctrl_rx_resync(struct tls_context *tls_ctx,
@@ -901,7 +910,7 @@ static int
 tls_device_reencrypt(struct sock *sk, struct tls_context *tls_ctx)
 {
 	struct tls_sw_context_rx *sw_ctx = tls_sw_ctx_rx(tls_ctx);
-	const struct tls_cipher_size_desc *cipher_sz;
+	const struct tls_cipher_desc *cipher_desc;
 	int err, offset, copy, data_len, pos;
 	struct sk_buff *skb, *skb_iter;
 	struct scatterlist sg[1];
@@ -915,10 +924,10 @@ tls_device_reencrypt(struct sock *sk, struct tls_context *tls_ctx)
 	default:
 		return -EINVAL;
 	}
-	cipher_sz = &tls_cipher_size_desc[tls_ctx->crypto_recv.info.cipher_type];
+	cipher_desc = get_cipher_desc(tls_ctx->crypto_recv.info.cipher_type);
 
 	rxm = strp_msg(tls_strp_msg(sw_ctx));
-	orig_buf = kmalloc(rxm->full_len + TLS_HEADER_SIZE + cipher_sz->iv,
+	orig_buf = kmalloc(rxm->full_len + TLS_HEADER_SIZE + cipher_desc->iv,
 			   sk->sk_allocation);
 	if (!orig_buf)
 		return -ENOMEM;
@@ -934,8 +943,8 @@ tls_device_reencrypt(struct sock *sk, struct tls_context *tls_ctx)
 
 	sg_init_table(sg, 1);
 	sg_set_buf(&sg[0], buf,
-		   rxm->full_len + TLS_HEADER_SIZE + cipher_sz->iv);
-	err = skb_copy_bits(skb, offset, buf, TLS_HEADER_SIZE + cipher_sz->iv);
+		   rxm->full_len + TLS_HEADER_SIZE + cipher_desc->iv);
+	err = skb_copy_bits(skb, offset, buf, TLS_HEADER_SIZE + cipher_desc->iv);
 	if (err)
 		goto free_buf;
 
@@ -946,7 +955,7 @@ tls_device_reencrypt(struct sock *sk, struct tls_context *tls_ctx)
 	else
 		err = 0;
 
-	data_len = rxm->full_len - cipher_sz->tag;
+	data_len = rxm->full_len - cipher_desc->tag;
 
 	if (skb_pagelen(skb) > offset) {
 		copy = min_t(int, skb_pagelen(skb) - offset, data_len);
@@ -1063,7 +1072,7 @@ int tls_set_device_offload(struct sock *sk, struct tls_context *ctx)
 {
 	struct tls_context *tls_ctx = tls_get_ctx(sk);
 	struct tls_prot_info *prot = &tls_ctx->prot_info;
-	const struct tls_cipher_size_desc *cipher_sz;
+	const struct tls_cipher_desc *cipher_desc;
 	struct tls_record_info *start_marker_record;
 	struct tls_offload_context_tx *offload_ctx;
 	struct tls_crypto_info *crypto_info;
@@ -1111,31 +1120,31 @@ int tls_set_device_offload(struct sock *sk, struct tls_context *ctx)
 		rc = -EINVAL;
 		goto release_netdev;
 	}
-	cipher_sz = &tls_cipher_size_desc[crypto_info->cipher_type];
+	cipher_desc = get_cipher_desc(crypto_info->cipher_type);
 
 	/* Sanity-check the rec_seq_size for stack allocations */
-	if (cipher_sz->rec_seq > TLS_MAX_REC_SEQ_SIZE) {
+	if (cipher_desc->rec_seq > TLS_MAX_REC_SEQ_SIZE) {
 		rc = -EINVAL;
 		goto release_netdev;
 	}
 
 	prot->version = crypto_info->version;
 	prot->cipher_type = crypto_info->cipher_type;
-	prot->prepend_size = TLS_HEADER_SIZE + cipher_sz->iv;
-	prot->tag_size = cipher_sz->tag;
+	prot->prepend_size = TLS_HEADER_SIZE + cipher_desc->iv;
+	prot->tag_size = cipher_desc->tag;
 	prot->overhead_size = prot->prepend_size + prot->tag_size;
-	prot->iv_size = cipher_sz->iv;
-	prot->salt_size = cipher_sz->salt;
-	ctx->tx.iv = kmalloc(cipher_sz->iv + cipher_sz->salt, GFP_KERNEL);
+	prot->iv_size = cipher_desc->iv;
+	prot->salt_size = cipher_desc->salt;
+	ctx->tx.iv = kmalloc(cipher_desc->iv + cipher_desc->salt, GFP_KERNEL);
 	if (!ctx->tx.iv) {
 		rc = -ENOMEM;
 		goto release_netdev;
 	}
 
-	memcpy(ctx->tx.iv + cipher_sz->salt, iv, cipher_sz->iv);
+	memcpy(ctx->tx.iv + cipher_desc->salt, iv, cipher_desc->iv);
 
-	prot->rec_seq_size = cipher_sz->rec_seq;
-	ctx->tx.rec_seq = kmemdup(rec_seq, cipher_sz->rec_seq, GFP_KERNEL);
+	prot->rec_seq_size = cipher_desc->rec_seq;
+	ctx->tx.rec_seq = kmemdup(rec_seq, cipher_desc->rec_seq, GFP_KERNEL);
 	if (!ctx->tx.rec_seq) {
 		rc = -ENOMEM;
 		goto free_iv;

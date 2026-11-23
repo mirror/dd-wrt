@@ -12,6 +12,7 @@
 #include <linux/soc/qcom/apr.h>
 #include <dt-bindings/soc/qcom,gpr.h>
 #include <dt-bindings/sound/qcom,q6dsp-lpass-ports.h>
+#include "q6apm.h"
 #include "q6prm.h"
 #include "audioreach.h"
 
@@ -196,6 +197,9 @@ static int prm_callback(struct gpr_resp_pkt *data, void *priv, int op)
 	struct gpr_ibasic_rsp_result_t *result;
 	struct gpr_hdr *hdr = &data->hdr;
 
+	if (!prm)
+		return 0;
+
 	switch (hdr->opcode) {
 	case PRM_CMD_RSP_REQUEST_HW_RSC:
 	case PRM_CMD_RSP_RELEASE_HW_RSC:
@@ -225,6 +229,9 @@ static int prm_probe(gpr_device_t *gdev)
 	mutex_init(&cc->lock);
 	init_waitqueue_head(&cc->wait);
 	dev_set_drvdata(dev, cc);
+
+	if (!q6apm_is_adsp_ready())
+		return -EPROBE_DEFER;
 
 	return devm_of_platform_populate(dev);
 }

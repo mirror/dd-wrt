@@ -241,6 +241,14 @@ enum offs_rev {
 #define MT_DMA_DCR0_MAX_RX_LEN		GENMASK(15, 3)
 #define MT_DMA_DCR0_RXD_G5_EN		BIT(23)
 
+/* WTBLOFF TOP: band 0(0x820e9000),band 1(0x820f9000) */
+#define MT_WTBLOFF_TOP_BASE(_band)	((_band) ? 0x820f9000 : 0x820e9000)
+#define MT_WTBLOFF_TOP(_band, ofs)	(MT_WTBLOFF_TOP_BASE(_band) + (ofs))
+
+#define MT_WTBLOFF_TOP_RSCR(_band)	MT_WTBLOFF_TOP(_band, 0x008)
+#define MT_WTBLOFF_TOP_RSCR_RCPI_MODE	GENMASK(31, 30)
+#define MT_WTBLOFF_TOP_RSCR_RCPI_PARAM	GENMASK(25, 24)
+
 /* ETBF: band 0(0x820ea000), band 1(0x820fa000) */
 #define MT_WF_ETBF_BASE(_band)		((_band) ? 0x820fa000 : 0x820ea000)
 #define MT_WF_ETBF(_band, ofs)		(MT_WF_ETBF_BASE(_band) + (ofs))
@@ -540,8 +548,22 @@ enum offs_rev {
 #define MT_WF_RFCR1_DROP_CFEND		BIT(7)
 #define MT_WF_RFCR1_DROP_CFACK		BIT(8)
 
+#define MT_WF_RMAC_RSVD0(_band)	MT_WF_RMAC(_band, 0x02e0)
+#define MT_WF_RMAC_RSVD0_EIFS_CLR	BIT(21)
+
 #define MT_WF_RMAC_MIB_AIRTIME0(_band)	MT_WF_RMAC(_band, 0x0380)
 #define MT_WF_RMAC_MIB_RXTIME_CLR	BIT(31)
+#define MT_WF_RMAC_MIB_OBSS_BACKOFF	GENMASK(15, 0)
+#define MT_WF_RMAC_MIB_ED_OFFSET	GENMASK(20, 16)
+
+#define MT_WF_RMAC_MIB_AIRTIME1(_band)	MT_WF_RMAC(_band, 0x0384)
+#define MT_WF_RMAC_MIB_NONQOSD_BACKOFF	GENMASK(31, 16)
+
+#define MT_WF_RMAC_MIB_AIRTIME3(_band)	MT_WF_RMAC(_band, 0x038c)
+#define MT_WF_RMAC_MIB_QOS01_BACKOFF	GENMASK(31, 0)
+
+#define MT_WF_RMAC_MIB_AIRTIME4(_band)	MT_WF_RMAC(_band, 0x0390)
+#define MT_WF_RMAC_MIB_QOS23_BACKOFF	GENMASK(31, 0)
 
 /* WFDMA0 */
 #define MT_WFDMA0_BASE			__REG(WFDMA0_ADDR)

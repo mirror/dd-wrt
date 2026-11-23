@@ -1774,12 +1774,12 @@ static int collapse_file(struct mm_struct *mm, unsigned long addr,
 			 struct collapse_control *cc)
 {
 	struct address_space *mapping = file->f_mapping;
+	const bool is_shmem = shmem_mapping(mapping);
 	struct page *hpage;
 	pgoff_t index, end = start + HPAGE_PMD_NR;
 	LIST_HEAD(pagelist);
 	XA_STATE_ORDER(xas, &mapping->i_pages, start, HPAGE_PMD_ORDER);
 	int nr_none = 0, result = SCAN_SUCCEED;
-	bool is_shmem = shmem_file(file);
 	int nr;
 
 	VM_BUG_ON(!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) && !is_shmem);
@@ -2011,6 +2011,11 @@ static int collapse_file(struct mm_struct *mm, unsigned long addr,
 		WARN_ON_ONCE(xas_error(&xas));
 		continue;
 out_unlock:
+		/*
+		 * The page may have been unmapped with TTU_BATCH_FLUSH.
+		 * Flush before releasing the lock and our last reference.
+		 */
+		try_to_unmap_flush();
 		unlock_page(page);
 		put_page(page);
 		goto xa_unlocked;
@@ -2056,9 +2061,8 @@ xa_locked:
 xa_unlocked:
 
 	/*
-	 * If collapse is successful, flush must be done now before copying.
-	 * If collapse is unsuccessful, does flush actually need to be done?
-	 * Do it anyway, to clear the state.
+	 * Flush before copying the pages, or releasing them in rollback.
+	 * This is a no-op if out_unlock already flushed the batch.
 	 */
 	try_to_unmap_flush();
 
@@ -2167,6 +2171,7 @@ static int hpage_collapse_scan_file(struct mm_struct *mm, unsigned long addr,
 	int present, swap;
 	int node = NUMA_NO_NODE;
 	int result = SCAN_SUCCEED;
+	unsigned long failed_pfn = -1;
 
 	present = 0;
 	swap = 0;
@@ -2200,6 +2205,7 @@ static int hpage_collapse_scan_file(struct mm_struct *mm, unsigned long addr,
 					/* Maybe PMD-mapped */
 					? SCAN_PTE_MAPPED_HUGEPAGE
 					: SCAN_PAGE_COMPOUND;
+			failed_pfn = page_to_pfn(page);
 			/*
 			 * For SCAN_PTE_MAPPED_HUGEPAGE, further processing
 			 * by the caller won't touch the page cache, and so
@@ -2212,18 +2218,21 @@ static int hpage_collapse_scan_file(struct mm_struct *mm, unsigned long addr,
 		node = page_to_nid(page);
 		if (hpage_collapse_scan_abort(node, cc)) {
 			result = SCAN_SCAN_ABORT;
+			failed_pfn = page_to_pfn(page);
 			break;
 		}
 		cc->node_load[node]++;
 
 		if (!PageLRU(page)) {
 			result = SCAN_PAGE_LRU;
+			failed_pfn = page_to_pfn(page);
 			break;
 		}
 
 		if (page_count(page) !=
 		    1 + page_mapcount(page) + page_has_private(page)) {
 			result = SCAN_PAGE_COUNT;
+			failed_pfn = page_to_pfn(page);
 			break;
 		}
 
@@ -2252,7 +2261,7 @@ static int hpage_collapse_scan_file(struct mm_struct *mm, unsigned long addr,
 		}
 	}
 
-	trace_mm_khugepaged_scan_file(mm, page, file, present, swap, result);
+	trace_mm_khugepaged_scan_file(mm, failed_pfn, file, present, swap, result);
 	return result;
 }
 #else

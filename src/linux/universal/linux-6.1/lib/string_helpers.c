@@ -719,6 +719,23 @@ char *kstrdup_quotable_file(struct file *file, gfp_t gfp)
 }
 EXPORT_SYMBOL_GPL(kstrdup_quotable_file);
 
+/*
+ * Returns duplicate string in which the @old characters are replaced by @new.
+ */
+char *kstrdup_and_replace(const char *src, char old, char new, gfp_t gfp)
+{
+	char *dst;
+
+	dst = kstrdup(src, gfp);
+	if (!dst)
+		return NULL;
+
+	strreplace(dst, old, new);
+
+	return dst;
+}
+EXPORT_SYMBOL_GPL(kstrdup_and_replace);
+
 /**
  * kasprintf_strarray - allocate and fill array of sequential strings
  * @gfp: flags for the slab allocator

@@ -28,10 +28,10 @@
  * to PCC commands
  */
 #define PCC_CMD_WAIT_RETRIES_NUM	500ULL
+#define PCC_SIGNATURE_SIZE		sizeof(u32)
 
 struct pcc_data {
 	struct pcc_mbox_chan *pcc_chan;
-	void __iomem *pcc_comm_addr;
 	struct completion done;
 	struct mbox_client cl;
 	struct acpi_pcc_info ctx;
@@ -53,6 +53,7 @@ acpi_pcc_address_space_setup(acpi_handle region_handle, u32 function,
 	struct pcc_data *data;
 	struct acpi_pcc_info *ctx = handler_context;
 	struct pcc_mbox_chan *pcc_chan;
+	acpi_status ret;
 
 	data = kzalloc(sizeof(*data), GFP_KERNEL);
 	if (!data)
@@ -69,23 +70,35 @@ acpi_pcc_address_space_setup(acpi_handle region_handle, u32 function,
 	if (IS_ERR(data->pcc_chan)) {
 		pr_err("Failed to find PCC channel for subspace %d\n",
 		       ctx->subspace_id);
-		kfree(data);
-		return AE_NOT_FOUND;
+		ret = AE_NOT_FOUND;
+		goto err_free_data;
 	}
 
 	pcc_chan = data->pcc_chan;
-	data->pcc_comm_addr = acpi_os_ioremap(pcc_chan->shmem_base_addr,
-					      pcc_chan->shmem_size);
-	if (!data->pcc_comm_addr) {
-		pr_err("Failed to ioremap PCC comm region mem for %d\n",
+	if (pcc_chan->shmem_size < PCC_SIGNATURE_SIZE ||
+	    ctx->length > pcc_chan->shmem_size - PCC_SIGNATURE_SIZE) {
+		pr_err("PCC channel-%d shared memory is too small.\n",
 		       ctx->subspace_id);
-		pcc_mbox_free_channel(data->pcc_chan);
-		kfree(data);
-		return AE_NO_MEMORY;
+		ret = AE_AML_REGION_LIMIT;
+		goto err_free_channel;
+	}
+
+	if (!pcc_chan->mchan->mbox->txdone_irq) {
+		pr_err("This channel-%d does not support interrupt.\n",
+		       ctx->subspace_id);
+		ret = AE_SUPPORT;
+		goto err_free_channel;
 	}
 
 	*region_context = data;
 	return AE_OK;
+
+err_free_channel:
+	pcc_mbox_free_channel(data->pcc_chan);
+err_free_data:
+	kfree(data);
+
+	return ret;
 }
 
 static acpi_status
@@ -93,37 +106,38 @@ acpi_pcc_address_space_handler(u32 function, acpi_physical_address addr,
 			       u32 bits, acpi_integer *value,
 			       void *handler_context, void *region_context)
 {
-	int ret;
 	struct pcc_data *data = region_context;
+	void __iomem *pcc_opregion;
 	u64 usecs_lat;
+	int ret;
+
+	pcc_opregion = data->pcc_chan->shmem + PCC_SIGNATURE_SIZE;
 
 	reinit_completion(&data->done);
 
-	/* Write to Shared Memory */
-	memcpy_toio(data->pcc_comm_addr, (void *)value, data->ctx.length);
+	/* Write to the PCC OperationRegion after the shared memory signature. */
+	memcpy_toio(pcc_opregion, (void *)value, data->ctx.length);
 
 	ret = mbox_send_message(data->pcc_chan->mchan, NULL);
 	if (ret < 0)
 		return AE_ERROR;
 
-	if (data->pcc_chan->mchan->mbox->txdone_irq) {
-		/*
-		 * pcc_chan->latency is just a Nominal value. In reality the remote
-		 * processor could be much slower to reply. So add an arbitrary
-		 * amount of wait on top of Nominal.
-		 */
-		usecs_lat = PCC_CMD_WAIT_RETRIES_NUM * data->pcc_chan->latency;
-		ret = wait_for_completion_timeout(&data->done,
-						  usecs_to_jiffies(usecs_lat));
-		if (ret == 0) {
-			pr_err("PCC command executed timeout!\n");
-			return AE_TIME;
-		}
+	/*
+	 * pcc_chan->latency is just a Nominal value. In reality the remote
+	 * processor could be much slower to reply. So add an arbitrary
+	 * amount of wait on top of Nominal.
+	 */
+	usecs_lat = PCC_CMD_WAIT_RETRIES_NUM * data->pcc_chan->latency;
+	ret = wait_for_completion_timeout(&data->done,
+						usecs_to_jiffies(usecs_lat));
+	if (ret == 0) {
+		pr_err("PCC command executed timeout!\n");
+		return AE_TIME;
 	}
 
 	mbox_chan_txdone(data->pcc_chan->mchan, ret);
 
-	memcpy_fromio(value, data->pcc_comm_addr, data->ctx.length);
+	memcpy_fromio(value, pcc_opregion, data->ctx.length);
 
 	return AE_OK;
 }

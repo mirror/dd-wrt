@@ -955,14 +955,12 @@ void mt76_wcid_key_setup(struct mt76_dev *dev, struct mt76_wcid *wcid,
 }
 EXPORT_SYMBOL(mt76_wcid_key_setup);
 
-static int
-mt76_rx_signal(struct mt76_rx_status *status)
+int mt76_rx_signal(u8 chain_mask, s8 *chain_signal)
 {
-	s8 *chain_signal = status->chain_signal;
 	int signal = -128;
 	u8 chains;
 
-	for (chains = status->chains; chains; chains >>= 1, chain_signal++) {
+	for (chains = chain_mask; chains; chains >>= 1, chain_signal++) {
 		int cur, diff;
 
 		cur = *chain_signal;
@@ -984,6 +982,7 @@ mt76_rx_signal(struct mt76_rx_status *status)
 
 	return signal;
 }
+EXPORT_SYMBOL(mt76_rx_signal);
 
 static void
 mt76_rx_convert(struct mt76_dev *dev, struct sk_buff *skb,
@@ -1013,7 +1012,7 @@ mt76_rx_convert(struct mt76_dev *dev, struct sk_buff *skb,
 	status->ampdu_reference = mstat.ampdu_ref;
 	status->device_timestamp = mstat.timestamp;
 	status->mactime = mstat.timestamp;
-	status->signal = mt76_rx_signal(&mstat);
+	status->signal = mt76_rx_signal(mstat.chains, mstat.chain_signal);
 	if (status->signal <= -128)
 		status->flag |= RX_FLAG_NO_SIGNAL_VAL;
 
@@ -1189,6 +1188,7 @@ mt76_check_sta(struct mt76_dev *dev, struct sk_buff *skb)
 	struct ieee80211_hw *hw;
 	struct mt76_wcid *wcid = status->wcid;
 	u8 tidno = status->qos_ctl & IEEE80211_QOS_CTL_TID_MASK;
+	int signal;
 	bool ps;
 
 	hw = mt76_phy_hw(dev, status->phy_idx);
@@ -1206,8 +1206,9 @@ mt76_check_sta(struct mt76_dev *dev, struct sk_buff *skb)
 
 	sta = container_of((void *)wcid, struct ieee80211_sta, drv_priv);
 
-	if (status->signal <= 0)
-		ewma_signal_add(&wcid->rssi, -status->signal);
+	signal = mt76_rx_signal(status->chains, status->chain_signal);
+	if (signal <= 0 && signal > -128)
+		ewma_signal_add(&wcid->rssi, -signal);
 
 	wcid->inactive_count = 0;
 

@@ -510,6 +510,23 @@ static int nilfs_recover_dsync_blocks(struct the_nilfs *nilfs,
 			goto failed_inode;
 		}
 
+		/*
+		 * Regular files, directories, and symlinks are the only
+		 * inode types with data blocks and an initialized bmap;
+		 * a crafted image can reference some other inode type
+		 * here, whose i_bmap_data was never set up by
+		 * __nilfs_read_inode().
+		 */
+		if (!likely(S_ISREG(inode->i_mode) || S_ISDIR(inode->i_mode) ||
+			    S_ISLNK(inode->i_mode))) {
+			nilfs_warn(sb,
+				   "%s: invalid inode type (ino=%lu, mode=0%o)",
+				   __func__, (unsigned long)rb->ino,
+				   inode->i_mode);
+			err = -EINVAL;
+			goto failed_inode;
+		}
+
 		pos = rb->blkoff << inode->i_blkbits;
 		err = block_write_begin(inode->i_mapping, pos, blocksize,
 					&page, nilfs_get_block);
@@ -741,18 +758,13 @@ static void nilfs_abort_roll_forward(struct the_nilfs *nilfs)
  * @sb: super block instance
  * @ri: pointer to a nilfs_recovery_info struct to store search results.
  *
- * Return Value: On success, 0 is returned.  On error, one of the following
- * negative error code is returned.
- *
- * %-EINVAL - Inconsistent filesystem state.
- *
- * %-EIO - I/O error
- *
- * %-ENOSPC - No space left on device (only in a panic state).
- *
- * %-ERESTARTSYS - Interrupted.
- *
- * %-ENOMEM - Insufficient memory available.
+ * Return: 0 on success, or one of the following negative error codes on
+ * failure:
+ * * %-EINTR		- Interrupted.
+ * * %-EINVAL		- Inconsistent filesystem state.
+ * * %-EIO		- I/O error.
+ * * %-ENOMEM		- Insufficient memory available.
+ * * %-ENOSPC		- No space left on device (only in a panic state).
  */
 int nilfs_salvage_orphan_logs(struct the_nilfs *nilfs,
 			      struct super_block *sb,
@@ -817,14 +829,11 @@ failed:
  * segment pointed by the superblock.  It sets up struct the_nilfs through
  * this search. It fills nilfs_recovery_info (ri) required for recovery.
  *
- * Return Value: On success, 0 is returned.  On error, one of the following
- * negative error code is returned.
- *
- * %-EINVAL - No valid segment found
- *
- * %-EIO - I/O error
- *
- * %-ENOMEM - Insufficient memory available.
+ * Return: 0 on success, or one of the following negative error codes on
+ * failure:
+ * * %-EINVAL	- No valid segment found.
+ * * %-EIO	- I/O error.
+ * * %-ENOMEM	- Insufficient memory available.
  */
 int nilfs_search_super_root(struct the_nilfs *nilfs,
 			    struct nilfs_recovery_info *ri)

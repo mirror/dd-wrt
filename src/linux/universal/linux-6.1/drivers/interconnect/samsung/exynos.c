@@ -96,14 +96,9 @@ static struct icc_node *exynos_generic_icc_xlate(struct of_phandle_args *spec,
 static int exynos_generic_icc_remove(struct platform_device *pdev)
 {
 	struct exynos_icc_priv *priv = platform_get_drvdata(pdev);
-	struct icc_node *parent_node, *node = priv->node;
 
 	icc_provider_deregister(&priv->provider);
-
-	parent_node = exynos_icc_get_parent(priv->dev->parent->of_node);
-	if (parent_node && !IS_ERR(parent_node))
-		icc_link_destroy(node, parent_node);
-
+	dev_pm_qos_remove_request(&priv->qos_req);
 	icc_nodes_remove(&priv->provider);
 
 	return 0;

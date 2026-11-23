@@ -27,6 +27,8 @@ struct apm_graph_mgmt_cmd {
 
 #define APM_GRAPH_MGMT_PSIZE(p, n) ALIGN(struct_size(p, sub_graph_id_list, n), 8)
 
+struct q6apm *g_apm;
+
 int q6apm_send_cmd_sync(struct q6apm *apm, struct gpr_pkt *pkt, uint32_t rsp_opcode)
 {
 	gpr_device_t *gdev = apm->gdev;
@@ -143,6 +145,7 @@ static void q6apm_put_audioreach_graph(struct kref *ref)
 	kfree(graph);
 }
 
+
 static int q6apm_get_apm_state(struct q6apm *apm)
 {
 	struct gpr_pkt *pkt;
@@ -157,6 +160,15 @@ static int q6apm_get_apm_state(struct q6apm *apm)
 
 	return apm->state;
 }
+
+bool q6apm_is_adsp_ready(void)
+{
+	if (g_apm)
+		return q6apm_get_apm_state(g_apm);
+
+	return false;
+}
+EXPORT_SYMBOL_GPL(q6apm_is_adsp_ready);
 
 static struct audioreach_module *__q6apm_find_module_by_mid(struct q6apm *apm,
 						    struct audioreach_graph_info *info,
@@ -746,8 +758,6 @@ static int apm_probe(gpr_device_t *gdev)
 	if (!apm)
 		return -ENOMEM;
 
-	dev_set_drvdata(dev, apm);
-
 	mutex_init(&apm->lock);
 	apm->dev = dev;
 	apm->gdev = gdev;
@@ -759,6 +769,9 @@ static int apm_probe(gpr_device_t *gdev)
 	idr_init(&apm->containers_idr);
 
 	idr_init(&apm->modules_idr);
+
+	dev_set_drvdata(dev, apm);
+	g_apm = apm;
 
 	q6apm_get_apm_state(apm);
 
@@ -777,6 +790,7 @@ static int apm_probe(gpr_device_t *gdev)
 
 static void apm_remove(gpr_device_t *gdev)
 {
+	g_apm = NULL;
 	of_platform_depopulate(&gdev->dev);
 	snd_soc_unregister_component(&gdev->dev);
 }
@@ -797,6 +811,9 @@ static int apm_callback(struct gpr_resp_pkt *data, void *priv, int op)
 	struct device *dev = &gdev->dev;
 	struct gpr_ibasic_rsp_result_t *result;
 	struct gpr_hdr *hdr = &data->hdr;
+
+	if (!apm)
+		return 0;
 
 	result = data->payload;
 
