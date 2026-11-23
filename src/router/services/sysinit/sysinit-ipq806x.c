@@ -835,7 +835,7 @@ void start_sysinit(void)
 	case ROUTER_HABANERO:
 		nvram_default_get("clkfreq", "716");
 #ifdef HAVE_ANTAIRA
-		eval("insmod", "i2c-gpio-custom", "bus2=2,11,10");
+//		eval("insmod", "i2c-gpio-custom", "bus2=2,523,522");
 		eval("insmod", "rtc-pcf8523");
 		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "pcf8523 0x68");
 		eval("insmod", "gpio-antaira-i2c");
@@ -925,7 +925,7 @@ void start_sysinit(void)
 		}
 
 #ifdef HAVE_ANTAIRA
-		eval("insmod", "i2c-gpio-custom", "bus2=2,11,10");
+//		eval("insmod", "i2c-gpio-custom", "bus2=2,523,522");
 		eval("insmod", "rtc-pcf8523");
 		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "pcf8523 0x68");
 		eval("insmod", "gpio-antaira-i2c");
