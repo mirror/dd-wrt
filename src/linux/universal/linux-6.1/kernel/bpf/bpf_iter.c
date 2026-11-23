@@ -349,7 +349,7 @@ bool bpf_iter_prog_supported(struct bpf_prog *prog)
 	 * function of that program, whatever its name is.
 	 */
 	if (prog->aux->dst_prog)
-		return -EINVAL;
+		return false;
 
 	if (strncmp(attach_fname, prefix, prefix_len))
 		return false;

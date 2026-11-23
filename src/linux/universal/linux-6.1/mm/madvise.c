@@ -143,7 +143,6 @@ static int madvise_update_vma(struct vm_area_struct *vma,
 			      struct anon_vma_name *anon_name)
 {
 	struct mm_struct *mm = vma->vm_mm;
-	bool set_new_anon_name = new_flags == vma->vm_flags;
 	int error;
 	pgoff_t pgoff;
 
@@ -180,9 +179,6 @@ static int madvise_update_vma(struct vm_area_struct *vma,
 	}
 
 success:
-	if (set_new_anon_name)
-		return replace_anon_vma_name(vma, anon_name);
-
 	/*
 	 * vm_flags is protected by the mmap_lock held in write mode.
 	 */
