@@ -819,13 +819,18 @@ void start_sysinit(void)
 		nvram_default_get("clkfreq", "716");
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
-		sysprintf("echo netdev > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/trigger");
-		sysprintf("echo netdev > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/trigger");
-		sysprintf("echo eth0 > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/device_name");
-		sysprintf("echo eth1 > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/device_name");
+		sysprintf("echo netdev > /sys/devices/platform/leds/leds/blue:wan/trigger");
+		sysprintf("echo wan > /sys/devices/platform/leds/leds/blue:wan/device_name");
 
-		sysprintf("echo \"link tx rx\" > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/mode");
-		sysprintf("echo \"link tx rx\" > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/mode");
+		sysprintf("echo 1 > /sys/devices/platform/leds/leds/blue:wan/rx");
+		sysprintf("echo 1 > /sys/devices/platform/leds/leds/blue:wan/tx");
+		sysprintf("echo 1 > /sys/devices/platform/leds/leds/blue:wan/link");
+
+
+//		sysprintf("echo netdev > /sys/devices/platform/leds/leds/blue:lan/trigger");
+//		sysprintf("echo eth0 > /sys/devices/platform/leds/leds/blue:lan/device_name");
+//		sysprintf("echo \"link tx rx\" > /sys/devices/platform/leds/leds/blue:lan/mode");
+
 		break;
 	case ROUTER_LINKSYS_EA8300:
 		nvram_default_get("clkfreq", "716");
