@@ -923,17 +923,6 @@ void start_sysinit(void)
 			set_hwaddr("lan3", macaddr);
 			set_hwaddr("lan4", macaddr);
 		}
-
-#ifdef HAVE_ANTAIRA
-//		eval("insmod", "i2c-gpio-custom", "bus2=2,523,522");
-		eval("insmod", "rtc-pcf8523");
-		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "pcf8523 0x68");
-		eval("insmod", "gpio-antaira-i2c");
-		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "antairagpio 0x60");
-		eval("hwclock", "-s", "-u");
-		eval("ledtool", "20", "0");
-
-#endif /*HAVE_ANTAIRA */
 		set_named_smp_affinity("eth0", 0, 1);
 		set_named_smp_affinity("eth1", 1, 1);
 	} break;
