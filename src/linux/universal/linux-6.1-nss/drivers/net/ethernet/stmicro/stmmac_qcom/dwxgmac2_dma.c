@@ -139,7 +139,7 @@ static void dwxgmac2_dma_dump_regs(void __iomem *ioaddr, u32 *reg_space)
 		reg_space[i] = readl(ioaddr + i * 4);
 }
 
-static void dwxgmac2_dma_rx_mode(void __iomem *ioaddr, int mode,
+static void dwxgmac2_dma_rx_mode(struct stmmac_priv *priv,void __iomem *ioaddr, int mode,
 				 u32 channel, int fifosz, u8 qmode)
 {
 	u32 value = readl(ioaddr + XGMAC_MTL_RXQ_OPMODE(channel));

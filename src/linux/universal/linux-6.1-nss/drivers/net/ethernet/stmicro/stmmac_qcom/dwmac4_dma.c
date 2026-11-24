@@ -228,7 +228,7 @@ static void dwmac4_rx_watchdog(void __iomem *ioaddr, u32 riwt, u32 queue)
 	writel(riwt, ioaddr + DMA_CHAN_RX_WATCHDOG(queue));
 }
 
-static void dwmac4_dma_rx_chan_op_mode(void __iomem *ioaddr, int mode,
+static void dwmac4_dma_rx_chan_op_mode(struct stmmac_priv *priv,void __iomem *ioaddr, int mode,
 				       u32 channel, int fifosz, u8 qmode)
 {
 	unsigned int rqs = fifosz / 256 - 1;

@@ -148,7 +148,7 @@ static u32 dwmac1000_configure_fc(u32 csr6, int rxfifosz)
 	return csr6;
 }
 
-static void dwmac1000_dma_operation_mode_rx(void __iomem *ioaddr, int mode,
+static void dwmac1000_dma_operation_mode_rx(struct stmmac_priv *priv, void __iomem *ioaddr, int mode,
 					    u32 channel, int fifosz, u8 qmode)
 {
 	u32 csr6 = readl(ioaddr + DMA_CONTROL);

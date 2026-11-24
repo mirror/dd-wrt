@@ -2257,7 +2257,7 @@ static void stmmac_dma_operation_mode(struct stmmac_priv *priv)
 
 		qmode = priv->plat->rx_queues_cfg[chan].mode_to_use;
 
-		stmmac_dma_rx_mode(priv, priv->ioaddr, rxmode, chan,
+		stmmac_dma_rx_mode(priv, priv, priv->ioaddr, rxmode, chan,
 				rxfifosz, qmode);
 
 		stmmac_set_dma_bfsize(priv, priv->ioaddr,
@@ -2496,7 +2496,7 @@ static void stmmac_set_dma_operation_mode(struct stmmac_priv *priv, u32 txmode,
 	rxfifosz /= rx_channels_count;
 	txfifosz /= tx_channels_count;
 
-	stmmac_dma_rx_mode(priv, priv->ioaddr, rxmode, chan, rxfifosz, rxqmode);
+	stmmac_dma_rx_mode(priv, priv, priv->ioaddr, rxmode, chan, rxfifosz, rxqmode);
 	stmmac_dma_tx_mode(priv, priv->ioaddr, txmode, chan, txfifosz, txqmode);
 }
 

@@ -26,6 +26,7 @@
 })
 
 struct stmmac_extra_stats;
+struct stmmac_priv;
 struct stmmac_safety_stats;
 struct dma_desc;
 struct dma_extended_desc;
@@ -180,7 +181,7 @@ struct stmmac_dma_ops {
 	void (*axi)(void __iomem *ioaddr, struct stmmac_axi *axi);
 	/* Dump DMA registers */
 	void (*dump_regs)(void __iomem *ioaddr, u32 *reg_space);
-	void (*dma_rx_mode)(void __iomem *ioaddr, int mode, u32 channel,
+	void (*dma_rx_mode)(struct stmmac_priv *priv,void __iomem *ioaddr, int mode, u32 channel,
 			    int fifosz, u8 qmode);
 	void (*dma_tx_mode)(void __iomem *ioaddr, int mode, u32 channel,
 			    int fifosz, u8 qmode);
