@@ -18,3 +18,5 @@ udev-clean:
 
 udev-install:
 	install -D udev/udevtrigger $(INSTALLDIR)/udev/sbin/udevtrigger
+	mkdir -p $(INSTALLDIR)/udev/etc/udev
+	cp -f udev/etc/udev/udev.conf $(INSTALLDIR)/udev/etc/udev
