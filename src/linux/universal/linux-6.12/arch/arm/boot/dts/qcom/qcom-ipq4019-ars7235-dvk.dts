@@ -494,4 +494,5 @@
 
 &usb2_hs_phy {
 	status = "okay";
-}
+};
+
