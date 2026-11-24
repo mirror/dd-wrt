@@ -318,10 +318,10 @@
 
 &wifi0 {
 	status = "okay";
-	qcom,calibration-variant = "RT-AC58U";
+	qcom,ath10k-calibration-variant = "RT-AC58U";
 };
 
 &wifi1 {
 	status = "okay";
-	qcom,calibration-variant = "RT-AC58U";
+	qcom,ath10k-calibration-variant = "RT-AC58U";
 };
