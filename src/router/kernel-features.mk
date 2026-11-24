@@ -206,6 +206,9 @@ define kernelfeatures
 		echo "CONFIG_CRYPTO_DRBG_CTR=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_CRYPTO_DRBG_HASH=y" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_BLUEZ)" != "y" ]; then \
+		sed -i 's/\CONFIG_BT=m/# CONFIG_BT is not set/g' $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_MPTCP)" = "y" ]; then \
 		sed -i 's/\# CONFIG_MPTCP is not set/CONFIG_MPTCP=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_IPV6 is not set/CONFIG_IPV6=y/g' $(LINUXDIR)/.config; \
@@ -275,6 +278,11 @@ define kernelfeatures
 		sed -i 's/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3 is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/CONFIG_KALLSYMS=y/\# CONFIG_KALLSYMS is not set/g' $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_OPTIMIZE_O2)" = "y" ]; then \
+		sed -i 's/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3 is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_KERNELLTO)" = "y" ]; then \
 		echo "CONFIG_LTO_MENU=y" >> $(LINUXDIR)/.config; \
@@ -926,6 +934,7 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_CRYPTO_ARC4 is not set/CONFIG_CRYPTO_ARC4=m/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_SYSTEM_BLACKLIST_KEYRING is not set" >> $(LINUXDIR)/.config; \
 	else \
+		sed -i 's/\CONFIG_NFS_FS=m/# CONFIG_NFS_FS is not set/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_RPCSEC_GSS_KRB5 is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_VSOCKETS)" = "y" ]; then \
