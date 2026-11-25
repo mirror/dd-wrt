@@ -1206,6 +1206,7 @@ void start_qos(void)
 #ifdef HAVE_SVQOS
 	aqd = nvram_safe_get("svqos_aqd");
 
+	insmod("nfnetlink_queue");
 	insmod("imq");
 	insmod("ipt_IMQ");
 	insmod("xt_IMQ");
