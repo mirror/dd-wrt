@@ -216,6 +216,7 @@ for i in $(seq 1 $tunnels); do
 			insmod ipv6
 			insmod udp_tunnel
 			insmod ip6_udp_tunnel
+			insmod libchacha20poly1305
 			insmod ip_tunnel
 			insmod wireguard
 			} >/dev/null 2>&1
