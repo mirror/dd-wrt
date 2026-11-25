@@ -293,6 +293,7 @@ void start_transmission(void)
 	writeprocsysnet("core/rmem_max", "16777216");
 	writeprocsysnet("core/wmem_max", "4194304");
 	writeprocsysnet("ipv4/tcp_adv_win_scale", "4");
+	writeprocsys("vm/min_free_kbytes", "65536");
 
 	char *web = nvram_default_get("transmission_style", "default");
 	sysprintf("export TRANSMISSION_WEB_HOME=\"/usr/share/transmission/%s\" && transmissiond --config-dir \"%s\"", web,
