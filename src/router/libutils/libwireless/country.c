@@ -550,7 +550,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{ NULL, CTRY_INDIA_BFWA, APL11_WORLD, "97", "INDIA_BFWA" },
 	//#endif
 	{ NULL, CTRY_INDONESIA, APL1_WORLD, "ID", "INDONESIA" },
-	{ NULL, CTRY_IRAN, APL1_WORLD, "IR", "IRAN" },
+	{ NULL, CTRY_IRAN, APL1_WORLD, "IR", "IRAN" }, // it should be mentioned that the QCA firmwares do not include any support for Iran. so this country may only for for softmacs
 	{ NULL, CTRY_IRAQ, ETSI1_WORLD, "IQ", "IRAQ" },
 	{ "GB", CTRY_IRELAND, ETSI1_WORLD, "IE", "IRELAND" },
 	{ NULL, CTRY_ISRAEL, NULL1_WORLD, "IL", "ISRAEL" },
