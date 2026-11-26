@@ -15,6 +15,9 @@
 #include <asm/smp-ops.h>
 #include <linux/of.h>
 #include <linux/smp.h>
+#include <linux/memblock.h>
+#include <linux/sizes.h>
+#include <linux/swiotlb.h>
 
 #include <mach-rtl-otto.h>
 
@@ -46,6 +49,25 @@ const void *fdt;
 #define RTL9310_MIPSIA_L2SIZE_MASK (0x0f)
 #define RTL9310_MIPSIA_L2_LINESIZE_0 (0x0)
 #define RTL9310_MIPSIA_L2_LINESIZE_256 (0x7)
+
+#ifdef CONFIG_SWIOTLB
+/*
+ * The on-chip DMA masters cannot reach the second RAM bank at 0x90000000
+ * (HIGHMEM); writes into it are silently lost. dma-ranges on the soc bus
+ * caps device DMA to lowmem and SWIOTLB bounces anything above it. Boards
+ * without that bank need no pool. 1 MB covers the observed peak; swiotlb=
+ * on the command line still overrides it.
+ */
+void __init plat_swiotlb_setup(void)
+{
+	if (max_pfn <= max_low_pfn)
+		return;
+
+	swiotlb_adjust_size(SZ_1M);
+	swiotlb_init(true, SWIOTLB_VERBOSE);
+}
+#endif
+
 
 #ifdef CONFIG_MIPS_GIC
 extern void init_l2_cache(void);
