@@ -1777,7 +1777,7 @@ static void show_netmode(webs_t wp, char *prefix)
 			websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 		}
-		if (has_ac(prefix) && (has_ac(prefix) || has_ax(prefix)) && has_5ghz(prefix)) {
+		if (has_ac(prefix) && has_5ghz(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "acn-mixed") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n",
@@ -3590,7 +3590,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			else if (canht40)
 				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n",
 					  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-		if (has_ac(prefix) && (((has_5ghz(prefix) || has_6ghz(prefix)) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam",prefix))) 
+		if ((has_ac(prefix) || has_ax(prefix)) && (((has_5ghz(prefix) || has_6ghz(prefix)) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam",prefix))) 
 		    && nvram_nmatch("mixed", "%s_net_mode", prefix) || 
 		    nvram_nmatch("mixed5", "%s_net_mode", prefix) || 
 		    nvram_nmatch("ac-only", "%s_net_mode", prefix) || 
@@ -4652,7 +4652,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 						wp,
 						"document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n",
 						nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-				if (has_ac(prefix) &&
+				if ((has_ac(prefix) || has_ax(prefix)) &&
 				    ((has_5ghz(prefix) || has_6ghz(prefix)) ||
 				     (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix))) &&
 				    (nvram_nmatch("mixed", "%s_net_mode", prefix) ||
