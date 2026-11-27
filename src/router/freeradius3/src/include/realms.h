@@ -5,11 +5,11 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id: 828cbc251a39669aaafe45ea84a9439db3598995 $
+ * Version:	$Id: 37b6962e22347036b24f2e17b65abeb6c0f8f030 $
  *
  */
 
-RCSIDH(realms_h, "$Id: 828cbc251a39669aaafe45ea84a9439db3598995 $")
+RCSIDH(realms_h, "$Id: 37b6962e22347036b24f2e17b65abeb6c0f8f030 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,11 +51,9 @@ typedef enum {
 	HOME_STATE_IS_DEAD,
 	HOME_STATE_UNKNOWN,
 	HOME_STATE_ADMIN_DOWN,
-	HOME_STATE_CONNECTION_FAIL,
-	HOME_STATE_CERTIFICATE_FAIL,
 } home_state_t;
 
-#define HOME_SERVER_IS_DEAD(_x) (((_x)->state == HOME_STATE_IS_DEAD) || ((_x)->state == HOME_STATE_ADMIN_DOWN) || ((_x)->state == HOME_STATE_CONNECTION_FAIL) || ((_x)->state == HOME_STATE_CERTIFICATE_FAIL))
+#define HOME_SERVER_IS_DEAD(_x) (((_x)->state == HOME_STATE_IS_DEAD) || ((_x)->state == HOME_STATE_ADMIN_DOWN))
 
 typedef struct fr_socket_limit_t {
 	uint32_t	max_connections;
@@ -68,7 +66,10 @@ typedef struct fr_socket_limit_t {
 	uint32_t	write_timeout;
 	uint32_t	connect_timeout;
 	uint32_t	connect_fail_interval;
+#ifdef WITH_TLS
 	uint32_t	certificate_fail_interval;
+	uint32_t	max_packet_size;	//!< largest RADIUS packet which this listener accepts
+#endif
 } fr_socket_limit_t;
 
 typedef struct home_server {
@@ -79,19 +80,21 @@ typedef struct home_server {
 
 	bool			dual;			//!< One of a pair of homeservers on consecutive ports.
 	bool			dynamic;		//!< is this a dynamically added home server?
-	bool			nonblock;		//!< Enable a socket non-blocking to the home server.
-	fr_bool_auto_t	       	require_ma;		//!< for all replies to Access-Request and Status-Server
+	bool			dns_soft_fail;		//!< ignore the home server if DNS has issues
+	fr_bool_auto_t	       	require_ma;		//!< for all replies to Access-Request
 
 #ifdef WITH_COA_TUNNEL
 	bool			recv_coa;		//!< receive CoA packets, too
 #endif
-	char const		*virtual_server;		//!< For internal proxying
+	char const		*virtual_server;	//!< For internal proxying
 	char const		*parent_server;
 
 	fr_ipaddr_t		ipaddr;			//!< IP address of home server.
+	char const		*ipaddr_str;		//!< the name of the IP address
 	uint16_t		port;
 
-	uint32_t		affinity;		//!< for home server fail-over groups and EAP.
+	uint32_t		affinity_id;		//!< for home server fail-over groups and EAP.
+	bool			affinity_id_is_set;    	//!< is there an affinity_id set?
 
 	char const		*type_str;		//!< String representation of type.
 	home_type_t		type;			//!< Auth, Acct, CoA etc.
@@ -117,9 +120,16 @@ typedef struct home_server {
 	uint32_t		max_response_timeouts;
 	uint32_t		max_outstanding;	//!< Maximum outstanding requests.
 	uint32_t		currently_outstanding;
+#ifdef WITH_TCP
+	uint32_t		limit_outstanding;	//!< calculated from the number of live connections
+	uint32_t		active_connections;	//!< some may be frozen
+#endif
 
 	time_t			last_packet_sent;
 	time_t			last_packet_recv;
+	time_t			first_unanswered_sent;	//!< When the current run of unanswered packets
+							//!< started.  Zero when everything we sent has been
+							//!< answered.
 	time_t			last_failed_open;
 	struct timeval		revive_time;
 	struct timeval		zombie_period_start;
@@ -157,6 +167,16 @@ typedef struct home_server {
 	fr_tls_server_conf_t	*tls;
 	uint32_t		connect_timeout;
 	rbtree_t		*listeners;
+
+	bool			tls_failed;		//!< TLS negotiation failed, but old connections might still be active
+	time_t			tls_failed_time;	//!< New connections are blocked for "certificate_fail_interval"
+#endif
+
+#ifdef WITH_TCP
+	bool			tcp_failed;		//!< TCP connection failed, but old connections might still be active
+	time_t			tcp_failed_time;	//!< New connections are blocked for "tcp_failed_wait"
+	uint32_t		tcp_failed_count;	//!< consecutive failures, for the back-off
+	uint32_t		tcp_failed_wait;	//!< seconds to wait before the next attempt
 #endif
 
 #ifdef WITH_STATS
@@ -170,6 +190,9 @@ typedef struct home_server {
 	time_t			expiration;
 #endif
 	uint32_t		id;
+#ifdef HOMESERVER_VIOLATES_RFC
+	bool			no_auto_ma;		//!< For home servers which violate the RFCs.
+#endif
 } home_server_t;
 
 
@@ -196,7 +219,6 @@ typedef struct home_pool_t {
 	home_server_t		*fallback;
 	int			in_fallback;
 	time_t			time_all_dead;
-	time_t			last_serviced;
 
 	home_server_t		**affinity_group;
 
@@ -227,14 +249,17 @@ REALM		*realm_find2(char const *name); /* ... with name taken from realm_find */
 void		realm_home_server_sanitize(home_server_t *home, CONF_SECTION *cs);
 int		realm_pool_add(home_pool_t *pool, CONF_SECTION *cs);
 void		realm_pool_free(home_pool_t *pool);
-bool		realm_home_server_add(home_server_t *home);
+bool		realm_home_server_add(home_server_t *home, bool soft_fail);
 int		realm_realm_add( REALM *r, CONF_SECTION *cs);
 
 void		home_server_update_request(home_server_t *home, REQUEST *request);
 home_server_t	*home_server_ldb(char const *realmname, home_pool_t *pool, REQUEST *request);
+#ifdef WITH_TCP
+bool		home_server_connect_blocked(home_server_t const *home, time_t now);
+#endif
 home_server_t	*home_server_find(fr_ipaddr_t *ipaddr, uint16_t port, int proto);
 home_server_t	*home_server_find_bysrc(fr_ipaddr_t *ipaddr, uint16_t port, int proto, fr_ipaddr_t *src_ipaddr);
-home_server_t	*home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SECTION *cs);
+home_server_t	*home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SECTION *cs, bool *soft_fail);
 CONF_SECTION	*home_server_cs_afrom_client(CONF_SECTION *client);
 #ifdef WITH_COA
 home_server_t	*home_server_byname(char const *name, int type);

@@ -15,6 +15,7 @@ port-coa 	        = 12344
 # Port difines for request types: auth or coa
 auth-port = $(port-proxy-auth)
 coa-port  = $(port-home-coa)
+disconnect-port = $(port-home-coa)
 
 
 #
@@ -30,6 +31,7 @@ endif
 
 raddb:
 	${Q}echo "Setting up raddb directory"
+	${Q}rm -rf $(TEST_PATH)/raddb
 	${Q}cp -r $(top_builddir)/raddb $(TEST_PATH)
 	${Q}rm -rf $(TEST_PATH)/raddb/sites-enabled/* # we have per server config
 	${Q}echo 'detail detail_test {' >> $(TEST_PATH)/raddb/mods-enabled/detail
@@ -85,7 +87,7 @@ define PID_SERVER
 		s/$${{port-home-auth}}/$(port-home-auth)/g; \
 		s/$${{port-home-coa}}/$(port-home-coa)/g; \
 		s/$${{port-coa}}/$(port-coa)/g' \
-			$(TEST_PATH)/config-$(1)/main.conf > $(TEST_PATH)/config-$(1)/main.conf
+			$(TEST_PATH)/config-$(1)/main.conf.template > $(TEST_PATH)/config-$(1)/main.conf
 	$(call TEST_CONF,$(1))
 	$(call START_SERVER,$(1))
 endef
@@ -144,7 +146,7 @@ tests.radsec: radiusd.kill radiusd.pid $(TEST_FILES)
 
 .PHONY: clean.tests.radsec
 clean.tests.radsec: radiusd.kill
-	${Q}cd $(TEST_PATH) && rm -rf raddb/ detail_coa detail_test *.result *.conf dictionary *.ok *.log *.tmp
+	${Q}cd $(TEST_PATH) && rm -rf raddb/ detail_coa detail_test *.result *.conf dictionary *.ok *.log *.tmp *.work
 
 
 .PHONY: radiusd.kill radiusd-proxy.kill radiusd-home.kill radiusd-coa.kill dictionary raddb

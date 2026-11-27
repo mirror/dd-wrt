@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: c8529b2617bea790c16f7944f6b13e81236ee1b8 $
+ * $Id: 176213fc4c371e006c6c11e32475db6e01eb2420 $
  * @file rlm_pap.c
  * @brief Hashes plaintext passwords to compare against a prehashed reference.
  *
@@ -23,7 +23,7 @@
  * @copyright 2012       Matthew Newton <matthew@newtoncomputing.co.uk>
  * @copyright 2001       Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: c8529b2617bea790c16f7944f6b13e81236ee1b8 $")
+RCSID("$Id: 176213fc4c371e006c6c11e32475db6e01eb2420 $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -523,7 +523,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 		}
 
 		if (auth_type) {
-			DEBUG("Not doing PAP as Auth-Type is already set.");
+			RDEBUG("Not doing PAP as Auth-Type is already set.");
 			return RLM_MODULE_NOOP;
 		}
 

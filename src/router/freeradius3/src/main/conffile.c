@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: 7d9b6b37d748e2f2e00e91469d6fa0a71326c0c3 $
+ * Version:	$Id: 311584d0a0a0aebe3e8778be0e1b24a3a619942a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 7d9b6b37d748e2f2e00e91469d6fa0a71326c0c3 $")
+RCSID("$Id: 311584d0a0a0aebe3e8778be0e1b24a3a619942a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -41,6 +41,7 @@ RCSID("$Id: 7d9b6b37d748e2f2e00e91469d6fa0a71326c0c3 $")
 #include <sys/stat.h>
 #endif
 
+#include <fcntl.h>
 #include <ctype.h>
 
 bool check_config = false;
@@ -456,8 +457,8 @@ static int cf_file_open(CONF_SECTION *cs, char const *filename, bool from_dir, F
 	fp = fopen(filename, "r");
 	if (!fp) {
 error:
-		ERROR("Unable to open file \"%s\": %s",
-		      filename, fr_syserror(errno));
+		cf_log_err(&(cs->item), "Unable to open file '%s': %s",
+			   filename, fr_syserror(errno));
 		return -1;
 	}
 
@@ -476,8 +477,8 @@ error:
 	if (fstat(fd, &file->buf) == 0) {
 #ifdef S_IWOTH
 		if ((file->buf.st_mode & S_IWOTH) != 0) {
-			ERROR("Configuration file %s is globally writable.  "
-			      "Refusing to start due to insecure configuration.", filename);
+			cf_log_err(&(cs->item), "Configuration file %s is globally writable.  "
+				   "Refusing to start due to insecure configuration.", filename);
 
 			fclose(fp);
 			talloc_free(file);
@@ -523,7 +524,7 @@ bool cf_file_check(CONF_SECTION *cs, char const *filename, bool check_perms)
 	file->cs = cs;
 
 	if (stat(filename, &file->buf) < 0) {
-		ERROR("Unable to check file \"%s\": %s", filename, fr_syserror(errno));
+		cf_log_err(&(cs->item), "Unable to check file '%s': %s", filename, fr_syserror(errno));
 		talloc_free(file);
 		return false;
 	}
@@ -535,8 +536,8 @@ bool cf_file_check(CONF_SECTION *cs, char const *filename, bool check_perms)
 
 #ifdef S_IWOTH
 	if ((file->buf.st_mode & S_IWOTH) != 0) {
-		ERROR("Configuration file %s is globally writable.  "
-		      "Refusing to start due to insecure configuration.", filename);
+		cf_log_err(&(cs->item), "Configuration file %s is globally writable.  "
+			   "Refusing to start due to insecure configuration.", filename);
 		talloc_free(file);
 		return false;
 	}
@@ -757,7 +758,7 @@ CONF_SECTION *cf_section_alloc(CONF_SECTION *parent, char const *name1, char con
 						    parent,
 						    buffer, sizeof(buffer), name2, NULL);
 			if (!name2) {
-				ERROR("Failed expanding section name");
+				cf_log_err(&(parent->item), "Failed expanding section name");
 				return NULL;
 			}
 		}
@@ -986,7 +987,7 @@ void cf_item_add(CONF_SECTION *cs, CONF_ITEM *ci)
 			name1_cs = rbtree_finddata(cs->section_tree, cs_new);
 			if (!name1_cs) {
 				if (!rbtree_insert(cs->section_tree, cs_new)) {
-					ERROR("Failed inserting section into tree");
+					cf_log_err(&(cs_new->item), "Failed inserting section into tree");
 					fr_exit_now(1);
 				}
 				break;
@@ -1182,6 +1183,145 @@ CONF_SECTION *cf_top_section(CONF_SECTION *cs)
 
 
 /*
+ *	Open and read a file.
+ *
+ *	If raw is true, the entire contents of the file are copied into
+ *	the output buffer.  Otherwise only the first line is copied, and
+ *	a multi-line file is treated as an error.
+ */
+static int cf_expand_file(char const *cf, int *lineno,
+			  char **p_p, char const **ptr_p,
+			  char *output, size_t outsize, bool raw)
+{
+	int		fd;
+	size_t		room;
+	ssize_t		len;
+	char		*p, *next;
+	char const	*ptr;
+	char		name[PATH_MAX];
+
+	/*
+	 *	Note that we do NOT recursively expand the value.  It has to be a hard-coded string.
+	 *
+	 *	We do NOT do any sanity checks on the value.  i.e. filenames beginning with '/' are allowed,
+	 *	as are files with "../../".  The value here comes from the configuration files, and only the
+	 *	administrator has write access to them.
+	 */
+	strlcpy(name, cf, sizeof(name));
+	p = strrchr(name, '/');
+	if (p) {
+		p++;
+	} else {
+		p = name;
+	}
+
+	ptr = *ptr_p;
+
+	/*
+	 *	Look for trailing '}', and log a
+	 *	warning for anything that doesn't match,
+	 *	and exit with a fatal error.
+	 */
+	next = strchr(ptr, '}');
+	if (next == NULL) {
+		*p = '\0';
+		ERROR("%s[%d]: File expansion missing }",
+		      cf, *lineno);
+		return -1;
+	}
+
+	/*
+	 *	Can't really happen because input lines are
+	 *	capped at 8k, which is sizeof(name)
+	 */
+	if ((next - ptr) >= (name + sizeof(name) - p)) {
+		ERROR("%s[%d]: File name is too large",
+		      cf, *lineno);
+		return -1;
+	}
+
+	memcpy(p, ptr, next - ptr);
+	p[next - ptr] = '\0';
+
+	fd = open(name, O_RDONLY);
+	if (fd < 0) {
+		ERROR("%s[%d]: Failed opening %s: %s",
+		      cf, *lineno, name, fr_syserror(errno));
+		return -1;
+	}
+
+	p = *p_p;
+	room = (output + outsize) - p;
+	rad_assert(room > 0);
+
+	/*
+	 *	Read the raw data.
+	 */
+	len = read(fd, p, room);
+	if (len < 0) {
+		ERROR("%s[%d]: Failed reading %s: %s",
+		      cf, *lineno, name, fr_syserror(errno));
+		close(fd);
+		return -1;
+	}
+	close(fd);
+
+	if (!len) {
+		ERROR("%s[%d]: Failed reading %s: the file is empty",
+		      cf, *lineno, name);
+		return -1;
+	}
+
+	/*
+	 *	We don't know whether or not it was
+	 *	truncated, so we just error out.
+	 */
+	if ((size_t) len >= room) {
+		ERROR("%s[%d]: Too much data in %s: did not read the entire file",
+		      cf, *lineno, name);
+		return -1;
+	}
+
+	/*
+	 *	If we're not reading the raw file, return only the first line.
+	 */
+	if (!raw) {
+		char *q, *end = p + len;
+
+		while (p < end) {
+			if (*p >= ' ') {
+				p++;
+				continue;
+			}
+
+			break;
+		}
+
+		/*
+		 *	Strip trailing CR/LF.
+		 */
+		for (q = p; q < end; q++) {
+			if (*q >= ' ') break;
+
+			*q = '\0';
+		}
+
+		if (q != end) {
+			ERROR("%s[%d]: Too much data in %s: expected one line of text, found multiple lines in the file",
+			      cf, *lineno, name);
+			return -1;
+		}
+	} else {
+		p += len;
+	}
+
+	*ptr_p = next + 1;
+	*p_p = p;
+
+	return 0;
+}
+
+/*
  *	Expand the variables in an input string.
  */
 static char const *cf_expand_variables(char const *cf, int *lineno,
@@ -1266,7 +1406,7 @@ static char const *cf_expand_variables(char const *cf, int *lineno,
 			ci = cf_reference_item(parentcs, outercs, name);
 			if (!ci) {
 				if (soft_fail) *soft_fail = true;
-				ERROR("%s[%d]: Reference \"${%s}\" not found", cf, *lineno, name);
+				ERROR("%s[%d]: Reference '${%s}' not found", cf, *lineno, name);
 				return NULL;
 			}
 
@@ -1313,7 +1453,7 @@ static char const *cf_expand_variables(char const *cf, int *lineno,
 				if (cp->pass2) {
 					if (soft_fail) *soft_fail = true;
 
-					ERROR("%s[%d]: Reference \"%s\" points to a variable which has not been expanded.",
+					ERROR("%s[%d]: Reference '%s' points to a variable which has not been expanded.",
 					      cf, *lineno, input);
 					return NULL;
 				}
@@ -1329,7 +1469,7 @@ static char const *cf_expand_variables(char const *cf, int *lineno,
 				}
 
 				if (p + strlen(cp->value) >= output + outsize) {
-					ERROR("%s[%d]: Reference \"%s\" is too long",
+					ERROR("%s[%d]: Reference '%s' is too long",
 					       cf, *lineno, input);
 					return NULL;
 				}
@@ -1372,7 +1512,7 @@ static char const *cf_expand_variables(char const *cf, int *lineno,
 				ptr = end + 1;
 
 			} else {
-				ERROR("%s[%d]: Reference \"%s\" type is invalid", cf, *lineno, input);
+				ERROR("%s[%d]: Reference '%s' type is invalid", cf, *lineno, input);
 				return NULL;
 			}
 		} else if (strncmp(ptr, "$ENV{", 5) == 0) {
@@ -1417,7 +1557,7 @@ static char const *cf_expand_variables(char const *cf, int *lineno,
 			}
 
 			if (p + strlen(env) >= output + outsize) {
-				ERROR("%s[%d]: Reference \"%s\" is too long",
+				ERROR("%s[%d]: Reference '%s' is too long",
 				       cf, *lineno, input);
 				return NULL;
 			}
@@ -1425,6 +1565,16 @@ static char const *cf_expand_variables(char const *cf, int *lineno,
 			strcpy(p, env);
 			p += strlen(p);
 			ptr = end + 1;
+
+		} else if (strncmp(ptr, "$VALUE{", 7) == 0) {
+			ptr += 7;
+
+			if (cf_expand_file(cf, lineno, &p, &ptr, output, outsize, false) < 0) return NULL;
+
+		} else if (strncmp(ptr, "$FILE{", 6) == 0) {
+			ptr += 6;
+
+			if (cf_expand_file(cf, lineno, &p, &ptr, output, outsize, true) < 0) return NULL;
 
 		} else {
 			/*
@@ -1435,7 +1585,7 @@ static char const *cf_expand_variables(char const *cf, int *lineno,
 
 
 		if (p >= (output + outsize)) {
-			ERROR("%s[%d]: Reference \"%s\" is too long",
+			ERROR("%s[%d]: Reference '%s' is too long",
 			       cf, *lineno, input);
 			return NULL;
 		}
@@ -1473,14 +1623,14 @@ static inline int fr_item_validate_ipaddr(CONF_SECTION *cs, char const *name, PW
 		case AF_INET:
 			if (ipaddr->prefix == 32) return 0;
 
-			cf_log_err(&(cs->item), "Invalid IPv4 mask length \"/%i\".  Only \"/32\" permitted for non-prefix types",
+			cf_log_err(&(cs->item), "Invalid IPv4 mask length '/%i'.  Only '/32' permitted for non-prefix types",
 				   ipaddr->prefix);
 			break;
 
 		case AF_INET6:
 			if (ipaddr->prefix == 128) return 0;
 
-			cf_log_err(&(cs->item), "Invalid IPv6 mask length \"/%i\".  Only \"/128\" permitted for non-prefix types",
+			cf_log_err(&(cs->item), "Invalid IPv6 mask length '/%i'.  Only '/128' permitted for non-prefix types",
 				   ipaddr->prefix);
 			break;
 
@@ -1576,7 +1726,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 	char buffer[8192];
 
 	if (!cs) {
-		cf_log_err(&(cs->item), "No enclosing section for configuration item \"%s\"", name);
+		cf_log_err(&(cs->item), "No enclosing section for configuration item '%s'", name);
 		return -1;
 	}
 
@@ -1600,7 +1750,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 	 *	Everything except templates must have a base type.
 	 */
 	if (!(type & 0xff) && !tmpl) {
-		cf_log_err(c_item, "Configuration item \"%s\" must have a data type", name);
+		cf_log_err(c_item, "Configuration item '%s' must have a data type", name);
 		return -1;
 	}
 
@@ -1630,7 +1780,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 		c_item = &cp->item;
 
 		if (deprecated) {
-			cf_log_err(c_item, "Configuration item \"%s\" is deprecated", name);
+			cf_log_err(c_item, "Configuration item '%s' is deprecated", name);
 			return -2;
 		}
 
@@ -1660,7 +1810,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 
 	if (!value) {
 		if (required) {
-			cf_log_err(c_item, "Configuration item \"%s\" must have a value", name);
+			cf_log_err(c_item, "Configuration item '%s' must have a value", name);
 
 			return -1;
 		}
@@ -1669,7 +1819,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 
 	if ((value[0] == '\0') && cant_be_empty) {
 	cant_be_empty:
-		cf_log_err(c_item, "Configuration item \"%s\" must not be empty (zero length)", name);
+		cf_log_err(c_item, "Configuration item '%s' must not be empty (zero length)", name);
 		if (!required) cf_log_err(c_item, "Comment item to silence this message");
 
 		return -1;
@@ -1711,7 +1861,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 			*(bool *)data = false;
 		} else {
 			*(bool *)data = false;
-			cf_log_err(&(cs->item), "Invalid value \"%s\" for boolean "
+			cf_log_err(&(cs->item), "Invalid value '%s' for boolean "
 			       "variable %s", value, name);
 			return -1;
 		}
@@ -1731,7 +1881,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 		 *	represent config item integers.
 		 */
 		if (v > INT32_MAX) {
-			cf_log_err(&(cs->item), "Invalid value \"%s\" for variable %s, must be between 0-%u", value,
+			cf_log_err(&(cs->item), "Invalid value '%s' for variable %s, must be between 0-%u", value,
 				   name, INT32_MAX);
 			return -1;
 		}
@@ -1746,7 +1896,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 		unsigned long v = strtoul(value, 0, 0);
 
 		if (v > UINT8_MAX) {
-			cf_log_err(&(cs->item), "Invalid value \"%s\" for variable %s, must be between 0-%u", value,
+			cf_log_err(&(cs->item), "Invalid value '%s' for variable %s, must be between 0-%u", value,
 				   name, UINT8_MAX);
 			return -1;
 		}
@@ -1760,7 +1910,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 		unsigned long v = strtoul(value, 0, 0);
 
 		if (v > UINT16_MAX) {
-			cf_log_err(&(cs->item), "Invalid value \"%s\" for variable %s, must be between 0-%u", value,
+			cf_log_err(&(cs->item), "Invalid value '%s' for variable %s, must be between 0-%u", value,
 				   name, UINT16_MAX);
 			return -1;
 		}
@@ -1795,7 +1945,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 
 			lineno = cs->item.lineno;
 
-			value = cf_expand_variables("<internal>",
+			value = cf_expand_variables(cs->item.filename,
 						    &lineno,
 						    cs, buffer, sizeof(buffer),
 						    value, NULL);
@@ -1882,7 +2032,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 			cf_log_info(cs, "%.*s\t%s = <<< secret >>>",
 				    cs->depth, parse_spaces, name);
 		} else {
-			cf_log_info(cs, "%.*s\t%s = \"%s\"",
+			cf_log_info(cs, "%.*s\t%s = '%s'",
 				    cs->depth, parse_spaces, name, value ? value : "(null)");
 		}
 		*q = value ? talloc_typed_strdup(cs, value) : NULL;
@@ -1894,12 +2044,12 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 		 *	server startup.
 		 */
 		if (*q && file_input && !cf_file_check(cs, *q, true)) {
-			cf_log_err(&(cs->item), "Failed parsing configuration item \"%s\"", name);
+			cf_log_err(&(cs->item), "Failed parsing configuration item '%s'", name);
 			return -1;
 		}
 
 		if (*q && file_exists && !cf_file_check(cs, *q, false)) {
-			cf_log_err(&(cs->item), "Failed parsing configuration item \"%s\"", name);
+			cf_log_err(&(cs->item), "Failed parsing configuration item '%s'", name);
 			return -1;
 		}
 		break;
@@ -1910,7 +2060,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 
 		if (fr_pton4(ipaddr, value, -1, true, false) < 0) {
 		failed:
-			cf_log_err(&(cs->item), "Failed parsing configuration item \"%s\" - %s", name, fr_strerror());
+			cf_log_err(&(cs->item), "Failed parsing configuration item '%s' - %s", name, fr_strerror());
 			return -1;
 		}
 		if (fr_item_validate_ipaddr(cs, name, type, value, ipaddr) < 0) return -1;
@@ -2129,7 +2279,7 @@ int cf_section_parse(CONF_SECTION *cs, void *base, CONF_PARSER const *variables)
 			 *	to the CONF_PARSER struct for the subsection.
 			 */
 			if (!variables[i].dflt || !subcs) {
-				ERROR("Internal sanity check 1 failed in cf_section_parse %s", variables[i].name);
+				cf_log_err(&(cs->item), "Internal sanity check 1 failed in cf_section_parse %s", variables[i].name);
 				ret = -1;
 				goto finish;
 			}
@@ -2150,7 +2300,7 @@ int cf_section_parse(CONF_SECTION *cs, void *base, CONF_PARSER const *variables)
 		} else if (base) {
 			data = ((char *)base) + variables[i].offset;
 		} else {
-			ERROR("Internal sanity check 2 failed in cf_section_parse");
+			cf_log_err(&(cs->item), "Internal sanity check 2 failed in cf_section_parse");
 			ret = -1;
 			goto finish;
 		}
@@ -2173,10 +2323,10 @@ int cf_section_parse(CONF_SECTION *cs, void *base, CONF_PARSER const *variables)
 		case -2:	/* Deprecated CONF ITEM */
 			if ((variables[i + 1].offset == variables[i].offset) &&
 			    (variables[i + 1].data == variables[i].data)) {
-				cf_log_err(&(cs->item), "Replace \"%s\" with \"%s\"", variables[i].name,
+				cf_log_err(&(cs->item), "Replace '%s' with '%s'", variables[i].name,
 					   variables[i + 1].name);
 			} else {
-				cf_log_err(&(cs->item), "Cannot use deprecated configuration item \"%s\"", variables[i].name);
+				cf_log_err(&(cs->item), "Cannot use deprecated configuration item '%s'", variables[i].name);
 			}
 			goto finish;
 		}
@@ -2828,7 +2978,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 					 	continue;
 					}
 					if ((len > 9) && (strncmp(&dp->d_name[len - 9], ".dpkg-old", 9) == 0)) goto pkg_file;
-					if ((len > 7) && (strncmp(&dp->d_name[len - 7], ".rpmnew", 9) == 0)) goto pkg_file;
+					if ((len > 7) && (strncmp(&dp->d_name[len - 7], ".rpmnew", 7) == 0)) goto pkg_file;
 					if ((len > 8) && (strncmp(&dp->d_name[len - 8], ".rpmsave", 10) == 0)) goto pkg_file;
 
 					slen = snprintf(buf2, sizeof(buf2), "%s%s",
@@ -2884,18 +3034,13 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 
 		       templatecs = cf_section_sub_find(parentcs, "templates");
 		       if (!templatecs) {
-				ERROR("%s[%d]: No \"templates\" section for reference \"%s\"", filename, *lineno, buf2);
+				ERROR("%s[%d]: No 'templates' section for reference '%s'", filename, *lineno, buf2);
 				return -1;
 		       }
 
 		       ci = cf_reference_item(parentcs, templatecs, buf2);
-		       if (!ci || (ci->type != CONF_ITEM_SECTION)) {
-				ERROR("%s[%d]: Reference \"%s\" not found", filename, *lineno, buf2);
-				return -1;
-		       }
-
-		       if (!this) {
-				ERROR("%s[%d]: Internal sanity check error in template reference", filename, *lineno);
+		       if (!ci || (ci->type != CONF_ITEM_SECTION) || !this) {
+				ERROR("%s[%d]: Reference '%s' not found", filename, *lineno, buf2);
 				return -1;
 		       }
 
@@ -2913,7 +3058,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 		 *	with 'internal' names;
 		 */
 		if (buf1[0] == '_') {
-			ERROR("%s[%d]: Illegal configuration pair name \"%s\"", filename, *lineno, buf1);
+			ERROR("%s[%d]: Illegal configuration pair name '%s'", filename, *lineno, buf1);
 			return -1;
 		}
 
@@ -3028,7 +3173,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 
 			if ((size_t) slen >= (sizeof(buf2) - 1)) {
 				talloc_free(css);
-				ERROR("%s[%d]: Condition is too large after \"%s\"",
+				ERROR("%s[%d]: Condition is too large after '%s'",
 				       filename, *lineno, buf1);
 				return -1;
 			}
@@ -3224,7 +3369,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 		case T_SINGLE_QUOTED_STRING:
 			t3 = gettoken(&ptr, buf3, sizeof(buf3), true);
 			if (t3 != T_LCBRACE) {
-				ERROR("%s[%d]: Expecting section start brace '{' after \"%s %s\"",
+				ERROR("%s[%d]: Expecting section start brace '{' after '%s %s'",
 				       filename, *lineno, buf1, buf2);
 				return -1;
 			}
@@ -3260,7 +3405,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 			return -1;
 
 		default:
-			ERROR("%s[%d]: Parse error after \"%s\": unexpected token \"%s\"",
+			ERROR("%s[%d]: Parse error after '%s': unexpected token '%s'",
 			      filename, *lineno, buf1, fr_int2str(fr_tokens, t2, "<INVALID>"));
 
 			return -1;
@@ -4015,7 +4160,7 @@ void *cf_data_remove(CONF_SECTION *cs, char const *name)
 void cf_log_err(CONF_ITEM const *ci, char const *fmt, ...)
 {
 	va_list ap;
-	char buffer[256];
+	char buffer[1024];
 
 	va_start(ap, fmt);
 	vsnprintf(buffer, sizeof(buffer), fmt, ap);
@@ -4034,7 +4179,7 @@ void cf_log_err(CONF_ITEM const *ci, char const *fmt, ...)
 void cf_log_err_cs(CONF_SECTION const *cs, char const *fmt, ...)
 {
 	va_list ap;
-	char buffer[256];
+	char buffer[1024];
 
 	va_start(ap, fmt);
 	vsnprintf(buffer, sizeof(buffer), fmt, ap);
@@ -4051,7 +4196,7 @@ void cf_log_err_cs(CONF_SECTION const *cs, char const *fmt, ...)
 void cf_log_err_cp(CONF_PAIR const *cp, char const *fmt, ...)
 {
 	va_list ap;
-	char buffer[256];
+	char buffer[1024];
 
 	va_start(ap, fmt);
 	vsnprintf(buffer, sizeof(buffer), fmt, ap);

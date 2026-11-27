@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: fbee2951577b1ef2e4758c6a3cc37e72d54a4b08 $
+ * $Id: a4506e4275ba1667ccf814e0b0753b86f365097e $
  * @file rlm_wimax.c
  * @brief Supports various WiMax functionality.
  *
  * @copyright 2008 Alan DeKok <aland@networkradius.com>
  */
-RCSID("$Id: fbee2951577b1ef2e4758c6a3cc37e72d54a4b08 $")
+RCSID("$Id: a4506e4275ba1667ccf814e0b0753b86f365097e $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -130,8 +130,8 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 
 		p[(5*3)+2] = '\0';
 
-		DEBUG2("rlm_wimax: Fixing WiMAX binary Calling-Station-Id to %s",
-		       vp->vp_strvalue);
+		RDEBUG2("rlm_wimax: Fixing WiMAX binary Calling-Station-Id to %s",
+			vp->vp_strvalue);
 		return RLM_MODULE_OK;
 	}
 

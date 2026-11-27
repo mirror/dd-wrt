@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 3018f34cc05604803c4c7233fbd1006337409895 $
+ * Version:     $Id: a03a376ee7560b31a9f98bff4e1abdd09bcf3291 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 3018f34cc05604803c4c7233fbd1006337409895 $")
+RCSID("$Id: a03a376ee7560b31a9f98bff4e1abdd09bcf3291 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -170,7 +170,6 @@ static void 		session_init(tls_session_t *ssn);
 
 /* record */
 static void 		record_init(record_t *buf);
-static void 		record_close(record_t *buf);
 static unsigned int 	record_plus(record_t *buf, void const *ptr,
 				    unsigned int size);
 static unsigned int 	record_minus(record_t *buf, void *ptr,
@@ -475,11 +474,12 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 	ssn = talloc_zero(ctx, tls_session_t);
 	if (!ssn) return NULL;
 
+	ssn->conf = conf;
+	session_init(ssn);
 	talloc_set_destructor(ssn, _tls_session_free);
 
 	ssn->ctx = conf->ctx;
 	ssn->mtu = conf->fragment_size;
-	ssn->conf = conf;
 
 	SSL_CTX_set_mode(ssn->ctx, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_AUTO_RETRY);
 
@@ -524,12 +524,17 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 	 *	if we're doing certificate auth, and not PSK.
 	 */
 	verify_mode = SSL_VERIFY_PEER;
+#ifdef PSK_MAX_IDENTITY_LEN
 	if (!conf->psk_identity) {
+#endif
 		RDEBUG2("(TLS) Requiring Server certificate");
 		verify_mode |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+
+#ifdef PSK_MAX_IDENTITY_LEN
 	} else {
 		RDEBUG2("(TLS) PSK configured -- verifying Server certificate if presented");
 	}
+#endif
 	SSL_set_verify(ssn->ssl, verify_mode, cbtls_verify);
 
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_CONF, (void *)conf);
@@ -669,12 +674,13 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 		RERROR("(TLS) %s - Error allocating memory for SSL state", conf->name);
 		return NULL;
 	}
+
+	state->conf = conf;
 	session_init(state);
 	talloc_set_destructor(state, _tls_session_free);
 
 	state->ctx = conf->ctx;
 	state->ssl = new_tls;
-	state->conf = conf;
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
 	/*
@@ -687,7 +693,6 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 	 *	Initialize callbacks
 	 */
 	state->record_init = record_init;
-	state->record_close = record_close;
 	state->record_plus = record_plus;
 	state->record_minus = record_minus;
 
@@ -906,7 +911,7 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 	}
 
 	err = SSL_read(ssn->ssl, ssn->clean_out.data + ssn->clean_out.used,
-		       sizeof(ssn->clean_out.data) - ssn->clean_out.used);
+		       ssn->clean_out.size - ssn->clean_out.used);
 	if (err > 0) {
 		ssn->clean_out.used += err;
 		return 1;
@@ -1004,7 +1009,7 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 	err = BIO_ctrl_pending(ssn->from_ssl);
 	if (err > 0) {
 		err = BIO_read(ssn->from_ssl, ssn->dirty_out.data,
-			       sizeof(ssn->dirty_out.data));
+			       ssn->dirty_out.size);
 		if (err > 0) {
 			RDEBUG3("(TLS) %s- got %d bytes of data", ssn->conf->name, err);
 			ssn->dirty_out.used = err;
@@ -1057,7 +1062,7 @@ int tls_handshake_send(REQUEST *request, tls_session_t *ssn)
 
 		/* Get the dirty data from Bio to send it */
 		err = BIO_read(ssn->from_ssl, ssn->dirty_out.data + ssn->dirty_out.used,
-			       sizeof(ssn->dirty_out.data) - ssn->dirty_out.used);
+			       ssn->dirty_out.size - ssn->dirty_out.used);
 		if (err > 0) {
 			ssn->dirty_out.used += err;
 		} else {
@@ -1070,14 +1075,37 @@ int tls_handshake_send(REQUEST *request, tls_session_t *ssn)
 	return 1;
 }
 
+static void record_alloc(tls_session_t *ssn, record_t *rec, bool tls)
+{
+	rec->used = 0;
+	rec->size = ssn->conf->buffer_size;
+
+	/*
+	 *	Account for TLS record overhead.
+	 */
+	if (tls) {
+		int num = (rec->size + (SSL3_RT_MAX_PLAIN_LENGTH - 1)) / SSL3_RT_MAX_PLAIN_LENGTH;
+
+		rec->size += num * (((SSL3_RT_MAX_PACKET_SIZE + 255) & ~255) - SSL3_RT_MAX_PLAIN_LENGTH);
+	}
+
+	/*
+	 *	Round up to the nearest 1K boundary, because that
+	 *	makes memory allocation a bit easier.
+	 */
+	rec->size = (rec->size + 1023) & (uint32_t) ~1023;
+
+	MEM(rec->data = talloc_zero_array(ssn, uint8_t, rec->size));
+}
+
 static void session_init(tls_session_t *ssn)
 {
 	ssn->ssl = NULL;
 	ssn->into_ssl = ssn->from_ssl = NULL;
-	record_init(&ssn->clean_in);
-	record_init(&ssn->clean_out);
-	record_init(&ssn->dirty_in);
-	record_init(&ssn->dirty_out);
+	record_alloc(ssn, &ssn->clean_in, false);
+	record_alloc(ssn, &ssn->clean_out, false);
+	record_alloc(ssn, &ssn->dirty_in, true);
+	record_alloc(ssn, &ssn->dirty_out, true);
 
 	memset(&ssn->info, 0, sizeof(ssn->info));
 
@@ -1098,20 +1126,9 @@ static void session_close(tls_session_t *ssn)
 		SSL_free(ssn->ssl);
 		ssn->ssl = NULL;
 	}
-
-	record_close(&ssn->clean_in);
-	record_close(&ssn->clean_out);
-	record_close(&ssn->dirty_in);
-	record_close(&ssn->dirty_out);
-	session_init(ssn);
 }
 
 static void record_init(record_t *rec)
-{
-	rec->used = 0;
-}
-
-static void record_close(record_t *rec)
 {
 	rec->used = 0;
 }
@@ -1124,7 +1141,7 @@ static void record_close(record_t *rec)
 static unsigned int record_plus(record_t *rec, void const *ptr,
 				unsigned int size)
 {
-	unsigned int added = MAX_RECORD_SIZE - rec->used;
+	unsigned int added = rec->size - rec->used;
 
 	if(added > size)
 		added = size;
@@ -1538,11 +1555,15 @@ void tls_session_information(tls_session_t *tls_session)
 	}
 
 	/*
-	 *	We have a home server, but its certificate is expired,
-	 *	etc.  Remember that the TLS connection is not appropriate.
+	 *	TLS negotiation to the home server failed.  Remember
+	 *	that.  Other connections may still be open, so we
+	 *	don't mark the home server as dead.
 	 */
 	if (home) {
-		if (certificate_fail) home->state = HOME_STATE_CERTIFICATE_FAIL;
+		if (certificate_fail) {
+			home->tls_failed_time = time(NULL);
+			home->tls_failed = true;
+		}
 		if (!rad_debug_lvl) return;
 	}
 
@@ -1617,6 +1638,7 @@ static CONF_PARSER tls_server_config[] = {
 	{ "dh_file", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, fr_tls_server_conf_t, dh_file), NULL },
 	{ "random_file", FR_CONF_OFFSET(PW_TYPE_FILE_EXISTS, fr_tls_server_conf_t, random_file), NULL },
 	{ "fragment_size", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, fragment_size), "1024" },
+	{ "buffer_size", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, buffer_size), "65536" },
 	{ "include_length", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, include_length), "yes" },
 	{ "auto_chain", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, auto_chain), "yes" },
 	{ "disable_single_dh_use", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, disable_single_dh_use), NULL },
@@ -1630,10 +1652,12 @@ static CONF_PARSER tls_server_config[] = {
 	{ "cipher_list", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, cipher_list), NULL },
 #ifdef TLS1_3_VERSION
 	{ "cipher_suites", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, cipher_suites), NULL },
+	{ "group_list", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, group_list), NULL },
 #endif
 	{ "cipher_server_preference", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, cipher_server_preference), NULL },
 	{ "check_cert_issuer", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, check_cert_issuer), NULL },
 	{ "require_client_cert", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, require_client_cert), NULL },
+	{ "socat", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, socat), NULL },
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 	{ "sigalgs_list", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, sigalgs_list), NULL },
@@ -1705,6 +1729,7 @@ static CONF_PARSER tls_client_config[] = {
 	{ "dh_file", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, dh_file), NULL },
 	{ "random_file", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, random_file), NULL },
 	{ "fragment_size", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, fragment_size), "1024" },
+	{ "buffer_size", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, buffer_size), "0" },
 	{ "include_length", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, include_length), "yes" },
 	{ "check_crl", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, check_crl), "no" },
 	{ "check_cert_cn", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, check_cert_cn), NULL },
@@ -2183,6 +2208,14 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 			}
 		}
 
+		if (conf->session_lifetime && 
+		    ((vp = fr_pair_find_by_num(pairlist->reply, PW_TLS_SESSION_EXPIRY, 0, TAG_ANY)) != NULL)) {
+			if (vp->vp_date <= time(NULL)) {
+				RWDEBUG("(TLS) %s - cached data has expired (TLS-Session-Expiry) for session %s", conf->name, buffer);
+				goto error;
+			}
+		}
+
 		/* move the cached VPs into the session */
 		fr_pair_list_mcopy_by_num(talloc_ctx, &vps, &pairlist->reply, 0, 0, TAG_ANY);
 
@@ -2358,6 +2391,12 @@ static int cbtls_cache_save_vps(SSL *ssl, SSL_SESSION *sess, VALUE_PAIR *vps)
 
 	if (vps) fr_pair_add(&fake->reply->vps, fr_pair_list_copy(fake->reply, vps));
 
+	if (conf->session_lifetime) {
+		vp = fr_pair_afrom_num(fake->state_ctx, PW_TLS_SESSION_EXPIRY, 0);
+		vp->vp_date = time(NULL) + conf->session_lifetime;
+		fr_pair_add(&fake->state, vp);
+	}
+
 	/*
 	 *	Use &request:TLS-Session-Id to save the
 	 *	&session-state:TLS-Session-Data values.
@@ -2499,6 +2538,14 @@ static SSL_SESSION *cbtls_cache_load(SSL *ssl, const unsigned char *data, int le
 		}
 	}
 
+	if (conf->session_lifetime && 
+	    ((vp = fr_pair_find_by_num(fake->state, PW_TLS_SESSION_EXPIRY, 0, TAG_ANY)) != NULL)) {
+		if (vp->vp_date <= time(NULL)) {
+			RWDEBUG("(TLS) %s - cached data has expired (TLS-Session-Expiry) for session %s", conf->name, buffer);
+			goto error;
+		}
+	}
+
 	/*
 	 *	Try to de-serialize the session data.
 	 */
@@ -2551,9 +2598,9 @@ error:
 /** Extract components of OCSP responser URL from a certificate
  *
  * @param[in] cert to extract URL from.
- * @param[out] host_out Portion of the URL (must be freed with free()).
- * @param[out] port_out Port portion of the URL (must be freed with free()).
- * @param[out] path_out Path portion of the URL (must be freed with free()).
+ * @param[out] host_out Portion of the URL (must be freed with OPENSSL_free()).
+ * @param[out] port_out Port portion of the URL (must be freed with OPENSSL_free()).
+ * @param[out] path_out Path portion of the URL (must be freed with OPENSSL_free()).
  * @param[out] is_https Whether the responder should be contacted using https.
  * @return
  *	- 0 if no valid URL is contained in the certificate.
@@ -2567,7 +2614,7 @@ static int ocsp_parse_cert_url(X509 *cert, char **host_out, char **port_out,
 
 	AUTHORITY_INFO_ACCESS	*aia;
 	ACCESS_DESCRIPTION	*ad;
-	int			ret = -1;
+	int			ret = 0;
 
 	aia = X509_get_ext_d2i(cert, NID_info_access, NULL, NULL);
 
@@ -2578,7 +2625,15 @@ static int ocsp_parse_cert_url(X509 *cert, char **host_out, char **port_out,
 		if (OBJ_obj2nid(ad->method) != NID_ad_OCSP) continue;
 		if (ad->location->type != GEN_URI) continue;
 
-		if (OCSP_parse_url((char *) ad->location->d.ia5->data, host_out,
+		/*
+		 *	Distinguish "no OCSP URI" (0) from "OCSP URI
+		 *	which we could not parse" (-1).  The caller
+		 *	can then fall back to the "url" from the
+		 *	configuration file.
+		 */
+		ret = -1;
+
+		if (OCSP_parse_url((const char *) ASN1_STRING_get0_data(ad->location->d.ia5), host_out,
 				   port_out, path_out, is_https)) {
 			ret = 1;
 			break;
@@ -2606,7 +2661,7 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 				STACK_OF(X509) *untrusted, fr_tls_server_conf_t *conf)
 {
 	OCSP_CERTID	*certid;
-	OCSP_REQUEST	*req;
+	OCSP_REQUEST	*req = NULL;
 	OCSP_RESPONSE	*resp = NULL;
 	OCSP_BASICRESP	*bresp = NULL;
 	char		*host = NULL;
@@ -2615,19 +2670,24 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 	char		hostheader[1024];
 	int		use_ssl = -1;
 	long		nsec = MAX_VALIDITY_PERIOD, maxage = -1;
-	BIO		*cbio, *bio_out;
+	BIO		*cbio = NULL, *bio_out = NULL;
 	ocsp_status_t	ocsp_status = OCSP_STATUS_FAILED;
 	int		status;
 	ASN1_GENERALIZEDTIME *rev = NULL, *thisupd, *nextupd;
 	int		reason;
 #if OPENSSL_VERSION_NUMBER >= 0x1000003f
-	OCSP_REQ_CTX	*ctx;
+	OCSP_REQ_CTX	*ctx = NULL;
 	int		rc;
 	struct timeval	now;
 	struct timeval	when;
 #endif
 	VALUE_PAIR	*vp;
 
+	/*
+	 *	We didn't allocate anything, so we don't need to free anything.
+	 *
+	 *	All other code paths should do `goto ocsp_end` on error.
+	 */
 	if (issuer_cert == NULL) {
 		RWDEBUG("(TLS) Could not get issuer certificate");
 		goto skipped;
@@ -2637,8 +2697,29 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 	 * Create OCSP Request
 	 */
 	certid = OCSP_cert_to_id(NULL, client_cert, issuer_cert);
+	if (!certid) {
+		tls_error_log(request, "ocsp: Couldn't create certificate ID");
+		ocsp_status = OCSP_STATUS_SKIPPED;
+		goto ocsp_end;
+	}
+
 	req = OCSP_REQUEST_new();
-	OCSP_request_add0_id(req, certid);
+	if (!req) {
+		tls_error_log(request, "ocsp: Couldn't create OCSP request");
+		OCSP_CERTID_free(certid);
+		ocsp_status = OCSP_STATUS_SKIPPED;
+		goto ocsp_end;
+	}
+
+	/*
+	 *	On success the request owns the certid.
+	 */
+	if (!OCSP_request_add0_id(req, certid)) {
+		tls_error_log(request, "ocsp: Couldn't add certificate ID to OCSP request");
+		OCSP_CERTID_free(certid);
+		ocsp_status = OCSP_STATUS_SKIPPED;
+		goto ocsp_end;
+	}
 	if (conf->ocsp_use_nonce) OCSP_request_add1_nonce(req, NULL, 8);
 
 	/*
@@ -2655,7 +2736,8 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 		OCSP_parse_url(url, &host, &port, &path, &use_ssl);
 		if (!host || !port || !path) {
 			RWDEBUG("(TLS) ocsp: Host or port or path missing from configured URL \"%s\".  Not doing OCSP", url);
-			goto skipped;
+			ocsp_status = OCSP_STATUS_SKIPPED;
+			goto ocsp_end;
 		}
 	} else {
 		int ret;
@@ -2664,7 +2746,8 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 		switch (ret) {
 		case -1:
 			RWDEBUG("(TLS) ocsp: Invalid URL in certificate.  Not doing OCSP");
-			goto skipped;
+			ocsp_status = OCSP_STATUS_SKIPPED;
+			goto ocsp_end;
 
 		case 0:
 			if (conf->ocsp_url) {
@@ -2672,7 +2755,8 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 				goto use_ocsp_url;
 			}
 			RWDEBUG("(TLS) ocsp: No OCSP URL in certificate.  Not doing OCSP");
-			goto skipped;
+			ocsp_status = OCSP_STATUS_SKIPPED;
+			goto ocsp_end;
 
 		case 1:
 			break;
@@ -2684,14 +2768,19 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 	/* Check host and port length are sane, then create Host: HTTP header */
 	if ((strlen(host) + strlen(port) + 2) > sizeof(hostheader)) {
 		RWDEBUG("(TLS) ocsp: Host and port too long");
-		goto skipped;
+		ocsp_status = OCSP_STATUS_SKIPPED;
+		goto ocsp_end;
 	}
 	snprintf(hostheader, sizeof(hostheader), "%s:%s", host, port);
 
 	/* Setup BIO socket to OCSP responder */
 	cbio = BIO_new_connect(host);
+	if (!cbio) {
+		tls_error_log(request, "ocsp: Couldn't create connection to OCSP responder");
+		ocsp_status = OCSP_STATUS_SKIPPED;
+		goto ocsp_end;
+	}
 
-	bio_out = NULL;
 	if (rad_debug_lvl) {
 		if (default_log.dst == L_DST_STDOUT) {
 			bio_out = BIO_new_fp(stdout, BIO_NOCLOSE);
@@ -2758,8 +2847,6 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 		ocsp_status = OCSP_STATUS_SKIPPED;
 		goto ocsp_end;
 	}
-
-	OCSP_REQ_CTX_free(ctx);
 
 	if (rc == 0) {
 		REDEBUG("ocsp: Couldn't get OCSP response");
@@ -2837,11 +2924,14 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 
 ocsp_end:
 	/* Free OCSP Stuff */
+#if OPENSSL_VERSION_NUMBER >= 0x1000003f
+	if (ctx) OCSP_REQ_CTX_free(ctx);
+#endif
 	OCSP_REQUEST_free(req);
 	OCSP_RESPONSE_free(resp);
-	free(host);
-	free(port);
-	free(path);
+	OPENSSL_free(host);
+	OPENSSL_free(port);
+	OPENSSL_free(path);
 	BIO_free_all(cbio);
 	if (bio_out) BIO_free(bio_out);
 	OCSP_BASICRESP_free(bresp);
@@ -2982,6 +3072,7 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	int		err, depth, lookup, loc;
 	fr_tls_server_conf_t *conf;
 	int		my_ok = ok;
+	bool		ocsp_skipped = false;
 
 	ASN1_INTEGER	*sn = NULL;
 	ASN1_TIME	*asn_time = NULL;
@@ -3060,12 +3151,14 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	 *	we're at the client or issuing certificate.
 	 */
 	if (certs &&
-	    (lookup <= 1) && sn && ((size_t) sn->length < (sizeof(buf) / 2))) {
+	    (lookup <= 1) && sn && ((size_t) ASN1_STRING_length(sn) < (sizeof(buf) / 2))) {
 		char *p = buf;
 		int i;
+		int sn_len = ASN1_STRING_length(sn);
+		const unsigned char *sn_data = ASN1_STRING_get0_data(sn);
 
-		for (i = 0; i < sn->length; i++) {
-			sprintf(p, "%02x", (unsigned int)sn->data[i]);
+		for (i = 0; i < sn_len; i++) {
+			sprintf(p, "%02x", (unsigned int)sn_data[i]);
 			p += 2;
 		}
 		vp = fr_pair_make(talloc_ctx, certs, cert_attr_names[FR_TLS_SERIAL][lookup], buf, T_OP_SET);
@@ -3078,9 +3171,11 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	buf[0] = '\0';
 	asn_time = X509_get_notAfter(client_cert);
 	if (certs && (lookup <= 1) && asn_time &&
-	    (asn_time->length < (int) sizeof(buf))) {
-		memcpy(buf, (char*) asn_time->data, asn_time->length);
-		buf[asn_time->length] = '\0';
+	    (ASN1_STRING_length(asn_time) < (int) sizeof(buf))) {
+		int time_len = ASN1_STRING_length(asn_time);
+		const unsigned char *time_data = ASN1_STRING_get0_data(asn_time);
+		memcpy(buf, time_data, time_len);
+		buf[time_len] = '\0';
 		vp = fr_pair_make(talloc_ctx, certs, cert_attr_names[FR_TLS_EXPIRATION][lookup], buf, T_OP_SET);
 		rdebug_pair(L_DBG_LVL_2, request, vp, NULL);
 	}
@@ -3091,9 +3186,11 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	buf[0] = '\0';
 	asn_time = X509_get_notBefore(client_cert);
 	if (certs && (lookup <= 1) && asn_time &&
-	    (asn_time->length < (int) sizeof(buf))) {
-		memcpy(buf, (char*) asn_time->data, asn_time->length);
-		buf[asn_time->length] = '\0';
+	    (ASN1_STRING_length(asn_time) < (int) sizeof(buf))) {
+		int time_len = ASN1_STRING_length(asn_time);
+		const unsigned char *time_data = ASN1_STRING_get0_data(asn_time);
+		memcpy(buf, time_data, time_len);
+		buf[time_len] = '\0';
 		vp = fr_pair_make(talloc_ctx, certs, cert_attr_names[FR_TLS_VALID_SINCE][lookup], buf, T_OP_SET);
 		rdebug_pair(L_DBG_LVL_2, request, vp, NULL);
 	}
@@ -3378,7 +3475,7 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 		break;
 
 	case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
-		RERROR("(TLS) Failed with err in certificate 'no after' field..");
+		RERROR("(TLS) Failed with err in certificate 'not after' field.");
 		break;
 
 #if 0
@@ -3497,6 +3594,7 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 				 *	"skip verify on OK", then we don't do verify.
 				 */
 				my_ok = ocsp_check(request, ocsp_store, issuer_cert, client_cert, untrusted, conf);
+				ocsp_skipped = (my_ok == OCSP_STATUS_SKIPPED);
 				if (my_ok != OCSP_STATUS_FAILED) {
 					do_verify = !conf->verify_skip_if_ocsp_ok;
 				}
@@ -3561,9 +3659,14 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 		}
 
 		/*
-		 *	Track that we've verified the client certificate.
+		 *	Track if we've verified the client certificate.
+		 *
+		 *	A certificate which skips the OCSP checks due
+		 *	to softfail is not verified.  Track it
+		 *	separately, so that the caller can decide if
 		 */
 		ssn->client_cert_ok = (my_ok == 1);
+		ssn->client_cert_ocsp_skipped = ocsp_skipped && (my_ok != 0);
 	} /* depth == 0 */
 
 	/*
@@ -3611,8 +3714,24 @@ X509_STORE *fr_init_x509_store(fr_tls_server_conf_t *conf)
 		}
 
 #ifdef X509_V_FLAG_CRL_CHECK
-	if (conf->check_crl)
+	if (conf->check_crl) {
 		X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK);
+
+#ifdef X509_V_FLAG_USE_DELTAS
+		/*
+		 *	If set, delta CRLs (if present) are used to
+		 *	determine certificate status. If not set
+		 *	deltas are ignored.
+		 *
+		 *	So it's safe to always set this flag.
+		 *
+		 *	Set it here, and not in tls_init_ctx(), so
+		 *	that it also applies to the store which is
+		 *	re-created by ca_path_reload_interval.
+		 */
+		X509_STORE_set_flags(store, X509_V_FLAG_USE_DELTAS);
+#endif
+	}
 #endif
 #ifdef X509_V_FLAG_CRL_CHECK_ALL
 	if (conf->check_all_crl)
@@ -3864,6 +3983,50 @@ static const FR_NAME_NUMBER version2int[] = {
  * - Load the Private key & the certificate
  * - Set the Context options & Verify options
  */
+#if !defined(LIBRESSL_VERSION_NUMBER) || (LIBRESSL_VERSION_NUMBER >= 0x2070000fL)
+/** Warn if a certificate has expired, or is not yet valid
+ *
+ * @param cert to check.
+ * @param file the certificate was read from.
+ */
+static void tls_cert_validity_warn(X509 *cert, char const *file)
+{
+	ASN1_TIME	*when;
+	char const	*problem;
+	char		subject[1024];
+	char		date[64];
+	BIO		*bio;
+	int		len = 0;
+
+	if (X509_cmp_current_time(X509_get_notAfter(cert)) < 0) {
+		when = X509_get_notAfter(cert);
+		problem = "expired on";
+
+	} else if (X509_cmp_current_time(X509_get_notBefore(cert)) > 0) {
+		when = X509_get_notBefore(cert);
+		problem = "is not valid until";
+
+	} else {
+		return;
+	}
+
+	subject[0] = '\0';
+	X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject));
+	subject[sizeof(subject) - 1] = '\0';
+
+	bio = BIO_new(BIO_s_mem());
+	if (bio) {
+		ASN1_TIME_print(bio, when);
+		len = BIO_read(bio, date, sizeof(date) - 1);
+		BIO_free(bio);
+	}
+	if (len < 0) len = 0;
+	date[len] = '\0';
+
+	WARN(LOG_PREFIX ": Certificate \"%s\" in file \"%s\" %s %s", subject, file, problem, date);
+}
+#endif
+
 SSL_CTX *tls_init_ctx(fr_tls_server_conf_t *conf, int client, char const *chain_file, char const *private_key_file)
 {
 	SSL_CTX		*ctx;
@@ -4099,6 +4262,27 @@ SSL_CTX *tls_init_ctx(fr_tls_server_conf_t *conf, int client, char const *chain_
 			      chain_file);
 		return NULL;
 	}
+
+#if !defined(LIBRESSL_VERSION_NUMBER) || (LIBRESSL_VERSION_NUMBER >= 0x2070000fL)
+	/*
+	 *	The peer may reject a certificate which is outside of
+	 *	its validity period, so warn about it now.
+	 */
+	{
+		X509		*cert;
+		STACK_OF(X509)	*chain = NULL;
+		int		i;
+
+		cert = SSL_CTX_get0_certificate(ctx);
+		if (cert) tls_cert_validity_warn(cert, chain_file);
+
+		if (SSL_CTX_get0_chain_certs(ctx, &chain) && chain) {
+			for (i = 0; i < sk_X509_num(chain); i++) {
+				tls_cert_validity_warn(sk_X509_value(chain, i), chain_file);
+			}
+		}
+	}
+#endif
 
 load_ca:
 	/*
@@ -4388,21 +4572,57 @@ post_ca:
 	 *	current security level.  However, this is OpenSSL.  If
 	 *	you set conflicting options, it doesn't give an error.
 	 *	Instead, it just picks something to do.
+	 *
+	 *	SSL_CTX_set_cipher_list() accepts an empty string to
+	 *	clear the list for TLS <1.3 methods.  However, it
+	 *	reports an error.  We therefore catch the error, and
+	 *	allow it.
 	 */
-	if (conf->cipher_list) {
-		if (!SSL_CTX_set_cipher_list(ctx, conf->cipher_list)) {
-			tls_error_log(NULL, "Failed setting cipher list");
+	if (conf->cipher_list &&
+	    !SSL_CTX_set_cipher_list(ctx, conf->cipher_list)) {
+		unsigned long err = ERR_peek_last_error();
+
+		if (ERR_GET_LIB(err) != ERR_LIB_SSL ||
+		    ERR_GET_REASON(err) != SSL_R_NO_CIPHER_MATCH) {
+			tls_error_log(NULL, "Failed setting cipher_list");
 			return NULL;
 		}
 	}
 
 #ifdef TLS1_3_VERSION
-       if (conf->cipher_suites) {
-               if (!SSL_CTX_set_ciphersuites(ctx, conf->cipher_suites)) {
-                       tls_error_log(NULL, "Failed setting cipher suites");
-                       return NULL;
-               }
+	/*
+	 *	SSL_CTX_set_ciphersuites() accepts an empty string to
+	 *	clear the list for TLS >=1.3 methods.  However, it
+	 *	reports an error.  We therefore catch the error, and
+	 *	allow it.
+	 */
+       if (conf->cipher_suites &&
+	   !SSL_CTX_set_ciphersuites(ctx, conf->cipher_suites)) {
+		unsigned long err = ERR_peek_last_error();
+
+		if (ERR_GET_LIB(err) != ERR_LIB_SSL ||
+		    ERR_GET_REASON(err) != SSL_R_NO_CIPHER_MATCH) {
+			tls_error_log(NULL, "Failed setting cipher_suites");
+			return NULL;
+		}
        }
+
+	/*
+	 *	Set the supported groups if configured.
+	 *
+	 *	For TLS 1.3 this can help reduce round trips if the list
+	 *	includes a group the client predicted in the key_share extension.
+	 */
+       if (conf->group_list) {
+		char *list;
+
+		memcpy(&list, &(conf->group_list), sizeof(list)); /* const issues */
+
+	   	if (SSL_CTX_set1_groups_list(ctx, list) == 0) {
+			tls_error_log(NULL, "Failed setting group_list");
+			return NULL;
+		}
+	}
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
@@ -4610,17 +4830,6 @@ post_ca:
 		}
 		X509_STORE_set_flags(certstore, X509_V_FLAG_CRL_CHECK);
 
-#ifdef X509_V_FLAG_USE_DELTAS
-		/*
-		 *	If set, delta CRLs (if present) are used to
-		 *	determine certificate status. If not set
-		 *	deltas are ignored.
-		 *
-		 *	So it's safe to always set this flag.
-		 */
-		X509_STORE_set_flags(certstore, X509_V_FLAG_USE_DELTAS);
-#endif
-
 #ifdef X509_V_FLAG_CRL_CHECK_ALL
 		if (conf->check_all_crl)
 			X509_STORE_set_flags(certstore, X509_V_FLAG_CRL_CHECK_ALL);
@@ -4678,7 +4887,7 @@ post_ca:
 		/*
 		 *	Our lifetime is in hours, this is in seconds.
 		 */
-		SSL_CTX_set_timeout(ctx, conf->session_lifetime * 3600);
+		SSL_CTX_set_timeout(ctx, conf->session_lifetime);
 
 		/*
 		 *	Set the maximum number of entries in the
@@ -4764,19 +4973,53 @@ static int store_cmp(void const *a, void const *b)
 	return (one < two) - (one > two);
 }
 
+/*
+ *	Realm names are DNS names, which are case-insensitive.  And
+ *	DNS is ASCII only.  If we get something else, then we just
+ *	ignore it.
+ */
+static inline uint8_t realm_lower(uint8_t c)
+{
+	return ((c >= 'A') && (c <= 'Z')) ? (c + ('a' - 'A')) : c;
+}
+
 static uint32_t realm_hash(void const *data)
 {
 	fr_realm_ctx_t const *r = data;
+	uint8_t const *p;
+	uint32_t hash = fr_hash(NULL, 0);
 
-	return fr_hash_string(r->name);
+	for (p = (uint8_t const *) r->name; *p != '\0'; p++) {
+		uint8_t c = realm_lower(*p);
+
+		hash = fr_hash_update(&c, 1, hash);
+	}
+
+	return hash;
 }
 
 static int realm_cmp(void const *a, void const *b)
 {
 	fr_realm_ctx_t const *one = a;
 	fr_realm_ctx_t const *two = b;
+	uint8_t const *p = (uint8_t const *) one->name;
+	uint8_t const *q = (uint8_t const *) two->name;
+	uint8_t pc, qc;
 
-	return strcmp(one->name, two->name);
+	pc = realm_lower(*p);
+	qc = realm_lower(*q);
+
+	while (*p) {
+		if (pc != qc) break;
+
+		p++;
+		q++;
+
+		pc = realm_lower(*p);
+		qc = realm_lower(*q);
+	}
+
+	return (pc > qc) - (pc < qc);
 }
 
 static void realm_free(void *data)
@@ -4851,8 +5094,16 @@ static int tls_realms_load(fr_tls_server_conf_t *conf)
 		r->name = talloc_strdup(r, buffer);
 		r->ctx = ctx;
 
-		if (fr_hash_table_insert(ht, r) < 0) {
-			ERROR("Failed inserting certificate file %s into hash table", buffer);
+		/*
+		 *	Realm names are DNS, and are case insensitive.
+		 *	If there are two files of the same name but
+		 *	differing case, then that's an error.
+		 */
+		if (fr_hash_table_insert(ht, r) <= 0) {
+			ERROR("Failed inserting certificate file %s into hash table.  "
+			      "Is there another file with the same name, ignoring case?", buffer);
+			SSL_CTX_free(ctx);
+			talloc_free(r);
 			goto error;
 		}
 
@@ -4866,7 +5117,7 @@ static int tls_realms_load(fr_tls_server_conf_t *conf)
 }
 
 
-fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs)
+fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs, bool eap)
 {
 	fr_tls_server_conf_t *conf;
 
@@ -4887,11 +5138,36 @@ fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs)
 		talloc_free(conf);
 		return NULL;
 	}
+	conf->eap = eap;
 
 	/*
 	 *	Save people from their own stupidity.
 	 */
 	if (conf->fragment_size < 100) conf->fragment_size = 100;
+	if (conf->fragment_size > 65536) conf->fragment_size = 65536;
+
+	/*
+	 *	Enforce relevant packet sizes.  EAP is at least 1020
+	 *	bytes, so we bump it up to 2K just to be safe.
+	 *	RADIUS is 4K to 64K.
+	 */
+	if (eap) {
+		if (!conf->buffer_size) conf->buffer_size = 4096;
+
+		if (conf->buffer_size < conf->fragment_size) conf->buffer_size = conf->fragment_size;
+
+		if ((conf->buffer_size < 2048) || (conf->buffer_size > 65536)) {
+			cf_log_err_cs(cs, "Invalid value for \"buffer_size\".  It must be 2048..65536");
+			goto error;
+		}
+	} else {
+		if (!conf->buffer_size) conf->buffer_size = 65536;
+
+		if ((conf->buffer_size < 4096) || (conf->buffer_size > (1 << 18))) {
+			cf_log_err_cs(cs, "Invalid value for \"buffer_size\".  It must be 4096..256K");
+			goto error;
+		}
+	}
 
 	/*
 	 *	Disallow sessions of more than 7 days, as per RFC
@@ -4902,6 +5178,7 @@ fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs)
 	 *	sessions.
 	 */
 	if (conf->session_lifetime > (7 * 24)) conf->session_lifetime = 7 * 24;
+	conf->session_lifetime *= 3600;
 
 	/*
 	 *	Only check for certificate things if we don't have a
@@ -5074,10 +5351,20 @@ fr_tls_server_conf_t *tls_client_conf_parse(CONF_SECTION *cs)
 		return NULL;
 	}
 
+	conf->eap = false;
+
 	/*
 	 *	Save people from their own stupidity.
 	 */
 	if (conf->fragment_size < 100) conf->fragment_size = 100;
+
+	/*
+	 *	Enforce RADIUS sizes for now.
+	 */
+	if ((conf->buffer_size < 4096) || (conf->buffer_size > (1 << 18))) {
+		cf_log_err_cs(cs, "Invalid value for \"buffer_size\".  It must be 4096..256K");
+		goto error;
+	}
 
 	/*
 	 *	Initialize TLS
@@ -5235,7 +5522,7 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 				/* write the VPs to the cache file */
 				char filename[3 * MAX_SESSION_SIZE + 1], buf[1024];
 				FILE *vp_file;
-
+				
 				RDEBUG2("Saving session %s in the disk cache", buffer);
 
 				snprintf(filename, sizeof(filename), "%s%c%s.vps", conf->session_cache_path,
@@ -5265,6 +5552,14 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 						vp_prints(buf, sizeof(buf), vp);
 						fputs(buf, vp_file);
 						prev = vp;
+					}
+
+					if (conf->session_lifetime &&
+					    (fr_pair_find_by_num(vps,  PW_TLS_SESSION_EXPIRY, 0, TAG_ANY) != NULL)) {
+						uint32_t when = time(NULL) + conf->session_lifetime;
+
+						if (prev) fprintf(vp_file, ",\n\t");
+						fprintf(vp_file, "TLS-Session-Expiry = %u", when);
 					}
 
 					/*
@@ -5382,7 +5677,7 @@ fr_tls_status_t tls_application_data(tls_session_t *ssn, REQUEST *request)
 	 *      data buffer.
 	 */
 	err = SSL_read(ssn->ssl, ssn->clean_out.data + ssn->clean_out.used,
-		       sizeof(ssn->clean_out.data) - ssn->clean_out.used);
+		       ssn->clean_out.size - ssn->clean_out.used);
 	if (err <= 0) {
 		int code;
 

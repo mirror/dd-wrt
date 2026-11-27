@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 4b8a8f91d7d3a875aed451790b62d0236853980c $
+ * $Id: 6076be38b4da41489e14687853e2cee077d396c3 $
  *
  * @brief Valuepair functions that are radiusd-specific and as such do not
  * 	  belong in the library.
@@ -27,7 +27,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 4b8a8f91d7d3a875aed451790b62d0236853980c $")
+RCSID("$Id: 6076be38b4da41489e14687853e2cee077d396c3 $")
 
 #include <ctype.h>
 
@@ -134,7 +134,7 @@ int radius_compare_vps(UNUSED REQUEST *request, VALUE_PAIR *check, VALUE_PAIR *v
 
 		slen = regex_exec(preg, value_p, talloc_array_length(value_p) - 1, rxmatch, &nmatch);
 		if (slen < 0) {
-			RERROR("%s", fr_strerror());
+			RERROR("Failed processing regex: %s", fr_strerror());
 
 			goto regex_error;
 		}
@@ -379,7 +379,7 @@ int paircompare_register_byname(char const *name, DICT_ATTR const *from,
 	da = dict_attrbyname(name);
 	if (da) {
 		if (!da->flags.compare) {
-			fr_strerror_printf("Attribute '%s' already exists.", name);
+			fr_strerror_printf("Attribute '%s' already exists", name);
 			return -1;
 		}
 	} else if (from) {

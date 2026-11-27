@@ -1,7 +1,7 @@
 /*
  * eap_peap.h
  *
- * Version:     $Id: 7b803f8c61069db87b80f3659f1bb4e3edec83c4 $
+ * Version:     $Id: e89d4c2f01411ffa8e3cc85289616035701af9a8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,10 +23,9 @@
 #ifndef _EAP_PEAP_H
 #define _EAP_PEAP_H
 
-RCSIDH(eap_peap_h, "$Id: 7b803f8c61069db87b80f3659f1bb4e3edec83c4 $")
+RCSIDH(eap_peap_h, "$Id: e89d4c2f01411ffa8e3cc85289616035701af9a8 $")
 
 #include "eap_tls.h"
-#include <freeradius-devel/soh.h>
 
 typedef enum {
 	PEAP_STATUS_INVALID,
@@ -36,7 +35,6 @@ typedef enum {
 	PEAP_STATUS_INNER_IDENTITY_REQ_SENT,
 	PEAP_STATUS_PHASE2_INIT,
 	PEAP_STATUS_PHASE2,
-	PEAP_STATUS_WAIT_FOR_SOH_RESPONSE
 } peap_status;
 
 typedef enum {
@@ -56,9 +54,6 @@ typedef struct peap_tunnel_t {
 	bool		use_tunneled_reply;
 	bool		proxy_tunneled_request_as_eap;
 	char const	*virtual_server;
-	bool		soh;
-	char const	*soh_virtual_server;
-	VALUE_PAIR	*soh_reply_vps;
 	peap_resumption	session_resumption_state;
 } peap_tunnel_t;
 

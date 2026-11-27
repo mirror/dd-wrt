@@ -1,7 +1,7 @@
 /*
  * mppe_keys.c
  *
- * Version:     $Id: c5ed724a5a41965770f260b13a5657ce468dbbc2 $
+ * Version:     $Id: 3776c9a225645283c81f789916bca4c338c2c9e8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Authors: Henrik Eriksson <henriken@axis.com> & Lars Viklund <larsv@axis.com>
  */
 
-RCSID("$Id: c5ed724a5a41965770f260b13a5657ce468dbbc2 $")
+RCSID("$Id: 3776c9a225645283c81f789916bca4c338c2c9e8 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_tls.h"
@@ -200,7 +200,7 @@ void T_PRF(unsigned char const *secret, unsigned int secret_len,
 {
 	size_t prf_size = strlen(prf_label);
 	size_t pos;
-	uint16_t net_len = htons(out_len);	
+	uint16_t net_len = htons(out_len);
 	uint8_t	*buf;
 
 	if (prf_size > 128) prf_size = 128;
@@ -289,7 +289,7 @@ void eaptls_gen_keys_only(UNUSED REQUEST *request, SSL *s, char const *label, ui
 /*
  *	Generate keys according to RFC 5216 (section 2.3) and add to reply
  */
-void eaptls_gen_mppe_keys(REQUEST *request, SSL *s, char const *label, uint8_t const *context, UNUSED size_t context_size)
+void eaptls_gen_mppe_keys(REQUEST *request, SSL *s, char const *label, uint8_t const *context, size_t context_size)
 {
 	uint8_t out[4 * EAPTLS_MPPE_KEY_LEN];
 	uint8_t *p;

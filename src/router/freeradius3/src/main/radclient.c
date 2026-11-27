@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id: bfacb2e4a5a333ca4ef11c45b382b5d6499acfc0 $
+ * Version:	$Id: 1f201595766f0b0fe97b7b67956a0b0661cd7da5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: bfacb2e4a5a333ca4ef11c45b382b5d6499acfc0 $")
+RCSID("$Id: 1f201595766f0b0fe97b7b67956a0b0661cd7da5 $")
 
 #include <freeradius-devel/radclient.h>
 #include <freeradius-devel/radpaths.h>
@@ -934,7 +934,7 @@ static int send_one_packet(rc_request_t *request)
 			if (proto) {
 				mysockfd = fr_socket_client_tcp(NULL,
 								&request->packet->dst_ipaddr,
-								request->packet->dst_port, false);
+								request->packet->dst_port, false, NULL);
 				if (mysockfd < 0) {
 					ERROR("Failed opening socket");
 					exit(1);
@@ -1734,7 +1734,7 @@ int main(int argc, char **argv)
 
 #ifdef WITH_TCP
 	if (proto) {
-		sockfd = fr_socket_client_tcp(NULL, &server_ipaddr, server_port, false);
+		sockfd = fr_socket_client_tcp(NULL, &server_ipaddr, server_port, false, NULL);
 		if (sockfd < 0) {
 			ERROR("Error opening socket");
 			exit(1);

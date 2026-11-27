@@ -16,14 +16,14 @@
 #ifndef LIBRADIUS_H
 #define LIBRADIUS_H
 /*
- * $Id: 75a821927c05a52337cd7613233c3fa04da022c8 $
+ * $Id: 0c711bc256953830ce7d325e09b37dbd3c1d30fe $
  *
  * @file libradius.h
  * @brief Structures and prototypes for the radius library.
  *
  * @copyright 1999-2014 The FreeRADIUS server project
  */
-RCSIDH(libradius_h, "$Id: 75a821927c05a52337cd7613233c3fa04da022c8 $")
+RCSIDH(libradius_h, "$Id: 0c711bc256953830ce7d325e09b37dbd3c1d30fe $")
 
 /*
  *  Compiler hinting macros.  Included here for 3rd party consumers
@@ -426,6 +426,7 @@ typedef struct radius_packet {
 	bool			message_authenticator;
 	bool			proxy_state;
 	bool			eap_message;
+	bool			filter_proxy_state;	//!< matches the Proxy-State filter
 } RADIUS_PACKET;
 
 typedef enum {
@@ -542,15 +543,28 @@ DICT_VENDOR	*dict_vendorbyvalue(int vendor);
 #endif
 
 /* radius.c */
+
+/** Flags passed to rad_recv() and rad_packet_ok()
+ *
+ */
+typedef enum {
+	RAD_RECV_FLAG_NONE		= 0,
+	RAD_RECV_FLAG_REQUIRE_MA	= (1 << 0),	//!< Require Message-Authenticator in the packet.
+	RAD_RECV_FLAG_MSG_PEEK		= (1 << 1),	//!< Peek at the packet, leaving it in the socket buffer.
+	RAD_RECV_FLAG_LIMIT_PROXY_STATE	= (1 << 2),	//!< Forbid Proxy-State unless Message-Authenticator
+							//!< is present.
+	RAD_RECV_FLAG_REQUIRE_MA_REPLY	= (1 << 3)	//!< Require Message-Authenticator in Access-* replies,
+							//!< and in Protocol-Error.
+} rad_recv_flags_t;
+
+/** Check whether a rad_recv() flag is set
+ *
+ */
+#define RAD_RECV_FLAG_IS_SET(_flags, _flag) (((_flags) & (_flag)) != 0)
+
 int		rad_send(RADIUS_PACKET *, RADIUS_PACKET const *, char const *secret);
 bool		rad_packet_ok(RADIUS_PACKET *packet, int flags, decode_fail_t *reason);
 
-/*
- *	1 == require_ma
- *	2 == msg_peek
- *	4 == limit_proxy_state
- *	8 == require_ma for Access-* replies and Protocol-Error
- */
 RADIUS_PACKET	*rad_recv(TALLOC_CTX *ctx, int fd, int flags);
 ssize_t rad_recv_header(int sockfd, fr_ipaddr_t *src_ipaddr, uint16_t *src_port, int *code);
 void		rad_recv_discard(int sockfd);
@@ -661,7 +675,6 @@ int		fr_pair_cmp(VALUE_PAIR *a, VALUE_PAIR *b);
 int		fr_pair_list_cmp(VALUE_PAIR *a, VALUE_PAIR *b);
 
 typedef		int8_t (*fr_cmp_t)(void const *a, void const *b);
-int8_t		attrcmp(void const *a, void const *b);
 int8_t		fr_pair_cmp_by_da_tag(void const *a, void const *b);
 void		fr_pair_list_sort(VALUE_PAIR **vps, fr_cmp_t cmp);
 void		fr_pair_validate_debug(TALLOC_CTX *ctx, VALUE_PAIR const *failed[2]);
@@ -683,7 +696,8 @@ void		fr_pair_list_move_by_num(TALLOC_CTX *ctx, VALUE_PAIR **to, VALUE_PAIR **fr
 void		fr_pair_list_mcopy_by_num(TALLOC_CTX *ctx, VALUE_PAIR **to, VALUE_PAIR **from,
 					  unsigned int attr, unsigned int vendor, int8_t tag);
 VALUE_PAIR	*fr_pair_afrom_ip_str(TALLOC_CTX *ctx, char const *value,
-			     DICT_ATTR *ipv4, DICT_ATTR *ipv6, DICT_ATTR *ipv4_prefix, DICT_ATTR *ipv6_prefix);
+				      DICT_ATTR const *ipv4, DICT_ATTR const *ipv6,
+				      DICT_ATTR const *ipv4_prefix, DICT_ATTR const *ipv6_prefix);
 int		fr_pair_value_from_str(VALUE_PAIR *vp, char const *value, size_t len);
 VALUE_PAIR	*fr_pair_make(TALLOC_CTX *ctx, VALUE_PAIR **vps, char const *attribute, char const *value, FR_TOKEN op);
 int 		fr_pair_mark_xlat(VALUE_PAIR *vp, char const *value);
@@ -972,7 +986,7 @@ bool		fr_fifo_full(fr_fifo_t *fi);
  */
 int		fr_socket_client_unix(char const *path, bool async);
 int		fr_socket_client_udp(fr_ipaddr_t *src_ipaddr, fr_ipaddr_t *dst_ipaddr, uint16_t dst_port, bool async);
-int		fr_socket_client_tcp(fr_ipaddr_t *src_ipaddr, fr_ipaddr_t *dst_ipaddr, uint16_t dst_port, bool async);
+int		fr_socket_client_tcp(fr_ipaddr_t *src_ipaddr, fr_ipaddr_t *dst_ipaddr, uint16_t dst_port, bool async, bool *connected);
 int		fr_socket_wait_for_connect(int sockfd, struct timeval *timeout);
 
 #ifdef __cplusplus

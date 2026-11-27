@@ -4,7 +4,7 @@
  * The development of the EAP/SIM support was funded by Internet Foundation
  * Austria (http://www.nic.at/ipa).
  *
- * Version:     $Id: 38fe997a5f0fd11fee5759baa7a60843e560965c $
+ * Version:     $Id: 0a614b78b00c4253a5020428b61ddc67e9251e42 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  *
  */
 
-RCSID("$Id: 38fe997a5f0fd11fee5759baa7a60843e560965c $")
+RCSID("$Id: 0a614b78b00c4253a5020428b61ddc67e9251e42 $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,8 +90,8 @@ static int eap_sim_sendstart(eap_handler_t *handler)
 	newvp->vp_length = 2;
 	newvp->vp_octets = p = talloc_array(newvp, uint8_t, 2);
 
-	p[0] = 0;
 	p[0] = 1;
+	p[1] = 0;
 	fr_pair_add(vps, newvp);
 
 	/* the SUBTYPE, set to start. */
@@ -313,25 +313,31 @@ static int eap_sim_sendchallenge(eap_handler_t *handler)
 	newvp->vp_integer = ess->sim_id++;
 	fr_pair_replace(outvps, newvp);
 
-	/*
-	 *	Make a copy of the identity
-	 */
-	ess->keys.identitylen = strlen(handler->identity);
-	memcpy(ess->keys.identity, handler->identity, ess->keys.identitylen);
+	TALLOC_FREE(ess->keys.identity);
 
 	/*
 	 *	Use the SIM identity, if available
 	 */
 	newvp = fr_pair_find_by_num(*invps, PW_EAP_SIM_IDENTITY, 0, TAG_ANY);
-	if (newvp && newvp->vp_length > 2) {
+	if (newvp && (newvp->vp_length > 2)) {
 		uint16_t len;
 
 		memcpy(&len, newvp->vp_octets, sizeof(uint16_t));
 		len = ntohs(len);
-		if (len <= newvp->vp_length - 2 && len <= MAX_STRING_LEN) {
+		if (len <= newvp->vp_length - 2) {
+			MEM(ess->keys.identity = talloc_memdup(handler, newvp->vp_octets + 2, len));
 			ess->keys.identitylen = len;
-			memcpy(ess->keys.identity, newvp->vp_octets + 2, ess->keys.identitylen);
 		}
+	}
+
+	/*
+	 *	There was no AT_IDENTITY, the above checks found it to
+	 *	be malformed.  Fall back to using the EAP identity.
+	 */
+	if (!ess->keys.identity) {
+		ess->keys.identitylen = strlen(handler->identity);
+		MEM(ess->keys.identity = talloc_memdup(handler, handler->identity,
+						       ess->keys.identitylen));
 	}
 
 	/*

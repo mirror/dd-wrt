@@ -1,7 +1,7 @@
 /*
  * rlm_eap_ttls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 5fe54d1c3f93352fc76262ea51c397b3a39bd8b5 $
+ * Version:     $Id: 05fa29c94a3b009e5b1a02a036493bcf49ccf9ad $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: 5fe54d1c3f93352fc76262ea51c397b3a39bd8b5 $")
+RCSID("$Id: 05fa29c94a3b009e5b1a02a036493bcf49ccf9ad $")
 
 #include "eap_ttls.h"
 #include "eap_chbind.h"
@@ -189,11 +189,11 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 			offset += 4; /* offset to value field */
 
 			if (attr > 65535) {
-				DEBUG("Skipping Diameter attribute %08x", attr);
+				RDEBUG("Skipping Diameter attribute %08x", attr);
 				goto next_attr;
 			}
 			if (vendor > FR_MAX_VENDOR) {
-				DEBUG("Skipping large vendor ID %08x", vendor);
+				RDEBUG("Skipping large vendor ID %08x", vendor);
 				goto next_attr;
 			}
 		}
@@ -253,7 +253,6 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 			buffer[1] = size + 2;
 			memcpy(buffer + 2, data, size);
 
-			vp = NULL;
 			decoded = rad_attr2vp(packet, NULL, NULL, NULL,
 					      buffer, size + 2, &vp);
 			if (decoded < 0) {
@@ -269,7 +268,6 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 			}
 
 			fr_cursor_merge(&out, vp);
-
 			goto next_attr;
 		}
 
@@ -282,6 +280,7 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 		vp = fr_pair_afrom_da(packet, da);
 		if (!vp) {
 			RDEBUG2("Failure in creating VP");
+		fail:
 			fr_pair_list_free(&first);
 			return NULL;
 		}
@@ -303,9 +302,10 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 		raw:
 				if (vp) fr_pair_list_free(&vp);
 				da = dict_unknown_afrom_fields(packet, attr, vendor);
-				if (!da) return NULL;
+				if (!da) goto fail;
+
 				vp = fr_pair_afrom_da(packet, da);
-				if (!vp) return NULL;
+				if (!vp) goto fail;
 				fr_pair_value_memcpy(vp, data, size);
 				break;
 			}
@@ -331,9 +331,8 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 			if (size != vp->vp_length) {
 				RDEBUG2("Invalid length attribute %d",
 				       attr);
-				fr_pair_list_free(&first);
 				fr_pair_list_free(&vp);
-				return NULL;
+				goto fail;
 			}
 			memcpy(&vp->vp_ipaddr, data, vp->vp_length);
 
@@ -377,9 +376,14 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 			 *	Copy it over verbatim.
 			 */
 		case PW_TYPE_OCTETS:
-		default:
 			fr_pair_value_memcpy(vp, data, size);
 			break;
+
+			/*
+			 *	It's an unknown type, it must be raw.
+			 */
+		default:
+			goto raw;
 		}
 
 		/*
@@ -411,9 +415,8 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 			if ((vp->vp_length < 8) ||
 			    (vp->vp_length > 16)) {
 				RDEBUG("Tunneled challenge has invalid length");
-				fr_pair_list_free(&first);
 				fr_pair_list_free(&vp);
-				return NULL;
+				goto fail;
 			}
 
 			/*
@@ -425,9 +428,8 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 			if (memcmp(challenge, vp->vp_octets,
 				   vp->vp_length) != 0) {
 				RDEBUG("Tunneled challenge is incorrect");
-				fr_pair_list_free(&first);
 				fr_pair_list_free(&vp);
-				return NULL;
+				goto fail;
 			}
 		}
 
@@ -437,6 +439,7 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 		fr_cursor_insert(&out, vp);
 
 	next_attr:
+		vp = NULL;
 		if (data_left <= attr_len) break;
 
 		data_left -= attr_len;
@@ -844,6 +847,15 @@ static int CC_HINT(nonnull) eapttls_postproxy(eap_handler_t *handler, void *data
 		fake->packet->src_ipaddr = request->packet->src_ipaddr;
 		request->proxy = NULL;
 
+		/*
+		 *	These point into the VPs of the packet, as the
+		 *	fake request had them when the tunneled request
+		 *	was proxied.  The pre-proxy sections may have
+		 *	replaced those VPs, so look them up again.
+		 */
+		fake->username = fr_pair_find_by_num(fake->packet->vps, PW_USER_NAME, 0, TAG_ANY);
+		fake->password = fr_pair_find_by_num(fake->packet->vps, PW_USER_PASSWORD, 0, TAG_ANY);
+
 		rad_assert(!fake->reply);
 		fake->reply = talloc_steal(fake, request->proxy_reply);
 		request->proxy_reply = NULL;
@@ -1207,6 +1219,7 @@ int eapttls_process(eap_handler_t *handler, tls_session_t *tls_session)
 		talloc_free(req);
 
 		if (chbind_code != PW_CODE_ACCESS_ACCEPT) {
+			talloc_free(fake);
 			return chbind_code;
 		}
 	}

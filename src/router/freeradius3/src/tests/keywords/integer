@@ -179,7 +179,10 @@ if (Tmp-String-1 != '14139') {
 }
 
 # ethernet
-if (Tmp-String-2 != '62913607630848') {
+#
+# The 6 bytes of ethernet data are copied to the low bytes of the int64 field.
+#
+if (Tmp-String-2 != '959985468') {
 	update reply {
 		Filter-Id += 'fail 17'
 	}

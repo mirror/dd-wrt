@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 6e42f8470f655d34a827d9766d76b67b483a0a5b $
+ * $Id: ca15cd66ea344dc9b968726873df2d07e81e9785 $
  * @file rlm_python.c
  * @brief Translates requests between the server an a python interpreter.
  *
@@ -25,7 +25,7 @@
  * @copyright 2002  Miguel A.L. Paraz <mparaz@mparaz.com>
  * @copyright 2002  Imperium Technology, Inc.
  */
-RCSID("$Id: 6e42f8470f655d34a827d9766d76b67b483a0a5b $")
+RCSID("$Id: ca15cd66ea344dc9b968726873df2d07e81e9785 $")
 
 #define LOG_PREFIX "rlm_python - "
 
@@ -357,9 +357,9 @@ static void mod_vptuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vps, PyO
 			quote = "'";
 			s2p = s2;
 		}
-		DEBUG("%s - %s'%s:%s' %s %s%s%s", funcname,
-			fr_pair_value_from_str(vp, s2, -1) < 0 ? "Failed: " : "",
-			list_name, s1, fr_int2str(fr_tokens, op, "="), quote, s2p, quote);
+		RDEBUG("%s - %s'%s:%s' %s %s%s%s", funcname,
+		       fr_pair_value_from_str(vp, s2, -1) < 0 ? "Failed: " : "",
+		       list_name, s1, fr_int2str(fr_tokens, op, "="), quote, s2p, quote);
 
 		radius_pairmove(current, vps, vp, false);
 	}

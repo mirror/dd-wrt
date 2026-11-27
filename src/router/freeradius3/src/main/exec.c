@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: 67243f79ef62e3dda003677ba2b6fef173a14489 $
+ * $Id: 0ac4965e3840f346d61bc28344a6f0e41a7ae10c $
  *
  * @file exec.c
  * @brief Execute external programs.
@@ -23,7 +23,7 @@
  * @copyright 2000-2004,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 67243f79ef62e3dda003677ba2b6fef173a14489 $")
+RCSID("$Id: 0ac4965e3840f346d61bc28344a6f0e41a7ae10c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -42,6 +42,8 @@ RCSID("$Id: 67243f79ef62e3dda003677ba2b6fef173a14489 $")
 #ifndef WIFEXITED
 #	define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
+
+#define LOG_PREFIX "exec"
 
 #define MAX_ARGV (256)
 
@@ -89,16 +91,16 @@ pid_t radius_start_program(char const *cmd, REQUEST *request, bool exec_wait,
 	memcpy(&argv_p, &argv_start, sizeof(argv_p));
 	argc = rad_expand_xlat(request, cmd, MAX_ARGV, argv_p, true, sizeof(argv_buf), argv_buf);
 	if (argc <= 0) {
-		DEBUG("invalid command line '%s'.", cmd);
+		ROPTIONAL(REDEBUG, ERROR, "invalid command line '%s'.", cmd);
 		return -1;
 	}
 
 
 #ifndef NDEBUG
 	if (rad_debug_lvl > 2) {
-		DEBUG3("executing cmd %s", cmd);
+		ROPTIONAL(RDEBUG3, DEBUG3, "executing cmd %s", cmd);
 		for (i = 0; i < argc; i++) {
-			DEBUG3("\t[%d] %s", i, argv[i]);
+			ROPTIONAL(RDEBUG3, DEBUG3, "\t[%d] %s", i, argv[i]);
 		}
 	}
 #endif
@@ -110,13 +112,13 @@ pid_t radius_start_program(char const *cmd, REQUEST *request, bool exec_wait,
 	if (exec_wait) {
 		if (input_fd) {
 			if (pipe(to_child) != 0) {
-				DEBUG("Couldn't open pipe to child: %s", fr_syserror(errno));
+				ROPTIONAL(RDEBUG, DEBUG, "Couldn't open pipe to child: %s", fr_syserror(errno));
 				return -1;
 			}
 		}
 		if (output_fd) {
 			if (pipe(from_child) != 0) {
-				DEBUG("Couldn't open pipe from child: %s", fr_syserror(errno));
+				ROPTIONAL(RDEBUG, DEBUG, "Couldn't open pipe from child: %s", fr_syserror(errno));
 				/* safe because these either need closing or are == -1 */
 				close(to_child[0]);
 				close(to_child[1]);
@@ -196,7 +198,7 @@ pid_t radius_start_program(char const *cmd, REQUEST *request, bool exec_wait,
 		 */
 		devnull = open("/dev/null", O_RDWR);
 		if (devnull < 0) {
-			DEBUG("Failed opening /dev/null: %s\n", fr_syserror(errno));
+			ROPTIONAL(RDEBUG, DEBUG, "Failed opening /dev/null: %s\n", fr_syserror(errno));
 
 			/*
 			 *	Where the status code is interpreted as a module rcode
@@ -282,7 +284,7 @@ pid_t radius_start_program(char const *cmd, REQUEST *request, bool exec_wait,
 	 *	Parent process.
 	 */
 	if (pid < 0) {
-		DEBUG("Couldn't fork %s: %s", argv[0], fr_syserror(errno));
+		ROPTIONAL(RDEBUG, DEBUG, "Couldn't fork %s: %s", argv[0], fr_syserror(errno));
 		if (exec_wait) {
 			/* safe because these either need closing or are == -1 */
 			close(to_child[0]);
@@ -315,7 +317,7 @@ pid_t radius_start_program(char const *cmd, REQUEST *request, bool exec_wait,
 	return pid;
 #else
 	if (exec_wait) {
-		DEBUG("Wait is not supported");
+		ROPTIONAL(RDEBUG, DEBUG, "Wait is not supported");
 		return -1;
 	}
 
@@ -609,7 +611,6 @@ wait:
 	child_pid = rad_waitpid(pid, &status);
 	if (child_pid == 0) {
 		RERROR("Timeout waiting for child");
-
 		return -2;
 	}
 

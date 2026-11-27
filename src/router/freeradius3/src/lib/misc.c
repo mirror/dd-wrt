@@ -1,7 +1,7 @@
 /*
  * misc.c	Various miscellaneous functions.
  *
- * Version:	$Id: 80ed3dcfffb86c53e58e1b33500e231030c90cb5 $
+ * Version:	$Id: 949e8127cd4b037d49e830cb0a53357756092e99 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 80ed3dcfffb86c53e58e1b33500e231030c90cb5 $")
+RCSID("$Id: 949e8127cd4b037d49e830cb0a53357756092e99 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -333,7 +333,7 @@ int fr_pton4(fr_ipaddr_t *out, char const *value, ssize_t inlen, bool resolve, b
 	 */
 	if (inlen >= 0) {
 		if (inlen >= (ssize_t)sizeof(buffer)) {
-			fr_strerror_printf("Invalid IPv4 address string \"%s\"", value);
+			fr_strerror_printf("Invalid IPv4 address string '%s'", value);
 			return -1;
 		}
 		memcpy(buffer, value, inlen);
@@ -367,7 +367,7 @@ int fr_pton4(fr_ipaddr_t *out, char const *value, ssize_t inlen, bool resolve, b
 
 		} else if (!resolve) {
 			if (inet_pton(AF_INET, value, &out->ipaddr.ip4addr.s_addr) <= 0) {
-				fr_strerror_printf("Failed to parse IPv4 addreess string \"%s\"", value);
+				fr_strerror_printf("Failed to parse IPv4 addreess string '%s'", value);
 				return -1;
 			}
 		} else if (ip_hton(out, AF_INET, value, fallback) < 0) return -1;
@@ -382,19 +382,19 @@ int fr_pton4(fr_ipaddr_t *out, char const *value, ssize_t inlen, bool resolve, b
 	buffer[p - value] = '\0';
 
 	if (ip_prefix_from_str(buffer, &out->ipaddr.ip4addr.s_addr) <= 0) {
-		fr_strerror_printf("Failed to parse IPv4 address string \"%s\"", value);
+		fr_strerror_printf("Failed to parse IPv4 address string '%s'", value);
 		return -1;
 	}
 
 	mask = strtoul(p + 1, &eptr, 10);
 	if (mask > 32) {
-		fr_strerror_printf("Invalid IPv4 mask length \"%s\".  Should be between 0-32", p);
+		fr_strerror_printf("Invalid IPv4 mask length '%s'.  Should be between 0-32", p);
 		return -1;
 	}
 
 	if (eptr[0] != '\0') {
-		fr_strerror_printf("Failed to parse IPv4 address string \"%s\", "
-				   "got garbage after mask length \"%s\"", value, eptr);
+		fr_strerror_printf("Failed to parse IPv4 address string '%s', "
+				   "got garbage after mask length '%s'", value, eptr);
 		return -1;
 	}
 
@@ -433,7 +433,7 @@ int fr_pton6(fr_ipaddr_t *out, char const *value, ssize_t inlen, bool resolve, b
 	 */
 	if (inlen >= 0) {
 		if (inlen >= (ssize_t)sizeof(buffer)) {
-			fr_strerror_printf("Invalid IPv6 address string \"%s\"", value);
+			fr_strerror_printf("Invalid IPv6 address string '%s'", value);
 			return -1;
 		}
 		memcpy(buffer, value, inlen);
@@ -454,7 +454,7 @@ int fr_pton6(fr_ipaddr_t *out, char const *value, ssize_t inlen, bool resolve, b
 			memset(out->ipaddr.ip6addr.s6_addr, 0, sizeof(out->ipaddr.ip6addr.s6_addr));
 		} else if (!resolve) {
 			if (inet_pton(AF_INET6, value, out->ipaddr.ip6addr.s6_addr) <= 0) {
-				fr_strerror_printf("Failed to parse IPv6 address string \"%s\"", value);
+				fr_strerror_printf("Failed to parse IPv6 address string '%s'", value);
 				return -1;
 			}
 		} else if (ip_hton(out, AF_INET6, value, fallback) < 0) return -1;
@@ -463,7 +463,7 @@ int fr_pton6(fr_ipaddr_t *out, char const *value, ssize_t inlen, bool resolve, b
 	}
 
 	if ((p - value) >= INET6_ADDRSTRLEN) {
-		fr_strerror_printf("Invalid IPv6 address string \"%s\"", value);
+		fr_strerror_printf("Invalid IPv6 address string '%s'", value);
 		return -1;
 	}
 
@@ -475,19 +475,19 @@ int fr_pton6(fr_ipaddr_t *out, char const *value, ssize_t inlen, bool resolve, b
 
 	if (!resolve) {
 		if (inet_pton(AF_INET6, buffer, out->ipaddr.ip6addr.s6_addr) <= 0) {
-			fr_strerror_printf("Failed to parse IPv6 address string \"%s\"", value);
+			fr_strerror_printf("Failed to parse IPv6 address string '%s'", value);
 			return -1;
 		}
 	} else if (ip_hton(out, AF_INET6, buffer, fallback) < 0) return -1;
 
 	prefix = strtoul(p + 1, &eptr, 10);
 	if (prefix > 128) {
-		fr_strerror_printf("Invalid IPv6 mask length \"%s\".  Should be between 0-128", p);
+		fr_strerror_printf("Invalid IPv6 mask length '%s'.  Should be between 0-128", p);
 		return -1;
 	}
 	if (eptr[0] != '\0') {
-		fr_strerror_printf("Failed to parse IPv6 address string \"%s\", "
-				   "got garbage after mask length \"%s\"", value, eptr);
+		fr_strerror_printf("Failed to parse IPv6 address string '%s', "
+				   "got garbage after mask length '%s'", value, eptr);
 		return -1;
 	}
 
@@ -1159,17 +1159,17 @@ int ip_hton(fr_ipaddr_t *out, int af, char const *hostname, bool fallback)
 		switch (af) {
 		default:
 		case AF_UNSPEC:
-			fr_strerror_printf("Failed resolving \"%s\" to IP address: %s",
+			fr_strerror_printf("Failed resolving '%s' to IP address: %s",
 					   hostname, gai_strerror(rcode));
 			return -1;
 
 		case AF_INET:
-			fr_strerror_printf("Failed resolving \"%s\" to IPv4 address: %s",
+			fr_strerror_printf("Failed resolving '%s' to IPv4 address: %s",
 					   hostname, gai_strerror(rcode));
 			return -1;
 
 		case AF_INET6:
-			fr_strerror_printf("Failed resolving \"%s\" to IPv6 address: %s",
+			fr_strerror_printf("Failed resolving '%s' to IPv6 address: %s",
 					   hostname, gai_strerror(rcode));
 			return -1;
 		}
@@ -1220,7 +1220,7 @@ char const *ip_ntoh(fr_ipaddr_t const *src, char *dst, size_t cnt)
 
 	if ((error = getnameinfo((struct sockaddr *)&ss, salen, dst, cnt, NULL, 0,
 				 NI_NUMERICHOST | NI_NUMERICSERV)) != 0) {
-		fr_strerror_printf("ip_ntoh: %s", gai_strerror(error));
+		fr_strerror_printf("Failed looking up IP address - %s", gai_strerror(error));
 		return NULL;
 	}
 	return dst;

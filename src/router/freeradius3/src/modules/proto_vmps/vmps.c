@@ -1,7 +1,7 @@
 /*
  * vmps.c	Handle VMPS traffic.
  *
- * Version:	$Id: 1fc0a1970b1461276c024adbeafec2adad41abe1 $
+ * Version:	$Id: 6fcb391eaaeb0a1e295b7c762bb8066f1b865a1b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 1fc0a1970b1461276c024adbeafec2adad41abe1 $")
+RCSID("$Id: 6fcb391eaaeb0a1e295b7c762bb8066f1b865a1b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/protocol.h>
@@ -33,9 +33,9 @@ RCSID("$Id: 1fc0a1970b1461276c024adbeafec2adad41abe1 $")
 
 static int vmps_process(REQUEST *request)
 {
-	DEBUG2("Doing VMPS");
+	RDEBUG2("Doing VMPS");
 	process_post_auth(0, request);
-	DEBUG2("Done VMPS");
+	RDEBUG2("Done VMPS");
 
 	request->packet->code = 0; /* hack for VMPS */
 	request->reply->code = PW_CODE_ACCESS_ACCEPT;
@@ -91,7 +91,7 @@ static int vqp_socket_send(rad_listen_t *listener, REQUEST *request)
 	rad_assert(listener->send == vqp_socket_send);
 
 	if (vqp_encode(request->reply, request->packet) < 0) {
-		DEBUG2("Failed encoding packet: %s\n", fr_strerror());
+		RDEBUG2("Failed encoding packet: %s\n", fr_strerror());
 		return -1;
 	}
 

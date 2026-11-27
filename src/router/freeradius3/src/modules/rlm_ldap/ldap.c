@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 03c7daa5b5561d07813a05a47004bbc54ba220d6 $
+ * $Id: b4e864e62be093573af07e40d252e3d0bc88ba6d $
  * @file ldap.c
  * @brief LDAP module library functions.
  *
@@ -707,7 +707,7 @@ ldap_rcode_t rlm_ldap_bind(rlm_ldap_t const *inst, REQUEST *request, ldap_handle
 
 #ifndef WITH_SASL
 	if (sasl && sasl->mech) {
-		REDEBUG("Server is built without SASL, but is being asked to do SASL.");
+		MOD_ROPTIONAL(REDEBUG, DEBUG, "Server is built without SASL, but is being asked to do SASL.");
 		return status;
 	}
 #endif
@@ -734,11 +734,7 @@ ldap_rcode_t rlm_ldap_bind(rlm_ldap_t const *inst, REQUEST *request, ldap_handle
 
 			/* We got a valid message ID */
 			if (msgid >= 0) {
-				if (request) {
-					RDEBUG2("Waiting for bind result...");
-				} else {
-					DEBUG2("rlm_ldap (%s): Waiting for bind result...", inst->name);
-				}
+				MOD_ROPTIONAL(RDEBUG, DEBUG, "Waiting for bind result...");
 			}
 
 			status = rlm_ldap_result(inst, *pconn, msgid, dn, NULL, &error, &extra);
@@ -767,8 +763,6 @@ ldap_rcode_t rlm_ldap_bind(rlm_ldap_t const *inst, REQUEST *request, ldap_handle
 				if (*pconn) {
 					LDAP_DBGW_REQ("Bind with %s to %s failed: %s. Got new socket, retrying...",
 						      *dn ? dn : "(anonymous)", inst->server, error);
-
-					talloc_free(extra); /* don't leak debug info */
 
 					continue;
 				}
@@ -907,8 +901,6 @@ ldap_rcode_t rlm_ldap_search(LDAPMessage **result, rlm_ldap_t const *inst, REQUE
 			if (*pconn) {
 				LDAP_DBGW_REQ("Search failed: %s. Got new socket, retrying...", error);
 
-				talloc_free(extra); /* don't leak debug info */
-
 				continue;
 			}
 
@@ -1023,7 +1015,6 @@ ldap_rcode_t rlm_ldap_modify(rlm_ldap_t const *inst, REQUEST *request, ldap_hand
 			if (*pconn) {
 				RWDEBUG("Modify failed: %s. Got new socket, retrying...", error);
 
-				talloc_free(extra); /* don't leak debug info */
 				continue;
 			}
 

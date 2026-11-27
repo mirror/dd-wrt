@@ -1,7 +1,7 @@
 /*
  * radmin.c	RADIUS Administration tool.
  *
- * Version:	$Id: badc186d397d51a0c6752546ea05fa3baf7685b5 $
+ * Version:	$Id: 8da3614bd56fd8e2ff422812ffc95a8c95d7f03a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2012   Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: badc186d397d51a0c6752546ea05fa3baf7685b5 $")
+RCSID("$Id: 8da3614bd56fd8e2ff422812ffc95a8c95d7f03a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/md5.h>
@@ -144,7 +144,7 @@ static int client_socket(char const *server)
 		exit(1);
 	}
 
-	sockfd = fr_socket_client_tcp(NULL, &ipaddr, port, false);
+	sockfd = fr_socket_client_tcp(NULL, &ipaddr, port, false, NULL);
 	if (sockfd < 0) {
 		fprintf(stderr, "%s: Failed opening socket %s: %s\n",
 			progname, server, fr_syserror(errno));
@@ -345,6 +345,7 @@ int main(int argc, char **argv)
 	char const	*radius_dir = RADIUS_DIR;
 	char const	*dict_dir = DICTDIR;
 #ifdef USE_READLINE_HISTORY
+	bool		history = true;
 	char 		history_file[PATH_MAX];
 #endif
 
@@ -591,16 +592,22 @@ int main(int argc, char **argv)
 	if (input_file && !quiet && !isatty(STDIN_FILENO)) quiet = true;
 
 #ifdef USE_READLINE
-	if (!quiet) {
+	/*
+	 *	If we're doing '-e foo', then don't save the history.
+	 */
+	if (!quiet && !num_commands) history = false;
+
 #ifdef USE_READLINE_HISTORY
+	if (history) {
 		using_history();
 		stifle_history(READLINE_MAX_HISTORY_LINES);
 
 		snprintf(history_file, sizeof(history_file), "%s/%s", getenv("HOME"), ".radmin_history");
 		read_history(history_file);
-#endif
-		rl_bind_key('\t', rl_insert);
 	}
+#endif
+
+	if (!quiet) rl_bind_key('\t', rl_insert);
 #endif
 
 	/*
@@ -658,8 +665,10 @@ int main(int argc, char **argv)
 			}
 
 #ifdef USE_READLINE_HISTORY
-			add_history(line);
-			write_history(history_file);
+			if (history) {
+				add_history(line);
+				write_history(history_file);
+			}
 #endif
 		} else		/* quiet, or no readline */
 #endif

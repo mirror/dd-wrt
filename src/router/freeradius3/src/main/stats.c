@@ -1,7 +1,7 @@
 /*
  * stats.c	Internal statistics handling.
  *
- * Version:	$Id: a9c3c3b837d1a499d50c267c108ef414a00fcfff $
+ * Version:	$Id: 93ecd5112019f149bc18e2630d6f72f91f2ec275 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2008  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: a9c3c3b837d1a499d50c267c108ef414a00fcfff $")
+RCSID("$Id: 93ecd5112019f149bc18e2630d6f72f91f2ec275 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -111,6 +111,7 @@ static void stats_time(fr_stats_t *stats, REQUEST *request,
 
 void request_stats_final(REQUEST *request)
 {
+	int code;
 	rad_listen_t *listener;
 	RADCLIENT *client;
 
@@ -183,7 +184,9 @@ void request_stats_final(REQUEST *request)
 	 *	deleted, because only the main server thread calls
 	 *	this function, which makes it thread-safe.
 	 */
-	if (request->reply) switch (request->reply->code) {
+	code = request->reply ? request->reply->code : 0;
+
+	switch (code) {
 	case PW_CODE_ACCESS_ACCEPT:
 		INC_AUTH(total_access_accepts);
 
@@ -267,18 +270,41 @@ void request_stats_final(REQUEST *request)
 		 *	This packet then isn't counted in the statistics for overall response times. :(
 		 */
 	case 0:
-		if (request->packet->code == PW_CODE_ACCESS_REQUEST) {
-			if (request->reply->offset == -2) {
+		switch (request->packet->code) {
+		case PW_CODE_ACCESS_REQUEST:
+			if (!request->reply || request->reply->offset == -2) {
 				INC_AUTH(total_bad_authenticators);
 			} else {
 				INC_AUTH(total_packets_dropped);
 			}
-		} else if (request->packet->code == PW_CODE_ACCOUNTING_REQUEST) {
-			if (request->reply->offset == -2) {
+			break;
+
+		case PW_CODE_ACCOUNTING_REQUEST:
+			if (!request->reply || request->reply->offset == -2) {
 				INC_ACCT(total_bad_authenticators);
 			} else {
 				INC_ACCT(total_packets_dropped);
 			}
+			break;
+
+		case PW_CODE_COA_REQUEST:
+			if (!request->reply || request->reply->offset == -2) {
+				INC_COA(total_bad_authenticators);
+			} else {
+				INC_COA(total_packets_dropped);
+			}
+			break;
+
+		case PW_CODE_DISCONNECT_REQUEST:
+			if (!request->reply || request->reply->offset == -2) {
+				INC_DSC(total_bad_authenticators);
+			} else {
+				INC_DSC(total_packets_dropped);
+			}
+			break;
+
+		default:
+			break;
 		}
 		break;
 
@@ -287,37 +313,6 @@ void request_stats_final(REQUEST *request)
 	}
 
 #ifdef WITH_PROXY
-	if (!request->proxy || !request->home_server) goto done;	/* simplifies formatting */
-
-	switch (request->proxy->code) {
-	case PW_CODE_ACCESS_REQUEST:
-		proxy_auth_stats.total_requests += request->num_proxied_requests;
-		request->home_server->stats.total_requests += request->num_proxied_requests;
-		break;
-
-#ifdef WITH_ACCOUNTING
-	case PW_CODE_ACCOUNTING_REQUEST:
-		proxy_acct_stats.total_requests += request->num_proxied_requests;
-		request->home_server->stats.total_requests += request->num_proxied_requests;
-		break;
-#endif
-
-#ifdef WITH_COA
-	case PW_CODE_COA_REQUEST:
-		proxy_coa_stats.total_requests += request->num_proxied_requests;
-		request->home_server->stats.total_requests += request->num_proxied_requests;
-		break;
-
-	case PW_CODE_DISCONNECT_REQUEST:
-		proxy_dsc_stats.total_requests += request->num_proxied_requests;
-		request->home_server->stats.total_requests += request->num_proxied_requests;
-		break;
-#endif
-
-	default:
-		break;
-	}
-
 	if (!request->proxy_reply) goto done;	/* simplifies formatting */
 
 #undef INC
@@ -325,9 +320,8 @@ void request_stats_final(REQUEST *request)
 
 	switch (request->proxy_reply->code) {
 	case PW_CODE_ACCESS_ACCEPT:
-		INC(total_access_accepts);
-	proxy_stats:
-		INC(total_responses);
+	case PW_CODE_ACCESS_REJECT:
+	case PW_CODE_ACCESS_CHALLENGE:
 		stats_time(&proxy_auth_stats, NULL,
 			   &request->proxy->timestamp,
 			   &request->proxy_reply->timestamp);
@@ -336,32 +330,9 @@ void request_stats_final(REQUEST *request)
 			   &request->proxy_reply->timestamp);
 		break;
 
-	case PW_CODE_ACCESS_REJECT:
-		INC(total_access_rejects);
-		goto proxy_stats;
-
-	case PW_CODE_ACCESS_CHALLENGE:
-		INC(total_access_challenges);
-		goto proxy_stats;
-
-#ifdef WITH_ACCOUNTING
-	case PW_CODE_ACCOUNTING_RESPONSE:
-		proxy_acct_stats.total_responses++;
-		request->home_server->stats.total_responses++;
-		stats_time(&proxy_acct_stats, NULL,
-			   &request->proxy->timestamp,
-			   &request->proxy_reply->timestamp);
-		stats_time(&request->home_server->stats, NULL,
-			   &request->proxy->timestamp,
-			   &request->proxy_reply->timestamp);
-		break;
-#endif
-
 #ifdef WITH_COA
 	case PW_CODE_COA_ACK:
 	case PW_CODE_COA_NAK:
-		proxy_coa_stats.total_responses++;
-		request->home_server->stats.total_responses++;
 		stats_time(&proxy_coa_stats, NULL,
 			   &request->proxy->timestamp,
 			   &request->proxy_reply->timestamp);
@@ -372,8 +343,6 @@ void request_stats_final(REQUEST *request)
 
 	case PW_CODE_DISCONNECT_ACK:
 	case PW_CODE_DISCONNECT_NAK:
-		proxy_dsc_stats.total_responses++;
-		request->home_server->stats.total_responses++;
 		stats_time(&proxy_dsc_stats, NULL,
 			   &request->proxy->timestamp,
 			   &request->proxy_reply->timestamp);
@@ -384,8 +353,6 @@ void request_stats_final(REQUEST *request)
 #endif
 
 	default:
-		proxy_auth_stats.total_unknown_types++;
-		request->home_server->stats.total_unknown_types++;
 		break;
 	}
 

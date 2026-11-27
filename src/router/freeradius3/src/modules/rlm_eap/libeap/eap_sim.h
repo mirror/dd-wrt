@@ -1,7 +1,7 @@
 /*
  * eap_sim.h    Header file containing the EAP-SIM types
  *
- * Version:     $Id: 0d92f67eb4a3369c57abcce0501415fc8b2251e8 $
+ * Version:     $Id: 96f9585fbb7f177c84e1f2e5f17c7943f7f5a222 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _EAP_SIM_H
 #define _EAP_SIM_H
 
-RCSIDH(eap_sim_h, "$Id: 0d92f67eb4a3369c57abcce0501415fc8b2251e8 $")
+RCSIDH(eap_sim_h, "$Id: 96f9585fbb7f177c84e1f2e5f17c7943f7f5a222 $")
 
 #include "eap_types.h"
 
@@ -85,7 +85,7 @@ int unmap_eapsim_basictypes(RADIUS_PACKET *r, uint8_t *attr, unsigned int attrle
 
 struct eapsim_keys {
 	/* inputs */
-	uint8_t identity[MAX_STRING_LEN];
+	uint8_t *identity;
 	unsigned int  identitylen;
 	uint8_t nonce_mt[EAPSIM_NONCEMT_SIZE];
 	uint8_t rand[3][EAPSIM_RAND_SIZE];

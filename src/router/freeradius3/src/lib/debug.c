@@ -674,7 +674,7 @@ static int fr_fault_check_permissions(void)
 	if (stat(p, &statbuf) == 0) {
 #ifdef S_IWOTH
 		if ((statbuf.st_mode & S_IWOTH) != 0) {
-			fr_strerror_printf("panic_action file \"%s\" is globally writable", p);
+			fr_strerror_printf("panic_action file '%s' is globally writable", p);
 			return -1;
 		}
 #endif
@@ -808,7 +808,7 @@ NEVER_RETURNS void fr_fault(int sig)
 
 		FR_FAULT_LOG("Panic action exited with %i", code);
 
-		fr_exit_now(code);
+		fr_exit_now(128 + sig);
 	}
 
 
@@ -889,13 +889,13 @@ int fr_log_talloc_report(TALLOC_CTX *ctx)
 
 	fd = dup(fr_fault_log_fd);
 	if (fd < 0) {
-		fr_strerror_printf("Couldn't write memory report, failed to dup log fd: %s", fr_syserror(errno));
+		fr_strerror_printf("Failed write memory report, error dup'ing log fd: %s", fr_syserror(errno));
 		return -1;
 	}
 	log = fdopen(fd, "w");
 	if (!log) {
 		close(fd);
-		fr_strerror_printf("Couldn't write memory report, fdopen failed: %s", fr_syserror(errno));
+		fr_strerror_printf("Failed write memory report, error calling fdopen : %s", fr_syserror(errno));
 		return -1;
 	}
 

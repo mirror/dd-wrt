@@ -4,7 +4,7 @@
 /*
  * stats.h	Structures and functions for statistics.
  *
- * Version:	$Id: 482d3f383644ea408d76f4dc6b8b7b9b79bc050a $
+ * Version:	$Id: 46fe72b66a5950e6958e83595b518367a5ace9d5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  * Copyright 2005,2006,2007,2008  The FreeRADIUS server project
  */
 
-RCSIDH(stats_h, "$Id: 482d3f383644ea408d76f4dc6b8b7b9b79bc050a $")
+RCSIDH(stats_h, "$Id: 46fe72b66a5950e6958e83595b518367a5ace9d5 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,6 +83,9 @@ void radius_stats_ema(fr_stats_ema_t *ema,
 		      struct timeval *start, struct timeval *end);
 
 #define FR_STATS_INC(_x, _y) do { radius_ ## _x ## _stats._y++;if (listener) listener->stats._y++;if (client) client->_x._y++; if (listener && listener->parent) { listener->parent->stats._y++; } } while (0)
+#ifdef WITH_PROXY
+#define FR_PROXY_STATS_INC(_x, _h, _y, _t) proxy_stats(_x, _h, packet->code, offsetof(fr_stats_t, _y), _t)
+#endif
 
 #define FR_STATS_TYPE_INC(_x) _x++
 
@@ -92,7 +95,10 @@ void radius_stats_ema(fr_stats_ema_t *ema,
 
 #define FR_STATS_INC(_x, _y)
 #define FR_STATS_TYPE_INC(_x)
+#endif
 
+#ifndef FR_PROXY_STATS_INC
+#define FR_PROXY_STATS_INC(_x, _h, _y, _t)
 #endif
 
 #ifdef __cplusplus

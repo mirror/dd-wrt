@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 949811cd4ac68c1c15fd7634842fa508052dc256 $
+ * $Id: b57f6d4d2eda259b15532bb8608435acecc393c9 $
  * @file rlm_detail.c
  * @brief Write plaintext versions of packets to flatfiles.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: 949811cd4ac68c1c15fd7634842fa508052dc256 $")
+RCSID("$Id: b57f6d4d2eda259b15532bb8608435acecc393c9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -75,7 +75,7 @@ typedef struct detail_instance {
 
 static const CONF_PARSER module_config[] = {
 	{ "detailfile", FR_CONF_OFFSET(PW_TYPE_FILE_OUTPUT | PW_TYPE_DEPRECATED, rlm_detail_t, filename), NULL },
-	{ "filename", FR_CONF_OFFSET(PW_TYPE_FILE_OUTPUT | PW_TYPE_REQUIRED | PW_TYPE_XLAT, rlm_detail_t, filename), "%{radacctdir}/%{Client-IP-Address}/detail" },
+	{ "filename", FR_CONF_OFFSET(PW_TYPE_FILE_OUTPUT | PW_TYPE_REQUIRED | PW_TYPE_XLAT, rlm_detail_t, filename), "${radacctdir}/%{%{Packet-Src-IP-Address}:-%{Packet-Src-IPv6-Address}}/detail-%Y%m%d" },
 	{ "header", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, rlm_detail_t, header), "%t" },
 	{ "detailperm", FR_CONF_OFFSET(PW_TYPE_INTEGER | PW_TYPE_DEPRECATED, rlm_detail_t, perm), NULL },
 	{ "permissions", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_detail_t, perm), "0600" },

@@ -11,7 +11,7 @@
 #	the "inner-tunnel" virtual server.  You will likely have to edit
 #	that, too, for authentication to work.
 #
-#	$Id: f27c3b5240bfdb36f98423f7c929b674b2c2fa12 $
+#	$Id: 56801314a540d5d03e563f5419ca6eb780b1ca6a $
 #
 ######################################################################
 #
@@ -377,7 +377,17 @@ authorize {
 	#  the dpsk module.
 	#
 #	rewrite_called_station_id
+
+	#
+	#  Run the DPSK module.  If it returns "ok", then you can
+	#  look up the DPSK attributes in a database.
+	#
 #	dpsk
+#	if (ok) {
+#		... Use &Called-Station-MAC as a key in a database lookup
+#		... set &control:PSK-Identity
+#		... set &control:Pre-Shared-Key
+#	}
 
 	#
 	#  The WiMAX specification says that the Calling-Station-Id
@@ -570,7 +580,23 @@ authenticate {
 		pap
 	}
 
-#	dpsk
+	#
+	#  Authenticate DPSK / PPSK / ISPK / etc.
+	#
+	#  If the module found the Pre-Shared-Key in the CSV file,
+	#  then it returns "updated".  This lets you key off of the
+	#  return code, and write the information to a database.
+	#
+	#  This process will increase the speed of DPSK checks.
+	#
+#	Auth-Type dpsk {
+#		dpsk
+#		if (updated) {
+#			... use &Called-Station-MAC as a key
+#			... save &reply:PSK-Identity in a databae
+#			... save &reply:Pre-Shared-Key in a database
+#		}
+#	}
 
 	#
 	#  Most people want CHAP authentication
@@ -582,15 +608,19 @@ authenticate {
 	}
 
 	#
-	#  MSCHAP authentication.
+	#  MS-CHAP authentication
+	#
+	mschap
+
+	#
+	#  For backward compatibility too, e.g. "Auth-Type := MS-CHAP"
+	#  set in the "users" file. (The mschap module also sets
+	#  "Auth-Type := MS-CHAP" if no virtual server lists a bare
+	#  "mschap" in authenticate{}, as above.)
+	#
 	Auth-Type MS-CHAP {
 		mschap
 	}
-
-	#
-	#  For old names, too.
-	#
-	mschap
 
 	#
 	#  If you have a Cisco SIP server authenticating against
@@ -622,23 +652,34 @@ authenticate {
 
 	#
 	#  Allow EAP authentication.
-	eap
+	Auth-Type eap {
+		#
+		#  Note that some EAP methods allow "fast resumption",
+		#  i.e. TLS session tickets.  This means that once a
+		#  user has a session ticket, they can use it to
+		#  resume the session.  See mods-available/eap, and
+		#  the "cache" subsection.
+		#
+		#  This behavior has some surprising consequences.  If
+		#  the user is deleted from a database, then they
+		#  still have a session ticket, and can resume their
+		#  session, up to the cache "lifetime".
+		#
+		#  The fix is to either delete the cache entry when
+		#  the user is deleted from the database, or add a
+		#  database lookup here.
+		#
+#		if (user not found in database) {
+#			reject
+#		}
+#
+		eap
 
-	#
-	#  The older configurations sent a number of attributes in
-	#  Access-Challenge packets, which wasn't strictly correct.
-	#  If you want to filter out these attributes, uncomment
-	#  the following lines.
-	#
-#	Auth-Type eap {
-#		eap {
-#			handled = 1
-#		}
-#		if (handled && (Response-Packet-Type == Access-Challenge)) {
-#			attr_filter.access_challenge.post-auth
-#			handled  # override the "updated" code from attr_filter
-#		}
-#	}
+		#
+		#  If you want to filter attributes in the Access-Challenge,
+		#  see the Post-Auth-Type Challenge section below.
+		#
+	}
 }
 
 
@@ -767,6 +808,38 @@ accounting {
 	#
 #	Acct-Type Status-Server {
 #
+#	}
+
+
+	#
+	#  On the first proxied EAP packet, remember where it was
+	#  proxied to.  Subsequent EAP packets will retain the
+	#  Home-Server-Name attribute.
+	#
+	#  This updated tracking is similar to the `track_home_server`
+	#  setting in proxy.conf, but is implemented in a different
+	#  manner.  You should not enable both this policy below, and
+	#  the `track_home_server` at the same time.  If both are
+	#  enabled, then the &session-state:Home-Server-Name attribute
+	#  is ignored.
+	#
+	#  Changing the Home-Server-Name in a later EAP is possible,
+	#  but will likely cause authentication to fail.
+	#
+	#  Due to internal implementation issues, the configuration
+	#  below will ONLY work if the main configuration file has
+	#  the following configuration set in the `unlang` section:
+	#
+	#	improved_state_tracking = yes
+	#
+	#  This limitation is necessary because we cannot change the
+	#  server behavior in a stable release.  Any changed behavior
+	#  is controlled by a new configuration flag.
+	#
+#	if (proxy-reply:State && !&session-state:Home-Server-Name) {
+#		update session-state {
+#			Home-Server-Name := "%{home_server:instance}"
+#		}
 #	}
 }
 

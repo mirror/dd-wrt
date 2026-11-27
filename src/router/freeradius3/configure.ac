@@ -23,7 +23,7 @@ dnl #############################################################
 AC_PREREQ([2.59])
 export CFLAGS LIBS LDFLAGS CPPFLAGS
 
-AC_INIT([freeradius],[$Id: f560c31c219918bc67ed7fc4063786755688fa85 $],[http://bugs.freeradius.org],[],[http://www.freeradius.org])
+AC_INIT([freeradius],[$Id: b9dc70a399c386636bdd8f2ef4a21bf88e9c497b $],[http://bugs.freeradius.org],[],[http://www.freeradius.org])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/main/radiusd.c])
 AC_CONFIG_HEADER([src/include/autoconf.h])
@@ -496,7 +496,7 @@ AC_ARG_WITH(radiusv11,
     ;;
   esac ]
 )
-if test "x$WITH_RADIUSCV11" = "xyes"; then
+if test "x$WITH_RADIUSV11" = "xyes"; then
   AC_DEFINE(WITH_RADIUSV11, [1], [define if you want RADIUSv11 support (For RADSec et al)])
 fi
 

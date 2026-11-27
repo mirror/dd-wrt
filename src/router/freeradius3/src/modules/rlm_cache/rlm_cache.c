@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: fd2d4112b0696c91a4fed8c0db20f8ff74c02db4 $
+ * $Id: 7ef080067648ec86085ca36b89ab013f35e75677 $
  * @file rlm_cache.c
  * @brief Cache values and merge them back into future requests.
  *
  * @copyright 2012-2014 The FreeRADIUS server project
  */
-RCSID("$Id: fd2d4112b0696c91a4fed8c0db20f8ff74c02db4 $")
+RCSID("$Id: 7ef080067648ec86085ca36b89ab013f35e75677 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -43,7 +43,7 @@ RCSID("$Id: fd2d4112b0696c91a4fed8c0db20f8ff74c02db4 $")
 static const CONF_PARSER module_config[] = {
 	{ "driver", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_cache_t, driver_name), "rlm_cache_rbtree" },
 	{ "key", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_REQUIRED | PW_TYPE_XLAT, rlm_cache_t, key), NULL },
-	{ "ttl", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_cache_t, ttl), "500" },
+	{ "ttl", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_cache_t, ttl), "10" },
 	{ "max_entries", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_cache_t, max_entries), "0" },
 
 	/* Should be a type which matches time_t, @fixme before 2038 */
@@ -604,10 +604,11 @@ static ssize_t cache_xlat(void *instance, REQUEST *request,
 
 	case RLM_MODULE_NOTFOUND:	/* not found */
 		*out = '\0';
-		return 0;
+		goto finish;
 
 	default:
-		return -1;
+		ret = -1;
+		goto finish;
 	}
 
 	switch (list) {

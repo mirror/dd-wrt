@@ -16,7 +16,7 @@
 #ifndef _EAP_TEAP_H
 #define _EAP_TEAP_H
 
-RCSIDH(eap_teap_h, "$Id: b7ed4a36fe2fa214b8fb22a14ab53c7538ac0e86 $")
+RCSIDH(eap_teap_h, "$Id: 9a0fba9c0e77b37f8c94d88552a5e1bc9edb7172 $")
 
 #include "eap_tls.h"
 
@@ -147,6 +147,7 @@ typedef struct teap_tunnel_t {
 	bool			auto_chain;		//!< do we automatically chain identities
 	bool			sent_basic_password;
 
+	bool			sent_crypto_binding;	//!< a Crypto-Binding request is outstanding
 	uint8_t			crypto_binding_nonce[32]; //!< nonce sent in last Crypto-Binding request
 
 #ifdef WITH_PROXY

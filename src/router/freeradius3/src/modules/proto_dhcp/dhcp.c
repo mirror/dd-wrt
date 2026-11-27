@@ -1,7 +1,7 @@
 /*
  * dhcp.c	Functions to send/receive dhcp packets.
  *
- * Version:	$Id: b2e368eba680420f01587474f785daf58f91a0a5 $
+ * Version:	$Id: 4a128b245473aebc9c9450cf3062b1a0715585bf $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  * Copyright 2008 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: b2e368eba680420f01587474f785daf58f91a0a5 $")
+RCSID("$Id: 4a128b245473aebc9c9450cf3062b1a0715585bf $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/udpfromto.h>
@@ -283,8 +283,14 @@ RADIUS_PACKET *fr_dhcp_recv(int sockfd)
 			    (struct sockaddr *)&src, &sizeof_src);
 #endif
 
-	if (data_len <= 0) {
+	if (data_len < 0) {
 		fr_strerror_printf("Failed reading DHCP socket: %s", fr_syserror(errno));
+		rad_free(&packet);
+		return NULL;
+	}
+
+	if (data_len == 0) {
+		fr_strerror_printf("Received zero-length packet");
 		rad_free(&packet);
 		return NULL;
 	}
@@ -1245,13 +1251,13 @@ int8_t fr_dhcp_attr_cmp(void const *a, void const *b)
 	 *	If the attr is a TLV, first compare on the parent
 	 */
 	base_a = my_a->da->flags.is_tlv ? DHCP_BASE_ATTR(my_a->da->attr) : my_a->da->attr;
-	base_b = my_b->da->flags.is_tlv ? DHCP_BASE_ATTR(my_b->da->attr) : my_a->da->attr;
+	base_b = my_b->da->flags.is_tlv ? DHCP_BASE_ATTR(my_b->da->attr) : my_b->da->attr;
 
 	/*
 	 *	Relay-Agent is last
 	 */
 	if ((base_a == PW_DHCP_OPTION_82) && (base_b != PW_DHCP_OPTION_82)) return +1;
-	if ((base_a != PW_DHCP_OPTION_82) && (my_b->da->attr == base_b)) return -1;
+	if ((base_a != PW_DHCP_OPTION_82) && (base_b == PW_DHCP_OPTION_82)) return -1;
 
 	if (base_a < base_b) return -1;
 	if (base_a > base_b) return 1;
@@ -1294,20 +1300,24 @@ static ssize_t fr_dhcp_vp2data(uint8_t *out, size_t outlen, VALUE_PAIR *vp)
 		break;
 
 	case PW_TYPE_SHORT:
+		fr_assert(vp->vp_length == 2);
 		p[0] = (vp->vp_short >> 8) & 0xff;
 		p[1] = vp->vp_short & 0xff;
 		break;
 
 	case PW_TYPE_INTEGER:
+		fr_assert(vp->vp_length == 4);
 		lvalue = htonl(vp->vp_integer);
 		memcpy(p, &lvalue, 4);
 		break;
 
 	case PW_TYPE_IPV4_ADDR:
+		fr_assert(vp->vp_length == 4);
 		memcpy(p, &vp->vp_ipaddr, 4);
 		break;
 
 	case PW_TYPE_ETHERNET:
+		fr_assert(vp->vp_length == 6);
 		memcpy(p, vp->vp_ether, 6);
 		break;
 
@@ -1496,6 +1506,8 @@ ssize_t fr_dhcp_encode_option(UNUSED TALLOC_CTX *ctx, uint8_t *out, size_t outle
 	size_t freespace = outlen;
 	ssize_t len;
 
+	if (outlen < 2) return -1; /* insufficient room for an option */
+
 	vp = fr_cursor_current(cursor);
 	if (!vp) return -1;
 
@@ -1553,6 +1565,8 @@ ssize_t fr_dhcp_encode_option(UNUSED TALLOC_CTX *ctx, uint8_t *out, size_t outle
 			return 0;
 		}
 
+		fr_assert((size_t) len <= freespace);
+
 		p += len;
 		*opt_len += len;
 		freespace -= len;
@@ -1565,7 +1579,7 @@ ssize_t fr_dhcp_encode_option(UNUSED TALLOC_CTX *ctx, uint8_t *out, size_t outle
 int fr_dhcp_encode(RADIUS_PACKET *packet)
 {
 	unsigned int i;
-	uint8_t *p;
+	uint8_t *p, *end;
 	vp_cursor_t cursor;
 	VALUE_PAIR *vp;
 	uint32_t lvalue;
@@ -1584,6 +1598,7 @@ int fr_dhcp_encode(RADIUS_PACKET *packet)
 
 	packet->data_len = MAX_PACKET_SIZE;
 	packet->data = talloc_zero_array(packet, uint8_t, packet->data_len);
+	end = packet->data + packet->data_len;
 
 	/* XXX Ugly ... should be set by the caller */
 	if (packet->code == 0) packet->code = PW_DHCP_NAK;
@@ -1825,6 +1840,8 @@ int fr_dhcp_encode(RADIUS_PACKET *packet)
 				break;
 
 			case PW_TYPE_OCTETS: /* only for Client HW Address */
+				if (packet->data[2] > 16) continue;
+
 				fr_pair_value_memcpy(vp, p, packet->data[2]);
 				break;
 
@@ -1867,14 +1884,18 @@ int fr_dhcp_encode(RADIUS_PACKET *packet)
 	 *  and sub options.
 	 */
 	while ((vp = fr_cursor_current(&cursor))) {
+		if ((end - p) < 2) break;
+
 		len = fr_dhcp_encode_option(packet, p, packet->data_len - (p - packet->data), &cursor);
 		if (len < 0) break;
 		p += len;
 	};
 
-	p[0] = 0xff;		/* end of option option */
-	p[1] = 0x00;
-	p += 2;
+	if ((end - p) >= 2) {
+		p[0] = 0xff;		/* end of option option */
+		p[1] = 0x00;
+		p += 2;
+	}
 	dhcp_size = p - packet->data;
 
 	/*

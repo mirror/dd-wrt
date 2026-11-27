@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 19a5eda981b6622abf34a962b56d3b2d504f1f07 $
+ * $Id: 6f548689548e55a1341f7da51e951e0f303121d6 $
  *
  * @file radius.c
  * @brief Functions to send/receive radius packets.
@@ -23,7 +23,7 @@
  * @copyright 2000-2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 19a5eda981b6622abf34a962b56d3b2d504f1f07 $")
+RCSID("$Id: 6f548689548e55a1341f7da51e951e0f303121d6 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -41,6 +41,19 @@ RCSID("$Id: 19a5eda981b6622abf34a962b56d3b2d504f1f07 $")
  *	Some messages get printed out only in debugging mode.
  */
 #define FR_DEBUG_STRERROR_PRINTF if (fr_debug_lvl) fr_strerror_printf
+
+/*
+ *	Scratch buffers for receiving and encoding packets.  Where the
+ *	compiler supports thread-local storage (TLS_STORAGE_CLASS, see
+ *	src/include/threads.h), the buffers are static and per-thread.
+ *	Otherwise the buffers go on the stack, because a static buffer
+ *	would be shared between threads.
+ */
+#ifdef __THREAD
+#  define FR_RADIUS_BUFFER static __THREAD
+#else
+#  define FR_RADIUS_BUFFER
+#endif
 
 #if 0
 #define VP_TRACE printf
@@ -327,9 +340,16 @@ static int rad_sendto(int sockfd, void *data, size_t data_len, int flags,
 done:
 #endif
 	if (rcode < 0) {
-		if (errno == EMSGSIZE) {
+		switch (errno) {
+		case EMSGSIZE:
 			fr_strerror_printf("sendto failed - destination does not support UDP fragmentation: %s", fr_syserror(errno));
-		} else {
+			break;
+
+		case ENETDOWN:
+		case ENETUNREACH:
+			return 0;
+
+		default:
 			fr_strerror_printf("sendto failed: %s", fr_syserror(errno));
 		}
 	}
@@ -448,7 +468,8 @@ static ssize_t rad_recvfrom(int sockfd, RADIUS_PACKET *packet, int flags,
 	ssize_t			data_len;
 	size_t			len;
 	uint16_t		port;
-	uint8_t			buffer[MAX_PACKET_LEN];
+
+	FR_RADIUS_BUFFER uint8_t buffer[MAX_PACKET_LEN];
 
 	memset(&src, 0, sizeof_src);
 	memset(&dst, 0, sizeof_dst);
@@ -476,6 +497,14 @@ static ssize_t rad_recvfrom(int sockfd, RADIUS_PACKET *packet, int flags,
 	}
 
 	/*
+	 *	Ignore length unless we saw at least the header.
+	 */
+	if (data_len < RADIUS_HDR_LEN) {
+		FR_DEBUG_STRERROR_PRINTF("Packet is too short to be RADIUS: got %zd bytes", data_len);
+		return 0;
+	}
+
+	/*
 	 *      See how long the packet says it is.
 	 */
 	len = (buffer[2] * 256) + buffer[3];
@@ -485,7 +514,10 @@ static ssize_t rad_recvfrom(int sockfd, RADIUS_PACKET *packet, int flags,
 	 *	the RADIUS header says that the RADIUS packet islarger
 	 *	than our buffer.  Discard it.
 	 */
-	if ((len < RADIUS_HDR_LEN) || (len > (size_t) data_len)) return 0;
+	if ((len < RADIUS_HDR_LEN) || (len > (size_t) data_len)) {
+		FR_DEBUG_STRERROR_PRINTF("Packet length field says %zu bytes, but got %zd bytes", len, data_len);
+		return 0;
+	}
 
 	if (!fr_sockaddr2ipaddr(&src, sizeof_src, src_ipaddr, &port)) {
 		return -1;	/* Unknown address family, Die Die Die! */
@@ -995,7 +1027,7 @@ static ssize_t vp2data_any(RADIUS_PACKET *packet,
 		case PW_CODE_PROTOCOL_ERROR:
 		default:
 			if (!original) {
-				fr_strerror_printf("ERROR: No request packet, cannot encrypt %s attribute in the vp.", vp->da->name);
+				fr_strerror_printf("ERROR: No request packet, cannot encrypt %s attribute", vp->da->name);
 				return -1;
 			}
 
@@ -1090,7 +1122,13 @@ static ssize_t attr_shift(uint8_t const *start, uint8_t const *end,
 		}
 
 		len -= sublen;
-		memmove(ptr + 255 + hdr_len, ptr + 255, sublen);
+
+		/*
+		 *	Move "len" bytes of data "hdr" bytes ahead.
+		 *
+		 *	The resulting fragment is "sublen" in size.
+		 */
+		memmove(ptr + 255 + hdr_len, ptr + 255, len);
 		memmove(ptr + 255, ptr, hdr_len);
 		ptr[1] += sublen;
 		if (vsa_offset) ptr[vsa_offset] += sublen;
@@ -1850,6 +1888,8 @@ static const bool code2ma[FR_MAX_PACKET_CODE] = {
 
 /** Encode a packet
  *
+ * If packet->data is already set, and is large enough for the new
+ * packet, then just overwrite it.  Otherwise, allocate data.
  */
 int rad_encode(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 	       char const *secret)
@@ -1862,9 +1902,10 @@ int rad_encode(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 	bool			seen_ma = false;
 
 	/*
-	 *	A 4K packet, aligned on 64-bits.
+	 *	A 4K packet, aligned on 64-bits.  The buffer is per-thread,
+	 *	and rad_encode() is not reentrant.
 	 */
-	uint64_t	data[MAX_PACKET_LEN / sizeof(uint64_t)];
+	FR_RADIUS_BUFFER uint64_t data[MAX_PACKET_LEN / sizeof(uint64_t)];
 
 	/*
 	 *	Double-check some things based on packet code.
@@ -1894,7 +1935,7 @@ int rad_encode(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 	}
 
 	/*
-	 *	Use memory on the stack, until we know how
+	 *	Encode into the thread-local buffer, until we know how
 	 *	large the packet will be.
 	 */
 	hdr = (radius_packet_t *) data;
@@ -1992,6 +2033,11 @@ int rad_encode(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 		VERIFY_VP(reply);
 
 		/*
+		 *	How much room do we have left?
+		 */
+		room = ((uint8_t *) data) + sizeof(data) - ptr;
+
+		/*
 		 *	Ignore non-wire attributes, but allow extended
 		 *	attributes.
 		 */
@@ -2004,6 +2050,8 @@ int rad_encode(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 			 *	attributes with a debug build.
 			 */
 			if (reply->da->attr == PW_RAW_ATTRIBUTE) {
+				if (reply->vp_length > room) break;
+
 				memcpy(ptr, reply->vp_octets, reply->vp_length);
 				len = reply->vp_length;
 				reply = reply->next;
@@ -2037,11 +2085,6 @@ int rad_encode(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 				continue;
 			}
 		}
-
-		/*
-		 *	How much room do we have left?
-		 */
-		room = ((uint8_t *) data) + sizeof(data) - ptr;
 
 		/*
 		 *	Set the Message-Authenticator to the correct
@@ -2100,18 +2143,25 @@ int rad_encode(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 
 	/*
 	 *	Fill in the rest of the fields, and copy the data over
-	 *	from the local stack to the newly allocated memory.
+	 *	from the thread-local buffer to the packet.
 	 *
-	 *	Yes, all this 'memcpy' is slow, but it means
-	 *	that we only allocate the minimum amount of
-	 *	memory for a request.
+	 *	Allocate enough memory for the packet, or re-use
+	 *	memory from the previous round.  i.e. if we encode a
+	 *	proxied packet, and then proxy it to a new location,
+	 *	there isn't a lot of point in freeing the packet
+	 *	buffer, and then immediately allocating a new one of
+	 *	the same size.
 	 */
-	packet->data_len = total_length;
-	packet->data = talloc_array(packet, uint8_t, packet->data_len);
+	if (packet->data && (talloc_array_length(packet->data) < total_length)) TALLOC_FREE(packet->data);
 	if (!packet->data) {
-		fr_strerror_printf("Out of memory");
-		return -1;
+		packet->data = talloc_array(packet, uint8_t, total_length);
+		if (!packet->data) {
+			packet->data_len = 0;
+			fr_strerror_printf("Out of memory");
+			return -1;
+		}
 	}
+	packet->data_len = total_length;
 
 	memcpy(packet->data, hdr, packet->data_len);
 	hdr = (radius_packet_t *) packet->data;
@@ -2629,13 +2679,15 @@ bool rad_packet_ok(RADIUS_PACKET *packet, int flags, decode_fail_t *reason)
 	 *	require Message-Authenticator for Access-* replies,
 	 *	and for Protocol-Error.
 	 */
-	require_ma = ((flags & 0x01) != 0) || (hdr->code == PW_CODE_STATUS_SERVER) || (((flags & 0x08) != 0) && code2ma[hdr->code]);
+	require_ma = RAD_RECV_FLAG_IS_SET(flags, RAD_RECV_FLAG_REQUIRE_MA) ||
+		(hdr->code == PW_CODE_STATUS_SERVER) ||
+		(RAD_RECV_FLAG_IS_SET(flags, RAD_RECV_FLAG_REQUIRE_MA_REPLY) && code2ma[hdr->code]);
 
 	/*
 	 *	We only limit Proxy-State if we're not requiring
 	 *	Message-Authenticator.
 	 */
-	limit_proxy_state = ((flags & 0x04) != 0) && !require_ma;
+	limit_proxy_state = RAD_RECV_FLAG_IS_SET(flags, RAD_RECV_FLAG_LIMIT_PROXY_STATE) && !require_ma;
 
 	/*
 	 *	Repeat the length checks.  This time, instead of
@@ -2860,7 +2912,7 @@ bool rad_packet_ok(RADIUS_PACKET *packet, int flags, decode_fail_t *reason)
 	 */
 	if ((fr_max_attributes > 0) &&
 	    (num_attributes > fr_max_attributes)) {
-		FR_DEBUG_STRERROR_PRINTF("Possible DoS attack from host %s: Too many attributes in request (received %d, max %d are allowed).",
+		FR_DEBUG_STRERROR_PRINTF("Possible DoS attack from host %s: Too many attributes in request (received %d, max %d are allowed)",
 			   inet_ntop(packet->src_ipaddr.af,
 				     &packet->src_ipaddr.ipaddr,
 				     host_ipaddr, sizeof(host_ipaddr)),
@@ -2888,7 +2940,7 @@ bool rad_packet_ok(RADIUS_PACKET *packet, int flags, decode_fail_t *reason)
 	    !packet->radiusv11 &&
 #endif
 	    !seen_ma) {
-		FR_DEBUG_STRERROR_PRINTF("Insecure packet from host %s:  Packet does not contain required Message-Authenticator attribute.  You may need to set \"require_message_authenticator = no\" in the configuration.",
+		FR_DEBUG_STRERROR_PRINTF("Insecure packet from host %s:  Packet does not contain required Message-Authenticator attribute.  You may need to set 'require_message_authenticator = no' in the configuration",
 			   inet_ntop(packet->src_ipaddr.af,
 				     &packet->src_ipaddr.ipaddr,
 				     host_ipaddr, sizeof(host_ipaddr)));
@@ -2958,13 +3010,13 @@ RADIUS_PACKET *rad_recv(TALLOC_CTX *ctx, int fd, int flags)
 	 */
 	packet = rad_alloc(ctx, false);
 	if (!packet) {
-		fr_strerror_printf("out of memory");
+		fr_strerror_printf("Out of memory");
 		return NULL;
 	}
 
-	if (flags & 0x02) {
+	if (RAD_RECV_FLAG_IS_SET(flags, RAD_RECV_FLAG_MSG_PEEK)) {
 		sock_flags = MSG_PEEK;
-		flags &= ~0x02;
+		flags &= ~RAD_RECV_FLAG_MSG_PEEK;
 	}
 
 	data_len = rad_recvfrom(fd, packet, sock_flags,
@@ -3146,8 +3198,8 @@ int rad_verify(RADIUS_PACKET *packet, RADIUSV11_UNUSED RADIUS_PACKET *original, 
 	 *	so can't validate the authenticators.
 	 */
 	if ((packet->code == 0) || (packet->code >= FR_MAX_PACKET_CODE)) {
-		fr_strerror_printf("Received Unknown packet code %d "
-				   "from client %s port %d: Cannot validate Request/Response Authenticator.",
+		fr_strerror_printf("Received unknown packet code %d "
+				   "from client %s port %d: Cannot validate Request/Response Authenticator",
 				   packet->code,
 				   inet_ntop(packet->src_ipaddr.af,
 				             &packet->src_ipaddr.ipaddr,
@@ -3463,7 +3515,7 @@ ssize_t rad_data2vp_tlvs(TALLOC_CTX *ctx,
 			fr_pair_list_free(&head);
 			return -1;
 		}
-		if (*tail) tail = &((*tail)->next);
+		while (*tail) tail = &((*tail)->next);
 		data += data[1];
 	}
 
@@ -4001,7 +4053,7 @@ create_attrs:
 		/*
 		 *	Vendors can send zero-length VSAs.
 		 */
-		if (*tail) tail = &((*tail)->next);
+		while (*tail) tail = &((*tail)->next);
 
 		data += vsa_len;
 		attrlen -= vsa_len;
@@ -4541,6 +4593,8 @@ alloc_raw:
 
 done:
 	vp->type = VT_DATA;
+	VERIFY_VP(vp);
+
 	*pvp = vp;
 
 	return attrlen;
@@ -4803,7 +4857,7 @@ int rad_decode(RADIUS_PACKET *packet, RADIUS_PACKET *original,
 			char host_ipaddr[128];
 
 			fr_pair_list_free(&head);
-			fr_strerror_printf("Possible DoS attack from host %s: Too many attributes in request (received %d, max %d are allowed).",
+			fr_strerror_printf("Possible DoS attack from host %s: Too many attributes in request (received %d, max %d are allowed)",
 				   inet_ntop(packet->src_ipaddr.af,
 					     &packet->src_ipaddr.ipaddr,
 					     host_ipaddr, sizeof(host_ipaddr)),
@@ -5065,6 +5119,8 @@ ssize_t rad_tunnel_pwdecode(uint8_t passwd[static 256], size_t *pwlen, char cons
 			 */
 			reallen = passwd[2] ^ digest[0];
 			if (reallen > encrypted_len) {
+				fr_md5_destroy(&old);
+				fr_md5_destroy(&context);
 				fr_strerror_printf("tunnel password is too long for the attribute");
 				return -1;
 			}
@@ -5263,7 +5319,7 @@ RADIUS_PACKET *rad_alloc(TALLOC_CTX *ctx, bool new_vector)
 
 	rp = talloc_zero(ctx, RADIUS_PACKET);
 	if (!rp) {
-		fr_strerror_printf("out of memory");
+		fr_strerror_printf("Out of memory");
 		return NULL;
 	}
 	rp->id = -1;

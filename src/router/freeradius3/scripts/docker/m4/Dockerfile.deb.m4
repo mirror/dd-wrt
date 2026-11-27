@@ -9,6 +9,18 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update
 RUN apt-get install -y devscripts equivs git quilt gcc
 
+ifelse(D_NAME, `ubuntu26', `dnl
+#
+#  chmod from uutils is currently broken on armv7 (fails with
+#  EOVERFLOW under qemu) so bodge the proper gnu binary in place.
+#  The proper way is to install coreutils-from-gnu, but build-essential
+#  has a hard dependency on coreutils-from-uutils :(
+#
+RUN apt-get install -y gnu-coreutils \
+ && rm -f /usr/bin/chmod \
+ && cp -a /usr/bin/gnuchmod /usr/bin/chmod
+
+')dnl
 #
 #  Create build directory
 #
@@ -31,6 +43,13 @@ ARG release
 RUN [ -z "$release" ] || git checkout ${release} ; \
     git status ; \
     git log -1 --oneline
+
+#
+#  libssl3 is called libssl3t64 on 32-bit platforms with a 64-bit time_t (e.g.
+#  armhf). This hack fixes rebuilding older releases before debian/rules was
+#  updated.
+#
+RUN sed -i 's/libssl3\([,"]\)/libssl3 | libssl3t64\1/' debian/rules
 
 #
 #  Install build dependencies

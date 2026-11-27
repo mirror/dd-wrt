@@ -1,7 +1,7 @@
 /*
  * util.c	Various utility functions.
  *
- * Version:     $Id: 0aeae1f369f6e478a062d0e3d2d07db8033941a2 $
+ * Version:     $Id: fdb25f090f0871687857fe580a06729b5f36db95 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 0aeae1f369f6e478a062d0e3d2d07db8033941a2 $")
+RCSID("$Id: fdb25f090f0871687857fe580a06729b5f36db95 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -563,30 +563,42 @@ void NEVER_RETURNS rad_assert_fail(char const *file, unsigned int line, char con
  */
 static int _request_free(REQUEST *request)
 {
-	rad_assert(!request->in_request_hash);
-#ifdef WITH_PROXY
-	rad_assert(!request->in_proxy_hash);
-#endif
-	rad_assert(!request->ev);
+	if (request->ev) {
+		request->master_state = REQUEST_STOP_PROCESSING;
+		return -1;
+	}
 
-#ifdef WITH_COA
-	rad_assert(request->coa == NULL);
-#endif
-
-#ifndef NDEBUG
-	request->magic = 0x01020304;	/* set the request to be nonsense */
-#endif
-	request->client = NULL;
-#ifdef WITH_PROXY
-	request->home_server = NULL;
-#endif
+	TALLOC_FREE(request->coa);
 
 	/*
 	 *	This is parented separately.
 	 */
-	if (request->state_ctx) {
-		talloc_free(request->state_ctx);
+	TALLOC_FREE(request->state_ctx);
+	request->state = NULL;
+
+#ifdef WITH_PROXY
+	if (request->in_proxy_hash) {
+		RERROR("Refusing to free request: it is still in the proxy hash");
+		return -1;
 	}
+
+	request->home_server = NULL;
+	TALLOC_FREE(request->proxy);
+	TALLOC_FREE(request->proxy_reply);
+#endif
+
+	/*
+	 *	If the request is still in a list, it's better to leak
+	 *	memory than to crash.
+	 */
+	if (request->in_request_hash) {
+		RERROR("Refusing to free request: it is still in the request hash");
+		return -1;
+	}
+
+#ifndef NDEBUG
+	request->magic = 0x01020304;	/* set the request to be nonsense */
+#endif
 
 	return 0;
 }

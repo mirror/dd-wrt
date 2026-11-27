@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: e7eb9f527c5b994fcd74e9d3d412ba625dc67d4f $
+ * $Id: 25c8c96661cb2bd1c41792210ddaf8d2567ad1ee $
  * @file rlm_redis.c
  * @brief Driver for the REDIS noSQL key value stores.
  *
@@ -23,7 +23,7 @@
  * @copyright 2011  TekSavvy Solutions <gabe@teksavvy.com>
  */
 
-RCSID("$Id: e7eb9f527c5b994fcd74e9d3d412ba625dc67d4f $")
+RCSID("$Id: 25c8c96661cb2bd1c41792210ddaf8d2567ad1ee $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -245,17 +245,17 @@ int rlm_redis_query(REDISSOCK **dissocket_p, REDIS_INST *inst,
 		return -1;
 
 	if (argc >= (MAX_REDIS_ARGS - 1)) {
-		RERROR("rlm_redis (%s): query has too many parameters; increase "
-				"MAX_REDIS_ARGS and recompile", inst->xlat_name);
+		RERROR("Query \"%s\" has too many parameters; increase "
+		       "MAX_REDIS_ARGS and recompile", query);
 		return -1;
 	}
 
 	dissocket = *dissocket_p;
 
-	DEBUG2("rlm_redis (%s): executing the query: \"%s\"", inst->xlat_name, query);
+	RDEBUG2("Executing the query: \"%s\"", query);
 	dissocket->reply = redisCommandArgv(dissocket->conn, argc, argv, NULL);
 	if (!dissocket->reply) {
-		RERROR("%s", dissocket->conn->errstr);
+		RERROR("Redis server returned error: %s", dissocket->conn->errstr);
 
 		dissocket = fr_connection_reconnect(inst->pool, dissocket);
 		if (!dissocket) {

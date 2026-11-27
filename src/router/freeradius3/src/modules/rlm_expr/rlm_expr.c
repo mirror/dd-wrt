@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: c5ebd34455283b23122fc6555755c5383c5f95d8 $
+ * $Id: 282e756713d4cff89f669369640e79161b6a9435 $
  * @file rlm_expr.c
  * @brief Register many xlat expansions including the expr expansion.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2002  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: c5ebd34455283b23122fc6555755c5383c5f95d8 $")
+RCSID("$Id: 282e756713d4cff89f669369640e79161b6a9435 $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -53,7 +53,7 @@ typedef struct rlm_expr_t {
 } rlm_expr_t;
 
 static const CONF_PARSER module_config[] = {
-	{ "safe_characters", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_expr_t, allowed_chars), "@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_: /" },
+	{ "safe_characters", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_expr_t, allowed_chars), "@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_: /äéöüàâæçèéêëîïôœùûüaÿÄÉÖÜßÀÂÆÇÈÉÊËÎÏÔŒÙÛÜŸ" },
 	CONF_PARSER_TERMINATOR
 };
 

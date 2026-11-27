@@ -18,7 +18,7 @@
 
 #ifdef WITH_TLS
 /**
- * $Id: 490d3d318fe61977225fff3fe1729a40e749c0c5 $
+ * $Id: 59637189f7f14acba40ce2a4241c2e3da96d62a5 $
  *
  * @file tls.h
  * @brief Structures and prototypes for TLS wrappers
@@ -26,7 +26,7 @@
  * @copyright 2010 Network RADIUS SARL <info@networkradius.com>
  */
 
-RCSIDH(tls_h, "$Id: 490d3d318fe61977225fff3fe1729a40e749c0c5 $")
+RCSIDH(tls_h, "$Id: 59637189f7f14acba40ce2a4241c2e3da96d62a5 $")
 
 #include <freeradius-devel/conffile.h>
 
@@ -84,13 +84,10 @@ extern FR_NAME_NUMBER const fr_tls_status_table[];
  *	being fragmented; this simplifies buffer allocation.
  */
 
-/*
- * FIXME: Dynamic allocation of buffer to overcome MAX_RECORD_SIZE overflows.
- * 	or configure TLS not to exceed MAX_RECORD_SIZE.
- */
 typedef struct _record_t {
 	size_t  used;
-	uint8_t data[MAX_RECORD_SIZE];
+	size_t  size;
+	uint8_t *data;
 } record_t;
 
 typedef struct _tls_info_t {
@@ -131,7 +128,6 @@ typedef struct _tls_session_t {
 	record_t 	dirty_out;			//!< Data EAP server sends.
 
 	void 		(*record_init)(record_t *buf);
-	void 		(*record_close)(record_t *buf);
 	unsigned int 	(*record_plus)(record_t *buf, void const *ptr, unsigned int size);
 	unsigned int 	(*record_minus)(record_t *buf, void *ptr, unsigned int size);
 
@@ -140,6 +136,7 @@ typedef struct _tls_session_t {
 	bool		connecting;			//!< whether we have a timer waiting for it to be connected
 	bool		is_init_finished;		//!< whether or not init is finished
 	bool		client_cert_ok;			//!< whether or not we validated the client certificate
+	bool		client_cert_ocsp_skipped;	//!< the client certificate was accepted, but the OCSP check was skipped (softfail)
 	bool		authentication_success;		//!< whether or not the user was authenticated (cert or PW)
 	bool		quick_session_tickets;		//!< for EAP-TLS.
 
@@ -330,7 +327,7 @@ int		tls_error_io_log(REQUEST *request, tls_session_t *session, int ret, char co
 void		tls_global_cleanup(void);
 tls_session_t	*tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQUEST *request, bool client_cert, bool allow_tls13);
 tls_session_t	*tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, int fd, VALUE_PAIR **certs);
-fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs);
+fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs, bool eap);
 fr_tls_server_conf_t *tls_client_conf_parse(CONF_SECTION *cs);
 fr_tls_server_conf_t *tls_server_conf_alloc(TALLOC_CTX *ctx);
 SSL_CTX		*tls_init_ctx(fr_tls_server_conf_t *conf, int client, char const *chain_file, char const *private_key_file);
@@ -376,6 +373,7 @@ struct fr_tls_server_conf_t {
 	char const	*ca_file;
 	char const	*dh_file;
 	char const	*rsa_file;
+	char const	*socat;				//!< for debugging
 	uint32_t	verify_depth;
 	bool		file_type;
 	bool		include_length;
@@ -385,6 +383,7 @@ struct fr_tls_server_conf_t {
 	bool		disable_tlsv1_1;
 	bool		disable_tlsv1_2;
 	bool		disallow_untrusted;		//!< allow untrusted CAs to issue client certificates
+	bool		eap;				//!< for TLS-based EAP methods
 
 	int		min_version;
 	int		max_version;
@@ -396,6 +395,7 @@ struct fr_tls_server_conf_t {
 	 *	Always < 4096 (due to radius limit), 0 by default = 1024
 	 */
 	uint32_t	fragment_size;
+	uint32_t	buffer_size;
 	bool		check_crl;
 	bool		check_all_crl;
 	bool		allow_expired_crl;
@@ -406,6 +406,7 @@ struct fr_tls_server_conf_t {
 	char const	*cipher_list;
 	char const	*cipher_suites;
 	bool		cipher_server_preference;
+	char const	*group_list;
 	char const	*check_cert_issuer;
 	char const	*sigalgs_list;
 

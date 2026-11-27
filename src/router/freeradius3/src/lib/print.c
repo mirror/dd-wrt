@@ -1,7 +1,7 @@
 /*
  * print.c	Routines to print stuff.
  *
- * Version:	$Id: 83aa26744bc5233e2efd60ff3c9c0588b6147379 $
+ * Version:	$Id: 45c710443433c3df2442d9c334d2241b1c8f321c $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 83aa26744bc5233e2efd60ff3c9c0588b6147379 $")
+RCSID("$Id: 45c710443433c3df2442d9c334d2241b1c8f321c $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -632,6 +632,7 @@ static char const *vp_tokens[] = {
 	"=*",
 	"!*",
 	"==",
+	"^=",
 	"#",
 	"<BARE-WORD>",
 	"<\"STRING\">",

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 334e7c1459f1d13316d19158fb35ea807ca1f261 $
+ * $Id: f9c5a372b09a589a88440c5e2760e814a2e6904f $
  * @file rlm_sqlippool.c
  * @brief Allocates an IP address / prefix from pools stored in SQL.
  *
@@ -23,7 +23,7 @@
  * @copyright 2006  The FreeRADIUS server project
  * @copyright 2006  Suntel Communications
  */
-RCSID("$Id: 334e7c1459f1d13316d19158fb35ea807ca1f261 $")
+RCSID("$Id: f9c5a372b09a589a88440c5e2760e814a2e6904f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -107,7 +107,7 @@ static CONF_PARSER module_config[] = {
 	{ "sql_module_instance", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_REQUIRED, rlm_sqlippool_t, sql_instance_name), "sql" },
 
 	{ "lease-duration", FR_CONF_OFFSET(PW_TYPE_INTEGER | PW_TYPE_DEPRECATED, rlm_sqlippool_t, lease_duration), NULL },
-	{ "lease_duration", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_sqlippool_t, lease_duration), "86400" },
+	{ "lease_duration", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_sqlippool_t, lease_duration), "3600" },
 
 	{ "pool-name", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_DEPRECATED, rlm_sqlippool_t, pool_name), NULL },
 	{ "pool_name", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_sqlippool_t, pool_name), "Pool-Name" },

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 7c54db0b4333905f4da113e74d145a993091e803 $
+ * $Id: f2c4eb457780ad837f3cbef0b354485e8210ed80 $
  * @file rlm_python3.c
  * @brief Translates requests between the server an a python interpreter.
  *
@@ -25,7 +25,7 @@
  * @copyright 2002  Miguel A.L. Paraz <mparaz@mparaz.com>
  * @copyright 2002  Imperium Technology, Inc.
  */
-RCSID("$Id: 7c54db0b4333905f4da113e74d145a993091e803 $")
+RCSID("$Id: f2c4eb457780ad837f3cbef0b354485e8210ed80 $")
 
 #define LOG_PREFIX "rlm_python3 - "
 
@@ -371,11 +371,16 @@ static void mod_vptuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vps, PyO
 			quote = "'";
 			s2p = s2;
 		}
-		DEBUG("%s - %s'%s:%s' %s %s%s%s", funcname,
-			fr_pair_value_from_str(vp, s2, -1) < 0 ? "Failed: " : "",
-			list_name, s1, fr_int2str(fr_tokens, op, "="), quote, s2p, quote);
 
-		radius_pairmove(current, vps, vp, false);
+		if (fr_pair_value_from_str(vp, s2, -1) >= 0) {
+			RDEBUG("%s - '%s:%s' %s %s%s%s", funcname,
+			       list_name, s1, fr_int2str(fr_tokens, op, "="), quote, s2p, quote);
+			radius_pairmove(current, vps, vp, false);
+		} else {
+			REDEBUG("FAILED converting attribute %s with value %s - %s",
+				s1, s2, fr_strerror());
+			talloc_free(vp);
+		}
 	}
 }
 
@@ -1431,7 +1436,7 @@ extern module_t rlm_python3;
 module_t rlm_python3 = {
 	.magic		= RLM_MODULE_INIT,
 	.name		= "python3",
-	.type		= RLM_TYPE_THREAD_UNSAFE,
+	.type		= RLM_TYPE_THREAD_SAFE,
 	.inst_size	= sizeof(rlm_python_t),
 	.config		= module_config,
 	.instantiate	= mod_instantiate,

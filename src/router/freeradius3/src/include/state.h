@@ -4,7 +4,7 @@
 /*
  * state.h	handle multi-packet state
  *
- * Version:	$Id: d9b47a0605e24528839ed65e51bf084ff26943b9 $
+ * Version:	$Id: 56ca6573dccfa61244185bf1dc405da0871dabd5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2014 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(state_h, "$Id: d9b47a0605e24528839ed65e51bf084ff26943b9 $")
+RCSIDH(state_h, "$Id: 56ca6573dccfa61244185bf1dc405da0871dabd5 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +38,7 @@ void fr_state_delete(fr_state_t *state);
 void fr_state_discard(REQUEST *request, RADIUS_PACKET *original);
 
 void fr_state_get_vps(REQUEST *request, RADIUS_PACKET *packet);
+bool fr_state_get_proxied_vps(REQUEST *request);
 bool fr_state_put_vps(REQUEST *request, RADIUS_PACKET *original, RADIUS_PACKET *packet);
 
 #ifdef __cplusplus

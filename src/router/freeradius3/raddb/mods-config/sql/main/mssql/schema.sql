@@ -1,4 +1,4 @@
--- $Id: 7f6d63358cc3d9a45b5f2f058f05b882164b2ac5 $d$
+-- $Id: 498e771170eccdb9d369936b036b6351732faa25 $d$
 --
 -- schela.sql   rlm_sql - FreeRADIUS SQL Module
 --
@@ -127,6 +127,9 @@ CREATE INDEX [Class] ON [radacct]([Class]) ON [PRIMARY]
 GO
 
 /* For use by onoff */
+SET QUOTED_IDENTIFIER ON
+GO
+
 CREATE INDEX [RadacctBulkClose] ON [radacct]([NASIPAddress],[AcctStartTime]) WHERE [AcctStopTime] IS NULL ON [PRIMARY]
 GO
 

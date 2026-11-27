@@ -3,7 +3,7 @@
 #
 # Rebuild this file with `make docker.alpine.regen`
 #
-ARG from=alpine:3.23
+ARG from=alpine:3.24
 FROM ${from} AS build
 
 #
@@ -56,7 +56,7 @@ RUN apk add postgresql-dev mariadb-dev unixodbc-dev sqlite-dev
 #
 #  Build the server
 #
-RUN ./configure --prefix=/opt
+RUN ./configure --disable-developer --prefix=/opt
 RUN make -j2
 RUN make install
 RUN rm /opt/lib/*.a

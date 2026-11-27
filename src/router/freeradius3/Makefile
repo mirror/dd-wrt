@@ -4,7 +4,7 @@
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-#  Version:	$Id: 888e74e14f0c371788f74309093b0c2d9e12bf34 $
+#  Version:	$Id: dd9f4c835e1684c4102c7e3b5023c3549beb6c15 $
 #
 
 #
@@ -87,7 +87,7 @@ raddb/test.conf:
 $(BUILD_DIR)/tests/radiusd-c: raddb/test.conf ${BUILD_DIR}/bin/radiusd | build.raddb
 	${Q}$(MAKE) -C raddb/certs
 	${Q}printf "radiusd -C... "
-	${Q}if ! $(TESTBIN)/radiusd -XCMd ./raddb -D ./share -n test > $(BUILD_DIR)/tests/radiusd.config.log; then \
+	${Q}if ! ./scripts/bin/radiusd -XCMd ./raddb -D ./share -n test > $(BUILD_DIR)/tests/radiusd.config.log; then \
 		rm -f raddb/test.conf; \
 		cat $(BUILD_DIR)/tests/radiusd.config.log; \
 		echo "fail"; \
@@ -97,7 +97,7 @@ $(BUILD_DIR)/tests/radiusd-c: raddb/test.conf ${BUILD_DIR}/bin/radiusd | build.r
 	${Q}echo "ok"
 	${Q}touch $@
 
-test: ${BUILD_DIR}/bin/radiusd ${BUILD_DIR}/bin/radclient tests.unit tests.xlat tests.keywords tests.modules tests.auth test.sql_nas_table $(BUILD_DIR)/tests/radiusd-c | build.raddb
+test: ${BUILD_DIR}/bin/radiusd ${BUILD_DIR}/bin/radclient tests.api tests.pairmove tests.unit tests.xlat tests.keywords tests.modules tests.auth tests.tcp tests.listen_cli tests.tls_cert test.sql_nas_table $(BUILD_DIR)/tests/radiusd-c | build.raddb
 	${Q}$(MAKE) -C src/tests tests
 
 #

@@ -1,12 +1,17 @@
 # -*- text -*-
 #
-#  $Id: 5fbdcee67e8d2ac2033119b48e3f76999c8190be $
+#  $Id: 1bf86b17bc0057fb7a30cba2e83c52e47a7d33ab $
 
 #
 #  Microsoft CHAP authentication
 #
 #  This module supports MS-CHAP and MS-CHAPv2 authentication.
 #  It also enforces the SMB-Account-Ctrl attribute.
+#
+#  NOTE: Only use MS-CHAP inside of PEAP, TTLS, EAP-FAST, TEAP, or a
+#  RADIUS/TLS tunnel.  If you send MS-CHAP over ANY network via
+#  RADIUS/UDP, then anyone who can see the RADIUS traffic can crack
+#  MS-CHAP in milliseconds.
 #
 mschap {
 	#

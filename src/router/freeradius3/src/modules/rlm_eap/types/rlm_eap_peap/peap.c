@@ -1,7 +1,7 @@
 /*
  * peap.c contains the interfaces that are called from eap
  *
- * Version:     $Id: 3e745bfa21c1f944e5f7252d5f08bb7ebc9cbb65 $
+ * Version:     $Id: 2cfc9aa798de693c009db6e399617661ec61e8c3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: 3e745bfa21c1f944e5f7252d5f08bb7ebc9cbb65 $")
+RCSID("$Id: 2cfc9aa798de693c009db6e399617661ec61e8c3 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_peap.h"
@@ -118,92 +118,6 @@ static int eappeap_identity(eap_handler_t *handler, tls_session_t *tls_session)
 }
 
 /*
- * Send an MS SoH request
- */
-static int eappeap_soh(eap_handler_t *handler, tls_session_t *tls_session)
-{
-	uint8_t tlv_packet[20];
-
-	tlv_packet[0] = 254;	/* extended type */
-
-	tlv_packet[1] = 0;
-	tlv_packet[2] = 0x01;	/* ms vendor */
-	tlv_packet[3] = 0x37;
-
-	tlv_packet[4] = 0;	/* ms soh eap */
-	tlv_packet[5] = 0;
-	tlv_packet[6] = 0;
-	tlv_packet[7] = 0x21;
-
-	tlv_packet[8] = 0;	/* vendor-spec tlv */
-	tlv_packet[9] = 7;
-
-	tlv_packet[10] = 0;
-	tlv_packet[11] = 8;	/* payload len */
-
-	tlv_packet[12] = 0;	/* ms vendor */
-	tlv_packet[13] = 0;
-	tlv_packet[14] = 0x01;
-	tlv_packet[15] = 0x37;
-
-	tlv_packet[16] = 0;
-	tlv_packet[17] = 2;
-	tlv_packet[18] = 0;
-	tlv_packet[19] = 0;
-
-	(tls_session->record_plus)(&tls_session->clean_in, tlv_packet, 20);
-	tls_handshake_send(handler->request, tls_session);
-	return 1;
-}
-
-static void eapsoh_verify(REQUEST *request, RADIUS_PACKET *packet,
-			  uint8_t const *data, unsigned int data_len) {
-
-	VALUE_PAIR *vp;
-	uint8_t eap_method_base;
-	uint32_t eap_vendor;
-	uint32_t eap_method;
-	int rv;
-
-	vp = fr_pair_make(packet, &packet->vps, "SoH-Supported", "no", T_OP_EQ);
-	if (data && data[0] == PW_EAP_NAK) {
-		RDEBUG("SoH - client NAKed");
-		return;
-	}
-
-	if (!data || data_len < 8) {
-		RDEBUG("SoH - eap payload too short");
-		return;
-	}
-
-	eap_method_base = *data++;
-	if (eap_method_base != 254) {
-		RDEBUG("SoH - response is not extended EAP: %i", eap_method_base);
-		return;
-	}
-
-	eap_vendor = soh_pull_be_24(data); data += 3;
-	if (eap_vendor != 0x137) {
-		RDEBUG("SoH - extended eap vendor %08x is not Microsoft", eap_vendor);
-		return;
-	}
-
-	eap_method = soh_pull_be_32(data); data += 4;
-	if (eap_method != 0x21) {
-		RDEBUG("SoH - response eap type %08x is not EAP-SoH", eap_method);
-		return;
-	}
-
-
-	rv = soh_verify(request, data, data_len - 8);
-	if (rv<0) {
-		RDEBUG("SoH - error decoding payload: %s", fr_strerror());
-	} else {
-		vp->vp_integer = 1;
-	}
-}
-
-/*
  *	Verify the tunneled EAP message.
  */
 static int eapmessage_verify(REQUEST *request,
@@ -271,56 +185,42 @@ static VALUE_PAIR *eap2vp(UNUSED REQUEST *request, RADIUS_PACKET *packet,
 			  EAP_DS *eap_ds,
 			  uint8_t const *data, size_t data_len, int peap_version)
 {
-	size_t total;
 	uint8_t *p;
 	VALUE_PAIR *vp = NULL, *head = NULL;
 	vp_cursor_t cursor;
 
-	if (data_len > 65535) return NULL; /* paranoia */
+	if (data_len > (65535 - EAP_HEADER_LEN)) return NULL; /* paranoia */
 
 	vp = fr_pair_afrom_num(packet, PW_EAP_MESSAGE, 0);
 	if (!vp) {
 		return NULL;
 	}
 
-	total = data_len;
-	if (total > 249) total = 249;
-
+	/*
+	 *	The whole packet goes in one EAP-Message attribute.
+	 */
 	if (peap_version == 0) {
 		/*
 		 *	Hand-build an EAP packet from the crap in PEAP version 0.
 		 */
-		vp->vp_length = EAP_HEADER_LEN + total;
-		vp->vp_octets = p = talloc_array(vp, uint8_t, vp->vp_length);
+		vp->vp_length = EAP_HEADER_LEN + data_len;
+		MEM(vp->vp_octets = p = talloc_array(vp, uint8_t, vp->vp_length));
 
 		p[0] = PW_EAP_RESPONSE;
 		p[1] = eap_ds->response->id;
 		p[2] = (data_len + EAP_HEADER_LEN) >> 8;
 		p[3] = (data_len + EAP_HEADER_LEN) & 0xff;
 
-		memcpy(p + EAP_HEADER_LEN, data, total);
+		memcpy(p + EAP_HEADER_LEN, data, data_len);
 
 	} else {		/* peapv1 */
-		vp->vp_length = total;
-		vp->vp_octets = p = talloc_array(vp, uint8_t, vp->vp_length);
-		memcpy(p, data, total);
+		vp->vp_length = data_len;
+		MEM(vp->vp_octets = p = talloc_array(vp, uint8_t, vp->vp_length));
+		memcpy(p, data, data_len);
 	}
 
 	fr_cursor_init(&cursor, &head);
 	fr_cursor_insert(&cursor, vp);
-	while (total < data_len) {
-		vp = fr_pair_afrom_num(packet, PW_EAP_MESSAGE, 0);
-		if (!vp) {
-			fr_pair_list_free(&head);
-			return NULL;
-		}
-
-		fr_pair_value_memcpy(vp, data + total, (data_len - total));
-
-		total += vp->vp_length;
-
-		fr_cursor_insert(&cursor, vp);
-	}
 
 	return head;
 }
@@ -583,6 +483,14 @@ static int CC_HINT(nonnull) eappeap_postproxy(eap_handler_t *handler, void *data
 		fake->packet->src_ipaddr = request->packet->src_ipaddr;
 		request->proxy = NULL;
 
+		/*
+		 *	fake->username points into the VPs of the packet,
+		 *	as they were when the tunneled request was proxied.
+		 *	The pre-proxy sections may have replaced those VPs,
+		 *	so look the pair up again.
+		 */
+		fake->username = fr_pair_find_by_num(fake->packet->vps, PW_USER_NAME, 0, TAG_ANY);
+
 		rad_assert(!fake->reply);
 		fake->reply = talloc_steal(fake, request->proxy_reply);
 		request->proxy_reply = NULL;
@@ -696,9 +604,6 @@ static char const *peap_state(peap_tunnel_t *t)
 	case PEAP_STATUS_TUNNEL_ESTABLISHED:
 		return "TUNNEL ESTABLISHED";
 
-	case PEAP_STATUS_WAIT_FOR_SOH_RESPONSE:
-		return "WAITING FOR SOH RESPONSE";
-
 	case PEAP_STATUS_INNER_IDENTITY_REQ_SENT:
 		return "WAITING FOR INNER IDENTITY";
 
@@ -779,12 +684,6 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 		if (SSL_session_reused(tls_session->ssl)) {
 			RDEBUG2("Skipping Phase2 because of session resumption");
 			t->session_resumption_state = PEAP_RESUMPTION_YES;
-			if (t->soh) {
-				t->status = PEAP_STATUS_WAIT_FOR_SOH_RESPONSE;
-				RDEBUG2("Requesting SoH from client");
-				eappeap_soh(handler, tls_session);
-				return RLM_MODULE_HANDLED;
-			}
 			/* we're good, send success TLV */
 			t->status = PEAP_STATUS_SENT_TLV_SUCCESS;
 			eappeap_success(handler, tls_session);
@@ -814,54 +713,8 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 		fr_pair_value_bstrncpy(t->username, data + header + 1, data_len - header - 1);
 
 		RDEBUG("Got inner identity '%s'", t->username->vp_strvalue);
-		if (t->soh) {
-			t->status = PEAP_STATUS_WAIT_FOR_SOH_RESPONSE;
-			RDEBUG2("Requesting SoH from client");
-			eappeap_soh(handler, tls_session);
-			return RLM_MODULE_HANDLED;
-		}
 		t->status = PEAP_STATUS_PHASE2_INIT;
 		break;
-
-	case PEAP_STATUS_WAIT_FOR_SOH_RESPONSE:
-		fake = request_alloc_fake(request);
-		rad_assert(!fake->packet->vps);
-
-		fake->eap_inner_tunnel = true;
-
-		eapsoh_verify(fake, fake->packet, data + header, data_len - header);
-		setup_fake_request(request, fake, t);
-
-		if (t->soh_virtual_server) {
-			fake->server = t->soh_virtual_server;
-		}
-		RDEBUG("Sending SoH request to server %s", fake->server ? fake->server : "NULL");
-		rad_virtual_server(fake, true);
-
-		if (fake->reply->code != PW_CODE_ACCESS_ACCEPT) {
-			RDEBUG2("SoH was rejected");
-			talloc_free(fake);
-			t->status = PEAP_STATUS_SENT_TLV_FAILURE;
-			eappeap_failure(handler, tls_session);
-			return RLM_MODULE_HANDLED;
-		}
-
-		/* save the SoH VPs */
-		rad_assert(!t->soh_reply_vps);
-		fr_pair_list_mcopy_by_num(t, &t->soh_reply_vps, &fake->reply->vps, 0, 0, TAG_ANY);
-		rad_assert(!fake->reply->vps);
-		talloc_free(fake);
-
-		if (t->session_resumption_state == PEAP_RESUMPTION_YES) {
-			/* we're good, send success TLV */
-			t->status = PEAP_STATUS_SENT_TLV_SUCCESS;
-			eappeap_success(handler, tls_session);
-			return RLM_MODULE_HANDLED;
-		}
-
-		t->status = PEAP_STATUS_PHASE2_INIT;
-		break;
-
 
 	/*
 	 *	If we authenticated the user, then it's OK.
@@ -939,9 +792,9 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 
 		t->status = PEAP_STATUS_PHASE2;
 
-		vp = fr_pair_afrom_num(fake->packet, PW_EAP_MESSAGE, 0);
+		MEM(vp = fr_pair_afrom_num(fake->packet, PW_EAP_MESSAGE, 0));
 		vp->vp_length = len;
-		vp->vp_octets = q = talloc_array(vp, uint8_t, vp->vp_length);
+		MEM(vp->vp_octets = q = talloc_array(vp, uint8_t, vp->vp_length));
 
 		q[0] = PW_EAP_RESPONSE;
 		q[1] = eap_ds->response->id;
@@ -956,7 +809,7 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 
 		if (t->default_method != 0) {
 			RDEBUG2("Setting default EAP type for tunneled EAP session");
-			vp = fr_pair_make(fake, &fake->config, "EAP-Type", "0", T_OP_EQ);
+			MEM(vp = fr_pair_make(fake, &fake->config, "EAP-Type", "0", T_OP_EQ));
 			vp->vp_integer = t->default_method;
 		}
 		break; }
@@ -973,6 +826,7 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 
 	default:
 		REDEBUG("Invalid state change in PEAP");
+		talloc_free(fake);
 		return RLM_MODULE_REJECT;
 	}
 
@@ -1002,7 +856,7 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 			 */
 			if (t->default_method != 0) {
 				RDEBUG2("Setting default EAP type for tunneled EAP session");
-				vp = fr_pair_make(fake, &fake->config, "EAP-Type", "0", T_OP_EQ);
+				MEM(vp = fr_pair_make(fake, &fake->config, "EAP-Type", "0", T_OP_EQ));
 				vp->vp_integer = t->default_method;
 			}
 		}
@@ -1098,6 +952,19 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 
 				if (rcode != RLM_MODULE_HANDLED) {
 					RDEBUG("Can't handle the return code %d", rcode);
+					rcode = RLM_MODULE_REJECT;
+					goto done;
+				}
+
+				/*
+				 *	The authenticate section can change
+				 *	&control:, and so can free the
+				 *	Proxy-To-Realm pair which "vp" points
+				 *	to.  Find it again.
+				 */
+				vp = fr_pair_find_by_num(fake->config, PW_PROXY_TO_REALM, 0, TAG_ANY);
+				if (!vp) {
+					RDEBUG2("Proxy-To-Realm was removed by the authenticate section: not proxying");
 					rcode = RLM_MODULE_REJECT;
 					goto done;
 				}

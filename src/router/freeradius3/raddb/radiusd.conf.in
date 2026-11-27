@@ -3,7 +3,7 @@
 ## radiusd.conf	-- FreeRADIUS server configuration file - @RADIUSD_VERSION_STRING@
 ##
 ##	http://www.freeradius.org/
-##	$Id: 164b9f7e2cf29766149a3300c9f64ea0262278b4 $
+##	$Id: 82810a7f3745ac65abbc747af6e8579368069dab $
 ##
 
 ######################################################################
@@ -393,6 +393,26 @@ unlang {
 	#  dereference request->proxy_listener under load.
 	#
 #	proxy_null_listener = no
+
+	#
+	#  client_database_blastradius: Apply the global BlastRADIUS
+	#  configuration to clients which are read from a database.
+	#
+	#  Up to version 3.2.11, FreeRADIUS read clients from SQL, but
+	#  did not apply the global "require_message_authenticator"
+	#  and "limit_proxy_state" settings.
+	#
+	#  In the interest of compatability, and in not breaking
+	#  existing configurations, the default value here is set to
+	#  "no".
+	#
+	#  When set to "yes", a client which is read from a database
+	#  will inherit both settings from the global configuration.
+	#
+	#  Check that every client which is listed the database has
+	#  been upgraded before setting this to "yes".
+	#
+#	client_database_blastradius = no
 }
 
 #

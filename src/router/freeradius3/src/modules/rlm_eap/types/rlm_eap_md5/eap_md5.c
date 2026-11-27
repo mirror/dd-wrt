@@ -1,7 +1,7 @@
 /*
  * eap_md5.c  EAP MD5 functionality.
  *
- * Version:     $Id: d6cc6e27243d63376f7e98d4bad5830ab4038817 $
+ * Version:     $Id: d1010bc8b2aa3bc039a9a5ef7d612d8e75ca1c3f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
  *
  */
 
-RCSID("$Id: d6cc6e27243d63376f7e98d4bad5830ab4038817 $")
+RCSID("$Id: d1010bc8b2aa3bc039a9a5ef7d612d8e75ca1c3f $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -151,6 +151,14 @@ int eapmd5_verify(MD5_PACKET *packet, VALUE_PAIR* password,
 	 */
 	if (packet->value_size != 16) {
 		ERROR("rlm_eap_md5: Expected 16 bytes of response to challenge, got %d", packet->value_size);
+		return 0;
+	}
+
+	/*
+	 *	The packet ID, the password, and the challenge go into one buffer.
+	 */
+	if (password->vp_length > (sizeof(string) - 1 - MD5_CHALLENGE_LEN)) {
+		ERROR("rlm_eap_md5: Password is too long for EAP-MD5");
 		return 0;
 	}
 

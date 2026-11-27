@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: cd6b1f330d15e57036163d7df4c74ac2ab1f95a7 $
+ * $Id: 0d9fa07d478f1fdfcc24b334653a0be0306fd023 $
  *
  * @brief Function prototypes and datatypes for the REST (HTTP) transport.
  * @file rest.h
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSIDH(other_h, "$Id: cd6b1f330d15e57036163d7df4c74ac2ab1f95a7 $")
+RCSIDH(other_h, "$Id: 0d9fa07d478f1fdfcc24b334653a0be0306fd023 $")
 
 #include <freeradius-devel/connection.h>
 #include "config.h"
@@ -127,6 +127,14 @@ typedef struct rlm_rest_section_t {
 
 	bool			attr_num;	//!< If true, the the attribute number is supplied for each attribute.
 	bool			raw_value;	//!< If true, enumerated attributes are provided as a numeric value
+
+	bool			do_xlat;	//!< Section default for xlat expansion of values in responses.
+						//!< May be overridden per-attribute with the "do_xlat" flag in
+						//!< JSON responses.  Defaults to true for compatibility with
+						//!< existing configurations.
+	bool			is_json;	//!< Section default for the "is_json" flag in JSON responses.
+						//!< If true, nested JSON data is copied to the attribute in
+						//!< string form.  Defaults to false.
 
 	char const		*force_to_str;	//!< Force decoding with this decoder.
 	http_body_type_t	force_to;	//!< Override the Content-Type header in the response

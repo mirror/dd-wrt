@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: f7e23628e66854dc01786266c39e398b8fafb699 $
+ * $Id: c1ff601de341f9a8b7e59913bea2406500718535 $
  * @file rlm_exec.c
  * @brief Execute commands and parse the results.
  *
  * @copyright 2002,2006  The FreeRADIUS server project
  * @copyright 2002  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: f7e23628e66854dc01786266c39e398b8fafb699 $")
+RCSID("$Id: c1ff601de341f9a8b7e59913bea2406500718535 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -56,7 +56,7 @@ typedef struct rlm_exec_t {
  *	buffer over-flows.
  */
 static const CONF_PARSER module_config[] = {
-	{ "wait", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_exec_t, wait), "yes" },
+	{ "wait", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_exec_t, wait), "no" },
 	{ "program", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, rlm_exec_t, program), NULL },
 	{ "input_pairs", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_exec_t, input), NULL },
 	{ "output_pairs", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_exec_t, output), NULL },

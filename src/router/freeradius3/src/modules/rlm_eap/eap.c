@@ -1,7 +1,7 @@
 /*
  * eap.c    rfc2284 & rfc2869 implementation
  *
- * Version:     $Id: 08b7f539f7364e74ab7cee9fc8fe20b6027f066a $
+ * Version:     $Id: 83d49b31dc28673a8c42ac8d24cb0861554567b2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@
 
 #include <freeradius-devel/modpriv.h>
 
-RCSID("$Id: 08b7f539f7364e74ab7cee9fc8fe20b6027f066a $")
+RCSID("$Id: 83d49b31dc28673a8c42ac8d24cb0861554567b2 $")
 
 #include "rlm_eap.h"
 #include <ctype.h>
@@ -212,7 +212,7 @@ static int eap_module_call(eap_module_t *module, eap_handler_t *handler)
  *
  */
 static eap_type_t eap_process_nak(rlm_eap_t *inst, REQUEST *request,
-				    eap_type_t type,
+				    eap_type_t type, uint64_t nak_mask,
 				    eap_type_data_t *nak)
 {
 	unsigned int i;
@@ -271,6 +271,15 @@ static eap_type_t eap_process_nak(rlm_eap_t *inst, REQUEST *request,
 				eap_type2name(nak->data[i]),
 				nak->data[i]);
 
+			continue;
+		}
+
+		/*
+		 *	This type was already NAKed, don't allow the peer to request it again
+		 */
+		if ((nak_mask & (((uint64_t) 1) << nak->data[i])) != 0) {
+			RDEBUG2("Peer sent NAK asking for %s (%d), which we had previously suggested, skipping...",
+				eap_type2name(nak->data[i]), nak->data[i]);
 			continue;
 		}
 
@@ -410,6 +419,21 @@ eap_rcode_t eap_method_select(rlm_eap_t *inst, eap_handler_t *handler)
 		rad_assert(next < PW_EAP_MAX_TYPES);
 		rad_assert(inst->methods[next]);
 
+		/*
+		 *	A method may be proposed only once in a
+		 *	conversation.  eap_process_nak() already
+		 *	skips types in the mask, so this catches
+		 *	only the other ways of getting here.
+		 */
+		_Static_assert(PW_EAP_MAX_TYPES <= 64, "nak_mask is too small");
+		if ((handler->nak_mask & (((uint64_t) 1) << next)) != 0) {
+			REDEBUG2("Refusing to propose EAP %s (%d) a second time",
+				 eap_type2name(next), next);
+
+			return EAP_INVALID;
+		}
+		if (next > PW_EAP_NAK) handler->nak_mask |= ((uint64_t) 1) << next;
+
 		handler->stage = INITIATE;
 		handler->type = next;
 
@@ -439,7 +463,7 @@ eap_rcode_t eap_method_select(rlm_eap_t *inst, eap_handler_t *handler)
 		if (handler->started) return EAP_INVALID;
 
 		next = eap_process_nak(inst, handler->request,
-				       handler->type, type);
+				       handler->type, handler->nak_mask, type);
 
 		/*
 		 *	We probably want to return 'fail' here...
@@ -641,6 +665,37 @@ rlm_rcode_t eap_compose(eap_handler_t *handler)
 }
 
 /*
+ *	RFC 5080 Section 2.1.1 says:
+ *
+ *	An Access-Request sent as a result of a new or restarted
+ *	authentication run MUST NOT include the State attribute, even if a
+ *	State attribute has previously been received in an Access-Challenge
+ *	for the same user and port.
+ *
+ *	We therefore look for this situation, and reject those
+ *	authentications.  If we don't reject it, we would instead
+ *	restore the old session-state, and bad things can happen.
+ *
+ *	The rejected session should cause the AP to remove the old
+ *	State.  The user can then retry, and the AP will then send a
+ *	new Access-Request without a State.
+ */
+static bool eap_start_has_state(rlm_eap_t *inst, REQUEST *request, char const *what)
+{
+	if (!fr_pair_find_by_num(request->packet->vps, PW_STATE, 0, TAG_ANY)) return false;
+
+	REDEBUG("Ignoring %s which contains a State attribute.", what);
+
+	/*
+	 *	Delete the old session, so that its State cannot be used again.
+	 */
+	eaplist_cancel(inst, request);
+
+	return true;
+}
+
+
+/*
  * Radius criteria, EAP-Message is invalid without Message-Authenticator
  * For EAP_START, send Access-Challenge with EAP Identity request.
  */
@@ -712,6 +767,8 @@ int eap_start(rlm_eap_t *inst, REQUEST *request)
 				"Realm %s. Not doing EAP.", proxy->vp_strvalue);
 			return EAP_NOOP;
 		}
+
+		if (eap_start_has_state(inst, request, "EAP-Start")) return EAP_FAIL;
 
 		RDEBUG2("Got EAP_START message");
 		vp = fr_pair_afrom_num(request->reply, PW_EAP_MESSAGE, 0);
@@ -859,6 +916,8 @@ int eap_start(rlm_eap_t *inst, REQUEST *request)
 	 * ...in the inner-tunnel, to avoid expensive and unnecessary SQL/LDAP lookups
 	 */
 	if (eap_msg->vp_octets[4] == PW_EAP_IDENTITY) {
+		if (eap_start_has_state(inst, request, "EAP-Identity")) return EAP_FAIL;
+
 		RDEBUG2("EAP-Identity reply, returning 'ok' so we can short-circuit the rest of authorize");
 		return EAP_OK;
 	}
@@ -918,13 +977,13 @@ static int eap_validation(REQUEST *request, eap_packet_raw_t **eap_packet_p)
 	 *	High level EAP packet checks
 	 */
 	if (len <= EAP_HEADER_LEN) {
-		RAUTH("EAP packet is too small: Ignoring it.");
+		REDEBUG("EAP packet is too small: Ignoring it.");
 		return EAP_INVALID;
 	}
 
 	if (eap_packet->code == PW_EAP_REQUEST) {
 		VALUE_PAIR *vp;
-		RAUTH("Unexpected EAP-Request.  NAKing it.");
+		REDEBUG("Unexpected EAP-Request.  NAKing it.");
 
 		vp = pair_make_reply("EAP-Message", "123456", T_OP_SET);
 		if (vp) {
@@ -960,82 +1019,30 @@ static int eap_validation(REQUEST *request, eap_packet_raw_t **eap_packet_p)
 	 *	CANNOT ask us to authenticate outselves.
 	 */
 	if (eap_packet->code != PW_EAP_RESPONSE) {
-		RAUTH("Unexpected packet code %02x: Ignoring it.", eap_packet->code);
+		REDEBUG("Unexpected packet code %02x: Ignoring it.", eap_packet->code);
 		return EAP_INVALID;
 	}
 
 	if ((eap_packet->data[0] <= 0) ||
 	    (eap_packet->data[0] >= PW_EAP_MAX_TYPES)) {
 		/*
-		 *	Handle expanded types by smashing them to
-		 *	normal types.
+		 *	A peer should send a normal EAP type instead of wrapping the type in an Expanded type.
+		 *	eap_vp2packet() checks the flags and lengths of TLS-based EAP types by looking at the
+		 *	"base" type, not by looking at the expanded type.  (
 		 */
 		if (eap_packet->data[0] == PW_EAP_EXPANDED_TYPE) {
-			uint8_t *p, *q;
-
-			if (len <= (EAP_HEADER_LEN + 1 + 3 + 4)) {
-				RAUTH("Expanded EAP type is too short: ignoring the packet");
-				return EAP_INVALID;
-			}
-
-			if ((eap_packet->data[1] != 0) ||
-			    (eap_packet->data[2] != 0) ||
-			    (eap_packet->data[3] != 0)) {
-				RAUTH("Expanded EAP type has unknown Vendor-ID: ignoring the packet");
-				return EAP_INVALID;
-			}
-
-			if ((eap_packet->data[4] != 0) ||
-			    (eap_packet->data[5] != 0) ||
-			    (eap_packet->data[6] != 0)) {
-				RAUTH("Expanded EAP type has unknown Vendor-Type: ignoring the packet");
-				return EAP_INVALID;
-			}
-
-			if ((eap_packet->data[7] == 0) ||
-			    (eap_packet->data[7] >= PW_EAP_MAX_TYPES)) {
-				RAUTH("Unsupported Expanded EAP type %s (%u): ignoring the packet",
-				      eap_type2name(eap_packet->data[7]), eap_packet->data[7]);
-				return EAP_INVALID;
-			}
-
-			if (eap_packet->data[7] == PW_EAP_NAK) {
-				RAUTH("Unsupported Expanded EAP-NAK: ignoring the packet");
-				return EAP_INVALID;
-			}
-
-			/*
-			 *	Re-write the EAP packet to NOT have the expanded type.
-			 */
-			q = (uint8_t *) eap_packet;
-			memmove(q + EAP_HEADER_LEN, q + EAP_HEADER_LEN + 7, len - 7 - EAP_HEADER_LEN);
-
-			p = talloc_realloc(talloc_parent(eap_packet), eap_packet, uint8_t, len - 7);
-			if (!p) {
-				RAUTH("Unsupported EAP type %s (%u): ignoring the packet",
-				      eap_type2name(eap_packet->data[0]), eap_packet->data[0]);
-				return EAP_INVALID;
-			}
-
-			len -= 7;
-			p[2] = (len >> 8) & 0xff;
-			p[3] = len & 0xff;
-
-			*eap_packet_p = (eap_packet_raw_t *) p;
-			RWARN("Converting Expanded EAP to normal EAP.");
-			RWARN("Unnecessary use of Expanded EAP types is not recommended.");
-
-			return EAP_VALID;
+			REDEBUG("Unsupported Expanded EAP type: ignoring the packet");
+			return EAP_INVALID;
 		}
 
-		RAUTH("Unsupported EAP type %s (%u): ignoring the packet",
+		REDEBUG("Unsupported EAP type %s (%u): ignoring the packet",
 		      eap_type2name(eap_packet->data[0]), eap_packet->data[0]);
 		return EAP_INVALID;
 	}
 
 	/* we don't expect notification, but we send it */
 	if (eap_packet->data[0] == PW_EAP_NOTIFICATION) {
-		RAUTH("Got NOTIFICATION, "
+		REDEBUG("Got NOTIFICATION, "
 			       "Ignoring the packet");
 		return EAP_INVALID;
 	}
@@ -1189,7 +1196,7 @@ eap_handler_t *eap_handler(rlm_eap_t *inst, eap_packet_raw_t **eap_packet_p,
 			       eap_type2name(handler->type),
 			       eap_type2name(eap_packet->data[0]));
 			RERROR("Your Supplicant or NAS is probably broken");
-			goto error;
+			goto error2;
 		}
 
 	       vp = fr_pair_find_by_num(request->packet->vps, PW_USER_NAME, 0, TAG_ANY);
@@ -1204,7 +1211,7 @@ eap_handler_t *eap_handler(rlm_eap_t *inst, eap_packet_raw_t **eap_packet_p,
 		       RDEBUG2("Broken NAS did not set User-Name, setting from EAP Identity");
 		       vp = fr_pair_make(request->packet, &request->packet->vps, "User-Name", handler->identity, T_OP_EQ);
 		       if (!vp) {
-			       goto error;
+			       goto error2;
 		       }
 	       } else {
 		       /*
@@ -1219,7 +1226,7 @@ eap_handler_t *eap_handler(rlm_eap_t *inst, eap_packet_raw_t **eap_packet_p,
 		       if (strncmp(handler->identity, vp->vp_strvalue,
 				   MAX_STRING_LEN) != 0) {
 			       RDEBUG("Identity does not match User-Name.  Authentication failed");
-			       goto error;
+			       goto error2;
 		       }
 	       }
 	} else {		/* packet was EAP identity */

@@ -1,7 +1,7 @@
 /*
  * command.c	Command socket processing.
  *
- * Version:	$Id: 1e5d43212283d80ede908200fae86f49b54d9afb $
+ * Version:	$Id: d4ac5a91879ce885482b334df8b66d037c0a3486 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -254,24 +254,12 @@ static int fr_server_domain_socket_peercred(char const *path, uid_t UNUSED uid, 
 		return -1;
 	}
 
-#ifdef O_NONBLOCK
-	{
-		int flags;
-
-		if ((flags = fcntl(sockfd, F_GETFL, NULL)) < 0)  {
-			fr_strerror_printf("Failure getting socket flags: %s", fr_syserror(errno));
-			close(sockfd);
-			return -1;
-		}
-
-		flags |= O_NONBLOCK;
-		if( fcntl(sockfd, F_SETFL, flags) < 0) {
-			fr_strerror_printf("Failure setting socket flags: %s", fr_syserror(errno));
-			close(sockfd);
-			return -1;
-		}
+	if (fr_nonblock(sockfd) < 0) {
+		ERROR("Failed setting non-blocking on socket: %s",
+		      fr_syserror(errno));
+		close(sockfd);
+		return -1;
 	}
-#endif
 
 	/*
 	 *	Changing socket permissions only works on linux.
@@ -410,7 +398,7 @@ static int fr_server_domain_socket_perm(char const *path, uid_t uid, gid_t gid)
 			talloc_free(user);
 			goto error;
 		}
-		fr_strerror_printf("Can't open directory \"%s\": %s.  Must be created manually, or modified, "
+		fr_strerror_printf("Failed opening directory '%s': %s.  Must be created manually, or modified, "
 				   "with permissions that allow writing by user %s or group %s", dir,
 				   user->pw_name, group->gr_name, fr_syserror(errno));
 		talloc_free(user);
@@ -496,7 +484,7 @@ static int fr_server_domain_socket_perm(char const *path, uid_t uid, gid_t gid)
 				talloc_free(need_group);
 				goto error;
 			}
-			fr_strerror_printf("Control socket directory \"%s\" must be owned by group %s, "
+			fr_strerror_printf("Control socket directory '%s' must be owned by group %s, "
 					   "currently owned by %s", dir, need_group->gr_name, have_group->gr_name);
 			talloc_free(need_group);
 			talloc_free(have_group);
@@ -530,7 +518,7 @@ static int fr_server_domain_socket_perm(char const *path, uid_t uid, gid_t gid)
 
 	name = strrchr(path, FR_DIR_SEP);
 	if (!name) {
-		fr_strerror_printf("Can't determine socket name");
+		fr_strerror_printf("Failed to determine socket name from '%s'", path);
 		goto error;
 	}
 	name++;
@@ -652,23 +640,12 @@ static int fr_server_domain_socket_perm(char const *path, uid_t uid, gid_t gid)
 		goto sock_error;
 	}
 
-#ifdef O_NONBLOCK
-	{
-		int flags;
-
-		flags = fcntl(sock_fd, F_GETFL, NULL);
-		if (flags < 0)  {
-			fr_strerror_printf("Failed getting socket flags: %s", fr_syserror(errno));
-			goto sock_error;
-		}
-
-		flags |= O_NONBLOCK;
-		if (fcntl(sock_fd, F_SETFL, flags) < 0) {
-			fr_strerror_printf("Failed setting nonblocking socket flag: %s", fr_syserror(errno));
-			goto sock_error;
-		}
+	if (fr_nonblock(sock_fd) < 0) {
+		ERROR("Failed setting non-blocking on socket: %s",
+		      fr_syserror(errno));
+		close(sock_fd);
+		return -1;
 	}
-#endif
 
 	if (uid != (uid_t)-1) rad_seuid(euid);
 	if (gid != (gid_t)-1) rad_segid(egid);
@@ -757,7 +734,7 @@ static int command_hup(rad_listen_t *listener, int argc, char *argv[])
 
 	mi = module_find(cs, argv[0]);
 	if (!mi) {
-		cprintf_error(listener, "No such module \"%s\"\n", argv[0]);
+		cprintf_error(listener, "No such module '%s'\n", argv[0]);
 		return CMD_FAIL;
 	}
 
@@ -906,7 +883,7 @@ static void cprint_conf_parser(rad_listen_t *listener, int indent, CONF_SECTION 
 			 *	FIXME: Escape things in the string!
 			 */
 			if (*(char const * const *) data) {
-				cprintf(listener, "%.*s%s = \"%s\"\n", indent, tabs,
+				cprintf(listener, "%.*s%s = '%s'\n", indent, tabs,
 					variables[i].name, *(char const * const *) data);
 			} else {
 				cprintf(listener, "%.*s%s = \n", indent, tabs,
@@ -987,7 +964,7 @@ static int command_show_module_config(rad_listen_t *listener, int argc, char *ar
 
 	mi = module_find(cs, argv[0]);
 	if (!mi) {
-		cprintf_error(listener, "No such module \"%s\"\n", argv[0]);
+		cprintf_error(listener, "No such module '%s'\n", argv[0]);
 		return CMD_FAIL;
 	}
 
@@ -1030,7 +1007,7 @@ static int command_show_module_methods(rad_listen_t *listener, int argc, char *a
 
 	mi = module_find(cs, argv[0]);
 	if (!mi) {
-		cprintf_error(listener, "No such module \"%s\"\n", argv[0]);
+		cprintf_error(listener, "No such module '%s'\n", argv[0]);
 		return CMD_FAIL;
 	}
 
@@ -1060,7 +1037,7 @@ static int command_show_module_flags(rad_listen_t *listener, int argc, char *arg
 
 	mi = module_find(cs, argv[0]);
 	if (!mi) {
-		cprintf_error(listener, "No such module \"%s\"\n", argv[0]);
+		cprintf_error(listener, "No such module '%s'\n", argv[0]);
 		return CMD_FAIL;
 	}
 
@@ -1090,7 +1067,7 @@ static int command_show_module_status(rad_listen_t *listener, int argc, char *ar
 
 	mi = module_find(cs, argv[0]);
 	if (!mi) {
-		cprintf_error(listener, "No such module \"%s\"\n", argv[0]);
+		cprintf_error(listener, "No such module '%s'\n", argv[0]);
 		return CMD_FAIL;
 	}
 
@@ -1507,7 +1484,7 @@ static int command_debug_condition(rad_listen_t *listener, int argc, char *argv[
 		ERROR("%s", p);
 		ERROR("%s^ %s", spaces, error);
 
-		cprintf_error(listener, "Parse error in condition \"%s\": %s\n", p, error);
+		cprintf_error(listener, "Parse error in condition '%s': %s\n", p, error);
 
 		talloc_free(spaces);
 		talloc_free(text);
@@ -1773,7 +1750,7 @@ static int command_set_home_server_state(rad_listen_t *listener, int argc, char 
 		mark_home_server_dead(home, &now, true);
 
 	} else {
-		cprintf_error(listener, "Unknown state \"%s\"\n", argv[last]);
+		cprintf_error(listener, "Unknown state '%s'\n", argv[last]);
 		return CMD_FAIL;
 	}
 
@@ -1820,18 +1797,18 @@ static int command_show_home_server_state(rad_listen_t *listener, int argc, char
 /*
  *	For encode/decode stuff
  */
-static int null_socket_dencode(UNUSED rad_listen_t *listener, UNUSED REQUEST *request)
+static int command_socket_dencode(UNUSED rad_listen_t *listener, UNUSED REQUEST *request)
 {
 	return 0;
 }
 
-static int null_socket_send(UNUSED rad_listen_t *listener, REQUEST *request)
+static int command_socket_send(UNUSED rad_listen_t *listener, REQUEST *request)
 {
 	vp_cursor_t cursor;
 	char *output_file;
 	FILE *fp;
 
-	output_file = request_data_reference(request, (void *)null_socket_send, 0);
+	output_file = request_data_reference(request, (void *)command_socket_send, 0);
 	if (!output_file) {
 		ERROR("No output file for injected packet %d", request->number);
 		return 0;
@@ -1964,7 +1941,7 @@ static int command_inject_from(rad_listen_t *listener, int argc, char *argv[])
 
 	sock = listener->data;
 	if (!sock->inject_listener) {
-		cprintf_error(listener, "You must specify \"inject to\" before using \"inject from\"\n");
+		cprintf_error(listener, "You must specify 'inject to' before using 'inject from'\n");
 		return 0;
 	}
 
@@ -2012,12 +1989,12 @@ static int command_inject_file(rad_listen_t *listener, int argc, char *argv[])
 
 	sock = listener->data;
 	if (!sock->inject_listener) {
-		cprintf_error(listener, "You must specify \"inject to\" before using \"inject file\"\n");
+		cprintf_error(listener, "You must specify 'inject to' before using 'inject file'\n");
 		return 0;
 	}
 
 	if (!sock->inject_client) {
-		cprintf_error(listener, "You must specify \"inject from\" before using \"inject file\"\n");
+		cprintf_error(listener, "You must specify 'inject from' before using 'inject file'\n");
 		return 0;
 	}
 
@@ -2047,9 +2024,9 @@ static int command_inject_file(rad_listen_t *listener, int argc, char *argv[])
 	/*
 	 *	Re-write the IO for the listener.
 	 */
-	fake->encode = null_socket_dencode;
-	fake->decode = null_socket_dencode;
-	fake->send = null_socket_send;
+	fake->encode = command_socket_dencode;
+	fake->decode = command_socket_dencode;
+	fake->send = command_socket_send;
 
 	packet = rad_alloc(NULL, false);
 	packet->src_ipaddr = sock->src_ipaddr;
@@ -2106,8 +2083,8 @@ static int command_inject_file(rad_listen_t *listener, int argc, char *argv[])
 	 *	Remember what the output file is, and remember to
 	 *	delete the fake listener when done.
 	 */
-	request_data_add(request, null_socket_send, 0, talloc_typed_strdup(NULL, buffer), true);
-	request_data_add(request, null_socket_send, 1, fake, true);
+	request_data_add(request, command_socket_send, 0, talloc_typed_strdup(NULL, buffer), true);
+	request_data_add(request, command_socket_send, 1, fake, true);
 
 #endif
 
@@ -2259,7 +2236,7 @@ static int command_set_module_config(rad_listen_t *listener, int argc, char *arg
 
 	mi = module_find(cs, argv[0]);
 	if (!mi) {
-		cprintf_error(listener, "No such module \"%s\"\n", argv[0]);
+		cprintf_error(listener, "No such module '%s'\n", argv[0]);
 		return 0;
 	}
 
@@ -2288,7 +2265,7 @@ static int command_set_module_config(rad_listen_t *listener, int argc, char *arg
 	}
 
 	if (rcode < 0) {
-		cprintf_error(listener, "No such variable \"%s\"\n", argv[1]);
+		cprintf_error(listener, "No such variable '%s'\n", argv[1]);
 		return 0;
 	}
 
@@ -2342,7 +2319,7 @@ static int command_set_module_status(rad_listen_t *listener, int argc, char *arg
 
 	mi = module_find(cs, argv[0]);
 	if (!mi) {
-		cprintf_error(listener, "No such module \"%s\"\n", argv[0]);
+		cprintf_error(listener, "No such module '%s'\n", argv[0]);
 		return 0;
 	}
 
@@ -2359,7 +2336,7 @@ static int command_set_module_status(rad_listen_t *listener, int argc, char *arg
 
 		rcode = fr_str2int(mod_rcode_table, argv[1], -1);
 		if (rcode < 0) {
-			cprintf_error(listener, "Unknown status \"%s\"\n", argv[1]);
+			cprintf_error(listener, "Unknown status '%s'\n", argv[1]);
 			return 0;
 		}
 
@@ -2398,6 +2375,7 @@ static int command_print_stats(rad_listen_t *listener, fr_stats_t *stats,
 	cprintf(listener, "bad_authenticator\t%" PRIu64 "\n", stats->total_bad_authenticators);
 	cprintf(listener, "dropped\t\t%" PRIu64 "\n", stats->total_packets_dropped);
 	cprintf(listener, "unknown_types\t%" PRIu64 "\n", stats->total_unknown_types);
+	cprintf(listener, "no_records\t%" PRIu64 "\n", stats->total_no_records);
 
 	if (server) {
 		cprintf(listener, "timeouts\t%" PRIu64 "\n", stats->total_timeouts);
@@ -2574,14 +2552,14 @@ static int command_stats_home_server(rad_listen_t *listener, int argc, char *arg
 		}
 #endif
 
-#ifdef WITH_ACCOUNTING
+#ifdef WITH_COA
 		if (strcmp(argv[0], "coa") == 0) {
 			return command_print_stats(listener,
 						   &proxy_coa_stats, 0, 1);
 		}
 #endif
 
-#ifdef WITH_ACCOUNTING
+#ifdef WITH_COA
 		if (strcmp(argv[0], "disconnect") == 0) {
 			return command_print_stats(listener,
 						   &proxy_dsc_stats, 0, 1);
@@ -2717,7 +2695,7 @@ static int command_stats_pool(rad_listen_t *listener, int argc, char *argv[])
 
 	mi = module_find(cs, argv[0]);
 	if (!mi) {
-		cprintf_error(listener, "No such module \"%s\"\n", argv[0]);
+		cprintf_error(listener, "No such module '%s'\n", argv[0]);
 		return CMD_FAIL;
 	}
 
@@ -2925,8 +2903,8 @@ static fr_command_table_t command_table_set[] = {
 #ifdef WITH_STATS
 static fr_command_table_t command_table_stats[] = {
 	{ "client", FR_READ,
-	  "stats client [auth/acct/coa] <ipaddr> [udp|tcp] [listen <ipaddr> <port>] "
-	  "- show statistics for given client, or for all clients (auth or acct)",
+	  "stats client [auth/acct/coa/disconnect] <ipaddr> [udp|tcp] [listen <ipaddr> <port>] "
+	  "- show statistics for all clients (no ipaddr, etc.) or for a specific client (by ipaddr, etc.)",
 	  command_stats_client, NULL },
 
 #ifdef WITH_DETAIL
@@ -2937,7 +2915,8 @@ static fr_command_table_t command_table_stats[] = {
 
 #ifdef WITH_PROXY
 	{ "home_server", FR_READ,
-	  "stats home_server [<ipaddr>|auth|acct|coa|disconnect] <port> [udp|tcp] [src <ipaddr>] - show statistics for given home server (ipaddr and port), or for all home servers (auth or acct)",
+	  "stats home_server [auth|acct|coa|disconnect] <ipaddr> <port> [udp|tcp] [src <ipaddr>] "
+	  "- show statistics for all home servers (no ipaddr) or for a specific home server (by ipaddr, port, etc.)",
 	  command_stats_home_server, NULL },
 #endif
 
@@ -2957,7 +2936,7 @@ static fr_command_table_t command_table_stats[] = {
 
 	{ "socket", FR_READ,
 	  "stats socket <ipaddr> <port> [udp|tcp] "
-	  "- show statistics for given socket",
+	  "- show statistics for given socket (i.e 'listen' section)",
 	  command_stats_socket, NULL },
 
 #ifndef NDEBUG
@@ -3075,7 +3054,7 @@ static int command_socket_parse_unix(CONF_SECTION *cs, rad_listen_t *this)
 	} else {
 		sock->co.mode = fr_str2int(mode_names, sock->mode_name, 0);
 		if (!sock->co.mode) {
-			ERROR("Invalid mode name \"%s\"",
+			ERROR("Invalid mode name '%s'",
 			       sock->mode_name);
 			return -1;
 		}
@@ -3094,7 +3073,7 @@ static int command_socket_parse_unix(CONF_SECTION *cs, rad_listen_t *this)
 	}
 
 	if (this->fd < 0) {
-		ERROR("Failed creating control socket \"%s\": %s", sock->path, fr_strerror());
+		ERROR("Failed creating control socket '%s': %s", sock->path, fr_strerror());
 		if (sock->copy) talloc_free(sock->copy);
 		sock->copy = NULL;
 		return -1;
@@ -3318,7 +3297,7 @@ static int command_domain_recv_co(rad_listen_t *listener, fr_cs_buffer_t *co)
 			 */
 			if (((co->mode & FR_WRITE) == 0) &&
 			    ((table[i].mode & FR_WRITE) != 0)) {
-				cprintf_error(listener, "You do not have write permission.  See \"mode = rw\" in the \"listen\" section for this socket.\n");
+				cprintf_error(listener, "You do not have write permission.  See 'mode = rw' in the 'listen' section for this socket.\n");
 				goto do_next;
 			}
 
@@ -3372,7 +3351,7 @@ static int command_domain_recv_co(rad_listen_t *listener, fr_cs_buffer_t *co)
 			goto do_next;
 		}
 
-		cprintf_error(listener, "Unknown command \"%s\"\n",
+		cprintf_error(listener, "Unknown command '%s'\n",
 			      argv[0]);
 	}
 

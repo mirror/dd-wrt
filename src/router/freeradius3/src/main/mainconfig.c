@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id: 80fb2bbe0d5d397c8a552f3210b268c3125926ec $
+ * Version:	$Id: 4134ddb4601e7d80be134ff11080df02eb324011 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2002  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 80fb2bbe0d5d397c8a552f3210b268c3125926ec $")
+RCSID("$Id: 4134ddb4601e7d80be134ff11080df02eb324011 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -139,7 +139,7 @@ int fr_bool_auto_parse(CONF_PAIR *cp, fr_bool_auto_t *out, char const *str)
 		return -1;
 	}
 
-	cf_log_err(cf_pair_to_item(cp), "Invalid value for \"%s\"", cf_pair_attr(cp));
+	cf_log_err(cf_pair_to_item(cp), "Invalid value for '%s'", cf_pair_attr(cp));
 	return -1;
 }
 
@@ -214,10 +214,11 @@ static const CONF_PARSER log_config[] = {
  *  Security configuration for the server.
  */
 static const CONF_PARSER security_config[] = {
-	{ "max_attributes",  FR_CONF_POINTER(PW_TYPE_INTEGER, &fr_max_attributes), STRINGIFY(0) },
-	{ "reject_delay",  FR_CONF_POINTER(PW_TYPE_TIMEVAL, &main_config.reject_delay), STRINGIFY(0) },
+	{ "max_attributes",  FR_CONF_POINTER(PW_TYPE_INTEGER, &fr_max_attributes), "200" },
+	{ "reject_delay",  FR_CONF_POINTER(PW_TYPE_TIMEVAL, &main_config.reject_delay), "1" },
 	{ "delay_proxy_rejects",  FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.delay_proxy_rejects), "no" },
-	{ "status_server", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.status_server), "no"},
+	{ "status_server", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.status_server), "yes"},
+	{ "unauth_proxy_responses", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.unauth_proxy_responses), "no"},
 	{ "require_message_authenticator", FR_CONF_POINTER(PW_TYPE_STRING, &require_message_authenticator), "auto"},
 	{ "limit_proxy_state", FR_CONF_POINTER(PW_TYPE_STRING, &limit_proxy_state), "auto"},
 #ifdef ENABLE_OPENSSL_VERSION_CHECK
@@ -244,6 +245,7 @@ static const CONF_PARSER unlang_config[] = {
 	{ "policy_stop_return", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.policy_stop_return), "no" },
 	{ "improved_state_tracking", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.hoist_state), "no" },
 	{ "proxy_null_listener", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.proxy_null_listener), "no" },
+	{ "client_database_blastradius", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.client_database_blastradius), "no" },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -425,7 +427,7 @@ static ssize_t xlat_config(UNUSED void *instance, REQUEST *request, char const *
 	ci = cf_reference_item(request->root->config,
 			       request->root->config, buffer);
 	if (!ci || !cf_item_is_pair(ci)) {
-		REDEBUG("Config item \"%s\" does not exist", fmt);
+		REDEBUG("Config item '%s' does not exist", fmt);
 		*out = '\0';
 		return -1;
 	}
@@ -505,7 +507,7 @@ static ssize_t xlat_getclient(UNUSED void *instance, REQUEST *request, char cons
 
 	strlcpy(buffer, p, (q + 1) - p);
 	if (fr_pton(&ip, buffer, -1, AF_UNSPEC, false) < 0) {
-		REDEBUG("\"%s\" is not a valid IPv4 or IPv6 address", buffer);
+		REDEBUG("'%s' is not a valid IPv4 or IPv6 address", buffer);
 		goto error;
 	}
 
@@ -513,7 +515,7 @@ static ssize_t xlat_getclient(UNUSED void *instance, REQUEST *request, char cons
 
 	client = client_find(NULL, &ip, IPPROTO_IP);
 	if (!client) {
-		RDEBUG("No client found with IP \"%s\"", buffer);
+		RDEBUG("No client found with IP '%s'", buffer);
 		*out = '\0';
 		return 0;
 	}
@@ -588,7 +590,7 @@ static ssize_t xlat_listen_common(REQUEST *request, rad_listen_t *listen,
 			}
 		}
 
-		RDEBUG("Unknown TLS attribute \"%s\"", fmt);
+		RDEBUG("Unknown TLS attribute '%s'", fmt);
 		*out = '\0';
 		return 0;
 	}
@@ -612,7 +614,7 @@ static ssize_t xlat_listen_common(REQUEST *request, rad_listen_t *listen,
 
 	cp = cf_pair_find(listen->cs, fmt);
 	if (!cp || !(value = cf_pair_value(cp))) {
-		RDEBUG("Listener does not contain config item \"%s\"", fmt);
+		RDEBUG("Listener does not contain config item '%s'", fmt);
 		*out = '\0';
 		return 0;
 	}
@@ -673,7 +675,7 @@ static int switch_users(CONF_SECTION *cs)
 	if (rad_debug_lvl && (getuid() != 0)) return 1;
 
 	if (cf_section_parse(cs, NULL, bootstrap_config) < 0) {
-		fr_strerror_printf("Failed to parse user/group information.");
+		fr_strerror_printf("Failed to parse user/group information");
 		return 0;
 	}
 
@@ -1166,7 +1168,7 @@ do {\
 
 		} else if (default_log.dst == L_DST_FILES) {
 			if (!main_config.log_file) {
-				fprintf(stderr, "%s: Error: Specified \"files\" as a log destination, but no log filename was given!\n",
+				fprintf(stderr, "%s: Error: Specified 'files' as a log destination, but no log filename was given!\n",
 					main_config.name);
 				cf_file_free(cs);
 				return -1;
@@ -1255,6 +1257,8 @@ do {\
 			cf_file_free(cs);
 			return -1;
 		}
+
+		main_config.home_servers_require_ma = (main_config.require_ma == FR_BOOL_TRUE);
 
 		cp = NULL;
 		if (subcs) cp = cf_pair_find(subcs, "limit_proxy_state");

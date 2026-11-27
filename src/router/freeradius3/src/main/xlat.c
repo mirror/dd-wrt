@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: f765bc9e019b1b68659295225bff0d9ed7a59390 $
+ * $Id: 5d22a255081d32c1ed6aabd7deafb5f4b66e5431 $
  *
  * @file xlat.c
  * @brief String expansion ("translation"). Implements %Attribute -> value
@@ -24,7 +24,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: f765bc9e019b1b68659295225bff0d9ed7a59390 $")
+RCSID("$Id: 5d22a255081d32c1ed6aabd7deafb5f4b66e5431 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -219,11 +219,12 @@ static ssize_t xlat_integer(UNUSED void *instance, REQUEST *request,
 
 	/*
 	 *	Ethernet is weird... It's network related, so we assume to it should be
-	 *	bigendian.
+	 *	bigendian.  We therefore copy it to the _lowe_ bytes of the int64 field.
 	 */
 	case PW_TYPE_ETHERNET:
-		memcpy(&int64, vp->vp_ether, vp->vp_length);
-		return snprintf(out, outlen, "%" PRIu64, htonll(int64));
+		memcpy(((uint8_t *) &int64) + (sizeof(int64) - sizeof(vp->vp_ether)),
+		       vp->vp_ether, sizeof(vp->vp_ether));
+		return snprintf(out, outlen, "%" PRIu64, ntohll(int64));
 
 	case PW_TYPE_SIGNED:
 		return snprintf(out, outlen, "%i", vp->vp_signed);
@@ -1846,8 +1847,7 @@ static ssize_t xlat_tokenize_request(REQUEST *request, char const *fmt, xlat_exp
 	}
 
 	if (*head && (rad_debug_lvl > 2)) {
-		DEBUG("%s", fmt);
-		DEBUG("Parsed xlat tree:");
+		RDEBUG2("Parsed xlat tree for : %s", fmt);
 		xlat_tokenize_debug(*head, 0);
 	}
 

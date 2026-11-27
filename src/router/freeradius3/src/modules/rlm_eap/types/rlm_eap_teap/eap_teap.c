@@ -14,7 +14,7 @@
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-RCSID("$Id: b30ab7e3d33cd5f4c54d4937da69be557de34a5f $")
+RCSID("$Id: 3464ad5959829dfc22dd917aff8640cd11b906f0 $")
 
 #include "eap_teap.h"
 #include "eap_teap_crypto.h"
@@ -33,7 +33,8 @@ RCSID("$Id: b30ab7e3d33cd5f4c54d4937da69be557de34a5f $")
 #define RDEBUGHEX(_label, _data, _length) \
 do { if (fr_debug_lvl > 2) {\
 	char __buf[8192];\
-	for (size_t i = 0; (i < (size_t) _length) && (3*i < sizeof(__buf)); i++) {\
+	__buf[0] = '\0';\
+	for (size_t i = 0; (i < (size_t) _length) && ((3*i + 4) <= sizeof(__buf)); i++) {\
 		sprintf(&__buf[3*i], " %02x", (uint8_t)(_data)[i]);\
 	}\
 	RDEBUG2("%s - hexdump(len=%zu):%s", _label, (size_t)_length, __buf);\
@@ -162,6 +163,16 @@ static void eap_teap_derive_imck(REQUEST *request, tls_session_t *tls_session,
 		RDEBUGHEX("Phase 2: EMSK CMK[j]", imck_emsk.cmk, EAP_TEAP_CMK_LEN);
 
 		memcpy(&t->imck_emsk, &imck_emsk, sizeof(imck_emsk));
+	}
+
+	/*
+	 *	RFC 9930 section 6.2.2 is silent on the situation when there's no MSK and no EMSK.
+	 *	wpa_supplicant uses the new CMK[j] for the Compound MAC, but keeps S-IMCK[j-1] as the key for
+	 *	the session keys.  We do the same for compatability.
+	 */
+	if (!msklen && !emsklen) {
+		memcpy(imck_msk.simck, t->imck_msk.simck, sizeof(imck_msk.simck));
+		memcpy(imck_emsk.simck, t->imck_emsk.simck, sizeof(imck_emsk.simck));
 	}
 
 	memcpy(&t->imck_msk, &imck_msk, sizeof(imck_msk));
@@ -300,6 +311,7 @@ static void eap_teap_append_crypto_binding(REQUEST *request, tls_session_t *tls_
 	 *	Save the nonce so we can validate the response.
 	 */
 	memcpy(t->crypto_binding_nonce, cbb->binding.nonce, sizeof(t->crypto_binding_nonce));
+	t->sent_crypto_binding = true;
 
 	outer_tlvs = &cbb->outer_tlvs[0];
 
@@ -649,11 +661,22 @@ static ssize_t eap_teap_decode_vp(TALLOC_CTX *request, DICT_ATTR const *parent,
 		RERROR("eap_teap_decode_vp: Invalid arguments");
 		return -1;
 	}
+	*out = NULL;
 
 	/*
 	 *	Silently ignore zero-length attributes.
 	 */
 	if (attr_len == 0) return 0;
+
+	if (attr_len < dict_attr_sizes[parent->type][0]) {
+		REDEBUG("TLV %s has invalid length %lu < %lu", parent->name, attr_len, dict_attr_sizes[parent->type][0]);
+		return -1;
+	}
+
+	if (attr_len > dict_attr_sizes[parent->type][1]) {
+		REDEBUG("TLV %s has invalid length %lu > %lu", parent->name, attr_len, dict_attr_sizes[parent->type][1]);
+		return -1;
+	}
 
 	/*
 	 *	And now that we've verified the basic type
@@ -767,7 +790,7 @@ static ssize_t eap_teap_decode_vp(TALLOC_CTX *request, DICT_ATTR const *parent,
 }
 
 
-VALUE_PAIR *eap_teap_teap2vp(REQUEST *request, SSL *ssl, uint8_t const *data, size_t data_len,
+VALUE_PAIR *eap_teap_teap2vp(REQUEST *request, UNUSED SSL *ssl, uint8_t const *data, size_t data_len,
                              DICT_ATTR const *teap_da, vp_cursor_t *out)
 {
 	uint16_t	attr;
@@ -777,9 +800,10 @@ VALUE_PAIR *eap_teap_teap2vp(REQUEST *request, SSL *ssl, uint8_t const *data, si
 	VALUE_PAIR	*vp = NULL;
 	DICT_ATTR const *da;
 
-	if (!teap_da)
+	if (!teap_da) {
 		teap_da = dict_attrbyvalue(PW_FREERADIUS_EAP_TEAP_TLV, VENDORPEC_FREERADIUS);
-	rad_assert(teap_da != NULL);
+		rad_assert(teap_da != NULL);
+	}
 
 	if (!out) {
 		out = talloc(request, vp_cursor_t);
@@ -793,6 +817,11 @@ VALUE_PAIR *eap_teap_teap2vp(REQUEST *request, SSL *ssl, uint8_t const *data, si
 	while (data_left > 0) {
 		ssize_t decoded;
 
+		if (data_left < 4) {
+			REDEBUG2("Data is too short for TLV header");
+			return NULL;
+		}
+
 		/* FIXME do something with mandatory */
 
 		memcpy(&attr, data, sizeof(attr));
@@ -803,6 +832,11 @@ VALUE_PAIR *eap_teap_teap2vp(REQUEST *request, SSL *ssl, uint8_t const *data, si
 
 		data += 4;
 		data_left -= 4;
+
+		if (length > data_left) {
+			REDEBUG2("TLV header Length field overflows available data");
+			return NULL;
+		}
 
 		/*
 		 *	Look up the TLV.
@@ -815,14 +849,21 @@ VALUE_PAIR *eap_teap_teap2vp(REQUEST *request, SSL *ssl, uint8_t const *data, si
 			goto next_attr;
 		}
 		if (da->type == PW_TYPE_TLV) {
-			eap_teap_teap2vp(request, ssl, data, length, da, out);
+			RDEBUG3("Phase 2: Skipping unsupported TLV %s", da->name);
 			goto next_attr;
 		}
+
 		decoded = eap_teap_decode_vp(request, da, data, length, &vp);
 		if (decoded < 0) {
 			REDEBUG3("Phase 2: Failed decoding %s: %s", da->name, fr_strerror());
 			goto next_attr;
 		}
+
+		/*
+		 *	Zero-length TLVs are ignored, and do not create a VP.  Merging
+		 *	the VP from the previous TLV would link that VP to itself.
+		 */
+		if (!decoded) goto next_attr;
 
 		fr_cursor_merge(out, vp);
 
@@ -924,6 +965,7 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply(eap_handler_t *eap_session,
 	size_t				msklen = 0, emsklen = 0;
 	bool				doing_eap, msk1, msk2;
 	bool				sent_identity_type = false;
+	bool				got_mschap2_success = false;
 
 	teap_tunnel_t	*t = tls_session->opaque;
 
@@ -1010,33 +1052,41 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply(eap_handler_t *eap_session,
 
 			case PW_MSCHAP2_SUCCESS:
 				RDEBUG("Phase 2: Got %s, tunneling it to the client in a challenge", vp->da->name);
-				if (t->use_tunneled_reply) {
-					/*
-					 *	Clean up the tunneled reply.
-					 */
-					fr_pair_delete_by_num(&reply->vps, PW_PROXY_STATE, 0, TAG_ANY);
-					fr_pair_delete_by_num(&reply->vps, PW_EAP_MESSAGE, 0, TAG_ANY);
-					fr_pair_delete_by_num(&reply->vps, PW_MESSAGE_AUTHENTICATOR, 0, TAG_ANY);
-
-					/*
-					 *	Delete MPPE keys & encryption policy.  We don't
-					 *	want these here.
-					 */
-					fr_pair_delete_by_num(&reply->vps, 7, VENDORPEC_MICROSOFT, TAG_ANY);
-					fr_pair_delete_by_num(&reply->vps, 8, VENDORPEC_MICROSOFT, TAG_ANY);
-					fr_pair_delete_by_num(&reply->vps, 16, VENDORPEC_MICROSOFT, TAG_ANY);
-					fr_pair_delete_by_num(&reply->vps, 17, VENDORPEC_MICROSOFT, TAG_ANY);
-
-					fr_pair_list_free(&t->accept_vps); /* for proxying MS-CHAP2 */
-					fr_pair_list_mcopy_by_num(t, &t->accept_vps, &reply->vps, 0, 0, TAG_ANY);
-					rad_assert(!reply->vps);
-				}
+				got_mschap2_success = true;
 				break;
 
 			default:
 				break;
 			}
 		}
+
+		/*
+		 *	The cursor above caches the next pair in the list.  Deleting or moving pairs while the
+		 *	loop runs frees the pair which the cursor is pointing to.  Once the loop has read the
+		 *	MPPE keys, is safe to delete them.
+		 */
+		if (got_mschap2_success && t->use_tunneled_reply) {
+			/*
+			 *	Clean up the tunneled reply.
+			 */
+			fr_pair_delete_by_num(&reply->vps, PW_PROXY_STATE, 0, TAG_ANY);
+			fr_pair_delete_by_num(&reply->vps, PW_EAP_MESSAGE, 0, TAG_ANY);
+			fr_pair_delete_by_num(&reply->vps, PW_MESSAGE_AUTHENTICATOR, 0, TAG_ANY);
+
+			/*
+			 *	Delete MPPE keys & encryption policy.  We don't
+			 *	want these here.
+			 */
+			fr_pair_delete_by_num(&reply->vps, 7, VENDORPEC_MICROSOFT, TAG_ANY);
+			fr_pair_delete_by_num(&reply->vps, 8, VENDORPEC_MICROSOFT, TAG_ANY);
+			fr_pair_delete_by_num(&reply->vps, 16, VENDORPEC_MICROSOFT, TAG_ANY);
+			fr_pair_delete_by_num(&reply->vps, 17, VENDORPEC_MICROSOFT, TAG_ANY);
+
+			fr_pair_list_free(&t->accept_vps); /* for proxying MS-CHAP2 */
+			fr_pair_list_mcopy_by_num(t, &t->accept_vps, &reply->vps, 0, 0, TAG_ANY);
+			rad_assert(!reply->vps);
+		}
+
 		if ((msk1 && msk2) || emsklen || t->sent_basic_password) t->authenticated = true;
 
 		if (t->use_tunneled_reply) {
@@ -1049,12 +1099,11 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply(eap_handler_t *eap_session,
 		}
 
 		/*
-		 * RFC7170 section 5.2 and 5.4, only on a successful inner EAP method do we increment
-		 *
-		 * NOTE: hostapd for now incorrectly derives IMCK when an EAP method is skipped so this
-		 *       allows interop with Windows but not with wpa_supplicant
+		 *	RFC 9930 section 6.2.1: a round with Basic-Password-Auth, or with
+		 *	no MSK or EMSK, uses IMSK[j] = all zeroes.  The round still
+		 *	counts as round j, so derive IMCK[j] for every successful round.
 		 */
-		if ((msk1 && msk2) || emsklen) {
+		if ((msk1 && msk2) || emsklen || t->sent_basic_password) {
 			eap_teap_derive_imck(request, tls_session, msk, msklen, emsk, emsklen);
 		}
 
@@ -1121,6 +1170,14 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply(eap_handler_t *eap_session,
 			 *	Always challenge, as we're sending EAP-Identity.
 			 */
 			goto challenge;
+		}
+
+		/*
+		 *	If no inner method succeeded, then authentication as a whole has failed.
+		 */
+		if (!t->authenticated) {
+			REDEBUG("Phase 2: No inner authentication succeeded - rejecting the session");
+			goto fail;
 		}
 
 		RDEBUG("Phase 2: All inner authentications have succeeded");
@@ -1402,15 +1459,18 @@ fail:
 
 					goto no_quirk;
 quirk_wpa_supplicant:
+quirk_win11:
 					/*
-					 *	If we didn't have at least one authentication success, we fail.
+					 *	Skipping an optional method is only allowed after a previous round
+					 *	has succeeded.  We don't want peers to send Result=Success immediately
+					 *	after the TLS tunnel has been established.  This check also catches
+					 *	the Windows 11 empty EAP-Identity quirk.
 					 */
 					if (!t->authenticated) {
 						RWDEBUG("Phase 2: Did not find authentication material, and previous round was not authenticated");
 						goto fail;
 					}
 
-quirk_win11:
 					RWDEBUG("Phase 2: We sent Identity-Type = %s, but the supplicant did not send any authentication material - skipping optional method", identity_type_str);
 
 					vp = fr_pair_afrom_num(fake, PW_AUTH_TYPE, 0);
@@ -1659,6 +1719,15 @@ static PW_CODE eap_teap_validate_crypto_binding(REQUEST *request, UNUSED eap_han
 	flags = binding->subtype >> 4;
 
 	/*
+	 *	The peer sends Crypto-Binding only after we send one.
+	 */
+	if (!t->sent_crypto_binding) {
+		REDEBUG2("Phase 2: Peer sent unexpected Crypto-Binding - rejecting session");
+		return PW_CODE_ACCESS_REJECT;
+	}
+	t->sent_crypto_binding = false;
+
+	/*
 	 *	RFC 7170, Section 4.2.13: The nonce in a response MUST
 	 *	have the same value as the request nonce except the
 	 *	least significant bit MUST be set to one (1).
@@ -1672,12 +1741,14 @@ static PW_CODE eap_teap_validate_crypto_binding(REQUEST *request, UNUSED eap_han
 	}
 
 	/*
-	 *	The Flags field is 4 bits:
+	 *	The Flags field is 4 bits.  It is a value, not a bit
+	 *	mask, and says which Compound MACs are present:
 	 *
-	 *		0 - EMSK (may or may not be set)
-	 *		1 - MSK (always set)
-	 *		2 - MUST be zero
-	 *		3 - MUST be zero
+	 *		0 - invalid
+	 *		1 - EMSK Compound MAC only
+	 *		2 - MSK Compound MAC only
+	 *		3 - both Compound MACs
+	 *		4 and above - invalid
 	 */
 	if ((flags == 0) || (flags > 3)) {
 		RWDEBUG2("Phase 2: Invalid Crypto-Binding Flags=%d", flags);
@@ -1721,21 +1792,28 @@ static PW_CODE eap_teap_validate_crypto_binding(REQUEST *request, UNUSED eap_han
 	if ((flags & EAP_TEAP_TLV_CRYPTO_BINDING_FLAGS_CMAC_MSK) != 0) {
 		RDEBUGHEX("Phase 2: CMK for Compound MAC calculation (MSK)", t->imck_msk.cmk, EAP_TEAP_CMK_LEN);
 		HMAC(md, &t->imck_msk.cmk, EAP_TEAP_CMK_LEN, buf, buflen, mac, &maclen);
-		if (memcmp(binding->msk_compound_mac, mac, sizeof(binding->msk_compound_mac))) {
+		if (rad_digest_cmp(binding->msk_compound_mac, mac, sizeof(binding->msk_compound_mac)) != 0) {
 			RWDEBUG2("Phase 2: Crypto-Binding TLV (MSK) mis-match");
 			return PW_CODE_ACCESS_REJECT;
 		}
 		imck = &t->imck_msk;
 	}
 
+	/*
+	 *	The peer says that it sent an EMSK Compound MAC, but we have no
+	 *	EMSK to check it with.  Skipping the check would leave "imck"
+	 *	unset, and the keys would be derived from all zeroes without
+	 *	any Compound MAC having been verified.
+	 */
 	if (((flags & EAP_TEAP_TLV_CRYPTO_BINDING_FLAGS_CMAC_EMSK) != 0) && !t->imck_emsk_available) {
-		fr_assert(0);
+		RWDEBUG2("Phase 2: Crypto-Binding Flags=%d includes an EMSK Compound MAC, but there is no EMSK to verify it", flags);
+		return PW_CODE_ACCESS_REJECT;
 	}
 
 	if (((flags & EAP_TEAP_TLV_CRYPTO_BINDING_FLAGS_CMAC_EMSK) != 0) && t->imck_emsk_available) {
 		RDEBUGHEX("Phase 2: CMK for Compound MAC calculation (EMSK)", t->imck_emsk.cmk, EAP_TEAP_CMK_LEN);
 		HMAC(md, &t->imck_emsk.cmk, EAP_TEAP_CMK_LEN, buf, buflen, mac, &maclen);
-		if (memcmp(binding->emsk_compound_mac, mac, sizeof(binding->emsk_compound_mac))) {
+		if (rad_digest_cmp(binding->emsk_compound_mac, mac, sizeof(binding->emsk_compound_mac)) != 0) {
 			RWDEBUG2("Phase 2: Crypto-Binding TLV (EMSK) mis-match");
 			return PW_CODE_ACCESS_REJECT;
 		}
@@ -1812,14 +1890,15 @@ static PW_CODE eap_teap_process_tlvs(REQUEST *request, eap_handler_t *eap_sessio
 		case PW_FREERADIUS_EAP_TEAP_TLV:
 			switch (vp->da->attr >> 8) {
 			case EAP_TEAP_TLV_IDENTITY_TYPE:
-				fr_pair_add(&fake->packet->vps, fr_pair_copy(fake->packet, vp));
+				MEM(copy = fr_pair_copy(fake->packet, vp));
+				fr_pair_add(&fake->packet->vps, copy);
 				break;
 
 				/*
 				 *	Copy EAP-Payload to EAP-Message
 				 */
 			case EAP_TEAP_TLV_EAP_PAYLOAD:
-				copy = fr_pair_afrom_num(fake->packet, PW_EAP_MESSAGE, 0);
+				MEM(copy = fr_pair_afrom_num(fake->packet, PW_EAP_MESSAGE, 0));
 				fr_pair_value_memcpy(copy, vp->vp_octets, vp->vp_length);
 				fr_pair_add(&fake->packet->vps, copy);
 				break;
@@ -1830,18 +1909,19 @@ static PW_CODE eap_teap_process_tlvs(REQUEST *request, eap_handler_t *eap_sessio
 				 *	is a signal that we have a password response, and not an EAP-Message.
 				 */
 			case EAP_TEAP_TLV_BASIC_PASSWORD_AUTH_RESP:
-				fr_pair_add(&fake->packet->vps, fr_pair_copy(fake->packet, vp));
+				MEM(copy = fr_pair_copy(fake->packet, vp));
+				fr_pair_add(&fake->packet->vps, copy);
 
 				p = vp->vp_octets;
 
-				copy = fr_pair_afrom_num(fake->packet, PW_USER_NAME, 0);
+				MEM(copy = fr_pair_afrom_num(fake->packet, PW_USER_NAME, 0));
 				fr_pair_value_bstrncpy(copy, p + 1, p[0]);
 				fr_pair_add(&fake->packet->vps, copy);
 				fake->username = copy;
 
 				p += p[0] + 1;
 
-				copy = fr_pair_afrom_num(fake->packet, PW_USER_PASSWORD, 0);
+				MEM(copy = fr_pair_afrom_num(fake->packet, PW_USER_PASSWORD, 0));
 				fr_pair_value_bstrncpy(copy, p + 1, p[0]);
 				fr_pair_add(&fake->packet->vps, copy);
 				fake->password = copy;
@@ -1956,7 +2036,7 @@ PW_CODE eap_teap_process(eap_handler_t *eap_session, tls_session_t *tls_session)
 {
 	PW_CODE			code;
 	int			verify;
-	VALUE_PAIR		*teap_vps, *vp;
+	VALUE_PAIR		*teap_vps = NULL, *vp;
 	uint8_t			const *data;
 	size_t			data_len;
 	teap_tunnel_t		*t;
@@ -1972,6 +2052,18 @@ PW_CODE eap_teap_process(eap_handler_t *eap_session, tls_session_t *tls_session)
 
 	t = (teap_tunnel_t *) tls_session->opaque;
 
+	/*
+	 * When the inner EAP-Request/Identity cannt be coalesed with the TLS
+	 * Server Finished record we hit this section with no payload as we
+	 * see the supplicant ACK before we get the payload in the next round-trip
+	 * and we use the t->stage conditional to prevent any silly busy.
+	 *
+	 * TODO for TLS 1.3 do this coalesing (looks to EAP-TLS session resumption
+	 * for inspiration) , and for 1.2 something like False Start could be used
+	 * which of course OpenSSL does not support so a non-starter... :-/
+	 */
+	if (t->stage == TLS_SESSION_HANDSHAKE && data_len == 0) goto noappdata;
+
 	if (rad_debug_lvl > 2) print_tunneled_data(data, data_len);
 
 	/*
@@ -1982,12 +2074,17 @@ PW_CODE eap_teap_process(eap_handler_t *eap_session, tls_session_t *tls_session)
 	if (verify == RLM_MODULE_INVALID) return PW_CODE_ACCESS_REJECT;
 
 	teap_vps = eap_teap_teap2vp(request, tls_session->ssl, data, data_len, NULL, NULL);
+	if (!teap_vps) {
+		RDEBUG("Phase 2: Tunneled TEAP data is malformed.");
+		return PW_CODE_ACCESS_REJECT;
+	}
 
 	RDEBUG("Phase 2: Got Tunneled TEAP TLVs");
 	rdebug_pair_list(L_DBG_LVL_1, request, teap_vps, NULL);
 
 	if (verify != RLM_MODULE_OK) return PW_CODE_ACCESS_REJECT;
 
+noappdata:
 	if (t->stage == TLS_SESSION_HANDSHAKE) {
 		char buf[256];
 
@@ -2034,6 +2131,12 @@ PW_CODE eap_teap_process(eap_handler_t *eap_session, tls_session_t *tls_session)
 				RDEBUG("Phase 2: No %sEAP method configured - sending Basic-Password-Auth-Req = \"\"",
 				       vp->vp_short == EAP_TEAP_IDENTITY_TYPE_USER ? "User " : (vp->vp_short == EAP_TEAP_IDENTITY_TYPE_MACHINE ? "Machine " : "UNKNOWN "));
 				eap_teap_tlv_append(request, tls_session, EAP_TEAP_TLV_BASIC_PASSWORD_AUTH_REQ, true, 0, "");
+
+				/*
+				 *	A password round counts as "started authentication" once the inner
+				 *	server accepts it.
+				 */
+				t->sent_basic_password = true;
 			}
 		} else if (t->default_method) {
 			eap_teap_append_eap_identity_request(request, tls_session, eap_session);

@@ -36,7 +36,7 @@
 
 Summary: High-performance and highly configurable free RADIUS server
 Name: freeradius
-Version: 3.2.10
+Version: 3.2.11
 Release: 1%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Daemons
@@ -257,18 +257,11 @@ This plugin provides Python support for the FreeRADIUS server project.
 Summary: MySQL support for FreeRADIUS
 Group: System Environment/Daemons
 Requires: %{name} = %{version}-%{release}
-%if 0%{?rhel} <= 7
-Requires: mysql
-%endif
-%if 0%{?rhel} >= 8 && 0%{?rhel} <= 9
-Requires: mysql-libs
-%endif
-%if 0%{rhel} >= 10
+%if 0%{?rhel} >= 8
 Requires: mariadb-connector-c
-%endif
-%if 0%{rhel} >= 10
 BuildRequires: mariadb-connector-c-devel
 %else
+Requires: mysql
 BuildRequires: mysql-devel
 %endif
 
@@ -690,6 +683,7 @@ fi
 %{_libdir}/freeradius/rlm_eap_md5.so
 %{_libdir}/freeradius/rlm_eap_mschapv2.so
 %{_libdir}/freeradius/rlm_eap_peap.so
+%{_libdir}/freeradius/rlm_eap_psk.so
 %{_libdir}/freeradius/rlm_eap_sim.so
 %if 0%{?rhel} >= 8
 %{_libdir}/freeradius/rlm_eap_teap.so
@@ -712,7 +706,6 @@ fi
 %{_libdir}/freeradius/rlm_radutmp.so
 %{_libdir}/freeradius/rlm_realm.so
 %{_libdir}/freeradius/rlm_replicate.so
-%{_libdir}/freeradius/rlm_soh.so
 %{_libdir}/freeradius/rlm_sometimes.so
 %{_libdir}/freeradius/rlm_sql.so
 %{_libdir}/freeradius/rlm_sql_null.so
@@ -968,6 +961,7 @@ fi
 %files sqlite
 %defattr(-,root,root)
 %{_libdir}/freeradius/rlm_sql_sqlite.so
+%{_libdir}/freeradius/rlm_cache_sqlite.so
 
 %if %{!?_without_ldap:1}%{?_without_ldap:0}
 %files ldap

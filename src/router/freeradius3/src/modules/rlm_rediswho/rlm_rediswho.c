@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 11c3cf4ba125a2a2904ba884c6306282170692fe $
+ * $Id: cb17ef6024b894a8b19d4f40d610e638fe528032 $
  * @file rlm_rediswho.c
  * @brief Session tracking using redis.
  *
@@ -23,7 +23,7 @@
  * @copyright 2011  TekSavvy Solutions <gabe@teksavvy.com>
  */
 
-RCSID("$Id: 11c3cf4ba125a2a2904ba884c6306282170692fe $")
+RCSID("$Id: cb17ef6024b894a8b19d4f40d610e638fe528032 $")
 
 #include <freeradius-devel/radiusd.h>
 
@@ -70,7 +70,7 @@ static CONF_PARSER module_config[] = {
 	{ "redis_module_instance", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_rediswho_t, redis_instance_name), "redis" },
 
 	{ "trim-count", FR_CONF_OFFSET(PW_TYPE_SIGNED | PW_TYPE_DEPRECATED, rlm_rediswho_t, trim_count), NULL },
-	{ "trim_count", FR_CONF_OFFSET(PW_TYPE_SIGNED, rlm_rediswho_t, trim_count), "-1" },
+	{ "trim_count", FR_CONF_OFFSET(PW_TYPE_SIGNED, rlm_rediswho_t, trim_count), "15" },
 
 	/*
 	 *	These all smash the same variables, because we don't care about them right now.
@@ -107,7 +107,7 @@ static int rediswho_command(char const *fmt, REDISSOCK **dissocket_p,
 
 	switch (dissocket->reply->type) {
 	case REDIS_REPLY_INTEGER:
-		DEBUG("rediswho_command: query response %lld\n",
+		RDEBUG("rediswho_command: query response %lld\n",
 		      dissocket->reply->integer);
 		if (dissocket->reply->integer > 0)
 			result = dissocket->reply->integer;
@@ -115,7 +115,7 @@ static int rediswho_command(char const *fmt, REDISSOCK **dissocket_p,
 
 	case REDIS_REPLY_STATUS:
 	case REDIS_REPLY_STRING:
-		DEBUG("rediswho_command: query response %s\n",
+		RDEBUG("rediswho_command: query response %s\n",
 		      dissocket->reply->str);
 		break;
 

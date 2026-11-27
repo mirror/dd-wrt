@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 9e3c7530cfbb03c8e4a6084ae39ab7571da8cf97 $
+ * $Id: 7d99a0f9332722ef866f46d87ff94c407734662d $
  * @file rlm_counter.c
  * @brief Provides a packet counter to track data usage and other values.
  *
@@ -23,7 +23,7 @@
  * @copyright 2001  Alan DeKok <aland@ox.org>
  * @copyright 2001-2003  Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: 9e3c7530cfbb03c8e4a6084ae39ab7571da8cf97 $")
+RCSID("$Id: 7d99a0f9332722ef866f46d87ff94c407734662d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -544,23 +544,23 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 	if ((key_vp = fr_pair_find_by_num(request->packet->vps, PW_ACCT_STATUS_TYPE, 0, TAG_ANY)) != NULL)
 		acctstatustype = key_vp->vp_integer;
 	else {
-		DEBUG("rlm_counter: Could not find account status type in packet");
+		RDEBUG("Could not find account status type in packet");
 		return RLM_MODULE_NOOP;
 	}
 	if (acctstatustype != PW_STATUS_STOP) {
-		DEBUG("rlm_counter: We only run on Accounting-Stop packets");
+		RDEBUG("rlm_counter: We only run on Accounting-Stop packets");
 		return RLM_MODULE_NOOP;
 	}
 	uniqueid_vp = fr_pair_find_by_num(request->packet->vps, PW_ACCT_UNIQUE_SESSION_ID, 0, TAG_ANY);
 	if (uniqueid_vp != NULL)
-		DEBUG("rlm_counter: Packet Unique ID = '%s'",uniqueid_vp->vp_strvalue);
+		RDEBUG("Packet Unique ID = '%s'",uniqueid_vp->vp_strvalue);
 
 	/*
 	 *	Before doing anything else, see if we have to reset
 	 *	the counters.
 	 */
 	if (inst->reset_time && (inst->reset_time <= request->timestamp)) {
-		DEBUG("rlm_counter: Time to reset the database");
+		RDEBUG("Time to reset the database");
 		inst->last_reset = inst->reset_time;
 		find_next_reset(inst,request->timestamp);
 		pthread_mutex_lock(&inst->mutex);
@@ -574,11 +574,11 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 	 */
 	if (inst->service_type != NULL) {
 		if ((proto_vp = fr_pair_find_by_num(request->packet->vps, PW_SERVICE_TYPE, 0, TAG_ANY)) == NULL) {
-			DEBUG("rlm_counter: Could not find Service-Type attribute in the request. Returning NOOP");
+			RDEBUG("Could not find Service-Type attribute in the request. Returning NOOP");
 			return RLM_MODULE_NOOP;
 		}
 		if ((unsigned)proto_vp->vp_integer != inst->service_val) {
-			DEBUG("rlm_counter: This Service-Type is not allowed. Returning NOOP");
+			RDEBUG("This Service-Type is not allowed. Returning NOOP");
 			return RLM_MODULE_NOOP;
 		}
 	}
@@ -589,7 +589,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 	key_vp = fr_pair_find_by_num(request->packet->vps, PW_ACCT_DELAY_TIME, 0, TAG_ANY);
 	if (key_vp != NULL) {
 		if ((key_vp->vp_integer != 0) && (request->timestamp - (time_t) key_vp->vp_integer) < inst->last_reset) {
-			DEBUG("rlm_counter: This packet is too old. Returning NOOP");
+			RDEBUG("This packet is too old. Returning NOOP");
 			return RLM_MODULE_NOOP;
 		}
 	}
@@ -603,7 +603,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 	key_vp = (inst->key_attr->attr == PW_USER_NAME) ? request->username :
 					fr_pair_find_by_da(request->packet->vps, inst->key_attr, TAG_ANY);
 	if (!key_vp) {
-		DEBUG("rlm_counter: Could not find the key-attribute in the request. Returning NOOP");
+		RDEBUG("Could not find the key-attribute in the request. Returning NOOP");
 		return RLM_MODULE_NOOP;
 	}
 
@@ -612,37 +612,37 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 	 */
 	count_vp = fr_pair_find_by_da(request->packet->vps, inst->count_attr, TAG_ANY);
 	if (!count_vp) {
-		DEBUG("rlm_counter: Could not find the count_attribute in the request");
+		RDEBUG("Could not find the count_attribute in the request");
 		return RLM_MODULE_NOOP;
 	}
 
 	ASSIGN(key_datum.dptr, key_vp->vp_strvalue);
 	key_datum.dsize = key_vp->vp_length;
 
-	DEBUG("rlm_counter: Searching the database for key '%s'",key_vp->vp_strvalue);
+	RDEBUG("Searching the database for key '%s'",key_vp->vp_strvalue);
 	pthread_mutex_lock(&inst->mutex);
 	count_datum = gdbm_fetch(inst->gdbm, key_datum);
 	if (!count_datum.dptr) {
-		DEBUG("rlm_counter: Could not find the requested key in the database");
+		RDEBUG("Could not find the requested key in the database");
 		counter.user_counter = 0;
 		if (uniqueid_vp != NULL)
 			strlcpy(counter.uniqueid,uniqueid_vp->vp_strvalue, sizeof(counter.uniqueid));
 		else
 			memset((char *)counter.uniqueid,0,UNIQUEID_MAX_LEN);
 	} else {
-		DEBUG("rlm_counter: Key found");
+		RDEBUG("Key found");
 		memcpy(&counter, count_datum.dptr, sizeof(rad_counter));
 		free(count_datum.dptr);
-		DEBUG("rlm_counter: Counter Unique ID = '%s'",counter.uniqueid);
+		RDEBUG("Counter Unique ID = '%s'",counter.uniqueid);
 		if (uniqueid_vp != NULL) {
 			if (strncmp(uniqueid_vp->vp_strvalue,counter.uniqueid, UNIQUEID_MAX_LEN - 1) == 0) {
-				DEBUG("rlm_counter: Unique IDs for user match. Droping the request");
+				RDEBUG("Unique IDs for user match. Droping the request");
 				pthread_mutex_unlock(&inst->mutex);
 				return RLM_MODULE_NOOP;
 			}
 			strlcpy(counter.uniqueid,uniqueid_vp->vp_strvalue, sizeof(counter.uniqueid));
 		}
-		DEBUG("rlm_counter: User=%s, Counter=%d.",request->username->vp_strvalue,counter.user_counter);
+		RDEBUG("User=%s, Counter=%d.",request->username->vp_strvalue,counter.user_counter);
 	}
 
 	if (inst->count_attr->attr == PW_ACCT_SESSION_TIME) {
@@ -674,18 +674,18 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 		counter.user_counter++;
 	}
 
-	DEBUG("rlm_counter: User=%s, New Counter=%d.",request->username->vp_strvalue,counter.user_counter);
+	RDEBUG("User=%s, New Counter=%d.",request->username->vp_strvalue,counter.user_counter);
 	count_datum.dptr = (char *) &counter;
 	count_datum.dsize = sizeof(rad_counter);
 
-	DEBUG("rlm_counter: Storing new value in database");
+	RDEBUG("Storing new value in database");
 	ret = gdbm_store(inst->gdbm, key_datum, count_datum, GDBM_REPLACE);
 	pthread_mutex_unlock(&inst->mutex);
 	if (ret < 0) {
 		ERROR("rlm_counter: Failed storing data to %s: %s", inst->filename, gdbm_strerror(gdbm_errno));
 		return RLM_MODULE_FAIL;
 	}
-	DEBUG("rlm_counter: New value stored successfully");
+	RDEBUG("New value stored successfully");
 
 	return RLM_MODULE_OK;
 }
@@ -729,11 +729,10 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 	 *      Look for the key.  User-Name is special.  It means
 	 *      The REAL username, after stripping.
 	 */
-	DEBUG2("rlm_counter: Entering module authorize code");
 	key_vp = (inst->key_attr->attr == PW_USER_NAME) ? request->username :
 		 fr_pair_find_by_da(request->packet->vps, inst->key_attr, TAG_ANY);
 	if (!key_vp) {
-		DEBUG2("rlm_counter: Could not find Key value pair");
+		RDEBUG2("rlm_counter: Could not find Key value pair");
 		return rcode;
 	}
 
@@ -741,7 +740,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 	 *      Look for the check item
 	 */
 	if ((check_vp = fr_pair_find_by_da(request->config, inst->check_attr, TAG_ANY)) == NULL) {
-		DEBUG2("rlm_counter: Could not find Check item value pair");
+		RDEBUG2("Could not find Check item value pair");
 		return rcode;
 	}
 
@@ -755,28 +754,28 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 
 	counter.user_counter = 0;
 
-	DEBUG("rlm_counter: Searching the database for key '%s'",key_vp->vp_strvalue);
+	RDEBUG("Searching the database for key '%s'",key_vp->vp_strvalue);
 	pthread_mutex_lock(&inst->mutex);
 	count_datum = gdbm_fetch(inst->gdbm, key_datum);
 	pthread_mutex_unlock(&inst->mutex);
 	if (count_datum.dptr != NULL) {
-		DEBUG("rlm_counter: Key Found");
+		RDEBUG("Key Found");
 		memcpy(&counter, count_datum.dptr, sizeof(rad_counter));
 		free(count_datum.dptr);
 	}
 	else
-		DEBUG("rlm_counter: Could not find the requested key in the database");
+		RDEBUG("Could not find the requested key in the database");
 
 	/*
 	 * Check if check item > counter
 	 */
-	DEBUG("rlm_counter: Check item = %d, Count = %d",check_vp->vp_integer,counter.user_counter);
+	RDEBUG("Check item = %d, Count = %d",check_vp->vp_integer,counter.user_counter);
 	if (check_vp->vp_integer > counter.user_counter) {
 		unsigned int res;
 
 		res = check_vp->vp_integer - counter.user_counter;
 
-		DEBUG("rlm_counter: res is greater than zero");
+		RDEBUG("res is greater than zero");
 		if (inst->count_attr->attr == PW_ACCT_SESSION_TIME) {
 			/*
 			 * Do the following only if the count attribute is
@@ -831,10 +830,10 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 
 		rcode = RLM_MODULE_OK;
 
-		DEBUG2("rlm_counter: (Check item - counter) is greater than zero");
-		DEBUG2("rlm_counter: Authorized user %s, check_item=%d, counter=%d",
-				key_vp->vp_strvalue,check_vp->vp_integer,counter.user_counter);
-		DEBUG2("rlm_counter: Sent Reply-Item for user %s, Type=Session-Timeout, value=%d", key_vp->vp_strvalue,res);
+		RDEBUG2("(Check item - counter) is greater than zero");
+		RDEBUG2("Authorized user %s, check_item=%d, counter=%d",
+			key_vp->vp_strvalue,check_vp->vp_integer,counter.user_counter);
+		RDEBUG2("Sent Reply-Item for user %s, Type=Session-Timeout, value=%d", key_vp->vp_strvalue,res);
 	} else {
 		/*
 		 * User is denied access, send back a reply message
@@ -845,8 +844,8 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 		REDEBUG("Maximum %s usage time reached", inst->reset);
 		rcode = RLM_MODULE_REJECT;
 
-		DEBUG2("rlm_counter: Rejected user %s, check_item=%d, counter=%d",
-				key_vp->vp_strvalue,check_vp->vp_integer,counter.user_counter);
+		RDEBUG2("Rejected user %s, check_item=%d, counter=%d",
+			key_vp->vp_strvalue,check_vp->vp_integer,counter.user_counter);
 	}
 
 	return rcode;

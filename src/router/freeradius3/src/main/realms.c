@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: fa8326052038344d246e53acf907e491e50d039b $
+ * Version:     $Id: 888c47bc240a8df2416c2c89cac5516bd8a1ad2c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: fa8326052038344d246e53acf907e491e50d039b $")
+RCSID("$Id: 888c47bc240a8df2416c2c89cac5516bd8a1ad2c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -43,6 +43,9 @@ bool home_servers_udp = false;
 
 #ifdef HAVE_REGEX
 typedef struct realm_regex realm_regex_t;
+
+static uint32_t affinity_id = 0;
+static home_server_t const *affinity_array[256] = {};
 
 /** Regular expression associated with a realm
  *
@@ -66,6 +69,7 @@ struct realm_config {
 	bool			dynamic;
 	bool			fallback;
 	bool			wake_all_if_all_dead;
+	bool			dns_soft_fail;
 };
 
 static const FR_NAME_NUMBER home_server_types[] = {
@@ -128,6 +132,9 @@ static const CONF_PARSER proxy_config[] = {
 	{ "dead_time", FR_CONF_OFFSET(PW_TYPE_INTEGER, realm_config_t, dead_time), STRINGIFY(DEAD_TIME)  },
 
 	{ "wake_all_if_all_dead", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, realm_config_t, wake_all_if_all_dead), "no" },
+
+	{ "dns_soft_fail", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, realm_config_t, dns_soft_fail), NULL },
+
 	CONF_PARSER_TERMINATOR
 };
 #endif
@@ -280,10 +287,6 @@ static ssize_t xlat_home_server(UNUSED void *instance, REQUEST *request,
 
 		case HOME_STATE_IS_DEAD:
 			state = "dead";
-			break;
-
-		case HOME_STATE_CONNECTION_FAIL:
-			state = "fail";
 			break;
 
 		case HOME_STATE_ADMIN_DOWN:
@@ -461,15 +464,18 @@ static CONF_PARSER limit_config[] = {
 	{ "lifetime", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.lifetime), "0" },
 	{ "idle_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.idle_timeout), "0" },
 #ifdef WITH_TLS
-	{ "connect_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.connect_timeout), "30" },
-	{ "connect_fail_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.connect_fail_interval), "300" },
-	{ "certificate_fail_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.certificate_fail_interval), "3600" },
+	{ "connect_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.connect_timeout), "3" },
+	{ "connect_fail_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.connect_fail_interval), "30" },
+	{ "certificate_fail_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.certificate_fail_interval), "360" },
 #endif
 #ifdef SO_RCVTIMEO
 	{ "read_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.read_timeout), NULL },
 #endif
 #ifdef SO_SNDTIMEO
 	{ "write_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.write_timeout), NULL },
+#endif
+#ifdef WITH_TLS
+	{ "max_packet_size", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.max_packet_size), STRINGIFY(MAX_PACKET_LEN) },
 #endif
 	CONF_PARSER_TERMINATOR
 };
@@ -497,11 +503,10 @@ static CONF_PARSER home_server_recv_coa[] = {
 static const char *require_message_authenticator = NULL;
 
 static CONF_PARSER home_server_config[] = {
-	{ "nonblock", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, home_server_t, nonblock), "no" },
 	{ "require_message_authenticator", FR_CONF_POINTER(PW_TYPE_STRING| PW_TYPE_IGNORE_DEFAULT, &require_message_authenticator), NULL },
-	{ "ipaddr", FR_CONF_OFFSET(PW_TYPE_COMBO_IP_ADDR, home_server_t, ipaddr), NULL },
-	{ "ipv4addr", FR_CONF_OFFSET(PW_TYPE_IPV4_ADDR, home_server_t, ipaddr), NULL },
-	{ "ipv6addr", FR_CONF_OFFSET(PW_TYPE_IPV6_ADDR, home_server_t, ipaddr), NULL },
+	{ "ipaddr", FR_CONF_OFFSET(PW_TYPE_STRING, home_server_t, ipaddr_str), NULL },
+	{ "ipv4addr", FR_CONF_OFFSET(PW_TYPE_STRING, home_server_t, ipaddr_str), NULL },
+	{ "ipv6addr", FR_CONF_OFFSET(PW_TYPE_STRING, home_server_t, ipaddr_str), NULL },
 	{ "virtual_server", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_NOT_EMPTY, home_server_t, virtual_server), NULL },
 
 	{ "port", FR_CONF_OFFSET(PW_TYPE_SHORT, home_server_t, port), "0" },
@@ -516,8 +521,8 @@ static CONF_PARSER home_server_config[] = {
 
 	{ "src_ipaddr", FR_CONF_OFFSET(PW_TYPE_STRING, home_server_t, src_ipaddr_str), NULL },
 
-	{ "response_window", FR_CONF_OFFSET(PW_TYPE_TIMEVAL, home_server_t, response_window), "30" },
-	{ "response_timeouts", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, max_response_timeouts), "1" },
+	{ "response_window", FR_CONF_OFFSET(PW_TYPE_TIMEVAL, home_server_t, response_window), "20" },
+	{ "response_timeouts", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, max_response_timeouts), "3" },
 	{ "max_outstanding", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, max_outstanding), "65536" },
 
 	{ "zombie_period", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, zombie_period), "40" },
@@ -532,12 +537,12 @@ static CONF_PARSER home_server_config[] = {
 	{ "status_check_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, ping_timeout), NULL },
 
 	{ "num_answers_to_alive", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, num_pings_to_alive), "3" },
-	{ "revive_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, revive_interval), "300" },
+	{ "revive_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, revive_interval), "120" },
 
 	{ "username", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_NOT_EMPTY, home_server_t, ping_user_name), NULL },
 	{ "password", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_NOT_EMPTY, home_server_t, ping_user_password), NULL },
 
-	{ "affinity_id", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, affinity), NULL},
+	{ "dns_soft_fail", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, home_server_t, dns_soft_fail), NULL },
 
 #ifdef WITH_STATS
 	{ "historic_average_window", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, ema.window), NULL },
@@ -551,6 +556,12 @@ static CONF_PARSER home_server_config[] = {
 	{ "recv_coa", FR_CONF_POINTER(PW_TYPE_SUBSECTION, NULL), (void const *) home_server_recv_coa },
 #endif
 #endif
+
+#ifdef HOMESERVER_VIOLATES_RFC
+	{ "no_auto_ma", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, home_server_t, no_auto_ma), NULL },
+#endif
+
+	{ "affinity_id", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, affinity_id), NULL},
 
 	CONF_PARSER_TERMINATOR
 };
@@ -680,6 +691,10 @@ void realm_home_server_sanitize(home_server_t *home, CONF_SECTION *cs)
 		home->limit.certificate_fail_interval = 86400;
 	}
 
+	if (home->limit.max_packet_size) {
+		if (home->limit.max_packet_size < 4096) home->limit.max_packet_size = 4096;
+		if (home->limit.max_packet_size > 65536) home->limit.max_packet_size = 65536;
+	}
 #endif
 
 	/*
@@ -693,8 +708,6 @@ void realm_home_server_sanitize(home_server_t *home, CONF_SECTION *cs)
 	if (parent && strcmp(cf_section_name1(parent), "server") == 0) {
 		home->parent_server = cf_section_name2(parent);
 	}
-
-	FR_INTEGER_BOUND_CHECK("affinity_id", home->affinity, <=, 255);
 }
 
 /** Insert a new home server into the various internal lookup trees
@@ -734,9 +747,10 @@ static bool home_server_insert(home_server_t *home, CONF_SECTION *cs)
 /** Add an already allocate home_server_t to the various trees
  *
  * @param home server to add.
+ * @param soft_fail do we do a soft fail on DNS / IP conflicts
  * @return true on success, else false on error.
  */
-bool realm_home_server_add(home_server_t *home)
+bool realm_home_server_add(home_server_t *home, bool soft_fail)
 {
 	/*
 	 *	The structs aren't mutex protected.  Refuse to destroy
@@ -754,6 +768,8 @@ bool realm_home_server_add(home_server_t *home)
 
 	if (!home->virtual_server && !home->dynamic && (rbtree_finddata(home_servers_byaddr, home) != NULL)) {
 		char buffer[INET6_ADDRSTRLEN + 3];
+
+		if (soft_fail) return true;
 
 		inet_ntop(home->ipaddr.af, &home->ipaddr.ipaddr, buffer, sizeof(buffer));
 
@@ -900,12 +916,15 @@ static int home_server_map_verify(vp_map_t *map, UNUSED void *instance)
  * @param ctx to allocate home_server_t in.
  * @param rc Realm config, may be NULL in which case the global realm_config will be used.
  * @param cs Configuration section containing home server parameters.
+ * @param soft_fail whether we do a soft fail on DNS failure
  * @return a new home_server_t alloced in the context of the realm_config, or NULL on error.
  */
-home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SECTION *cs)
+home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SECTION *cs, bool *soft_fail)
 {
 	home_server_t	*home;
 	CONF_SECTION	*tls;
+	CONF_PAIR	*cp;
+	int		af;
 
 	if (!rc) rc = realm_config; /* Use the global config */
 
@@ -925,14 +944,48 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 	 */
 	if (cf_section_parse(cs, home, home_server_config) < 0) goto error;
 
-	if (fr_bool_auto_parse(cf_pair_find(cs, "require_message_authenticator"), &home->require_ma, require_message_authenticator) < 0) {
-		goto error;
+	if (soft_fail) *soft_fail = home->dns_soft_fail | rc->dns_soft_fail;
+
+	af = AF_UNSPEC;
+	cp = cf_pair_find(cs, "ipaddr");
+	if (!cp) {
+		cp = cf_pair_find(cs, "ipv4addr");
+		if (cp) {
+			af = AF_INET;
+		} else {
+			cp = cf_pair_find(cs, "ipv6addr");
+			if (cp) {
+				af = AF_INET6;
+			}
+		}
 	}
 
 	/*
 	 *	It has an IP address, it must be a remote server.
 	 */
-	if (cf_pair_find(cs, "ipaddr") || cf_pair_find(cs, "ipv4addr") || cf_pair_find(cs, "ipv6addr")) {
+	if (cp) {
+		if (fr_pton(&home->ipaddr, home->ipaddr_str, -1, af, true) < 0) {
+			cf_log_err(cf_pair_to_item(cp), "Failed parsing configuration item \"%s\" - %s",
+				   cf_pair_attr(cp), fr_strerror());
+			goto error;
+		}
+
+		if (home->ipaddr.af == AF_INET) {
+			if (home->ipaddr.prefix != 32) {
+				cf_log_err(cf_pair_to_item(cp), "Invalid prefix for \"%s\" - IPv4 home servers must use a /32 prefix",
+					   cf_pair_attr(cp));
+				goto error;
+			}
+		}
+
+		if (home->ipaddr.af == AF_INET6) {
+			if (home->ipaddr.prefix != 128) {
+				cf_log_err(cf_pair_to_item(cp), "Invalid prefix for \"%s\" - IPv6 home servers must use a /128 prefix",
+					   cf_pair_attr(cp));
+				goto error;
+			}
+		}
+
 		if (fr_inaddr_any(&home->ipaddr) == 1) {
 			cf_log_err_cs(cs, "Wildcard '*' addresses are not permitted for home servers");
 			goto error;
@@ -945,6 +998,25 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 
 			home->log_name = talloc_asprintf(home, "%s:%i", buffer, home->port);
 		}
+
+		cp = cf_pair_find(cs, "affinity_id");
+		if (cp) {
+			home->affinity_id_is_set = true;
+
+			if (home->affinity_id > UINT8_MAX) {
+				cf_log_err_cp(cp, "Invalid value - affinity_id must be 0..255");
+				goto error;
+			}
+
+			if (affinity_array[home->affinity_id] != NULL) {
+				cf_log_err_cp(cp, "Invalid value - affinity_id was already used by home server %s",
+					      affinity_array[home->affinity_id]->name);
+				goto error;
+			}
+
+			affinity_array[home->affinity_id] = home;
+		}
+
 	/*
 	 *	If it has a 'virtual_Server' config item, it's
 	 *	a loopback into a virtual server.
@@ -1111,6 +1183,22 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 		goto error;
 	}
 #endif
+
+	/*
+	 *	Allow a local 'require_message_authenticator' to over-ride a global setting.
+	 */
+	if (!home->virtual_server && !tls && ((home->type == HOME_TYPE_AUTH) || home->dual)) {
+		cp = cf_pair_find(cs, "require_message_authenticator");
+
+		if (cp && (fr_bool_auto_parse(cp, &home->require_ma, require_message_authenticator) < 0)) {
+			goto error;
+		}
+
+		if ((home->require_ma != FR_BOOL_TRUE) && main_config.home_servers_require_ma) {
+			main_config.home_servers_require_ma = false;
+			cf_log_info(cs, "Cannot set the global flag 'require_message_authenticator = yes' for proxied packets because this home server has that flag set to 'false'");
+		}
+	}
 
 	/*
 	 *	Check the reverse CoA configuration.
@@ -1757,6 +1845,46 @@ static int server_pool_add(realm_config_t *rc,
 
 	}
 
+	/*
+	 *	Do affinity tracking for EAP && State
+	 */
+	cp = cf_pair_find(cs, "track_home_server");
+	if (cp && server_type == HOME_TYPE_AUTH) {
+		bool affinity = false;
+
+		value = cf_pair_value(cp);
+		if (!value) {
+			cf_log_err_cp(cp,
+				   "No value given for track_home_server");
+			goto error;
+		}
+
+		if ((strcasecmp(value, "yes") == 0) ||
+		    (strcasecmp(value, "true") == 0)) {
+			affinity = true;
+
+		} else if ((strcasecmp(value, "no") == 0) ||
+			   (strcasecmp(value, "false") == 0)) {
+			affinity = false;
+
+		} else {
+			cf_log_err_cp(cp,
+				   "Invalid value '%s' given for track_home_server", value);
+			goto error;
+		}
+
+		if (do_print) cf_log_info(cs, "\ttrack_home_server = %s", value);
+
+		if (affinity) {
+			pool->affinity_group = rad_malloc(sizeof(home_server_t *) * 256);
+			if (!pool->affinity_group) {
+				ERROR("Out of memory");
+				goto error;
+			}
+			memset(pool->affinity_group, 0, sizeof(home_server_t *) * 256);
+		}
+	}
+
 	num_home_servers = 0;
 	for (cp = cf_pair_find(cs, "home_server");
 	     cp != NULL;
@@ -1808,36 +1936,49 @@ static int server_pool_add(realm_config_t *rc,
 			}
 		}
 
-		if (home->affinity) {
+		/*
+		 *	Pools can auto-assign affinity IDs.
+		 */
+		if (pool->affinity_group) {
 			if (home->virtual_server) {
-				ERROR("Home server %s is a virtual server, and cannot be used with 'affinity'", home->name);
+				ERROR("Home server %s is a virtual server, and cannot be used with 'track_home_server'", home->name);
 				goto error;
 			}
 
-			if (!pool->affinity_group) {
-				pool->affinity_group = talloc_zero_array(pool, home_server_t *, pool->num_home_servers);
-				if (!pool->affinity_group) {
-					ERROR("Out of memory");
+			if (!home->affinity_id_is_set) {
+				if (affinity_id > UINT8_MAX) {
+				too_many_home_servers:
+					ERROR("Too many home servers (> 256) used in pools with track_home_server=true");
 					goto error;
 				}
+
+				/*
+				 *	The home_server may have manually configured the affinity_id.
+				 */
+				while (affinity_array[affinity_id] != NULL) {
+					affinity_id++;
+					if (affinity_id > UINT8_MAX) goto too_many_home_servers;
+				}
+
+				home->affinity_id_is_set = true;
+				home->affinity_id = affinity_id;
+
+				affinity_array[home->affinity_id] = home;
+			} else {
+				rad_assert(affinity_array[home->affinity_id] == home);
 			}
 
-			if (home->affinity >= (uint32_t) pool->num_home_servers) {
-				ERROR("Home server %s has invalid 'affinity' value %u.  It must be less than %u",
-				      home->name, home->affinity, pool->num_home_servers);
-				goto error;
-			}
-
-			if (pool->affinity_group[home->affinity]) {
-				ERROR("Home server %s has invalid 'affinity' value %u.  That value is already used by home server %s",
-				      home->name, home->affinity, pool->affinity_group[home->affinity]->name);
-				goto error;
-			}
-
-			pool->affinity_group[home->affinity] = home;
+			pool->affinity_group[home->affinity_id] = home;
 		}
 
-		if (do_print) cf_log_info(cs, "\thome_server = %s", home->name);
+		if (do_print) {
+			if (home->affinity_id_is_set && rad_debug_lvl > 2) {
+				cf_log_info(cs, "\thome_server = %s [affinity_id = %u]", home->name, home->affinity_id);
+			} else {
+				cf_log_info(cs, "\thome_server = %s", home->name);
+			}
+		}
+
 		pool->servers[num_home_servers++] = home;
 	} /* loop over home_server's */
 
@@ -2719,10 +2860,13 @@ int realms_init(CONF_SECTION *config)
 	     cs != NULL;
 	     cs = cf_subsection_find_next(config, cs, "home_server")) {
 	     	home_server_t *home;
+		bool soft_fail = false;
 
-	     	home = home_server_afrom_cs(rc, rc, cs);
+		home = home_server_afrom_cs(rc, rc, cs, &soft_fail);
+		if (soft_fail && !home) continue;
+
 	     	if (!home) goto error;
-		if (!realm_home_server_add(home)) goto error;
+		if (!realm_home_server_add(home, soft_fail)) goto error;
 	}
 
 	/*
@@ -2736,10 +2880,13 @@ int realms_init(CONF_SECTION *config)
 		     cs != NULL;
 		     cs = cf_subsection_find_next(server_cs, cs, "home_server")) {
 			home_server_t *home;
+			bool soft_fail = false;
 
-			home = home_server_afrom_cs(rc, rc, cs);
+			home = home_server_afrom_cs(rc, rc, cs, &soft_fail);
+			if (soft_fail && !home) continue;
+
 			if (!home) goto error;
-			if (!realm_home_server_add(home)) goto error;
+			if (!realm_home_server_add(home, soft_fail)) goto error;
 		}
 	}
 #endif
@@ -2860,6 +3007,10 @@ int realms_init(CONF_SECTION *config)
 		closedir(dir);
 	}
 #endif
+
+	if (main_config.home_servers_require_ma) {
+		INFO("All home servers set 'require_message_authenticator = yes'");
+	}
 
 	return 1;
 }
@@ -3021,6 +3172,37 @@ void home_server_update_request(home_server_t *home, REQUEST *request)
 	}
 }
 
+#ifdef WITH_TCP
+/** Check if connections to home servers are blocked for policy reasons.
+ *
+ *  i.e. a TCP connect() failed, or there was a TLS negotiation
+ *  failure.
+ *
+ *  If connections are blocked, then we wait until the relevant
+ *  timeout before opening a new connection.
+ *
+ * @param home		the home server to check
+ * @param now		the current time
+ * @return
+ *	- true if new connections must not be opened.
+ *	- false if we can try to open a new connection.
+ */
+bool home_server_connect_blocked(home_server_t const *home, time_t now)
+{
+	if (home->proto != IPPROTO_TCP) return false;
+
+	if (home->tcp_failed &&
+	    ((home->tcp_failed_time + (time_t) home->tcp_failed_wait) > now)) return true;
+
+#ifdef WITH_TLS
+	if (home->tls_failed &&
+	    ((home->tls_failed_time + (time_t) home->limit.certificate_fail_interval) > now)) return true;
+#endif
+
+	return false;
+}
+#endif
+
 static bool home_server_active(REQUEST *request, home_server_t *home)
 {
 	/*
@@ -3040,6 +3222,34 @@ static bool home_server_active(REQUEST *request, home_server_t *home)
 		return false;
 	}
 
+	/*
+	 *	The home_server is within a "server foo" block.
+	 */
+	if (home->parent_server) {
+		/*
+		 *	Default virtual: ignore homes tied to a
+		 *	virtual.
+		 */
+		if (!request->server) {
+			return false;
+		}		
+
+		/*
+		 *	A virtual AND home is tied to virtual, ignore ones
+		 *	which don't match.
+		 */
+		if (strcmp(request->server, home->parent_server) != 0) {
+			return false;
+		}
+	}
+
+	/*
+	 *	Allow request->server && !home->parent_server
+	 *
+	 *	i.e. virtuals can proxy to globally defined
+	 *	homes.
+	 */
+
 #ifdef WITH_DETAIL
 	/*
 	 *	We read the packet from a detail file, AND it
@@ -3054,32 +3264,27 @@ static bool home_server_active(REQUEST *request, home_server_t *home)
 	}
 #endif
 
-	/*
-	 *	Default virtual: ignore homes tied to a
-	 *	virtual.
-	 */
-	if (!request->server && home->parent_server) {
-		return false;
-	}
+#ifdef WITH_TCP
+	if (home->proto != IPPROTO_TCP) return true;
 
 	/*
-	 *	A virtual AND home is tied to virtual,
-	 *	ignore ones which don't match.
+	 *	New connections are blocked, but there may be existing
+	 *	open connections which have free space.
 	 */
-	if (request->server && home->parent_server &&
-	    strcmp(request->server, home->parent_server) != 0) {
-		return false;
+	if (home_server_connect_blocked(home, request->packet->timestamp.tv_sec)) {
+		return (home->currently_outstanding < home->limit_outstanding);
 	}
-
-	/*
-	 *	Allow request->server && !home->parent_server
-	 *
-	 *	i.e. virtuals can proxy to globally defined
-	 *	homes.
-	 */
+#endif
 
 	return true;
 }
+
+/*
+ *	The number of times the key is hashed.  Going from 8 to 16
+ *	reduces the amount by which the busiest home server exceeds
+ *	its fair share by about 40%.
+ */
+#define NUM_CONSISTENT_KEYS (16)
 
 /*
  *	Return the nearest neighbour by consistent hash.
@@ -3094,29 +3299,55 @@ static bool home_server_active(REQUEST *request, home_server_t *home)
  *	It hashes the nodes once, and then hashes the key K ways.  We
  *	then choose the node which has a value _closest_ to one of the
  *	K keys.  Using K=2 achieves O(1) lookup with high probability,
- *	and a max to average ration of ~3.
+ *	and a max to average ratio of ~3.
+ *
+ *	We hash each key 16 times.  Compared with 8 times, 16 hashes
+ *	make the load on each home server closer to the fair share.
+ *	A simulation used 300 random sets of home server addresses.
+ *	Each set hashed 20,000 random keys, and all home servers were
+ *	alive.  The table gives the load on the most loaded and the
+ *	least loaded home server, averaged over the 300 sets.  Load
+ *	is a multiple of the fair share, which is 1/N of the keys for
+ *	N home servers.  The last column is the most loaded average
+ *	divided by the least loaded average:
+ *
+ *		N	most loaded	least loaded	ratio
+ *		2	1.07		0.94		1.14
+ *		4	1.09		0.83		1.31
+ *		8	1.11		0.68		1.63
+ *		16	1.12		0.50		2.25
+ *
+ *	With 8 hashes and 8 home servers, the most loaded home server
+ *	had 1.19 times its fair share and the least loaded had 0.53.
+ *	The load depends on where the home server IDs fall on the
+ *	hash ring.  Because of that, a set of addresses can be worse
+ *	than the average.  The worst set at 8 home servers had a most
+ *	loaded home server with 1.38 times its fair share.
  *
  *	@todo - if there's only one server alive, just pick that?
  */
 static home_server_t *home_server_by_consistent_key(REQUEST *request, home_pool_t *pool, uint32_t hash)
 {
 	int i, j;
-	uint32_t key[8];
+	uint32_t key[NUM_CONSISTENT_KEYS];
 	unsigned int mask;
 	uint32_t found_diff;
 	home_server_t *found;
-	home_server_t *home[8] = { NULL, NULL, NULL, NULL, 
-				   NULL, NULL, NULL, NULL };
-	static const uint32_t constants[8] = { 0xff51afd7, 0xed558ccd, 0xc4ceb9fe, 0x1a85ec53,
-					      ~0xff51afd7,~0xed558ccd,~0xc4ceb9fe,~0x1a85ec53 };
+	home_server_t *home[NUM_CONSISTENT_KEYS] = {};
+	static const uint32_t constants[NUM_CONSISTENT_KEYS] = {
+		0xff51afd7, 0xed558ccd, 0xc4ceb9fe, 0x1a85ec53,
+		~0xff51afd7,~0xed558ccd,~0xc4ceb9fe,~0x1a85ec53,
+		0x85ebca6b, 0xc2b2ae35, 0x9e3779b9, 0x27d4eb2f,
+		~0x85ebca6b,~0xc2b2ae35,~0x9e3779b9,~0x27d4eb2f
+	};
 
 	/*
 	 *	Get some hash keys.
 	 */
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < NUM_CONSISTENT_KEYS; i++) {
 		key[i] = fr_hash_update(&constants[i], sizeof(constants[i]), hash);
 	}
-	mask = (1 << 8) - 1;
+	mask = (1 << NUM_CONSISTENT_KEYS) - 1;
 
 	/*
 	 *	Loop over all home servers, picking one of them
@@ -3128,7 +3359,7 @@ static home_server_t *home_server_by_consistent_key(REQUEST *request, home_pool_
 	 *	can stop walking the list of home servers.
 	 */
 	for (i = 0; i < pool->num_home_servers; i++) {
-		for (j = 0; j < 8; j++) {
+		for (j = 0; j < NUM_CONSISTENT_KEYS; j++) {
 			if (!home[j] && (pool->servers[i]->id > key[j])) {
 				home[j] = pool->servers[i];
 
@@ -3146,7 +3377,7 @@ static home_server_t *home_server_by_consistent_key(REQUEST *request, home_pool_
 	 *	key was too large, then wrap around to pick the first
 	 *	home server.
 	 */
-	if (mask) for (i = 0; i < 8; i++) {
+	if (mask) for (i = 0; i < NUM_CONSISTENT_KEYS; i++) {
 		if (!home[i]) home[i] = pool->servers[0];
 	}
 
@@ -3158,17 +3389,18 @@ pick:
 	 *	Pick the _alive_ home server which has an ID which is
 	 *	_closest_ to the given key.
 	 */
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < NUM_CONSISTENT_KEYS; i++) {
 		uint32_t diff;
 
 		if (!home_server_active(request, home[i])) continue;
 
-		if (home[i]->id <= key[i]) {
-			diff = key[i] - home[i]->id;
-
-		} else {
-			diff = home[i]->id - key[i];
-		}
+		/*
+		 *	The distance is measured clockwise around the
+		 *	ring, from the key to the home server.  Unsigned
+		 *	arithmetic handles the wrap-around case, where
+		 *	the home server's ID is smaller than the key.
+		 */
+		diff = home[i]->id - key[i];
 
 		if (!found || (diff < found_diff)) {
 			found = home[i];
@@ -3197,17 +3429,21 @@ home_server_t *home_server_ldb(char const *realmname,
 	    (request->packet->code == PW_CODE_ACCESS_REQUEST) &&
 	    ((vp = fr_pair_find_by_num(request->packet->vps, PW_STATE, 0, TAG_ANY)) != NULL) &&
 	    (vp->vp_length > 1) &&
-	    (vp->vp_octets[0] < (uint32_t) pool->num_home_servers) &&
 	    (pool->affinity_group[vp->vp_octets[0]] != NULL)) {
-		    found = pool->affinity_group[vp->vp_octets[0]];
+		found = pool->affinity_group[vp->vp_octets[0]];
 
-		    if (HOME_SERVER_IS_DEAD(found)) return NULL;
+		if (HOME_SERVER_IS_DEAD(found)) {
+			RDEBUG3("Found affinity tracking ID '%u' in State but home server is dead; cancelling proxying", vp->vp_octets[0]);
+			return NULL;
+		} else {
+			RDEBUG3("Found affinity tracking ID '%u' in State; overriding proxy destination", vp->vp_octets[0]);
+		}
 
-		    /*
-		     *	Get rid of the extra octet that we added on the outbound proxying.
-		     */
-		    fr_pair_value_memcpy(vp, vp->vp_octets + 1, vp->vp_length - 1);
-		    return found;
+		/*
+		 *	Get rid of the extra octet that we added on the outbound proxying.
+		 */
+		fr_pair_value_memcpy(vp, vp->vp_octets + 1, vp->vp_length - 1);
+		return found;
 	}
 
 	/*
@@ -3616,7 +3852,7 @@ int home_server_afrom_file(char const *filename)
 		goto error;
 	}
 
-	home = home_server_afrom_cs(realm_config, realm_config, subcs);
+	home = home_server_afrom_cs(realm_config, realm_config, subcs, NULL);
 	if (!home) {
 		fr_strerror_printf("Failed parsing configuration to a home_server structure");
 		goto error;
@@ -3643,14 +3879,6 @@ int home_server_afrom_file(char const *filename)
 		talloc_free(home);
 		goto error;
 	}
-
-#ifdef WITH_COA_TUNNEL
-	if (home->recv_coa) {
-		fr_strerror_printf("Dynamic home_server '%s' cannot receive CoA requests'", p);
-		talloc_free(home);
-		goto error;
-	}
-#endif
 
 	old = home_server_byname(home->name, home->type);
 	if (old) {
@@ -3732,7 +3960,7 @@ int home_server_afrom_file(char const *filename)
 	 *	just change the IP address?
 	 */
 
-	if (!realm_home_server_add(home)) {
+	if (!realm_home_server_add(home, false)) {
 		fr_strerror_printf("Failed adding dynamic server");
 		talloc_free(home);
 		goto error;

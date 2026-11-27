@@ -2,7 +2,7 @@
 #
 #  main/mysql/process-radacct.sql -- Schema extensions for processing radacct entries
 #
-#  $Id: 0696603ae0fd2478ff9af5f85137e91eee706981 $
+#  $Id: 5c887823afeacc30655d651ebfe70957079d3d07 $
 
 --  ---------------------------------
 --  - Per-user data usage over time -
@@ -126,6 +126,8 @@ BEGIN
         )) AS a
         GROUP BY
             username
+        ORDER BY
+            NULL
     ) AS s
     ON DUPLICATE KEY UPDATE
         acctinputoctets = data_usage_by_period.acctinputoctets + s.acctinputoctets,

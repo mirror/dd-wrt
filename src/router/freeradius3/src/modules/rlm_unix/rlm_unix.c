@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 229644fe9561ddd23c8b23537f00c9f16eafdd64 $
+ * $Id: 9bb01f060717f2c64ba3d2839a7dab09c6540ccf $
  * @file rlm_unix.c
  * @brief Unixy things
  *
@@ -27,7 +27,7 @@
  * @copyright 2000  Jeff Carneal <jeff@apex.net>
  * @copyright 2000  Alan Curry <pacman@world.std.com>
  */
-RCSID("$Id: 229644fe9561ddd23c8b23537f00c9f16eafdd64 $")
+RCSID("$Id: 9bb01f060717f2c64ba3d2839a7dab09c6540ccf $")
 USES_APPLE_DEPRECATED_API
 
 #include	<freeradius-devel/radiusd.h>
@@ -214,7 +214,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST
 	 *	Check if account is locked.
 	 */
 	if (pr_pw->uflg.fg_lock!=1) {
-		AUTH("rlm_unix: [%s]: account locked", name);
+		REDEBUG("account is locked");
 		return RLM_MODULE_USERLOCK;
 	}
 #else /* OSFC2 */
@@ -251,7 +251,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST
 	 *	Users with a particular shell are denied access
 	 */
 	if (strcmp(pwd->pw_shell, DENY_SHELL) == 0) {
-		RAUTH("rlm_unix: [%s]: invalid shell", name);
+		REDEBUG("invalid shell (force deny)");
 		return RLM_MODULE_REJECT;
 	}
 #endif
@@ -269,8 +269,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST
 	}
 	endusershell();
 	if (!shell) {
-		RAUTH("[%s]: invalid shell [%s]",
-		       name, pwd->pw_shell);
+		REDEBUG("invalid shell '%s'", pwd->pw_shell);
 		return RLM_MODULE_REJECT;
 	}
 #endif
@@ -282,7 +281,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST
 	 */
 	if (spwd && spwd->sp_lstchg > 0 && spwd->sp_max >= 0 &&
 	    (request->timestamp / 86400) > (spwd->sp_lstchg + spwd->sp_max)) {
-		RAUTH("[%s]: password has expired", name);
+		REDEBUG("password has expired");
 		return RLM_MODULE_REJECT;
 	}
 	/*
@@ -290,7 +289,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST
 	 */
 	if (spwd && spwd->sp_expire > 0 &&
 	    (request->timestamp / 86400) > spwd->sp_expire) {
-		RAUTH("[%s]: account has expired", name);
+		REDEBUG("[%s]: account has expired", name);
 		return RLM_MODULE_REJECT;
 	}
 #endif
@@ -301,7 +300,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST
 	 */
 	if ((pwd->pw_expire > 0) &&
 	    (request->timestamp > pwd->pw_expire)) {
-		RAUTH("[%s]: password has expired", name);
+		REDEBUG("[%s]: password has expired", name);
 		return RLM_MODULE_REJECT;
 	}
 #endif

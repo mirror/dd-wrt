@@ -54,12 +54,12 @@ tailproxy=$(echo $!)
 
 $BIN_PATH/radclient -f $TEST_NAME.request -xF -D ./ 127.0.0.1:$PORT $TYPE $SECRET 1> $OUTPUT
 
-# skip comments
-sed '/^\s*#/d' $TEST_NAME.reply > $TEST_NAME.reply.tmp
+# wait if needed (read from the .reply itself, ignoring comments)
+delay=$(sed '/^\s*#/d' $TEST_NAME.reply | grep delay | awk '{print $2}')
 
-# wait if needed
-delay=$(grep delay $TEST_NAME.reply.tmp | awk '{print $2}')
-sed '/delay/d' $TEST_NAME.reply.tmp > $TEST_NAME.reply.tmp
+# skip comments and the delay command
+sed '/^\s*#/d; /delay/d' $TEST_NAME.reply > $TEST_NAME.reply.tmp
+
 sleep $delay 2>&1 > /dev/null
 
 cat radclient.log > $RES
@@ -74,6 +74,7 @@ done < $TEST_NAME.reply.tmp
 
 if [ ! -f fail ]; then echo "This test succeded!" >> ok; fi
 
+rm -rf $TEST_NAME.result
 mkdir $TEST_NAME.result 2>&1 > /dev/null
 cp ./$TEST_NAME.reply.tmp fr-*-$TEST_NAME.log fail ok \
     $RES radclient.log detail_test $TEST_NAME.result 2>&1 > /dev/null

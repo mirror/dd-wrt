@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /**
- * $Id: aa2ae097aceead6eb2ec44aaac2bcb59a02bb1bc $
+ * $Id: 1c6b805c2a309b532ef531462ab12686f9103471 $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id: aa2ae097aceead6eb2ec44aaac2bcb59a02bb1bc $")
+RCSIDH(radiusd_h, "$Id: 1c6b805c2a309b532ef531462ab12686f9103471 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -122,6 +122,7 @@ typedef struct main_config {
 	bool		log_reject;			//!< Log Access-Reject
 	bool		log_auth_badpass;		//!< Log successful authentications.
 	bool		log_auth_goodpass;		//!< Log failed authentications.
+	bool		unauth_proxy_responses;		//!< log the names of home servers for unauthenticated responses
 	char const	*auth_badpass_msg;		//!< Additional text to append to successful auth messages.
 	char const	*auth_goodpass_msg;		//!< Additional text to append to failed auth messages.
 
@@ -179,6 +180,8 @@ typedef struct main_config {
 
 	bool		exiting;			//!< are we exiting?
 
+	bool		home_servers_require_ma;	//!< do all home servers require Message-Authenticator?
+
 	fr_bool_auto_t 	require_ma;			//!< global configuration for all clients and home servers
 
 	fr_bool_auto_t 	limit_proxy_state;     		//!< global configuration for all clients
@@ -190,6 +193,8 @@ typedef struct main_config {
 	bool		group_stop_return;		//!< "return" stops at end of group
 	bool		policy_stop_return;		//!< "return" stops at end of policy
 	bool		proxy_null_listener;		//!< use a null proxy listener for thread race conditions
+	bool		client_database_blastradius;	//!< clients from a database inherit the global
+							//!< BlastRADIUS configuration
 } main_config_t;
 
 #if defined(WITH_VERIFY_PTR)
@@ -339,7 +344,7 @@ struct rad_request {
 #define SECONDS_PER_DAY		86400
 #define MAX_REQUEST_TIME	30
 #define CLEANUP_DELAY		5
-#define MAX_REQUESTS		256
+#define MAX_REQUESTS		16384
 #define RETRY_DELAY		5
 #define RETRY_COUNT		3
 #define DEAD_TIME		120
@@ -587,7 +592,7 @@ int	fr_bool_auto_parse(CONF_PAIR *cp, fr_bool_auto_t *out, char const *str);
 /* listen.c */
 void listen_free(rad_listen_t **head);
 int listen_init(CONF_SECTION *cs, rad_listen_t **head, bool spawn_flag);
-rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t src_port);
+rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home);
 #ifdef WITH_TLS
 void proxy_tls_close(rad_listen_t *listener);
 #endif
@@ -622,7 +627,7 @@ int radius_evaluate_map(REQUEST *request, int modreturn, int depth,
 			fr_cond_t const *c);
 int radius_evaluate_cond(REQUEST *request, int modreturn, int depth,
 			 fr_cond_t const *c);
-void radius_pairmove(REQUEST *request, VALUE_PAIR **to, VALUE_PAIR *from, bool do_xlat) CC_HINT(nonnull);
+void radius_pairmove(REQUEST *request, VALUE_PAIR **to, VALUE_PAIR *from, bool do_xlat) CC_HINT(nonnull(1,2));
 
 #ifdef WITH_TLS
 /*
@@ -636,7 +641,8 @@ int proxy_tls_send(rad_listen_t *listener, REQUEST *request);
 int proxy_tls_send_reply(rad_listen_t *listener, REQUEST *request);
 int dual_tls_send_coa_request(rad_listen_t *listener, REQUEST *request);
 void listen_coa_free(void);
-void listen_coa_add(rad_listen_t *listener, char const *key);
+bool listen_coa_add(rad_listen_t *listener, char const *key);
+void listen_coa_delete(rad_listen_t *listener, char const *key);
 int listen_coa_find(REQUEST *request, char const *key);
 #endif
 #endif

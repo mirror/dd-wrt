@@ -3,7 +3,7 @@
 ## Makefile -- Build and run tests for the server.
 ##
 ##	http://www.freeradius.org/
-##	$Id: 16a8c3bc873bdcc701fd9aa7fd679840e964cd65 $
+##	$Id: e1722acbfef7fad988d7df3bf6f72d794c3e9046 $
 ##
 #
 include ../../Make.inc
@@ -75,6 +75,16 @@ $(BUILD_PATH)/tests/eapol_test/eapol_test.mk: | $(BUILD_PATH)/tests/eapol_test
 endif
 
 -include $(BUILD_PATH)/tests/eapol_test/eapol_test.mk
+
+#
+#  If OpenSSL3 is available, include extra rlm_eap config in the test radiusd
+#
+ifneq "$(OPENSSL_LIBS)" ""
+ifeq "$(OPENSSL3_OK)" "yes"
+override EAP_CONF_INCLUDE := $$INCLUDE $${testdir}/config/eap-include.conf
+endif
+endif
+
 endif
 
 #
@@ -165,9 +175,10 @@ config/eap-test-inner-tunnel: $(RADDB_PATH)sites-available/inner-tunnel
 #  * set the maximum TLS version to 1.2 or 1.3, depending if 1.3 is available
 #  * always enable TLS 1.3 for the tests, via the super-secret magic flag.
 #  * tell OpenSSL to enable insecure ciphers TLS 1.0 and TLS 1.1
+#  * include extra config for EAP methods disabled in the default raddb
 #
-config/eap-test: $(RADDB_PATH)mods-available/eap config/eap-test-inner-tunnel
-	${Q}sed -e 's/eap {/eap eap-test {/' \
+config/eap-test: $(RADDB_PATH)mods-available/eap config/eap-test-inner-tunnel config/eap-include.conf
+	${Q}sed -e 's|^eap {|eap eap-test {\n${EAP_CONF_INCLUDE}|' \
 	     -e 's/= inner-tunnel/= eap-test-inner-tunnel/;s/use_tunneled_reply = no/use_tunneled_reply = yes/' \
 	     -e 's/enable = no/enable = yes/' \
 	     -e 's/^\(.*\)persist_dir =/  persist_dir =/' \
@@ -219,6 +230,24 @@ ifneq "$(EAPOL_TEST)" ""
 EAP_FILES        = eap-md5.conf
 EAP_FILES       += eap-mschapv2.conf
 
+#
+#  TEAP needs an eapol_test which was built with TEAP support.  Set
+#  EAPOL_TEST_TEAP=yes to run the test.
+#
+ifneq "$(EAPOL_TEST_TEAP)" ""
+EAP_FILES       += eap-teap-password.conf
+endif
+
+#
+#  These need OpenSSL for AES, etc, but don't need TLS.
+#
+ifneq "$(OPENSSL_LIBS)" ""
+EAP_FILES += eap-psk.conf
+ifeq "$(OPENSSL3_OK)" "yes"
+EAP_FILES += eap-pwd.conf
+endif
+endif
+
 EAP_TLS_FILES    = eap-tls.conf
 EAP_TLS_FILES   += eap-ttls-eap-gtc.conf
 EAP_TLS_FILES   += eap-ttls-eap-mschapv2.conf
@@ -231,7 +260,6 @@ EAP_TLS_FILES   += peap-gtc.conf
 EAP_TLS_FILES   += peap-mschapv2.conf
 
 #EAP_TLS_FILES   += eap-fast.conf		# disabled in default config
-#EAP_TLS_FILES   += eap-pwd.conf		# disabled in default config
 #EAP_TLS_FILES   += eap-teap-mschapv2.conf	# not configured in eapol_test
 
 EAP_TLS_VERSIONS = 1.1 1.2

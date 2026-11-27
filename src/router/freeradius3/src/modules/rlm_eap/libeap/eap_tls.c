@@ -1,7 +1,7 @@
 /*
  * eap_tls.c
  *
- * Version:     $Id: fe07ef18d4d032ee3764c1d1d16be2175d400dcf $
+ * Version:     $Id: 47a427075657fc66c2ad0937d1788b06bdbadb7b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
  *
  */
 
-RCSID("$Id: fe07ef18d4d032ee3764c1d1d16be2175d400dcf $")
+RCSID("$Id: 47a427075657fc66c2ad0937d1788b06bdbadb7b $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <assert.h>
@@ -459,8 +459,9 @@ static fr_tls_status_t eaptls_verify(eap_handler_t *handler)
 	 *	else.
 	 */
 	eaptls_packet = (eaptls_packet_t *)eap_ds->response->type.data;
-	if (prev_eap_ds && prev_eap_ds->response)
+	if (prev_eap_ds && prev_eap_ds->response && (prev_eap_ds->response->type.num == prev_eap_ds->request->type.num)) {
 		eaptls_prev = (eaptls_packet_t *)prev_eap_ds->response->type.data;
+	}
 
 	if (eaptls_packet) {
 		/*
@@ -512,13 +513,28 @@ static fr_tls_status_t eaptls_verify(eap_handler_t *handler)
 	if (TLS_OUTER_TLV_INCLUDED(eaptls_packet->flags)) {
 		uint8_t const *p = eaptls_packet->data;
 
+		/*
+		 *	eap_vp2packet() has already checked this, but
+		 *	don't depend on it.
+		 */
+		if (frag_len < sizeof(olen)) {
+			REDEBUG("(TLS) EAP fragment is too small to contain Outer TLV length");
+			return FR_TLS_INVALID;
+		}
+
 		p += TLS_LENGTH_INCLUDED(eaptls_packet->flags) << 2;
 
 		memcpy(&olen, p, sizeof(olen));
 		olen = ntohl(olen);
 
-		fr_assert((4 + olen) <= frag_len); /* already checked in eap_vp2packet */
-		frag_len -= (olen + 4);
+		if (olen > (frag_len - sizeof(olen))) {
+			REDEBUG("(TLS) EAP Outer TLV length (%u bytes) exceeds fragment (%zu bytes)",
+				olen, frag_len - sizeof(olen));
+			return FR_TLS_INVALID;
+		}
+
+		frag_len -= sizeof(olen);
+		frag_len -= olen;
 	}
 
 	/*
@@ -886,7 +902,8 @@ static fr_tls_status_t eaptls_operation(fr_tls_status_t status, eap_handler_t *h
 	 *	notibly not for PEAP even on resumption.
 	 */
 	if ((SSL_version(tls_session->ssl) == TLS1_3_VERSION) &&
-	    (tls_session->client_cert_ok || tls_session->authentication_success || SSL_session_reused(tls_session->ssl))) {
+	    (tls_session->client_cert_ok || tls_session->client_cert_ocsp_skipped ||
+	     tls_session->authentication_success || SSL_session_reused(tls_session->ssl))) {
 		if ((handler->type == PW_EAP_TLS) || SSL_session_reused(tls_session->ssl)) {
 			tls_session->authentication_success = true;
 
@@ -1290,7 +1307,7 @@ fr_tls_server_conf_t *eaptls_conf_parse(CONF_SECTION *cs, char const *attr)
 	if (!tls_cs)
 		return NULL;
 
-	tls_conf = tls_server_conf_parse(tls_cs);
+	tls_conf = tls_server_conf_parse(tls_cs, true);
 
 	if (!tls_conf)
 		return NULL;

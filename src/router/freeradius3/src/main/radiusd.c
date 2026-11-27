@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id: afe32bb676670bafde9f5fd63a9bbabdefb47f3d $
+ * Version:	$Id: 863ed59da1327ff347e8255adef481e225b511dc $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * Copyright 2000  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: afe32bb676670bafde9f5fd63a9bbabdefb47f3d $")
+RCSID("$Id: 863ed59da1327ff347e8255adef481e225b511dc $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -765,8 +765,8 @@ static void NEVER_RETURNS usage(int status)
 	fprintf(output, "Usage: %s [options]\n", main_config.name);
 	fprintf(output, "Options:\n");
 	fprintf(output, "  -C            Check configuration and exit.\n");
-	fprintf(stderr, "  -d <raddb>    Set configuration directory (defaults to " RADDBDIR ").\n");
-	fprintf(stderr, "  -D <dictdir>  Set main dictionary directory (defaults to " DICTDIR ").\n");
+	fprintf(output, "  -d <raddb>    Set configuration directory (defaults to " RADDBDIR ").\n");
+	fprintf(output, "  -D <dictdir>  Set main dictionary directory (defaults to " DICTDIR ").\n");
 	fprintf(output, "  -f            Run as a foreground process, not a daemon.\n");
 	fprintf(output, "  -h            Print this help message.\n");
 	fprintf(output, "  -i <ipaddr>   Listen on ipaddr ONLY.\n");

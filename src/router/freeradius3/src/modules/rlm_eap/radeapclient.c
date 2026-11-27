@@ -1,7 +1,7 @@
 /*
  * radeapclient.c	EAP specific radius packet debug tool.
  *
- * Version:	$Id: b946a87497e9d1e3ccc4f8c507f354655d5c1388 $
+ * Version:	$Id: 603ecea2ec011ee441375114de9d41493f85d808 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: b946a87497e9d1e3ccc4f8c507f354655d5c1388 $")
+RCSID("$Id: 603ecea2ec011ee441375114de9d41493f85d808 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -82,6 +82,7 @@ typedef struct rc_transaction rc_transaction_t;
  */
 typedef struct rc_eap_sim_context {
 	struct eapsim_keys keys;
+	uint8_t *identity;
 } rc_eap_sim_context_t;
 
 typedef struct rc_eap_md5_context {
@@ -196,6 +197,14 @@ fr_event_list_t *radius_event_list_corral(UNUSED event_corral_t hint)
  */
 void request_free(REQUEST *request) CC_HINT(nonnull);
 void request_done(REQUEST *request, int original) CC_HINT(nonnull);
+#ifdef WITH_STATS
+void request_stat_final(REQUEST *request) CC_HINT(nonnull);
+
+void request_stats_final(UNUSED REQUEST *request)
+{
+	/* do nothing */
+}
+#endif
 
 void request_free(UNUSED REQUEST *request)
 {
@@ -472,6 +481,14 @@ static int rc_init_packet(rc_transaction_t *trans)
 			DICT_ATTR const *da;
 			uint8_t *p, *q;
 
+			/*
+			 *	The length octet holds the length of the value plus the 2 octet header.
+			 */
+			if (vp->vp_length > (255 - 2)) {
+				ERROR("%s is too long\n", vp->da->name);
+				return 0;
+			}
+
 			p = talloc_array(vp, uint8_t, vp->vp_length + 2);
 
 			memcpy(p + 2, vp->vp_octets, vp->vp_length);
@@ -699,6 +716,14 @@ static void generate_triplets(RADIUS_PACKET *packet, VALUE_PAIR *ki, uint8_t con
 	int i, idx;
 	eap_sim_state_t ess;
 
+	/*
+	 *	comp128 reads 16 octets of Ki.
+	 */
+	if (ki->vp_length < 16) {
+		ERROR("EAP-Sim-Ki must be 16 octets\n");
+		return;
+	}
+
 	for (idx = 0; idx < 3; idx++) {
 		VALUE_PAIR *vp;
 		char *p;
@@ -922,7 +947,7 @@ static int rc_process_eap_start(rc_eap_context_t *eap_context,
 		}
 		newvp = fr_pair_afrom_num(rep, PW_EAP_SIM_IDENTITY, 0);
 
-		idlen = strlen(vp->vp_strvalue);
+		idlen = vp->vp_length;
 		p = talloc_zero_array(newvp, uint8_t, idlen + 2);
 		no_idlen = htons(idlen);
 		memcpy(p, &no_idlen, 2);
@@ -931,8 +956,13 @@ static int rc_process_eap_start(rc_eap_context_t *eap_context,
 
 		fr_pair_replace(&(rep->vps), newvp);
 
-		/* record it */
-		memcpy(eap_context->eap.sim.keys.identity, vp->vp_strvalue, idlen);
+		/*
+		 *	Record it.  The keys are used in a later round
+		 *	trip, by which time this packet is gone, so the
+		 *	identity has to be copied and not referenced.
+		 */
+		MEM(eap_context->eap.sim.identity = talloc_memdup(eap_context, vp->vp_strvalue, vp->vp_length));
+		eap_context->eap.sim.keys.identity = eap_context->eap.sim.identity;
 		eap_context->eap.sim.keys.identitylen = idlen;
 	}
 
@@ -969,6 +999,14 @@ static int rc_process_eap_challenge(rc_eap_context_t *eap_context,
 	randvp= fr_pair_find_by_num(req->vps, PW_EAP_SIM_RAND, 0, TAG_ANY);
 	if (!mac || !randvp) {
 		ERROR("challenge message needs to contain RAND and MAC\n");
+		return 0;
+	}
+
+	/*
+	 *	The attribute has two reserved octets, followed by three RAND values.
+	 */
+	if (randvp->vp_length < (2 + (EAPSIM_RAND_SIZE * 3))) {
+		ERROR("challenge message RAND is too short\n");
 		return 0;
 	}
 
@@ -1025,6 +1063,13 @@ static int rc_process_eap_challenge(rc_eap_context_t *eap_context,
 		  }
 	  }
 
+	  for (int j = 0; j < 3; j++) {
+		  if (randcfgvp[j]->vp_length < EAPSIM_RAND_SIZE) {
+			  ERROR("EAP-Sim-Rand%d must be %d octets\n", j + 1, EAPSIM_RAND_SIZE);
+			  return 0;
+		  }
+	  }
+
 	  if (memcmp(randcfg[0], randcfgvp[0]->vp_octets, EAPSIM_RAND_SIZE)!=0 ||
 	      memcmp(randcfg[1], randcfgvp[1]->vp_octets, EAPSIM_RAND_SIZE)!=0 ||
 	      memcmp(randcfg[2], randcfgvp[2]->vp_octets, EAPSIM_RAND_SIZE)!=0) {
@@ -1059,6 +1104,13 @@ static int rc_process_eap_challenge(rc_eap_context_t *eap_context,
 		ERROR("needs to have sres1, 2 and 3 set.\n");
 		return 0;
 	}
+
+	if ((sres1->vp_length < EAPSIM_SRES_SIZE) ||
+	    (sres2->vp_length < EAPSIM_SRES_SIZE) ||
+	    (sres3->vp_length < EAPSIM_SRES_SIZE)) {
+		ERROR("sres1, 2 and 3 must be %d octets.\n", EAPSIM_SRES_SIZE);
+		return 0;
+	}
 	memcpy(eap_context->eap.sim.keys.sres[0], sres1->vp_strvalue, sizeof(eap_context->eap.sim.keys.sres[0]));
 	memcpy(eap_context->eap.sim.keys.sres[1], sres2->vp_strvalue, sizeof(eap_context->eap.sim.keys.sres[1]));
 	memcpy(eap_context->eap.sim.keys.sres[2], sres3->vp_strvalue, sizeof(eap_context->eap.sim.keys.sres[2]));
@@ -1071,6 +1123,13 @@ static int rc_process_eap_challenge(rc_eap_context_t *eap_context,
 	   !Kc2 ||
 	   !Kc3) {
 		ERROR("needs to have Kc1, 2 and 3 set.\n");
+		return 0;
+	}
+
+	if ((Kc1->vp_length < EAPSIM_KC_SIZE) ||
+	    (Kc2->vp_length < EAPSIM_KC_SIZE) ||
+	    (Kc3->vp_length < EAPSIM_KC_SIZE)) {
+		ERROR("Kc1, 2 and 3 must be %d octets.\n", EAPSIM_KC_SIZE);
 		return 0;
 	}
 	memcpy(eap_context->eap.sim.keys.Kc[0], Kc1->vp_strvalue, sizeof(eap_context->eap.sim.keys.Kc[0]));
@@ -1296,15 +1355,21 @@ static int rc_respond_eap_md5(rc_eap_context_t *eap_context,
 		return 0;
 	}
 
+	/* the first octet is the value size, and the value follows it */
+	if (vp->vp_length < 1) {
+		ERROR("md5 challenge is empty\n");
+		return 0;
+	}
+
 	/* got the details of the MD5 challenge */
 	valuesize = vp->vp_octets[0];
 	value = &vp->vp_octets[1];
 
 	/* sanitize items */
-	if (valuesize > vp->vp_length)
+	if (valuesize > (vp->vp_length - 1))
 	{
 		ERROR("md5 valuesize if too big (%u > %u)\n",
-			(unsigned int) valuesize, (unsigned int) vp->vp_length);
+			(unsigned int) valuesize, (unsigned int) (vp->vp_length - 1));
 		return 0;
 	}
 
@@ -1992,7 +2057,7 @@ int main(int argc, char **argv)
 			timeout = atof(optarg);
 			break;
 		case 'v':
-			printf("$Id: b946a87497e9d1e3ccc4f8c507f354655d5c1388 $"
+			printf("$Id: 603ecea2ec011ee441375114de9d41493f85d808 $"
 #ifndef ENABLE_REPRODUCIBLE_BUILDS
 			", built on " __DATE__ " at " __TIME__
 #endif

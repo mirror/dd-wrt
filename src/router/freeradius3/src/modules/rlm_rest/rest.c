@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 9078315e8152a560c4880b6cb6aff0e6fd6235ae $
+ * $Id: 57751a551e4ab42ca620baf5c6b63455898487e5 $
  *
  * @brief Functions and datatypes for the REST (HTTP) transport.
  * @file rest.c
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSID("$Id: 9078315e8152a560c4880b6cb6aff0e6fd6235ae $")
+RCSID("$Id: 57751a551e4ab42ca620baf5c6b63455898487e5 $")
 
 #include <ctype.h>
 #include <string.h>
@@ -1084,7 +1084,7 @@ static int rest_decode_plain(UNUSED rlm_rest_t *instance, UNUSED rlm_rest_sectio
  * @param[in] rawlen Length of data in raw buffer.
  * @return the number of VALUE_PAIRs processed or -1 on unrecoverable error.
  */
-static int rest_decode_post(UNUSED rlm_rest_t *instance, UNUSED rlm_rest_section_t *section,
+static int rest_decode_post(UNUSED rlm_rest_t *instance, rlm_rest_section_t *section,
 			    REQUEST *request, void *handle, char *raw, size_t rawlen)
 {
 	rlm_rest_handle_t	*randle = handle;
@@ -1096,6 +1096,7 @@ static int rest_decode_post(UNUSED rlm_rest_t *instance, UNUSED rlm_rest_section
 	char *name  = NULL;
 	char *value = NULL;
 
+	char const *to_parse = NULL;
 	char *expanded = NULL;
 
 	DICT_ATTR const *da;
@@ -1190,10 +1191,15 @@ static int rest_decode_post(UNUSED rlm_rest_t *instance, UNUSED rlm_rest_section
 		RDEBUG3("Value  : \"%s\"", value);
 		REXDENT();
 
-		RDEBUG2("Performing xlat expansion of response value");
+		if (section->do_xlat) {
+			RDEBUG2("Performing xlat expansion of response value");
 
-		if (radius_axlat(&expanded, request, value, NULL, NULL) < 0) {
-			goto skip;
+			if (radius_axlat(&expanded, request, value, NULL, NULL) < 0) {
+				goto skip;
+			}
+			to_parse = expanded;
+		} else {
+			to_parse = value;
 		}
 
 		vp = fr_pair_afrom_da(ctx, da);
@@ -1204,7 +1210,7 @@ static int rest_decode_post(UNUSED rlm_rest_t *instance, UNUSED rlm_rest_section
 			goto error;
 		}
 
-		ret = fr_pair_value_from_str(vp, expanded, -1);
+		ret = fr_pair_value_from_str(vp, to_parse, -1);
 		TALLOC_FREE(expanded);
 		if (ret < 0) {
 			RWDEBUG("Incompatible value assignment, skipping");
@@ -1264,7 +1270,7 @@ static VALUE_PAIR *json_pair_make_leaf(UNUSED rlm_rest_t *instance, UNUSED rlm_r
 	VALUE_PAIR *vp;
 
 	if (json_object_is_type(leaf, json_type_null)) {
-		RDEBUG3("Got null value for attribute \"%s\", skipping...", da->name);
+		RDEBUG3("Got null value for attribute \"%s\", skipping it", da->name);
 
 		return NULL;
 	}
@@ -1276,7 +1282,7 @@ static VALUE_PAIR *json_pair_make_leaf(UNUSED rlm_rest_t *instance, UNUSED rlm_r
 	 */
 	value = json_object_get_string(leaf);
 	if (!value) {
-		RWDEBUG("Failed getting string value for attribute \"%s\", skipping...", da->name);
+		RWDEBUG("Failed getting string value for attribute \"%s\", skipping it", da->name);
 
 		return NULL;
 	}
@@ -1299,7 +1305,7 @@ static VALUE_PAIR *json_pair_make_leaf(UNUSED rlm_rest_t *instance, UNUSED rlm_r
 
 	vp = fr_pair_afrom_da(ctx, da);
 	if (!vp) {
-		RWDEBUG("Failed creating valuepair for attribute \"%s\", skipping...", da->name);
+		RWDEBUG("Failed creating valuepair for attribute \"%s\", skipping it", da->name);
 		talloc_free(expanded);
 
 		return NULL;
@@ -1311,7 +1317,7 @@ static VALUE_PAIR *json_pair_make_leaf(UNUSED rlm_rest_t *instance, UNUSED rlm_r
 	ret = fr_pair_value_from_str(vp, to_parse, -1);
 	talloc_free(expanded);
 	if (ret < 0) {
-		RWDEBUG("Incompatible value assignment for attribute \"%s\", skipping...", da->name);
+		RWDEBUG("Incompatible value assignment for attribute \"%s\", skipping it", da->name);
 		talloc_free(vp);
 
 		return NULL;
@@ -1349,9 +1355,13 @@ static VALUE_PAIR *json_pair_make_leaf(UNUSED rlm_rest_t *instance, UNUSED rlm_r
 @endverbatim
  *
  * JSON valuepair flags:
- *  - do_xlat	(optional) Controls xlat expansion of values. Defaults to true.
+ *  - do_xlat	(optional) Controls xlat expansion of values. Defaults to the
+ *			   section "do_xlat" configuration item, which itself
+ *			   defaults to true.
  *  - is_json	(optional) If true, any nested JSON data will be copied to the
- *			   VALUE_PAIR in string form. Defaults to true.
+ *			   VALUE_PAIR in string form. Defaults to the section
+ *			   "is_json" configuration item, which itself defaults
+ *			   to false.
  *  - op	(optional) Controls how the attribute is inserted into
  *			   the target list. Defaults to ':=' (T_OP_SET).
  *
@@ -1379,11 +1389,11 @@ static int json_pair_make(rlm_rest_t *instance, rlm_rest_section_t *section,
 	if (!json_object_is_type(object, json_type_object)) {
 #ifdef HAVE_JSON_TYPE_TO_NAME
 		REDEBUG("Can't process VP container, expected JSON object"
-			"got \"%s\", skipping...",
+			"got \"%s\", skipping it",
 			json_type_to_name(json_object_get_type(object)));
 #else
 		REDEBUG("Can't process VP container, expected JSON object"
-			", skipping...");
+			", skipping it");
 #endif
 		return -1;
 	}
@@ -1402,8 +1412,8 @@ static int json_pair_make(rlm_rest_t *instance, rlm_rest_section_t *section,
 
 		json_flags_t flags = {
 			.op = T_OP_SET,
-			.do_xlat = 1,
-			.is_json = 0
+			.do_xlat = section->do_xlat,
+			.is_json = section->is_json
 		};
 
 		vp_tmpl_t dst;
@@ -1421,18 +1431,18 @@ static int json_pair_make(rlm_rest_t *instance, rlm_rest_section_t *section,
 		RDEBUG2("Parsing attribute \"%s\"", name);
 
 		if (tmpl_from_attr_str(&dst, name, REQUEST_CURRENT, PAIR_LIST_REPLY, false, false) <= 0) {
-			RWDEBUG("Failed parsing attribute: %s, skipping...", fr_strerror());
+			RWDEBUG("Failed parsing attribute: %s, skipping it", fr_strerror());
 			continue;
 		}
 
 		if (radius_request(&current, dst.tmpl_request) < 0) {
-			RWDEBUG("Attribute name refers to outer request but not in a tunnel, skipping...");
+			RWDEBUG("Attribute name refers to outer request but not in a tunnel, skipping it");
 			continue;
 		}
 
 		vps = radius_list(current, dst.tmpl_list);
 		if (!vps) {
-			RWDEBUG("List not valid in this context, skipping...");
+			RWDEBUG("List not valid in this context, skipping it");
 			continue;
 		}
 		ctx = radius_list_ctx(current, dst.tmpl_list);
@@ -1460,7 +1470,7 @@ static int json_pair_make(rlm_rest_t *instance, rlm_rest_section_t *section,
 			if (json_object_object_get_ex(value, "op", &tmp)) {
 				flags.op = fr_str2int(fr_tokens, json_object_get_string(tmp), 0);
 				if (!flags.op) {
-					RWDEBUG("Invalid operator value \"%s\", skipping...",
+					RWDEBUG("Invalid operator value \"%s\", skipping it",
 						json_object_get_string(tmp));
 					continue;
 				}
@@ -1484,7 +1494,7 @@ static int json_pair_make(rlm_rest_t *instance, rlm_rest_section_t *section,
 			 *  Value key must be present if were using the expanded syntax.
 			 */
 			if (!json_object_object_get_ex(value, "value", &value)) {
-				RWDEBUG("Value key missing, skipping...");
+				RWDEBUG("Value key missing, skipping it");
 				continue;
 			}
 		}
@@ -1495,7 +1505,7 @@ static int json_pair_make(rlm_rest_t *instance, rlm_rest_section_t *section,
 		if (!flags.is_json && json_object_is_type(value, json_type_array)) {
 			elements = json_object_array_length(value);
 			if (!elements) {
-				RWDEBUG("Zero length value array, skipping...");
+				RWDEBUG("Zero length value array, skipping it");
 				continue;
 			}
 			element = json_object_array_get_idx(value, 0);
@@ -1525,7 +1535,7 @@ static int json_pair_make(rlm_rest_t *instance, rlm_rest_section_t *section,
 
 			if (json_object_is_type(element, json_type_object) && !flags.is_json) {
 				/* TODO: Insert nested VP into VP structure...*/
-				RWDEBUG("Found nested VP, these are not yet supported, skipping...");
+				RWDEBUG("Found nested VP, these are not yet supported, skipping it");
 
 				continue;
 
@@ -1985,7 +1995,7 @@ static int rest_request_config_body(UNUSED rlm_rest_t *instance, rlm_rest_sectio
 	 *  no body should be sent.
 	 */
 	if (!func) {
-		SET_OPTION(CURLOPT_POSTFIELDSIZE, 0);
+		SET_OPTION(CURLOPT_POSTFIELDSIZE, 0L);
 		return 0;
 	}
 
@@ -2135,7 +2145,7 @@ int rest_request_config(rlm_rest_t *instance, rlm_rest_section_t *section,
 	while (fr_cursor_next_by_num(&headers, PW_REST_HTTP_HEADER, 0, TAG_ANY)) {
 		header = fr_cursor_remove(&headers);
 		if (!strchr(header->vp_strvalue, ':')) {
-			RWDEBUG("Invalid HTTP header \"%s\" must be in format '<attribute>: <value>'.  Skipping...",
+			RWDEBUG("Invalid HTTP header \"%s\" must be in format '<attribute>: <value>'.  skipping it",
 				header->vp_strvalue);
 			talloc_free(header);
 			continue;

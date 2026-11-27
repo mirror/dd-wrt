@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: cfe17fca17fd887373cd27c2766de84072a9dea3 $
+ * $Id: 15f3e0217b72aa0cab4703e0918941891a1304a0 $
  * @file rlm_digest.c
  * @brief Handles SIP digest authentication requests from Cisco SIP servers.
  *
  * @copyright 2002,2006  The FreeRADIUS server project
  * @copyright 2002  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: cfe17fca17fd887373cd27c2766de84072a9dea3 $")
+RCSID("$Id: 15f3e0217b72aa0cab4703e0918941891a1304a0 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -214,14 +214,14 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(UNUSED void *instance, REQU
 	passwd = fr_pair_find_by_num(request->config, PW_DIGEST_HA1, 0, TAG_ANY);
 	if (passwd) {
 		if (passwd->vp_length != 32) {
-			RAUTH("Digest-HA1 has invalid length, authentication failed");
+			REDEBUG("Digest-HA1 has invalid length, authentication failed");
 			return RLM_MODULE_INVALID;
 		}
 	} else {
 		passwd = fr_pair_find_by_num(request->config, PW_CLEARTEXT_PASSWORD, 0, TAG_ANY);
 	}
 	if (!passwd) {
-		RAUTH("Cleartext-Password or Digest-HA1 is required for authentication");
+		REDEBUG("Cleartext-Password or Digest-HA1 is required for authentication");
 		return RLM_MODULE_INVALID;
 	}
 

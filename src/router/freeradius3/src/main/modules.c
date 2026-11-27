@@ -1,7 +1,7 @@
 /*
  * modules.c	Radius module support.
  *
- * Version:	$Id: c3a4c3deb7ed84332387253a8d35597074095a06 $
+ * Version:	$Id: f772fcfb24d9ef2c38b181805af283c38a63d529 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: c3a4c3deb7ed84332387253a8d35597074095a06 $")
+RCSID("$Id: f772fcfb24d9ef2c38b181805af283c38a63d529 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -176,7 +176,12 @@ fr_dlhandle fr_dlopenext(char const *name)
 	 */
 	env = getenv("FR_LIBRARY_PATH");
 	if (env) {
-		DEBUG3("Ignoring libdir as FR_LIBRARY_PATH set.  Module search path will be: %s", env);
+		static bool complaint = false;
+
+		if (!complaint) {
+			DEBUG3("Ignoring libdir as FR_LIBRARY_PATH set.  Module search path will be: %s", env);
+			complaint = true;
+		}
 		search_path = env;
 	} else {
 		search_path = radlib_dir;
@@ -995,7 +1000,7 @@ rlm_rcode_t indexed_modcall(rlm_components_t comp, int idx, REQUEST *request)
 		list = server->mc[comp];
 		if (!list) {
 			if (server->name) {
-				RDEBUG3("Empty %s section in virtual server \"%s\".  Using default return values.",
+				RDEBUG3("Empty %s section in virtual server '%s'.  Using default return values.",
 					section_type_value[comp].section, server->name);
 			} else {
 				RDEBUG3("Empty %s section.  Using default return values.", section_type_value[comp].section);
@@ -1008,18 +1013,43 @@ rlm_rcode_t indexed_modcall(rlm_components_t comp, int idx, REQUEST *request)
 		if (this) {
 			list = this->modulelist;
 		} else {
-			RDEBUG2("%s sub-section not found.  Ignoring.", section_type_value[comp].typename);
+			DICT_VALUE *dval;
+
+			dval = dict_valbyattr(section_type_value[comp].attr, 0, idx);
+
+			/*
+			 *	Failed to find "Auth-Type foo" is an error, not a warning
+			 */
+			if (comp == MOD_AUTHENTICATE) {
+				if (dval) {
+					REDEBUG2("%s %s sub-section not found in virtual server '%s'.  Ignoring.",
+						 section_type_value[comp].typename, dval->name, server->name);
+				} else {
+					REDEBUG2("%s %d sub-section not found in virtual server '%s'.  Ignoring.",
+						 section_type_value[comp].typename, idx, server->name);
+				}
+			} else {
+				if (dval) {
+					RWDEBUG2("%s = %s sub-section not found in virtual server '%s'.  Ignoring.",
+						 section_type_value[comp].typename, dval->name, server->name);
+				} else {
+					RWDEBUG2("%s = %d sub-section not found in virtual server '%s'.  Ignoring.",
+						 section_type_value[comp].typename, idx, server->name);
+				}
+			}
 		}
 	}
 
 	if (server->subcs[comp]) {
 		if (idx == 0) {
-			RDEBUG("# Executing section %s from file %s",
+			RDEBUG("# Executing section %s from file %s line %d",
 			       section_type_value[comp].section,
-			       cf_section_filename(server->subcs[comp]));
+			       cf_section_filename(server->subcs[comp]),
+			       cf_section_lineno(server->subcs[comp]));
 		} else {
-			RDEBUG("# Executing group from file %s",
-			       cf_section_filename(server->subcs[comp]));
+			RDEBUG("# Executing group from file %s line %d",
+			       cf_section_filename(server->subcs[comp]),
+			       cf_section_lineno(server->subcs[comp]));
 		}
 	}
 	request->component = section_type_value[comp].section;

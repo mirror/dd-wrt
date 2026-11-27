@@ -56,24 +56,6 @@ RUN yum config-manager --set-enabled crb
 ')dnl
 
 #
-#  Documentation build dependecies
-#
-define(`NODE_VER', ifelse(OS_VER, 7, `16', `20'))dnl
-
-#  - doxygen & JSON.pm
-RUN yum install -y doxygen graphviz perl-JSON
-#  - antora (npm needed)
-RUN curl -sL https://rpm.nodesource.com/setup_`'NODE_VER.x | bash -
-RUN yum install -y nodejs
-RUN npm i -g @antora/cli@3.1.7 @antora/site-generator-default@3.1.7
-#  - pandoc
-RUN curl -o - -L $(curl -s https://api.github.com/repos/jgm/pandoc/releases/latest | grep "browser_download_url.*tar.gz" | cut -d '"' -f 4) | tar xzvf - -C /tmp/
-RUN mv /tmp/pandoc-*/bin/* /usr/local/bin
-#  - asciidoctor
-RUN yum install -y rubygems-devel
-RUN gem install asciidoctor
-
-#
 #  Setup a src dir in /usr/local
 #
 RUN mkdir -p /usr/local/src/repositories
@@ -103,13 +85,13 @@ ARG source=https://github.com/FreeRADIUS/freeradius-server.git
 RUN git clone --depth 1 --no-single-branch ${source}
 
 #
-#  Install build dependencies for all branches from v3 onwards
+#  Install build dependencies for all branches from v3.2 onwards
 #  Nodesource has issues (no SRPMS in some repos) and is not needed here
 #  CentOS/RHEL 7 do not support "-D" for yum-builddep so do that separately below if needed
 #
 define(`BUILDDEP_EXTRA', ifelse(OS_VER, 7, `--disablerepo="nodesource*"', `-D "_with_rlm_yubikey 1"'))dnl
 WORKDIR freeradius-server
-RUN for i in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin 2>/dev/null | sed -e 's#origin/##' | egrep "^(v[3-9]*\.[0-9x]*\.x|master)$");\
+RUN for i in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin 2>/dev/null | sed -e 's#origin/##' | egrep "^(v[3-9]*\.[2-9x]*\.x|master)$");\
 	do \
 		git checkout $i; \
 		[ -e redhat/freeradius.spec ] && yum-builddep BUILDDEP_EXTRA -y redhat/freeradius.spec; \

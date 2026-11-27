@@ -1,7 +1,7 @@
 /*
  * acct.c	Accounting routines.
  *
- * Version:	$Id: f6b048a572d7568f2e1d5d13786b640e0e75be0a $
+ * Version:	$Id: f5e6471e9b52e5a607a8f0b7838daadee5be0635 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: f6b048a572d7568f2e1d5d13786b640e0e75be0a $")
+RCSID("$Id: f5e6471e9b52e5a607a8f0b7838daadee5be0635 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -87,7 +87,7 @@ int rad_accounting(REQUEST *request)
 		vp = fr_pair_find_by_num(request->config, PW_ACCT_TYPE, 0, TAG_ANY);
 		if (vp) {
 			acct_type = vp->vp_integer;
-			DEBUG2("  Found Acct-Type %s",
+			RDEBUG2("  Found Acct-Type %s",
 			       dict_valnamebyattr(PW_ACCT_TYPE, 0, acct_type));
 		}
 		result = process_accounting(acct_type, request);
@@ -131,7 +131,7 @@ int rad_accounting(REQUEST *request)
 			 */
 			realm = realm_find2(vp->vp_strvalue);
 			if (realm && !realm->acct_pool) {
-				DEBUG("rad_accounting: Cancelling proxy to realm %s, as it is a LOCAL realm.", realm->name);
+				RDEBUG("rad_accounting: Cancelling proxy to realm %s, as it is a LOCAL realm.", realm->name);
 				fr_pair_delete_by_num(&request->config, PW_PROXY_TO_REALM, 0, TAG_ANY);
 			} else {
 				/*

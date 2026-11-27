@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: faf3df60a23d276c10c5ac6383568577d94cf982 $
+ * $Id: a5015183217a5f0237965039513341d745495ae1 $
  * @file rlm_sql.c
  * @brief Implements SQL 'users' file, and SQL accounting.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Mike Machado <mike@innercite.com>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: faf3df60a23d276c10c5ac6383568577d94cf982 $")
+RCSID("$Id: a5015183217a5f0237965039513341d745495ae1 $")
 
 #include <ctype.h>
 
@@ -356,8 +356,7 @@ static int generate_sql_clients(rlm_sql_t *inst)
 				      row[4],	/* secret */
 				      row[2],	/* shortname */
 				      row[3],	/* type */
-				      server,	/* server */
-				      false);	/* require message authenticator */
+				      server);	/* server */
 		if (!c) {
 			continue;
 		}

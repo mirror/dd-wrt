@@ -3,7 +3,7 @@
  *
  * code common to clients and to servers.
  *
- * Version:     $Id: 97862c84ce773d88e2a734b2c0f7c0e8c41bdc43 $
+ * Version:     $Id: 23378759f8a067c770b274c7341ad17ada3a0036 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@
  *
  */
 
-RCSID("$Id: 97862c84ce773d88e2a734b2c0f7c0e8c41bdc43 $")
+RCSID("$Id: 23378759f8a067c770b274c7341ad17ada3a0036 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/rad_assert.h>
@@ -245,7 +245,7 @@ int eap_basic_compose(RADIUS_PACKET *packet, eap_packet_t *reply)
 		break;
 	default:
 		/* Should never enter here */
-		ERROR("rlm_eap: reply code %d is unknown, Rejecting the request.", reply->code);
+		ERROR("rlm_eap: reply code %d is unknown, Rejecting the request", reply->code);
 		packet->code = PW_CODE_ACCESS_REJECT;
 		break;
 	}
@@ -306,6 +306,7 @@ eap_packet_raw_t *eap_vp2packet(TALLOC_CTX *ctx, VALUE_PAIR *vps)
 	eap_packet_raw_t *eap_packet;
 	unsigned char *ptr;
 	uint16_t len;
+	size_t data_len;
 	int total_len;
 	vp_cursor_t cursor;
 	bool allow_o = false;
@@ -422,7 +423,13 @@ eap_packet_raw_t *eap_vp2packet(TALLOC_CTX *ctx, VALUE_PAIR *vps)
 	case PW_EAP_TTLS:
 	case PW_EAP_PEAP:
 	case PW_EAP_FAST:
-		if (len < 2) {
+		/*
+		 *	len includes the EAP header, but all of the
+		 *	offsets below are into eap_packet->data.
+		 */
+		data_len = len - EAP_HEADER_LEN;	/* len >= 5, checked above */
+
+		if (data_len < 2) {
 			fr_strerror_printf("Malformed EAP packet - packet is too small to contain TLS flags");
 			talloc_free(eap_packet);
 			return NULL;
@@ -443,7 +450,7 @@ eap_packet_raw_t *eap_vp2packet(TALLOC_CTX *ctx, VALUE_PAIR *vps)
 		if (TLS_LENGTH_INCLUDED(eap_packet->data[1])) {
 			uint32_t tls_len;
 
-			if (len <= (2 + 4)) {
+			if (data_len < (2 + 4)) {
 				fr_strerror_printf("Malformed EAP packet - TLS 'L' bit is set, but packet is too small to contain 'length' field");
 				talloc_free(eap_packet);
 				return NULL;
@@ -483,11 +490,11 @@ eap_packet_raw_t *eap_vp2packet(TALLOC_CTX *ctx, VALUE_PAIR *vps)
 			 */
 			if (TLS_OUTER_TLV_INCLUDED(eap_packet->data[1])) {
 				uint32_t tlv_len;
-				uint16_t offset;
+				size_t offset;
 
 			check_outer_tlv:
 				if (!allow_o) {
-					fr_strerror_printf("Malformed EAP packet - TLS 'O' bit is set, but EAP method does not use it.");
+					fr_strerror_printf("Malformed EAP packet - TLS 'O' bit is set, but EAP method does not use it");
 					talloc_free(eap_packet);
 					return NULL;
 				}
@@ -497,7 +504,7 @@ eap_packet_raw_t *eap_vp2packet(TALLOC_CTX *ctx, VALUE_PAIR *vps)
 				 */
 				offset = 2 + (TLS_LENGTH_INCLUDED(eap_packet->data[1]) << 2);
 
-				if (len <= (offset + 4)) {
+				if (data_len < (offset + 4)) {
 					fr_strerror_printf("Malformed EAP packet - TLS 'O' bit is set, but packet is too small to contain 'outer tlv length' field");
 					talloc_free(eap_packet);
 					return NULL;
@@ -507,14 +514,12 @@ eap_packet_raw_t *eap_vp2packet(TALLOC_CTX *ctx, VALUE_PAIR *vps)
 				tlv_len = ntohl(tlv_len);
 
 				/*
-				 *	The EAP header includes all of
-				 *	the data in the packet.  The
-				 *	outer TLV length cannot
-				 *	include the EAP header, type,
-				 *	flags, length field, or outer
-				 *	tlv length field.
+				 *	The outer TLV length cannot
+				 *	include the type, flags,
+				 *	length field, or outer tlv
+				 *	length field.
 				 */
-				if ((int)tlv_len > (len - (offset + 4))) {
+				if (tlv_len > (data_len - (offset + 4))) {
 					fr_strerror_printf("Malformed EAP packet - TLS 'O' bit is set, but 'outer tlv length' field is larger than the current fragment");
 					talloc_free(eap_packet);
 					return NULL;

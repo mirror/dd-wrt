@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 3f55a858c444f520987e9fe9bab3227eb8500114 $
+ * $Id: f33690f631e3815e93de013fdcab11883470c376 $
  * @file rlm_proxy_rate_limit.c
  * @brief Rate limiting when proxying requests
  *
  * @copyright 2024 Network RADIUS SAS (legal@networkradius.com)
  */
-RCSID("$Id: 3f55a858c444f520987e9fe9bab3227eb8500114 $")
+RCSID("$Id: f33690f631e3815e93de013fdcab11883470c376 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -116,11 +116,11 @@ struct rlm_proxy_rate_limit_s {
 };
 
 static const CONF_PARSER module_config[] = {
-	{ "max_entries", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, max_entries), "65536" },
-	{ "idle_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, idle_timeout), "2" },
+	{ "max_entries", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, max_entries), "2048" },
+	{ "idle_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, idle_timeout), "10" },
 	{ "num_subtables", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, num_subtables), "256" },
 	{ "window", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, window), "1"},
-	{ "count", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, count), "2"},
+	{ "count", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, count), "1"},
 	CONF_PARSER_TERMINATOR
 };
 

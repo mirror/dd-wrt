@@ -1,7 +1,7 @@
 /*
  * vqp.c	Functions to send/receive VQP packets.
  *
- * Version:	$Id: 9667387abce8e6488a1389c66e08bd355060aa81 $
+ * Version:	$Id: 20353baf77bf8495e9e93966eb75f005eafc0703 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2007 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 9667387abce8e6488a1389c66e08bd355060aa81 $")
+RCSID("$Id: 20353baf77bf8495e9e93966eb75f005eafc0703 $")
 
 #include	<freeradius-devel/libradius.h>
 #include	<freeradius-devel/udpfromto.h>
@@ -279,7 +279,7 @@ RADIUS_PACKET *vqp_recv(int sockfd)
 	 */
 	packet = rad_alloc(NULL, false);
 	if (!packet) {
-		fr_strerror_printf("out of memory");
+		fr_strerror_printf("Out of memory");
 		return NULL;
 	}
 

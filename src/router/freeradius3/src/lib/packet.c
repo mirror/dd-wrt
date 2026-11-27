@@ -1,7 +1,7 @@
 /*
  * packet.c	Generic packet manipulation functions.
  *
- * Version:	$Id: 7f9abf534f79bef691616a4475d82f2436dfb504 $
+ * Version:	$Id: 860180d74c228320e22c8494d596e825dbcd20f5 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000-2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 7f9abf534f79bef691616a4475d82f2436dfb504 $")
+RCSID("$Id: 860180d74c228320e22c8494d596e825dbcd20f5 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -691,7 +691,7 @@ bool fr_packet_list_id_alloc(fr_packet_list_t *pl, int proto,
 
 	src_any = fr_inaddr_any(&request->src_ipaddr);
 	if (src_any < 0) {
-		fr_strerror_printf("Can't check src_ipaddr");
+		fr_strerror_printf("Failed check src_ipaddr");
 		return false;
 	}
 
@@ -933,7 +933,11 @@ bool fr_packet_list_id_free(fr_packet_list_t *pl,
 	if (yank && !fr_packet_list_yank(pl, request)) return false;
 
 	ps = fr_socket_find(pl, request->sockfd);
-	if (!ps) return false;
+	if (!ps) {
+		request->id = -1;
+		request->src_port = 0;
+		return false;
+	}
 
 #ifdef WITH_RADIUSV11
 	/*
@@ -1012,7 +1016,7 @@ RADIUS_PACKET *fr_packet_list_recv(fr_packet_list_t *pl, fd_set *set)
 
 #ifdef WITH_TCP
 		if (pl->sockets[start].proto == IPPROTO_TCP) {
-			packet = fr_tcp_recv(pl->sockets[start].sockfd, 0);
+			packet = fr_tcp_recv(pl->sockets[start].sockfd, RAD_RECV_FLAG_NONE);
 			if (!packet) {
 				fr_strerror_printf("TCP connection has been closed");
 				return NULL;
@@ -1036,7 +1040,7 @@ RADIUS_PACKET *fr_packet_list_recv(fr_packet_list_t *pl, fd_set *set)
 		 *	Rely on rad_recv() to fill in the required
 		 *	fields.
 		 */
-		packet = rad_recv(NULL, pl->sockets[start].sockfd, 0);
+		packet = rad_recv(NULL, pl->sockets[start].sockfd, RAD_RECV_FLAG_NONE);
 		if (!packet) continue;
 
 		/*

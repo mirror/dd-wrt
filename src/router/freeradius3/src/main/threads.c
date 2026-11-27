@@ -1,7 +1,7 @@
 /*
  * threads.c	request threading support
  *
- * Version:	$Id: 5b94115b22bee41e63b9b6ea27893c175a71b984 $
+ * Version:	$Id: fd0b2dba951f1b8aeb17f8dd38b920e9eaeab582 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 5b94115b22bee41e63b9b6ea27893c175a71b984 $")
+RCSID("$Id: fd0b2dba951f1b8aeb17f8dd38b920e9eaeab582 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -550,7 +550,7 @@ int request_enqueue(REQUEST *request)
 /*
  *	Free a list of requests, WITHOUT holding the thread mutex.
  */
-static void request_list_free(fr_dlist_t *head)
+static void request_list_free(fr_dlist_t *head, bool worker)
 {
 	fr_dlist_t *entry;
 
@@ -582,10 +582,48 @@ static void request_list_free(fr_dlist_t *head)
 		 *	generally happens when the server is blocked,
 		 *	due to a slow back-end database.
 		 */
-		request->child_state = REQUEST_DONE;
 		if (request->master_state == REQUEST_TO_FREE) {
+			request->child_state = REQUEST_DONE;
+
+#ifdef WITH_STATS
+			/*
+			 *	The packet was not fully processed, so we
+			 *	increase the "dropped" count.  Since the
+			 *	request might be freed immediately below, we
+			 *	can't rely on request_done() calling
+			 *	request_stats_final().
+			 */
+			request_stats_final(request);
+#endif
+
 			request_free(request);
+
+		} else if (worker) {
+			/*
+			 *	Once child_state is REQUEST_DONE, the
+			 *	master thread is free to run the timer,
+			 *	remove the request from the packet list,
+			 *	and free it.  So we do everything else
+			 *	first, and set child_state last.  This is
+			 *	what request_done() does when it is called
+			 *	from a child thread, but we cannot call it
+			 *	here, as it would access the request after
+			 *	child_state has been set.
+			 *
+			 *	The request still has a timer, which will
+			 *	call request_done() in the master thread.
+			 */
+			request->process = request_done;
+			request->component = "<REQUEST_DONE>";
+			request->module = "";
+
+#ifdef HAVE_STDATOMIC_H
+			atomic_thread_fence(memory_order_release);
+#endif
+			request->child_state = REQUEST_DONE;
+
 		} else {
+			request->child_state = REQUEST_DONE;
 			request_done(request, REQUEST_DONE);
 		}
 	}
@@ -662,7 +700,7 @@ static int request_fifo_discard(int priority, bool lower, time_t now)
 	 */
 	if (!fr_dlist_empty(&free_list)) {
 		pthread_mutex_unlock(&thread_pool.queue_mutex);
-		request_list_free(&free_list);
+		request_list_free(&free_list, false);
 		pthread_mutex_lock(&thread_pool.queue_mutex);
 	}
 
@@ -673,7 +711,7 @@ static int request_fifo_discard(int priority, bool lower, time_t now)
 /*
  *	Remove a request from the queue.
  */
-static int request_dequeue(REQUEST **prequest)
+static int request_dequeue(REQUEST **prequest, bool worker)
 {
 	time_t blocked;
 	static time_t last_complained = 0;
@@ -796,7 +834,7 @@ static int request_dequeue(REQUEST **prequest)
 	 *	mutex to do its work, and we don't want to have nested mutexes.
 	 */
 	if (!fr_dlist_empty(&free_list)) {
-		request_list_free(&free_list);
+		request_list_free(&free_list, worker);
 	}
 
 	/*
@@ -900,7 +938,7 @@ static void *request_handler_thread(void *arg)
 		 *	It may be empty, in which case we fail
 		 *	gracefully.
 		 */
-		if (!request_dequeue(&self->request)) continue;
+		if (!request_dequeue(&self->request, true)) continue;
 
 		self->request->child_pid = self->pthread_id;
 		self->request_count++;
@@ -1362,7 +1400,7 @@ void thread_pool_free(void)
 	if (main_config.memory_report) {
 		REQUEST *request;
 
-		while (request_dequeue(&request) == 1) {
+		while (request_dequeue(&request, false) == 1) {
 			request->child_state = REQUEST_DONE;
 			request_free(request);
 		}

@@ -1,7 +1,7 @@
 /*
  * tcp.c	TCP-specific functions.
  *
- * Version:	$Id: 355277c70dced0fd0c453e8a0606cf64a607ec0c $
+ * Version:	$Id: 3eb278a7b7b5a8f90f420fd824683a99dcfb58cf $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright (C) 2009 Dante http://dante.net
  */
 
-RCSID("$Id: 355277c70dced0fd0c453e8a0606cf64a607ec0c $")
+RCSID("$Id: 3eb278a7b7b5a8f90f420fd824683a99dcfb58cf $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -71,13 +71,17 @@ int fr_tcp_read_packet(RADIUS_PACKET *packet, int flags)
 			   4 - packet->data_len, 0);
 		if (len == 0) return -2; /* clean close */
 
+		if (len < 0) {
 #ifdef ECONNRESET
-		if ((len < 0) && (errno == ECONNRESET)) { /* forced */
-			return -2;
-		}
+			if (errno == ECONNRESET) return -2;
+#endif
+#ifdef ENOTCONN
+			if (errno == ENOTCONN) return -2;
+#endif
+#ifdef ETIMEDOUT
+			if (errno == ETIMEDOUT) return -2;
 #endif
 
-		if (len < 0) {
 			fr_strerror_printf("Error receiving packet: %s",
 				   fr_syserror(errno));
 			return -1;

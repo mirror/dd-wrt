@@ -1,7 +1,7 @@
 /*
  * rlm_eap.h    Local Header file.
  *
- * Version:     $Id: 4d5e1fa2694d7c8b211a1f5595ea14e6571d09b6 $
+ * Version:     $Id: 52e7706b2a7a06bf3834d288b6d8e5f43c246879 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _RLM_EAP_H
 #define _RLM_EAP_H
 
-RCSIDH(rlm_eap_h, "$Id: 4d5e1fa2694d7c8b211a1f5595ea14e6571d09b6 $")
+RCSIDH(rlm_eap_h, "$Id: 52e7706b2a7a06bf3834d288b6d8e5f43c246879 $")
 
 #include <freeradius-devel/modpriv.h>
 #include "eap.h"
@@ -111,6 +111,7 @@ eap_handler_t 	*eap_handler_alloc(rlm_eap_t *inst, REQUEST *request);
 void	    	eap_ds_free(EAP_DS **eap_ds);
 int 	    	eaplist_add(rlm_eap_t *inst, eap_handler_t *handler) CC_HINT(nonnull);
 eap_handler_t 	*eaplist_find(rlm_eap_t *inst, REQUEST *request, eap_packet_raw_t *eap_packet);
+void		eaplist_cancel(rlm_eap_t *inst, REQUEST *request);
 void		eaplist_free(rlm_eap_t *inst);
 
 /* State */

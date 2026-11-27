@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 93b0e3afb2a6b37c1d929922e957414e46e48942 $
+ * $Id: 7408f6f28d32ab139f198698095d48750e688e7b $
  *
  * @file src/main/fuzzer.c
  * @brief Functions to fuzz protocol decoding
  *
  * @copyright 2019 Network RADIUS SAS (legal@networkradius.com)
  */
-RCSID("$Id: 93b0e3afb2a6b37c1d929922e957414e46e48942 $")
+RCSID("$Id: 7408f6f28d32ab139f198698095d48750e688e7b $")
 
 #include <freeradius-devel/radiusd.h>
 
@@ -155,7 +155,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *buf, size_t len)
 	memcpy(&packet->data, &buf, sizeof(buf)); /* const issues */
 	packet->data_len = len;
 
-	if (rad_packet_ok(packet, 0, NULL)) {
+	if (rad_packet_ok(packet, RAD_RECV_FLAG_NONE, NULL)) {
 		(void) rad_decode(packet, NULL, "testing123");
 		if (fr_debug_lvl > 3) vp_printlist(stdout, packet->vps);
 	}

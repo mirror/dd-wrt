@@ -1,7 +1,7 @@
 /*
  * value.c	Functions to handle value_data_t
  *
- * Version:	$Id: 7ebdbcb59d39b20b92471f864ea17cd2ae8c2b5e $
+ * Version:	$Id: 89ce71c05ac4c37dec13507926481906b8ee4750 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2014 The FreeRADIUS server project
  */
 
-RCSID("$Id: 7ebdbcb59d39b20b92471f864ea17cd2ae8c2b5e $")
+RCSID("$Id: 89ce71c05ac4c37dec13507926481906b8ee4750 $")
 
 #include <freeradius-devel/libradius.h>
 #include <ctype.h>
@@ -41,7 +41,7 @@ int value_data_cmp(PW_TYPE a_type, value_data_t const *a, size_t a_len,
 	int compare = 0;
 
 	if (a_type != b_type) {
-		fr_strerror_printf("Can't compare values of different types");
+		fr_strerror_printf("Cannot compare values of different types");
 		return -2;
 	}
 
@@ -661,7 +661,7 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 		 *	print them this way.
 		 */
 		if (addr.prefix != 32) {
-			fr_strerror_printf("Invalid IPv4 mask length \"/%i\".  Only \"/32\" permitted "
+			fr_strerror_printf("Invalid IPv4 mask length '/%i'.  Only '/32' permitted "
 					   "for non-prefix types", addr.prefix);
 			return -1;
 		}
@@ -676,6 +676,7 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 
 		if (fr_pton4(&addr, src, src_len, fr_hostname_lookups, false) < 0) return -1;
 
+		dst->ipv4prefix[0] = 0;
 		dst->ipv4prefix[1] = addr.prefix;
 		memcpy(&dst->ipv4prefix[2], &addr.ipaddr.ip4addr.s_addr, sizeof(dst->ipv4prefix) - 2);
 	}
@@ -692,7 +693,7 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 		 *	print them this way.
 		 */
 		if (addr.prefix != 128) {
-			fr_strerror_printf("Invalid IPv6 mask length \"/%i\".  Only \"/128\" permitted "
+			fr_strerror_printf("Invalid IPv6 mask length '/%i'.  Only '/128' permitted "
 					   "for non-prefix types", addr.prefix);
 			return -1;
 		}
@@ -707,6 +708,7 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 
 		if (fr_pton6(&addr, src, src_len, fr_hostname_lookups, false) < 0) return -1;
 
+		dst->ipv6prefix[0] = 0;
 		dst->ipv6prefix[1] = addr.prefix;
 		memcpy(&dst->ipv6prefix[2], addr.ipaddr.ip6addr.s6_addr, sizeof(dst->ipv6prefix) - 2);
 	}
@@ -732,6 +734,20 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 	}
 
 	switch (*src_type) {
+	case PW_TYPE_BOOLEAN:
+		if ((strcmp(src, "yes") == 0) || (strcmp(src, "true") == 0) || (strcmp(src, "1") == 0)) {
+			dst->boolean = true;
+			break;
+		}
+
+		if ((strcmp(src, "no") == 0) || (strcmp(src, "false") == 0) || (strcmp(src, "0") == 0)) {
+			dst->boolean = false;
+			break;
+		}
+
+		fr_strerror_printf("Invalid value '%s' for boolean", src);
+		return -1;
+
 	case PW_TYPE_BYTE:
 	{
 		char *p;
@@ -743,12 +759,18 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 		i = fr_strtoul(src, &p);
 
 		/*
-		 *	Look for the named src for the given
-		 *	attribute.
+		 *	Unexpected text after the number, try to parse
+		 *	the input as an enumerated name.  If we can't
+		 *	do that, fail.
 		 */
-		if (src_enumv && *p && !is_whitespace(p)) {
+		if (*p && !is_whitespace(p)) {
+			if (!src_enumv) {
+				fr_strerror_printf("Invalid byte value '%s'", src);
+				return -1;
+			}
+
 			if ((dval = dict_valbyname(src_enumv->attr, src_enumv->vendor, src)) == NULL) {
-				fr_strerror_printf("Unknown or invalid value \"%s\" for attribute %s",
+				fr_strerror_printf("Unknown or invalid value '%s' for attribute %s",
 						   src, src_enumv->name);
 				return -1;
 			}
@@ -756,7 +778,7 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 			dst->byte = dval->value;
 		} else {
 			if (i > 255) {
-				fr_strerror_printf("Byte value \"%s\" is larger than 255", src);
+				fr_strerror_printf("Byte value '%s' is larger than 255", src);
 				return -1;
 			}
 
@@ -776,12 +798,18 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 		i = fr_strtoul(src, &p);
 
 		/*
-		 *	Look for the named src for the given
-		 *	attribute.
+		 *	Unexpected text after the number, try to parse
+		 *	the input as an enumerated name.  If we can't
+		 *	do that, fail.
 		 */
-		if (src_enumv && *p && !is_whitespace(p)) {
+		if (*p && !is_whitespace(p)) {
+			if (!src_enumv) {
+				fr_strerror_printf("Invalid short value '%s'", src);
+				return -1;
+			}
+
 			if ((dval = dict_valbyname(src_enumv->attr, src_enumv->vendor, src)) == NULL) {
-				fr_strerror_printf("Unknown or invalid value \"%s\" for attribute %s",
+				fr_strerror_printf("Unknown or invalid value '%s' for attribute %s",
 						   src, src_enumv->name);
 				return -1;
 			}
@@ -789,7 +817,7 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 			dst->ushort = dval->value;
 		} else {
 			if (i > 65535) {
-				fr_strerror_printf("Short value \"%s\" is larger than 65535", src);
+				fr_strerror_printf("Short value '%s' is larger than 65535", src);
 				return -1;
 			}
 
@@ -809,12 +837,19 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 		i = fr_strtoul(src, &p);
 
 		/*
-		 *	Look for the named src for the given
-		 *	attribute.
+		 *	There's text left over after the number.  Either it
+		 *	names an enumerated value, or the input simply isn't
+		 *	a number.  Without an enumeration to consult, the
+		 *	only honest answer is to fail.
 		 */
-		if (src_enumv && *p && !is_whitespace(p)) {
+		if (*p && !is_whitespace(p)) {
+			if (!src_enumv) {
+				fr_strerror_printf("Invalid integer value '%s'", src);
+				return -1;
+			}
+
 			if ((dval = dict_valbyname(src_enumv->attr, src_enumv->vendor, src)) == NULL) {
-				fr_strerror_printf("Unknown or invalid value \"%s\" for attribute %s",
+				fr_strerror_printf("Unknown or invalid value '%s' for attribute %s",
 						   src, src_enumv->name);
 				return -1;
 			}
@@ -837,7 +872,7 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 		 *	Note that ALL integers are unsigned!
 		 */
 		if (sscanf(src, "%" PRIu64, &i) != 1) {
-			fr_strerror_printf("Failed parsing \"%s\" as unsigned 64bit integer", src);
+			fr_strerror_printf("Failed parsing '%s' as unsigned 64bit integer", src);
 			return -1;
 		}
 		dst->integer64 = i;
@@ -868,7 +903,7 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 			date = mktime(&tm);
 
 		} else if (fr_get_time(src, &date) < 0) {
-			fr_strerror_printf("failed to parse time string \"%s\"", src);
+			fr_strerror_printf("failed to parse time string '%s'", src);
 			return -1;
 		}
 
@@ -879,7 +914,7 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 
 	case PW_TYPE_IFID:
 		if (ifid_aton(src, (void *) dst->ifid) == NULL) {
-			fr_strerror_printf("Failed to parse interface-id string \"%s\"", src);
+			fr_strerror_printf("Failed to parse interface-id string '%s'", src);
 			return -1;
 		}
 		break;
@@ -896,9 +931,20 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 		 *	ethernet address.
 		 */
 		if (is_integer(src)) {
-			uint64_t integer = htonll(atoll(src));
+			uint64_t int64 = (uint64_t) atoll(src);
 
-			memcpy(dst->ether, &integer, sizeof(dst->ether));
+			if (int64 > UINT64_C(0xffffffffffff)) {
+				fr_strerror_printf("Ethernet address '%s' is larger than 48 bits", src);
+				return -1;
+			}
+
+			int64 = htonll(int64);
+
+			/*
+			 *	Copy the lower 48 bits of the number into the ethernet field.
+			 */
+			memcpy(dst->ether, ((uint8_t *) &int64) + (sizeof(int64) - sizeof(dst->ether)),
+			       sizeof(dst->ether));
 			break;
 		}
 
@@ -917,11 +963,22 @@ ssize_t value_data_from_str(TALLOC_CTX *ctx, value_data_t *dst,
 				c1 = c2 = NULL;
 			}
 			if (!c1 || !c2 || (p_len >= sizeof(dst->ether))) {
-				fr_strerror_printf("failed to parse Ethernet address \"%s\"", src);
+				fr_strerror_printf("failed to parse Ethernet address '%s'", src);
 				return -1;
 			}
 			dst->ether[p_len] = ((c1-hextab)<<4) + (c2-hextab);
 			p_len++;
+		}
+
+		/*
+		 *	The return length for a fixed-size type comes from the
+		 *	type table, so a short address would have claimed six
+		 *	valid bytes while leaving the rest untouched.
+		 */
+		if (p_len != sizeof(dst->ether)) {
+			fr_strerror_printf("Ethernet address '%s' is too short, expected 6 octets, got %zu",
+					   src, p_len);
+			return -1;
 		}
 	}
 		break;
@@ -1281,7 +1338,7 @@ ssize_t value_data_cast(TALLOC_CTX *ctx, value_data_t *dst,
 
 		case PW_TYPE_INTEGER:
 			if (src->integer > INT_MAX) {
-				fr_strerror_printf("Invalid cast: From integer to signed.  integer value %u is larger "
+				fr_strerror_printf("Invalid cast from integer to signed.  integer value %u is larger "
 						   "than max signed int and would overflow", src->integer);
 				return -1;
 			}
@@ -1289,8 +1346,8 @@ ssize_t value_data_cast(TALLOC_CTX *ctx, value_data_t *dst,
 			break;
 
 		case PW_TYPE_INTEGER64:
-			if (src->integer > INT_MAX) {
-				fr_strerror_printf("Invalid cast: From integer64 to signed.  integer64 value %" PRIu64
+			if (src->integer64 > INT_MAX) {
+				fr_strerror_printf("Invalid cast from integer64 to signed.  integer64 value %" PRIu64
 						   " is larger than max signed int and would overflow", src->integer64);
 				return -1;
 			}
@@ -1519,7 +1576,13 @@ ssize_t value_data_cast(TALLOC_CTX *ctx, value_data_t *dst,
 		dst->integer = htonl(src->ipaddr.s_addr);
 
 	} else {		/* they're of the same byte order */
-		memcpy(&dst, &src, src_len);
+		/*
+		 *	Note that dst and src are already pointers.  Taking
+		 *	their addresses here copied between the local pointer
+		 *	variables instead of between the values, so the
+		 *	destination was never written.
+		 */
+		memcpy(dst, src, src_len);
 	}
 
 	return src_len;
@@ -1979,6 +2042,9 @@ print_int:
 				data->ether[2], data->ether[3],
 				data->ether[4], data->ether[5]);
 
+	case PW_TYPE_BOOLEAN:
+		return snprintf(out, outlen, "%s", data->boolean ? "yes" : "no");
+
 	/*
 	 *	Don't add default here
 	 */
@@ -1990,7 +2056,6 @@ print_int:
 	case PW_TYPE_EVS:
 	case PW_TYPE_VSA:
 	case PW_TYPE_TIMEVAL:
-	case PW_TYPE_BOOLEAN:
 	case PW_TYPE_MAX:
 		fr_assert(0);
 		*out = '\0';

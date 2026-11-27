@@ -1,7 +1,7 @@
 /*
  * rlm_eap_fast.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: d1f45b7976b006f8cee77555bc8e130862eacdbb $
+ * Version:     $Id: c3549f8d668f535f45abc1d51b5b8b255f7cee88 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: d1f45b7976b006f8cee77555bc8e130862eacdbb $")
+RCSID("$Id: c3549f8d668f535f45abc1d51b5b8b255f7cee88 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 
@@ -130,25 +130,6 @@ static int mod_instantiate(CONF_SECTION *cs, void **instance)
 		ERROR("rlm_eap_fast.pac_lifetime: must be non-zero");
 		return -1;
 	}
-
-#ifdef TLS1_3_VERSION
-	if (inst->tls_conf->min_version == TLS1_3_VERSION) {
-		ERROR("There are no standards for using TLS 1.3 with EAP-FAST.");
-		ERROR("You MUST enable TLS 1.2 for EAP-FAST to work.");
-		return -1;
-	}
-
-	if ((inst->tls_conf->max_version == TLS1_3_VERSION) ||
-	    (inst->tls_conf->min_version == TLS1_3_VERSION)) {
-		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-		WARN("!! There is no standard for using EAP-FAST with TLS 1.3");
-		WARN("!! Please set tls_max_version = \"1.2\"");
-		WARN("!! FreeRADIUS only supports TLS 1.3 for special builds of wpa_supplicant and Windows");
-		WARN("!! This limitation is likely to change in late 2021.");
-		WARN("!! If you are using this version of FreeRADIUS after 2021, you will probably need to upgrade");
-		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-	}
-#endif
 
 	rad_assert(PAC_A_ID_LENGTH == MD5_DIGEST_LENGTH);
 	FR_MD5_CTX ctx;
@@ -270,6 +251,15 @@ static int _session_ticket(SSL *s, uint8_t const *data, int len, void *arg)
 
 	RDEBUG("PAC provided via ClientHello SessionTicket extension");
 
+	/*
+	 *	Check that the ticket is large enough to contain a
+	 *	header, before we read the header.
+	 */
+	if (len < (int) sizeof(opaque->hdr)) {
+		errmsg = "PAC is too small to contain a header";
+		goto error;
+	}
+
 	if ((ntohs(opaque->hdr.type) & EAP_FAST_TLV_TYPE) != PAC_INFO_PAC_OPAQUE) {
 		errmsg = "PAC is not of type Opaque";
 error:
@@ -300,6 +290,17 @@ error:
 
 	if (length < PAC_A_ID_LENGTH + EVP_MAX_IV_LENGTH + EVP_GCM_TLS_TAG_LEN + 1) {
 		errmsg = "PAC file too short";
+		goto error;
+	}
+
+	/*
+	 *	eap_fast_decrypt() writes the decrypted data to
+	 *	opaque_plaintext, which is a fixed-size structure on
+	 *	the stack.  Bound the length by that structure, and
+	 *	not by the size of the ticket that the peer sent.
+	 */
+	if ((size_t) length > sizeof(*opaque) - sizeof(opaque->hdr)) {
+		errmsg = "PAC is too long";
 		goto error;
 	}
 

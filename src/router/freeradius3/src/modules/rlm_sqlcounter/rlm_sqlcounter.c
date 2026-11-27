@@ -15,20 +15,22 @@
  */
 
 /**
- * $Id: cd41ac41313e2cd268e3831118e38363191bdff7 $
+ * $Id: 0f3ecf674c4565491e7794570d6801c5322cd382 $
  * @file rlm_sqlcounter.c
  * @brief Tracks data usage and other counters using SQL.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2001  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: cd41ac41313e2cd268e3831118e38363191bdff7 $")
+RCSID("$Id: 0f3ecf674c4565491e7794570d6801c5322cd382 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 #include <freeradius-devel/rad_assert.h>
 
 #include <ctype.h>
+
+#define LOG_PREFIX "rlm_sqlcounter"
 
 #define MAX_QUERY_LEN 2048
 
@@ -134,7 +136,7 @@ static int find_next_reset(rlm_sqlcounter_t *inst, REQUEST *request, time_t time
 		}
 
 		num = atoi(inst->reset);
-		DEBUG3("rlm_sqlcounter: num=%d, last=%c",num,last);
+		ROPTIONAL(RDEBUG3, DEBUG3, "num=%d, last=%c", num, last);
 	}
 
 	if (strcmp(inst->reset, "hourly") == 0 || last == 'h') {
@@ -181,10 +183,10 @@ static int find_next_reset(rlm_sqlcounter_t *inst, REQUEST *request, time_t time
 	if (len == 0) *sNextTime = '\0';
 
 	if (is_monthly) {
-		DEBUG2("rlm_sqlcounter: Current Time: %" PRId64 " [%s], Next reset %" PRId64 " [%s], Reset day [%d]",
+		RDEBUG2("rlm_sqlcounter: Current Time: %" PRId64 " [%s], Next reset %" PRId64 " [%s], Reset day [%d]",
 			(int64_t) timeval, sCurrentTime, (int64_t) inst->reset_time, sNextTime, inst->reset_day);
 	} else {
-		DEBUG2("rlm_sqlcounter: Current Time: %" PRId64 " [%s], Next reset %" PRId64 " [%s]",
+		RDEBUG2("rlm_sqlcounter: Current Time: %" PRId64 " [%s], Next reset %" PRId64 " [%s]",
 			(int64_t) timeval, sCurrentTime, (int64_t) inst->reset_time, sNextTime);
 	}
 	return ret;

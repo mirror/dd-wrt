@@ -4,7 +4,7 @@
 #
 #	Non Protocol Attributes used by FreeRADIUS
 #
-#	$Id: 809e7a50fb8d938bf4ff875797365f565c60f61b $
+#	$Id: 7140c3b0c4c8bf1929eae2d3e4a3d2890232791a $
 #
 
 #	The attributes number ranges are allocates as follows:
@@ -301,11 +301,11 @@ ATTRIBUTE	PBKDF2-SHA1-Password			1186	octets secret
 ATTRIBUTE	PBKDF2-SHA256-Password			1187	octets secret
 ATTRIBUTE	PBKDF2-SHA512-Password			1188	octets secret
 ATTRIBUTE	PBKDF2-SHA256-LEGACY-Password		1189	octets secret
+ATTRIBUTE	Originating-Realm-Key			1190	string
+ATTRIBUTE	Proxy-To-Originating-Realm		1191	string
 
 ATTRIBUTE	MS-CHAP-Peer-Challenge			1192	octets
 ATTRIBUTE	Home-Server-Name			1193	string
-ATTRIBUTE	Originating-Realm-Key			1194	string
-ATTRIBUTE	Proxy-To-Originating-Realm		1195	string
 
 ATTRIBUTE	TOTP-Secret				1194	string # base32 encoded
 ATTRIBUTE	TOTP-Key				1195	octets # raw key
@@ -363,6 +363,8 @@ ATTRIBUTE	EAP-Pwd-Password-Prep			1222	byte
 
 ATTRIBUTE	TEAP-Type-Machine			1223	integer
 ATTRIBUTE	TEAP-Type-User				1224	integer
+
+ATTRIBUTE	PSK-Password				1225	octets secret
 
 #
 #	Range:	1280 - 1535
@@ -606,10 +608,12 @@ VALUE	TLS-Cache-Method		refresh			4
 
 ATTRIBUTE	TLS-Client-Cert-X509v3-Certificate-Policies 1939	string
 
-# 1940 - 1959: reserved for TLS session caching, mostly in 4.0
+# 1940 - 1959: reserved for TLS session caching
 
 ATTRIBUTE	TLS-Session-ID				1940	octets
 ATTRIBUTE	TLS-Session-Data			1942	octets
+ATTRIBUTE	TLS-Session-Lifetime			1943	integer
+ATTRIBUTE	TLS-Session-Expiry			1944	date
 
 # Set by EAP-TLS code
 ATTRIBUTE	TLS-OCSP-Cert-Valid			1943	integer

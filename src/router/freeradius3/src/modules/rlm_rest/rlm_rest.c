@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 5d1e567764e69181d107a2eb0fdc54a472d12e8a $
+ * $Id: 42a8a2827bb1c16026712ae577f5b09bbc46c30a $
  * @file rlm_rest.c
  * @brief Integrate FreeRADIUS with RESTfull APIs
  *
  * @copyright 2012-2014  Arran Cudbard-Bell <arran.cudbardb@freeradius.org>
  */
-RCSID("$Id: 5d1e567764e69181d107a2eb0fdc54a472d12e8a $")
+RCSID("$Id: 42a8a2827bb1c16026712ae577f5b09bbc46c30a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -63,6 +63,13 @@ static const CONF_PARSER section_config[] = {
 	{ "body", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_rest_section_t, body_str), "none" },
 	{ "attr_num", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_rest_section_t, attr_num), "no" },
 	{ "raw_value", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_rest_section_t, raw_value), "no" },
+
+	/*
+	 *	Defaults for response decoding.  "do_xlat" MUST default to "yes",
+	 *	existing configurations rely on values being expanded.
+	 */
+	{ "do_xlat", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_rest_section_t, do_xlat), "yes" },
+	{ "is_json", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_rest_section_t, is_json), "no" },
 	{ "data", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, rlm_rest_section_t, data), NULL },
 	{ "force_to", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_rest_section_t, force_to_str), NULL },
 

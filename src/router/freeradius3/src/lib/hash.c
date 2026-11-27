@@ -11,7 +11,7 @@
  *  rather than being able to move 1/2 of the entries in the chain with
  *  one update.
  *
- * Version:	$Id: b8ce15c54a524c4caa51b3f264e37687adf656f4 $
+ * Version:	$Id: b40e35f6707ab239dbfce1548cc3cb374c7021a0 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,7 @@
  *  Copyright 2005,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: b8ce15c54a524c4caa51b3f264e37687adf656f4 $")
+RCSID("$Id: b40e35f6707ab239dbfce1548cc3cb374c7021a0 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -828,8 +828,8 @@ uint32_t fr_hash_update(void const *data, size_t size, uint32_t hash)
 	uint8_t const *q = p + size;
 
 	while (p != q) {
-		hash *= FNV_MAGIC_PRIME;
 		hash ^= (uint32_t) (*p++);
+		hash *= FNV_MAGIC_PRIME;
     }
 
     return hash;
@@ -844,8 +844,8 @@ uint32_t fr_hash_string(char const *p)
 	uint32_t      hash = FNV_MAGIC_INIT;
 
 	while (*p) {
-		hash *= FNV_MAGIC_PRIME;
 		hash ^= (uint32_t) (*p++);
+		hash *= FNV_MAGIC_PRIME;
 	}
 
 	return hash;

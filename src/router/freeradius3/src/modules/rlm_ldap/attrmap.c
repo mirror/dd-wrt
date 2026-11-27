@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 75a2a5c7e9561a08f7c9503626ff4713e5f8195a $
+ * $Id: 97c21758ed9afebd131549a4b8d100a35971c6d9 $
  * @file ldap.c
  * @brief Functions for mapping between LDAP and FreeRADIUS attributes.
  *
@@ -62,13 +62,13 @@ int rlm_ldap_map_getvalue(TALLOC_CTX *ctx, VALUE_PAIR **out, REQUEST *request, v
 			if (map_afrom_attr_str(ctx, &attr, self->values[i]->bv_val,
 					       map->lhs->tmpl_request, map->lhs->tmpl_list,
 					       REQUEST_CURRENT, PAIR_LIST_REQUEST) < 0) {
-				RWDEBUG("Failed parsing \"%s\" as valuepair (%s), skipping...", fr_strerror(),
+				RWDEBUG("Failed parsing \"%s\" as valuepair (%s), skipping it", fr_strerror(),
 					self->values[i]->bv_val);
 				continue;
 			}
 
 			if (attr->lhs->tmpl_request != map->lhs->tmpl_request) {
-				RWDEBUG("valuepair \"%s\" has conflicting request qualifier (%s vs %s), skipping...",
+				RWDEBUG("valuepair \"%s\" has conflicting request qualifier (%s vs %s), skipping it",
 					self->values[i]->bv_val,
 					fr_int2str(request_refs, attr->lhs->tmpl_request, "<INVALID>"),
 					fr_int2str(request_refs, map->lhs->tmpl_request, "<INVALID>"));
@@ -78,7 +78,7 @@ int rlm_ldap_map_getvalue(TALLOC_CTX *ctx, VALUE_PAIR **out, REQUEST *request, v
 			}
 
 			if ((attr->lhs->tmpl_list != map->lhs->tmpl_list)) {
-				RWDEBUG("valuepair \"%s\" has conflicting list qualifier (%s vs %s), skipping...",
+				RWDEBUG("valuepair \"%s\" has conflicting list qualifier (%s vs %s), skipping it",
 					self->values[i]->bv_val,
 					fr_int2str(pair_lists, attr->lhs->tmpl_list, "<INVALID>"),
 					fr_int2str(pair_lists, map->lhs->tmpl_list, "<INVALID>"));
@@ -86,7 +86,7 @@ int rlm_ldap_map_getvalue(TALLOC_CTX *ctx, VALUE_PAIR **out, REQUEST *request, v
 			}
 
 			if (map_to_vp(request, &vp, request, attr, NULL) < 0) {
-				RWDEBUG("Failed creating attribute for valuepair \"%s\", skipping...",
+				RWDEBUG("Failed creating attribute for valuepair \"%s\", skipping it",
 					self->values[i]->bv_val);
 				goto next_pair;
 			}
@@ -373,13 +373,13 @@ int rlm_ldap_map_do(const rlm_ldap_t *inst, REQUEST *request, LDAP *handle,
 			if (map_afrom_attr_str(request, &attr, value,
 					       REQUEST_CURRENT, PAIR_LIST_REPLY,
 					       REQUEST_CURRENT, PAIR_LIST_REQUEST) < 0) {
-				RWDEBUG("Failed parsing '%s' value \"%s\" as valuepair (%s), skipping...",
+				RWDEBUG("Failed parsing '%s' value \"%s\" as valuepair (%s), skipping it",
 					fr_strerror(), inst->valuepair_attr, value);
 				talloc_free(value);
 				continue;
 			}
 			if (map_to_request(request, attr, map_to_vp, NULL) < 0) {
-				RWDEBUG("Failed adding \"%s\" to request, skipping...", value);
+				RWDEBUG("Failed adding \"%s\" to request, skipping it", value);
 			} else {
 				applied++;
 			}

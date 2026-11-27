@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 999e6c49e3965a4cc699e43482010ce54f356950 $
+ * $Id: 934c6eaf1068a7af2a5274474cb6b3370bf0e3a4 $
  * @file rlm_radutmp.c
  * @brief Tracks sessions.
  *
  * @copyright 2000-2013  The FreeRADIUS server project
  */
-RCSID("$Id: 999e6c49e3965a4cc699e43482010ce54f356950 $")
+RCSID("$Id: 934c6eaf1068a7af2a5274474cb6b3370bf0e3a4 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/radutmp.h>
@@ -63,9 +63,9 @@ static const CONF_PARSER module_config[] = {
 	{ "case_sensitive", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_radutmp_t, case_sensitive), "yes" },
 	{ "check_with_nas", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_radutmp_t, check_nas), "yes" },
 	{ "perm", FR_CONF_OFFSET(PW_TYPE_INTEGER | PW_TYPE_DEPRECATED, rlm_radutmp_t, permission), NULL },
-	{ "permissions", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_radutmp_t, permission), "0644" },
+	{ "permissions", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_radutmp_t, permission), "0600" },
 	{ "callerid", FR_CONF_OFFSET(PW_TYPE_BOOLEAN | PW_TYPE_DEPRECATED, rlm_radutmp_t, caller_id_ok), NULL },
-	{ "caller_id", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_radutmp_t, caller_id_ok), "no" },
+	{ "caller_id", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_radutmp_t, caller_id_ok), "yes" },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -167,7 +167,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 	char		*expanded = NULL;
 
 	if (request->packet->src_ipaddr.af != AF_INET) {
-		DEBUG("rlm_radutmp: IPv6 not supported!");
+		RDEBUG("rlm_radutmp: IPv6 not supported!");
 		return RLM_MODULE_NOOP;
 	}
 

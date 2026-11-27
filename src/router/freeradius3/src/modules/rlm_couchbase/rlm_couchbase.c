@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 8e8c813061d8e38380f55365aff359d559d89bd2 $
+ * $Id: 947cb1eb657e2989395a86483423e8d698719a94 $
  *
  * @brief Integrate FreeRADIUS with the Couchbase document database.
  * @file rlm_couchbase.c
@@ -24,7 +24,7 @@
  * @copyright 2013-2014 The FreeRADIUS Server Project.
  */
 
-RCSID("$Id: 8e8c813061d8e38380f55365aff359d559d89bd2 $")
+RCSID("$Id: 947cb1eb657e2989395a86483423e8d698719a94 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/libradius.h>
@@ -39,7 +39,7 @@ RCSID("$Id: 8e8c813061d8e38380f55365aff359d559d89bd2 $")
  * Client Configuration
  */
 static const CONF_PARSER client_config[] = {
-	{ "view", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_couchbase_t, client_view), "_design/client/_view/by_name" },
+	{ "view", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_couchbase_t, client_view), "_design/client/_view/by_id" },
 	CONF_PARSER_TERMINATOR
 };
 

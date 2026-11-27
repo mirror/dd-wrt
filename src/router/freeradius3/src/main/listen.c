@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id: 972ba861dce13f0af43d18f3a6d183decc20e04c $
+ * Version:	$Id: c5049e0f8bc9df6355e24d004c5e3ed1cb828e52 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 972ba861dce13f0af43d18f3a6d183decc20e04c $")
+RCSID("$Id: c5049e0f8bc9df6355e24d004c5e3ed1cb828e52 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -101,6 +101,10 @@ static int command_write_magic(int newfd, listen_socket_t *sock);
 
 #ifdef WITH_COA_TUNNEL
 static int listen_coa_init(void);
+#endif
+
+#ifdef WITH_PROXY
+static rad_listen_t *proxy_default = NULL;
 #endif
 
 extern fr_protocol_t master_listen[];
@@ -217,6 +221,13 @@ RADCLIENT *client_listener_find(rad_listen_t *listener,
 		 */
 		if ((client->created + client->lifetime) > now) return client;
 
+		/*
+		 *	Multiple TCP / TLS connections can be using
+		 *	the same client.  Keep it alive until such
+		 *	time as all of the connections have gone away.
+		 */
+		if (client->limit.num_connections > 0) return client;
+
 #ifdef HAVE_SYS_STAT_H
 		/*
 		 *	The client was read from a file, and the file
@@ -235,7 +246,6 @@ RADCLIENT *client_listener_find(rad_listen_t *listener,
 			}
 		}
 #endif
-
 
 		/*
 		 *	Delete the client from the known list.
@@ -360,12 +370,13 @@ RADCLIENT *client_listener_find(rad_listen_t *listener,
 	if (request->client == client) {
 		created = client_afrom_request(clients, request);
 	} else {
-		created = request->client;
+		created = client_add_dynamic(clients, client, request->client, false);
+		if (!created) goto unknown;
 
-		/*
-		 *	This frees the client if it isn't valid.
-		 */
-		if (!client_add_dynamic(clients, client, created)) goto unknown;
+		if (created != request->client) {
+			client_free(request->client);
+			request->client = created;
+		}
 	}
 
 	request->server = client->server;
@@ -391,6 +402,9 @@ static void listener_coa_update(rad_listen_t *this, VALUE_PAIR *vps);
 #  define TLS_FREE(_x)
 #endif
 
+/*
+ *	Called with the mutex held, and unlocks the mutex.
+ */
 void tls_socket_close(rad_listen_t *listener);
 
 /*
@@ -407,7 +421,7 @@ int rad_status_server(REQUEST *request)
 	if (request->listener->tls) {
 		listen_socket_t *sock = request->listener->data;
 
-		PTHREAD_MUTEX_LOCK(&sock->mutex);
+		PTHREAD_MUTEX_LOCK(sock->mutex);
 		if (sock->state == LISTEN_TLS_CHECKING) {
 			int autz_type = PW_AUTZ_TYPE;
 			char const *name = "Autz-Type";
@@ -422,10 +436,17 @@ int rad_status_server(REQUEST *request)
 
 			dval = dict_valbyname(autz_type, 0, "New-TLS-Connection");
 			if (dval) {
+				PTHREAD_MUTEX_UNLOCK(sock->mutex);
 				rcode = process_authorize(dval->value, request);
+				PTHREAD_MUTEX_LOCK(sock->mutex);
 			} else {
 				rcode = RLM_MODULE_OK;
 				RWDEBUG("(TLS) Did not find '%s New-TLS-Connection' - defaulting to accept", name);
+			}
+
+			if (listener->status >= RAD_LISTEN_STATUS_EOL) {
+				PTHREAD_MUTEX_UNLOCK(sock->mutex);
+				return 0;
 			}
 
 			if ((rcode == RLM_MODULE_OK) || (rcode == RLM_MODULE_UPDATED)) {
@@ -437,6 +458,8 @@ int rad_status_server(REQUEST *request)
 				rad_assert(sock->request->packet != request->packet);
 
 				sock->state = LISTEN_TLS_SETUP;
+				PTHREAD_MUTEX_UNLOCK(sock->mutex);
+				radius_update_listener(listener);
 
 			} else {
 				RWDEBUG("(TLS) Connection is not authorized - closing TCP socket.");
@@ -445,11 +468,9 @@ int rad_status_server(REQUEST *request)
 				tls_socket_close(listener);
 			}
 
-			PTHREAD_MUTEX_UNLOCK(&sock->mutex);
-			radius_update_listener(listener);
 			return 0;
 		}
-		PTHREAD_MUTEX_UNLOCK(&sock->mutex);
+		PTHREAD_MUTEX_UNLOCK(sock->mutex);
 	}
 #endif
 
@@ -481,7 +502,7 @@ int rad_status_server(REQUEST *request)
 			request->reply->code = PW_CODE_ACCESS_ACCEPT;
 
 #ifdef WITH_COA_TUNNEL
-			if (request->listener->send_coa) listener_coa_update(request->listener, request->packet->vps);
+			if (request->listener->send_coa && request->client->reverse_coa) listener_coa_update(request->listener, request->packet->vps);
 #endif
 			break;
 
@@ -512,7 +533,7 @@ int rad_status_server(REQUEST *request)
 			request->reply->code = PW_CODE_ACCOUNTING_RESPONSE;
 
 #ifdef WITH_COA_TUNNEL
-			if (request->listener->send_coa) listener_coa_update(request->listener, request->packet->vps);
+			if (request->listener->send_coa && request->client->reverse_coa) listener_coa_update(request->listener, request->packet->vps);
 #endif
 			break;
 
@@ -697,6 +718,34 @@ static void blastradius_checks(RADIUS_PACKET *packet, RADCLIENT *client)
 }
 
 #ifdef WITH_TCP
+/*
+ *	Close a TCP socket.
+ *
+ *	We do NOT free the listener here.  Requests may still be using
+ *	the listener.  The listener is instead freed when all of the
+ *	requests using it are done.
+ */
+static void tcp_socket_close(rad_listen_t *listener)
+{
+	listen_socket_t *sock = listener->data;
+
+	listener->status = RAD_LISTEN_STATUS_EOL;
+
+	/*
+	 *	Remove the packet and request.  No other thread is
+	 *	accessing the socket data, unlike TLS.  So we don't
+	 *	need a mutex, and we can delete these data structures.
+	 */
+	rad_free(&sock->packet);
+	TLS_FREE(sock->request);
+
+	/*
+	 *	Tell the event handler that an FD has disappeared.
+	 */
+	radius_update_listener(listener);
+}
+
+
 static int dual_tcp_recv(rad_listen_t *listener)
 {
 	int rcode;
@@ -729,7 +778,7 @@ static int dual_tcp_recv(rad_listen_t *listener)
 	 */
 	packet = sock->packet;
 
-	rcode = fr_tcp_read_packet(packet, 0);
+	rcode = fr_tcp_read_packet(packet, RAD_RECV_FLAG_NONE);
 
 	/*
 	 *	Still only a partial packet.  Put it back, and return,
@@ -739,32 +788,21 @@ static int dual_tcp_recv(rad_listen_t *listener)
 		return 0;
 	}
 
-	if (rcode == -1) {	/* error reading packet */
+	if (rcode < 0) {	/* error or connection reset */
 		char buffer[256];
 
-		ERROR("Invalid packet from %s port %d, closing socket: %s",
-		       ip_ntoh(&packet->src_ipaddr, buffer, sizeof(buffer)),
-		       packet->src_port, fr_strerror());
-	}
+		if (rcode == -2) {
+			ERROR("Error reading from %s port %d, closing socket: %s",
+			      ip_ntoh(&packet->src_ipaddr, buffer, sizeof(buffer)),
+			      packet->src_port, fr_syserror(errno));
+		} else {
+			ERROR("Invalid packet from %s port %d, closing socket: %s",
+			      ip_ntoh(&packet->src_ipaddr, buffer, sizeof(buffer)),
+			      packet->src_port, fr_strerror());
+		}
 
-	if (rcode < 0) {	/* error or connection reset */
-		rad_free(&sock->packet);
-		TLS_FREE(sock->request);
-		listener->status = RAD_LISTEN_STATUS_EOL;
-
-		/*
-		 *	Tell the event handler that an FD has disappeared.
-		 */
 		DEBUG("Client has closed connection");
-		radius_update_listener(listener);
-
-		/*
-		 *	Do NOT free the listener here.  It's in use by
-		 *	a request, and will need to hang around until
-		 *	all of the requests are done.
-		 *
-		 *	It is instead free'd in remove_from_request_hash()
-		 */
+		tcp_socket_close(listener);
 		return 0;
 	}
 
@@ -778,7 +816,10 @@ static int dual_tcp_recv(rad_listen_t *listener)
 		/*
 		 *	Enforce BlastRADIUS checks on TCP, too.
 		 */
-		if (!rad_packet_ok(packet, (client->require_ma == FR_BOOL_TRUE) | ((client->limit_proxy_state == FR_BOOL_TRUE) << 2), NULL)) {
+		if (!rad_packet_ok(packet,
+				   ((client->require_ma == FR_BOOL_TRUE) ? RAD_RECV_FLAG_REQUIRE_MA : 0) |
+				   ((client->limit_proxy_state == FR_BOOL_TRUE) ? RAD_RECV_FLAG_LIMIT_PROXY_STATE : 0),
+				   NULL)) {
 			FR_STATS_INC(auth, total_malformed_requests);
 			rad_free(&sock->packet);
 			return 0;
@@ -850,9 +891,11 @@ static int tls_sni_callback(SSL *ssl, UNUSED int *al, void *arg)
 {
 	fr_tls_server_conf_t *conf = arg;
 	char const *name, *p;
+	char *q;
 	int type;
 	fr_realm_ctx_t my_r, *r;
 	REQUEST *request;
+	char lower[256];
 	char buffer[PATH_MAX];
 
 	/*
@@ -861,37 +904,64 @@ static int tls_sni_callback(SSL *ssl, UNUSED int *al, void *arg)
 	type = SSL_get_servername_type(ssl);
 	if (type < 0) return SSL_TLSEXT_ERR_OK;
 
-	/*
-	 *	No realms configured, just use the default context.
-	 */
-	if (!conf->realms) return SSL_TLSEXT_ERR_OK;
-
 	name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 	if (!name) return SSL_TLSEXT_ERR_OK;
 
 	/*
 	 *	RFC Section 6066 Section 3 says that the names are
 	 *	ASCII, without a trailing dot.  i.e. punycode.
+	 *
+	 *	DNS names are case-insensitive, so we force the name
+	 *	to lowercase.  That lets us match the name against
+	 *	the realm certificates, and lets policies compare it
+	 *	without worrying about case.
 	 */
-	for (p = name; *p != '\0'; p++) {
-		if (*p == '-') continue;
-		if (*p == '.') continue;
-		if ((*p >= 'A') && (*p <= 'Z')) continue;
-		if ((*p >= 'a') && (*p <= 'z')) continue;
-		if ((*p >= '0') && (*p <= '9')) continue;
-
+	for (p = name, q = lower; *p != '\0'; p++, q++) {
 		/*
-		 *	Anything else, fail.
+		 *	Too long, fail.
 		 */
-		return SSL_TLSEXT_ERR_ALERT_FATAL;
+		if ((size_t) (q - lower) >= (sizeof(lower) - 1)) goto invalid;
+
+		if ((*p == '-') || (*p == '.') ||
+		    ((*p >= 'a') && (*p <= 'z')) ||
+		    ((*p >= '0') && (*p <= '9'))) {
+			*q = *p;
+
+		} else if ((*p >= 'A') && (*p <= 'Z')) {
+			*q = *p + ('a' - 'A');
+
+		} else {
+			/*
+			 *	Anything else, fail.
+			 */
+		invalid:
+			/*
+			 *	If we have no realms, then we don't care
+			 *	about the name.  Otherwise it's an error.
+			 */
+			if (!conf->realms) return SSL_TLSEXT_ERR_OK;
+
+			return SSL_TLSEXT_ERR_ALERT_FATAL;
+		}
+	}
+	*q = '\0';
+
+	/*
+	 *	Set an attribute saying which server has been selected.
+	 *	This is done even if there are no realms, so that
+	 *	policies can see the name which the client requested.
+	 */
+	request = (REQUEST *)SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_REQUEST);
+	if (request) {
+		(void) pair_make_config("TLS-Server-Name-Indication", lower, T_OP_SET);
 	}
 
 	/*
-	 *	Too long, fail.
+	 *	No realms configured, just use the default context.
 	 */
-	if ((p - name) > 255) return SSL_TLSEXT_ERR_ALERT_FATAL;
+	if (!conf->realms) return SSL_TLSEXT_ERR_OK;
 
-	snprintf(buffer, sizeof(buffer), "%s/%s.pem", conf->realm_dir, name);
+	snprintf(buffer, sizeof(buffer), "%s/%s.pem", conf->realm_dir, lower);
 
 	my_r.name = buffer;
 	r = fr_hash_table_finddata(conf->realms, &my_r);
@@ -901,14 +971,6 @@ static int tls_sni_callback(SSL *ssl, UNUSED int *al, void *arg)
 	 *	one.
 	 */
 	if (r) (void) SSL_set_SSL_CTX(ssl, r->ctx);
-
-	/*
-	 *	Set an attribute saying which server has been selected.
-	 */
-	request = (REQUEST *)SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_REQUEST);
-	if (request) {
-		(void) pair_make_config("TLS-Server-Name-Indication", name, T_OP_SET);
-	}
 
 	return SSL_TLSEXT_ERR_OK;
 }
@@ -1114,6 +1176,107 @@ int fr_radiusv11_client_get_alpn(rad_listen_t *listener)
 #endif
 
 
+/*
+ *	Initialize a newly accepted listener from the parent
+ *	listener that accepted the connection.
+ *
+ *	The child shares the *configuration* of the parent.  The
+ *	child does not share the *state* of the parent.  We
+ *	therefore copy the configuration field by field, instead
+ *	of copying the entire structure.  Copying the whole
+ *	structure would also copy the run-time state of the
+ *	parent: request counts, statistics, and the shut-down
+ *	state.
+ *
+ *	The caller sets the fields that describe the child: fd,
+ *	status, data, and recv.
+ */
+static void listen_init_from_parent(rad_listen_t *this, rad_listen_t *parent)
+{
+	/*
+	 *	Which parent accepted the child, and which virtual
+	 *	server processes the packets.
+	 */
+	this->parent = parent;
+	this->server = parent->server;
+	this->cs = parent->cs;
+
+	/*
+	 *	How the child writes and prints the packets.  The
+	 *	caller sets recv, because recv depends on whether the
+	 *	connection uses TLS.
+	 */
+	this->send = parent->send;
+	this->encode = parent->encode;
+	this->decode = parent->decode;
+	this->print = parent->print;
+
+	this->proxy_send = parent->proxy_send;
+	this->proxy_encode = parent->proxy_encode;
+	this->proxy_decode = parent->proxy_decode;
+
+	/*
+	 *	Configuration that applies to every connection that
+	 *	the parent accepts.
+	 */
+	this->dual = parent->dual;
+	this->nodup = parent->nodup;
+	this->proxy_protocol = parent->proxy_protocol;
+
+	this->filter_proxy_state = parent->filter_proxy_state;
+	this->proxy_state_random[0] = fr_rand();
+	this->proxy_state_random[1] = fr_rand();
+
+#ifdef WITH_TLS
+	/*
+	 *	The parent owns the TLS configuration.  The caller may
+	 *	replace this->tls with the TLS configuration of the
+	 *	client.
+	 */
+	this->tls = parent->tls;
+	this->check_client_connections = parent->check_client_connections;
+
+#ifdef WITH_RADIUSV11
+	this->radiusv11 = parent->radiusv11;
+#endif
+
+#ifdef WITH_COA_TUNNEL
+	this->key = parent->key;
+	this->send_coa = parent->send_coa;
+
+	this->coa_irt = parent->coa_irt;
+	this->coa_mrc = parent->coa_mrc;
+	this->coa_mrt = parent->coa_mrt;
+	this->coa_mrd = parent->coa_mrd;
+	this->coa_max_keys = parent->coa_max_keys;
+#endif
+#endif
+
+	/*
+	 *	Fields that we deliberately do NOT copy, because
+	 *	each field below holds state of the parent, and not
+	 *	configuration of the parent:
+	 *
+	 *	next, fd_updating	the list of listeners waiting for
+	 *				the main thread to update the
+	 *				listeners.
+	 *	count			the number of requests using the
+	 *				parent.
+	 *	children, listen	only the parent listens, and only
+	 *				the parent has children.
+	 *	dead, blocked		the parent may have been shut
+	 *				down.  The child has not been
+	 *				shut down.
+	 *	entry			the place of the parent in the
+	 *				home server free list.
+	 *	num_ids_used		the number of CoA IDs that the
+	 *				parent uses.
+	 *	stats			the child has not yet received
+	 *				any packets.
+	 */
+}
+
+
 static int dual_tcp_accept(rad_listen_t *listener)
 {
 	int newfd;
@@ -1145,8 +1308,9 @@ static int dual_tcp_accept(rad_listen_t *listener)
 	}
 
 	if (!fr_sockaddr2ipaddr(&src, salen, &src_ipaddr, &src_port)) {
-		close(newfd);
 		DEBUG2(" ... unknown address family");
+	close_return:
+		close(newfd);
 		return 0;
 	}
 
@@ -1156,9 +1320,8 @@ static int dual_tcp_accept(rad_listen_t *listener)
 	 */
 	if ((client = client_listener_find(listener,
 					   &src_ipaddr, src_port)) == NULL) {
-		close(newfd);
 		FR_STATS_INC(auth, total_invalid_requests);
-		return 0;
+		goto close_return;
 	}
 
 	if (radius_event_fd_full()
@@ -1167,8 +1330,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 #endif
 		) {
 		RATE_LIMIT(INFO("Ignoring new connection from client %s too many connections are open", client->shortname));
-		close(newfd);
-		return 0;
+		goto close_return;
 	}
 
 #ifdef WITH_TLS
@@ -1183,8 +1345,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 	 */
 	if (client->tls_required && !listener->tls) {
 		INFO("Ignoring connection to TLS socket from non-TLS client");
-		close(newfd);
-		return 0;
+		goto close_return;
 	}
 
 #ifdef WITH_RADIUSV11
@@ -1193,8 +1354,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		case FR_RADIUSV11_FORBID:
 			if (client->radiusv11 == FR_RADIUSV11_REQUIRE) {
 				RATE_LIMIT(INFO("Ignoring new connection from client %s it is marked as 'radiusv11 = require', and this socket has 'radiusv11 = forbid'", client->shortname));
-				close(newfd);
-				return 0;
+				goto close_return;
 			}
 			break;
 
@@ -1207,8 +1367,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		case FR_RADIUSV11_REQUIRE:
 			if (client->radiusv11 == FR_RADIUSV11_FORBID) {
 				RATE_LIMIT(INFO("Ignoring new connection from client %s as it is marked as 'radiusv11 = forbid', and this socket has 'radiusv11 = require'", client->shortname));
-				close(newfd);
-				return 0;
+				goto close_return;
 			}
 			break;
 		}
@@ -1226,8 +1385,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		 *	FIXME: Print client IP/port, and server IP/port.
 		 */
 		RATE_LIMIT(INFO("Ignoring new connection from client %s due to client max_connections (%d)", client->shortname, client->limit.max_connections));
-		close(newfd);
-		return 0;
+		goto close_return;
 	}
 
 	sock = listener->data;
@@ -1237,8 +1395,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		 *	FIXME: Print client IP/port, and server IP/port.
 		 */
 		RATE_LIMIT(INFO("Ignoring new connection from client %s due to socket max_connections (%d)", client->shortname, sock->limit.num_connections));
-		close(newfd);
-		return 0;
+		goto close_return;
 	}
 
 	/*
@@ -1247,7 +1404,10 @@ static int dual_tcp_accept(rad_listen_t *listener)
 	 *	child listener will be done in a child thread.
 	 */
 	this = listen_alloc(NULL, listener->type);
-	if (!this) return -1;
+	if (!this) {
+		close(newfd);
+		return -1;
+	}
 
 	/*
 	 *	Now that we've opened a connection, increment the reference count.
@@ -1256,20 +1416,27 @@ static int dual_tcp_accept(rad_listen_t *listener)
 	sock->limit.num_connections++;
 
 	/*
-	 *	Copy everything, including the pointer to the socket
-	 *	information.
+	 *	Copy the socket information from the parent, and then
+	 *	copy the listener configuration.  listen_alloc() zeroed
+	 *	every other field.  Zero is the correct value for the
+	 *	child.  Only the parent listens, only the parent has
+	 *	children, and the child has not yet received any
+	 *	packets.
 	 */
 	sock = this->data;
-	memcpy(this->data, listener->data, sizeof(*sock));
-	memcpy(this, listener, sizeof(*this));
-	this->next = NULL;
-	this->children = NULL;
-	this->data = sock;	/* fix it back */
-	this->listen = false;
-#ifdef WITH_TCP
-	this->nonblock = listener->nonblock;
-#endif
+	memcpy(sock, listener->data, sizeof(*sock));
 
+	listen_init_from_parent(this, listener);
+
+	/*
+	 *	Fields that describe the child.
+	 */
+	this->fd = newfd;
+	this->status = RAD_LISTEN_STATUS_INIT;
+
+	sock->mutex = NULL;	/* we're not using our parents mutex */
+	sock->read_buf = NULL;	/* proxy sockets only */
+	sock->write_buf = NULL;
 	sock->parent = listener->data;
 	sock->other_ipaddr = src_ipaddr;
 	sock->other_port = src_port;
@@ -1295,12 +1462,11 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		sock->limit.lifetime = client->limit.lifetime;
 	}
 
-	this->fd = newfd;
-	this->status = RAD_LISTEN_STATUS_INIT;
-
-	this->parent = listener;
 	if (!rbtree_insert(listener->children, this)) {
 		ERROR("Failed inserting TCP socket into parent list.");
+	error:
+		talloc_free(this);
+		return -1;
 	}
 
 #ifdef WITH_COMMAND_SOCKET
@@ -1319,7 +1485,13 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		if (this->tls) {
 			this->recv = dual_tls_recv;
 			this->send = dual_tls_send;
-			this->nonblock = true;
+
+#ifdef HAVE_PTHREAD_H
+			sock->mutex = talloc_zero(sock, pthread_mutex_t);
+			if (!sock->mutex) goto tree_error;
+
+			if (pthread_mutex_init(sock->mutex, NULL) < 0) goto tree_error;
+#endif
 
 			/*
 			 *	Set up SNI callback.  We don't do it
@@ -1389,20 +1561,25 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		home->coa_mrc = this->coa_mrc;
 		home->coa_mrd = this->coa_mrd;
 		home->recv_coa_server = this->server;
+
+		/*
+		 *	Wait for the NAS for as long as we would retransmit.
+		 */
+		home->response_window.tv_sec = this->coa_mrd;
 	}
 #endif
 
-#ifdef WITH_TCP
 	/*
 	 *	Configure non-blocking sockets if requested.
 	 */
-	if (this->nonblock) {
-		if (fr_nonblock(this->fd) < 0) {
-			ERROR("Failed setting non-blocking on socket: %s",
-			      fr_syserror(errno));
-			close(this->fd);
-			return 0; /* do NOT close the parent socket! */
-		}
+	if (fr_nonblock(this->fd) < 0) {
+		ERROR("Failed setting non-blocking on socket: %s",
+		      fr_syserror(errno));
+#ifdef WITH_TLS
+	tree_error:
+#endif
+		rbtree_deletebydata(listener->children, this);
+		goto error;
 	}
 
 #ifdef TCP_NODELAY
@@ -1414,11 +1591,9 @@ static int dual_tcp_accept(rad_listen_t *listener)
 
 		if (setsockopt(this->fd, SOL_TCP, TCP_NODELAY, &on, sizeof(on)) < 0) {
 			ERROR("(TLS) Failed to set TCP_NODELAY: %s", fr_syserror(errno));
-			close(this->fd);
-			return 0; /* do NOT close the parent socket! */
+			goto tree_error;
 		}
 	}
-#endif
 #endif
 
 	/*
@@ -1450,9 +1625,14 @@ static void common_socket_free(rad_listen_t *this)
 	if (sock->client && sock->client->limit.num_connections > 0) {
 		sock->client->limit.num_connections--;
 	}
-	if (sock->home && sock->home->limit.num_connections > 0) {
+
+#ifdef WITH_PROXY
+	if (sock->home && (sock->home->limit.num_connections > 0)) {
 		sock->home->limit.num_connections--;
+
+		home_server_active_connections_decrement(this);
 	}
+#endif
 }
 #else
 #define common_socket_free NULL
@@ -1472,11 +1652,9 @@ int common_socket_print(rad_listen_t const *this, char *buffer, size_t bufsize)
 
 	ADDSTRING(name);
 
-#ifdef WITH_TCP
 	if (this->dual) {
 		ADDSTRING("+acct");
 	}
-#endif
 
 #ifdef WITH_COA_TUNNEL
 	if (this->send_coa) {
@@ -1604,9 +1782,18 @@ static CONF_PARSER performance_config[] = {
 	CONF_PARSER_TERMINATOR
 };
 
+static CONF_PARSER security_config[] = {
+	{ "filter_proxy_state", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rad_listen_t, filter_proxy_state), NULL },
+
+	CONF_PARSER_TERMINATOR
+};
+
 
 static CONF_PARSER limit_config[] = {
 	{ "max_pps", FR_CONF_OFFSET(PW_TYPE_INTEGER, listen_socket_t, max_rate), NULL },
+#ifdef WITH_TLS
+	{ "max_packet_size", FR_CONF_OFFSET(PW_TYPE_INTEGER, listen_socket_t, limit.max_packet_size), STRINGIFY(MAX_PACKET_LEN) },
+#endif
 
 #ifdef WITH_TCP
 	{ "max_connections", FR_CONF_OFFSET(PW_TYPE_INTEGER, listen_socket_t, limit.max_connections), "16" },
@@ -1628,6 +1815,7 @@ static CONF_PARSER coa_config[] = {
 	{ "mrt",  FR_CONF_OFFSET(PW_TYPE_INTEGER, rad_listen_t, coa_mrt), STRINGIFY(16) },
 	{ "mrc",  FR_CONF_OFFSET(PW_TYPE_INTEGER, rad_listen_t, coa_mrc), STRINGIFY(5) },
 	{ "mrd",  FR_CONF_OFFSET(PW_TYPE_INTEGER, rad_listen_t, coa_mrd), STRINGIFY(30) },
+	{ "max_keys",  FR_CONF_OFFSET(PW_TYPE_INTEGER, rad_listen_t, coa_max_keys), STRINGIFY(4096) },
 	CONF_PARSER_TERMINATOR
 };
 #endif
@@ -1742,11 +1930,19 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 		 *	UDP doesn't, so it's allowed.
 		 */
 #ifdef WITH_PROXY
-		if ((this->type == RAD_LISTEN_PROXY) &&
-		    (sock->proto != IPPROTO_UDP)) {
-			cf_log_err_cs(cs,
-				   "Proxy listeners can only listen on proto = udp");
-			return -1;
+		if (this->type == RAD_LISTEN_PROXY) {
+			if (sock->proto != IPPROTO_UDP) {
+				cf_log_err_cs(cs,
+					      "Proxy listeners can only listen on proto = udp");
+				return -1;
+			}
+
+			/*
+			 *	Cache this for the various security configurations.
+			 */
+			if (!proxy_default && fr_inaddr_any(&sock->my_ipaddr) && !sock->my_port) {
+				proxy_default = this;
+			}
 		}
 #endif	/* WITH_PROXY */
 
@@ -1774,20 +1970,12 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 			 */
 			if (listen_port == 0) listen_port = PW_RADIUS_TLS_PORT;
 
-			this->tls = tls_server_conf_parse(tls);
+			this->tls = tls_server_conf_parse(tls, false);
 			if (!this->tls) {
 				return -1;
 			}
 
 			this->tls->name = "RADIUS/TLS";
-
-#ifdef HAVE_PTHREAD_H
-			if (pthread_mutex_init(&sock->mutex, NULL) < 0) {
-				rad_assert(0 == 1);
-				listen_free(&this);
-				return 0;
-			}
-#endif
 
 			rcode = cf_item_parse(cs, "check_client_connections", FR_ITEM_POINTER(PW_TYPE_BOOLEAN, &this->check_client_connections), "no");
 			if (rcode < 0) return -1;
@@ -1803,8 +1991,6 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 				this->radiusv11 = this->tls->radiusv11 = rcode;
 			}
 #endif
-
-			this->nonblock = true;
 		}
 #else  /* WITH_TLS */
 		/*
@@ -1816,18 +2002,6 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 			return -1;
 		}
 #endif	/* WITH_TLS */
-
-		/*
-		 *	Allow non-blocking for TCP sockets
-		 *
-		 *	For TLS, we always set nonblock=true, which avoids calling this section The check
-		 *	below just means that we don't have to have more ifdef's around checking for
-		 *	this->tls.
-		 */
-		if (!this->nonblock && (sock->proto == IPPROTO_TCP)) {
-			rcode = cf_item_parse(cs, "nonblock", FR_ITEM_POINTER(PW_TYPE_BOOLEAN, &this->nonblock), NULL);
-			if (rcode < 0) return -1;
-		}
 
 #endif	/* WITH_TCP */
 
@@ -1855,6 +2029,16 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 		rcode = cf_section_parse(subcs, sock,
 					 limit_config);
 		if (rcode < 0) return -1;
+
+#ifdef WITH_TLS
+		/*
+		 *	The default, when there is no "limit" subsection.
+		 */
+		sock->limit.max_packet_size = MAX_PACKET_LEN;
+
+		if (sock->limit.max_packet_size < 4096) sock->limit.max_packet_size = 4096;
+		if (sock->limit.max_packet_size < 65536) sock->limit.max_packet_size = 65536;
+#endif
 
 		if (sock->max_rate && ((sock->max_rate < 10) || (sock->max_rate > 1000000))) {
 			cf_log_err_cs(cs,
@@ -1884,10 +2068,17 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 		}
 
 		/*
-		 *	Force no duplicate detection for TCP sockets.
+		 *	Default to no duplicate detection for TCP sockets.
+		 *
+		 *	But for broken systems, allow it to be done.
 		 */
 		if (sock->proto == IPPROTO_TCP) {
-			this->nodup = true;
+			bool dedup = false;
+
+			rcode = cf_item_parse(cs, "dedup", FR_ITEM_POINTER(PW_TYPE_BOOLEAN, &dedup), NULL);
+			if (rcode < 0) return -1;
+
+			this->nodup = !dedup;
 		}
 
 	} else {
@@ -1918,6 +2109,18 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 		}
 #endif
 		return 0;	/* don't do anything */
+	}
+
+	/*
+	 *	Some minor security against attacks.
+	 */
+	if ((this->type == RAD_LISTEN_PROXY) && (sock->proto == IPPROTO_UDP)) {
+		subcs = cf_section_sub_find(cs, "security");
+		if (subcs) {
+			rcode = cf_section_parse(subcs, this,
+						 security_config);
+			if (rcode < 0) return -1;
+		}
 	}
 #endif
 
@@ -1973,6 +2176,7 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 	 */
 	if (listen_bind(this) < 0) {
 		char buffer[128];
+
 		cf_log_err_cs(cs,
 			   "Error binding to port for %s port %d",
 			   ip_ntoh(&sock->my_ipaddr, buffer, sizeof(buffer)),
@@ -2178,7 +2382,7 @@ static int stats_socket_recv(rad_listen_t *listener)
 	 *	Now that we've sanity checked everything, receive the
 	 *	packet.
 	 */
-	packet = rad_recv(NULL, listener->fd, 1); /* require message authenticator */
+	packet = rad_recv(NULL, listener->fd, RAD_RECV_FLAG_REQUIRE_MA);
 	if (!packet) {
 		FR_STATS_INC(auth, total_malformed_requests);
 		if (DEBUG_ENABLED) ERROR("Receive - %s", fr_strerror());
@@ -2270,7 +2474,9 @@ static int auth_socket_recv(rad_listen_t *listener)
 	 *	Now that we've sanity checked everything, receive the
 	 *	packet.
 	 */
-	packet = rad_recv(ctx, listener->fd, (client->require_ma == FR_BOOL_TRUE) | ((client->limit_proxy_state == FR_BOOL_TRUE) << 2));
+	packet = rad_recv(ctx, listener->fd,
+			  ((client->require_ma == FR_BOOL_TRUE) ? RAD_RECV_FLAG_REQUIRE_MA : 0) |
+			  ((client->limit_proxy_state == FR_BOOL_TRUE) ? RAD_RECV_FLAG_LIMIT_PROXY_STATE : 0));
 	if (!packet) {
 		FR_STATS_INC(auth, total_malformed_requests);
 		if (DEBUG_ENABLED) ERROR("Receive - %s", fr_strerror());
@@ -2391,7 +2597,7 @@ static int acct_socket_recv(rad_listen_t *listener)
 	 *	Now that we've sanity checked everything, receive the
 	 *	packet.
 	 */
-	packet = rad_recv(ctx, listener->fd, 0);
+	packet = rad_recv(ctx, listener->fd, RAD_RECV_FLAG_NONE);
 	if (!packet) {
 		FR_STATS_INC(acct, total_malformed_requests);
 		if (DEBUG_ENABLED) ERROR("Receive - %s", fr_strerror());
@@ -2671,7 +2877,7 @@ static int coa_socket_recv(rad_listen_t *listener)
 	 *	Now that we've sanity checked everything, receive the
 	 *	packet.
 	 */
-	packet = rad_recv(ctx, listener->fd, (client->require_ma == FR_BOOL_TRUE));
+	packet = rad_recv(ctx, listener->fd, RAD_RECV_FLAG_NONE);
 	if (!packet) {
 		FR_STATS_INC(coa, total_malformed_requests);
 		if (DEBUG_ENABLED) ERROR("Receive - %s", fr_strerror());
@@ -2691,20 +2897,217 @@ static int coa_socket_recv(rad_listen_t *listener)
 #endif
 
 #ifdef WITH_PROXY
+#ifdef WITH_STATS
 /*
- *	Recieve packets from a proxy socket.
+ *	Update proxy stats.
+ *
+ *	Called from the main thread for everything except "total_requests".
+ */
+void proxy_stats(rad_listen_t *listener, home_server_t *home, int code, size_t offset, time_t when)
+{
+	bool last_packet = when && (offset == offsetof(fr_stats_t, total_responses));
+	size_t response_offset = 0;
+	uint8_t *base;
+	uint64_t *counter;
+
+	/*
+	 *	If the code is unknown, or the server is not built
+	 *	with the feature, it's an unknown type.
+	 */
+	switch (code) {
+#ifdef WITH_ACCOUNTING
+	case PW_CODE_ACCOUNTING_RESPONSE:
+		base = (uint8_t *) &proxy_acct_stats;
+		break;
+#endif
+
+#ifdef WITH_COA
+	case PW_CODE_COA_ACK:
+	case PW_CODE_COA_NAK:
+	case PW_CODE_DISCONNECT_ACK:
+	case PW_CODE_DISCONNECT_NAK:
+		base = (uint8_t *) &proxy_coa_stats;
+		break;
+#endif
+
+	case PW_CODE_ACCESS_ACCEPT:
+		base = (uint8_t *) &proxy_auth_stats;
+		response_offset = offsetof(fr_stats_t, total_access_accepts);
+		break;
+
+	case PW_CODE_ACCESS_REJECT:		
+		base = (uint8_t *) &proxy_auth_stats;
+		response_offset = offsetof(fr_stats_t, total_access_rejects);
+		break;
+
+	case PW_CODE_ACCESS_CHALLENGE:
+		base = (uint8_t *) &proxy_auth_stats;
+		response_offset = offsetof(fr_stats_t, total_access_challenges);
+		break;
+
+	default:
+		base = (uint8_t *) &proxy_auth_stats;
+		offset = offsetof(fr_stats_t, total_unknown_types);
+		break;
+	}
+
+	/*
+	 *	Update the global counters.
+	 */
+	counter = (uint64_t *) (base + offset);
+	(*counter)++;
+
+	if (response_offset) {
+		counter =  (uint64_t *) (base + response_offset);
+		(*counter)++;
+	}
+
+	if (!listener) goto check_home;
+
+	if (listener->parent) listener = listener->parent;
+
+	/*
+	 *	Update the listen counters
+	 */
+	base = (uint8_t *) &listener->stats;
+	counter = (uint64_t *) (base + offset);
+	(*counter)++;
+
+	if (response_offset) {
+		counter = (uint64_t *) (base + response_offset);
+		(*counter)++;
+	}
+
+	/*
+	 *	Listener last_packet was already updated
+	 */
+
+	if (!home) {
+		listen_socket_t *sock = listener->data;
+
+		home = sock->home;
+	}
+
+check_home:
+	if (home) {
+		base = (uint8_t *) &home->stats;
+		counter = (uint64_t *) (base + offset);
+		(*counter)++;
+
+		if (response_offset) {
+			counter = (uint64_t *) (base + response_offset);
+			(*counter)++;
+		}
+
+		if (last_packet) {
+			home->stats.last_packet = when;
+		}
+	}
+}
+#endif
+
+uint32_t proxy_state_hash(uint32_t seed[static 2], fr_ipaddr_t const *home_ip, int home_port)
+{
+	uint32_t hash;
+
+	hash = seed[0];
+	switch (home_ip->af) {
+	case AF_INET:
+		hash = fr_hash_update(&home_ip->ipaddr.ip4addr.s_addr, sizeof(home_ip->ipaddr.ip4addr.s_addr), hash);
+		break;
+
+	case AF_INET6:
+		hash = fr_hash_update(&home_ip->ipaddr.ip6addr.s6_addr, sizeof(home_ip->ipaddr.ip6addr.s6_addr), hash);
+		break;
+
+	default:
+		return hash;
+	}
+
+	hash = fr_hash_update(&home_port, sizeof(home_port), hash);
+	return fr_hash_update(&seed[1], sizeof(seed[1]), hash);
+}
+
+/*
+ *	See if we have a matching Proxy-State
+ */
+bool proxy_state_hash_check(rad_listen_t *listener, RADIUS_PACKET *packet)
+{
+	bool found = false;
+	uint8_t id;
+	uint8_t const *attr, *end;
+
+	attr = packet->data + 20; /* RADIUS_HDR_LEN */
+	end = packet->data + packet->data_len;
+
+#ifdef WITH_RADIUSV11
+	if (packet->radiusv11) {
+		id = packet->data[4 + 3];
+	} else
+#endif
+		id = packet->data[1];
+
+	while (attr < end) {
+		/*
+		 *	Paranoia, just in case.
+		 */
+		if ((size_t) (end - attr) < 2) break;
+		if (attr[1] < 2) break;
+
+		if ((attr[0] == PW_PROXY_STATE) &&
+		    (attr[1] == 2 + 1 + sizeof(uint32_t)) &&
+		    (attr[2] == id)) {
+			uint32_t hash;
+
+			hash = proxy_state_hash(listener->proxy_state_random,
+						&packet->src_ipaddr, packet->src_port);
+
+			if (memcmp(&hash, attr + 3, sizeof(hash)) == 0) {
+				found = true;
+				break;
+			}
+		}
+
+		attr += attr[1];
+	}
+
+	packet->filter_proxy_state = found;
+	return found;
+}
+
+/*
+ *	Receive packets from a proxy socket.
  */
 static int proxy_socket_recv(rad_listen_t *listener)
 {
 	RADIUS_PACKET	*packet;
+	bool found;
 #ifdef WITH_TCP
 	listen_socket_t *sock;
 #endif
 	char		buffer[128];
 
-	packet = rad_recv(NULL, listener->fd, 0);
+	/*
+	 *	We don't drop packets here due to `require_message_authenticator`.
+	 *
+	 *	While doing that would be useful for DoS issues, it also means that the server can't complain
+	 *	about missing Message-Authenticator.
+	 */
+	packet = rad_recv(NULL, listener->fd, RAD_RECV_FLAG_NONE);
 	if (!packet) {
 		if (DEBUG_ENABLED) ERROR("Receive - %s", fr_strerror());
+		return 0;
+	}
+
+	found = proxy_state_hash_check(listener, packet);
+	if (!found && listener->filter_proxy_state) {
+		ERROR("Invalid response fails Proxy-State filter for packet code %d sent to a proxy port "
+		      "from home server %s port %d - ID %d : IGNORED",
+		      packet->code,
+		      ip_ntoh(&packet->src_ipaddr, buffer, sizeof(buffer)),
+		      packet->src_port, packet->id);
+		FR_PROXY_STATS_INC(listener, NULL, total_no_records, 0);
+		rad_free(&packet);
 		return 0;
 	}
 
@@ -2737,9 +3140,7 @@ static int proxy_socket_recv(rad_listen_t *listener)
 		       packet->code,
 		       ip_ntoh(&packet->src_ipaddr, buffer, sizeof(buffer)),
 		       packet->src_port, packet->id);
-#ifdef WITH_STATS
-		listener->stats.total_unknown_types++;
-#endif
+		FR_PROXY_STATS_INC(listener, NULL, total_unknown_types, 0);
 		rad_free(&packet);
 		return 0;
 	}
@@ -2749,10 +3150,10 @@ static int proxy_socket_recv(rad_listen_t *listener)
 	packet->proto = sock->proto;
 #endif
 
-	if (!request_proxy_reply(packet)) {
-#ifdef WITH_STATS
-		listener->stats.total_packets_dropped++;
-#endif
+	if (!request_proxy_reply(listener, packet)) {
+		/*
+		 *	That function updates its own stats
+		 */
 		rad_free(&packet);
 		return 0;
 	}
@@ -2760,120 +3161,6 @@ static int proxy_socket_recv(rad_listen_t *listener)
 	return 1;
 }
 
-#ifdef WITH_TCP
-/*
- *	Recieve packets from a proxy socket.
- */
-static int proxy_socket_tcp_recv(rad_listen_t *listener)
-{
-	int rcode;
-	RADIUS_PACKET	*packet;
-	listen_socket_t	*sock = listener->data;
-	char		buffer[256];
-
-	if (listener->status != RAD_LISTEN_STATUS_KNOWN) return 0;
-
-	if (!sock->packet) {
-		sock->packet = rad_alloc(sock, false);
-		if (!sock->packet) return 0;
-
-		sock->packet->sockfd = listener->fd;
-		sock->packet->src_ipaddr = sock->other_ipaddr;
-		sock->packet->src_port = sock->other_port;
-		sock->packet->dst_ipaddr = sock->my_ipaddr;
-		sock->packet->dst_port = sock->my_port;
-		sock->packet->proto = sock->proto;
-	}
-
-	packet = sock->packet;
-
-	rcode = fr_tcp_read_packet(packet, 0);
-
-	/*
-	 *	Still only a partial packet.  Put it back, and return,
-	 *	so that we'll read more data when it's ready.
-	 */
-	if (rcode == 0) {
-		return 0;
-	}
-
-	if (rcode == -1) {	/* error reading packet */
-		ERROR("Invalid packet from %s port %d, closing socket: %s",
-		       ip_ntoh(&packet->src_ipaddr, buffer, sizeof(buffer)),
-		       packet->src_port, fr_strerror());
-	}
-
-	if (rcode < 0) {	/* error or connection reset */
-		/*
-		 *	Tell the event handler that an FD has disappeared.
-		 */
-		DEBUG("Home server %s port %d has closed connection",
-		      ip_ntoh(&packet->src_ipaddr, buffer, sizeof(buffer)),
-		      packet->src_port);
-
-		rad_free(&sock->packet);
-		TLS_FREE(sock->request);
-		listener->status = RAD_LISTEN_STATUS_EOL;
-		radius_update_listener(listener);
-
-		/*
-		 *	Do NOT free the listener here.  It's in use by
-		 *	a request, and will need to hang around until
-		 *	all of the requests are done.
-		 *
-		 *	It is instead free'd in remove_from_request_hash()
-		 */
-		return 0;
-	}
-
-	sock->packet = NULL;	/* we have no need for more partial reads */
-
-	/*
-	 *	FIXME: Client MIB updates?
-	 */
-	switch (packet->code) {
-	case PW_CODE_ACCESS_ACCEPT:
-	case PW_CODE_ACCESS_CHALLENGE:
-	case PW_CODE_ACCESS_REJECT:
-	case PW_CODE_PROTOCOL_ERROR:
-		break;
-
-#ifdef WITH_ACCOUNTING
-	case PW_CODE_ACCOUNTING_RESPONSE:
-		break;
-#endif
-
-	default:
-		/*
-		 *	FIXME: Update MIB for packet types?
-		 */
-		ERROR("Invalid packet code %d sent to a proxy port "
-		       "from home server %s port %d - ID %d : IGNORED",
-		       packet->code,
-		       ip_ntoh(&packet->src_ipaddr, buffer, sizeof(buffer)),
-		       packet->src_port, packet->id);
-		rad_free(&packet);
-		return 0;
-	}
-
-
-	/*
-	 *	FIXME: Have it return an indication of packets that
-	 *	are OK to ignore (dups, too late), versus ones that
-	 *	aren't OK to ignore (unknown response, spoofed, etc.)
-	 *
-	 *	Close the socket on bad packets...
-	 */
-	if (!request_proxy_reply(packet)) {
-		rad_free(&packet);
-		return 0;
-	}
-
-	sock->opened = sock->last_packet = time(NULL);
-
-	return 1;
-}
-#endif
 #endif
 
 #ifdef WITH_TLS
@@ -2967,17 +3254,27 @@ static int client_socket_decode(UNUSED rad_listen_t *listener, REQUEST *request)
 
 static int proxy_socket_encode(RADIUSV11_UNUSED rad_listen_t *listener, REQUEST *request)
 {
+#ifdef HOMESERVER_VIOLATES_RFC
+	bool		tls;
+#endif
 #ifdef WITH_RADIUSV11
 	listen_socket_t *sock = listener->data;
 
 	request->proxy->radiusv11 = sock->radiusv11;
 #endif
 
+#ifdef HOMESERVER_VIOLATES_RFC
+	tls = request->packet->tls;
+	if (request->home_server->no_auto_ma) request->proxy->tls = true;
+#endif
 	if (rad_encode(request->proxy, NULL, request->home_server->secret) < 0) {
 		RERROR("Failed encoding proxied packet: %s", fr_strerror());
 
 		return -1;
 	}
+#ifdef HOMESERVER_VIOLATES_RFC
+	request->proxy->tls = tls;
+#endif
 
 	if (request->proxy->data_len > (MAX_PACKET_LEN - 100)) {
 		RWDEBUG("Packet is large, and possibly truncated - %zd vs max %d",
@@ -3200,10 +3497,7 @@ static int listen_bind(rad_listen_t *this)
 	/*
 	 *	Don't open sockets if we're checking the config.
 	 */
-	if (check_config) {
-		this->fd = -1;
-		return 0;
-	}
+	if (check_config) return 0;
 
 	/*
 	 *	Copy fr_socket() here, as we may need to bind to a device.
@@ -3226,7 +3520,6 @@ static int listen_bind(rad_listen_t *this)
 	rcode = fcntl(this->fd, F_GETFD);
 	if (rcode >= 0) {
 		if (fcntl(this->fd, F_SETFD, rcode | FD_CLOEXEC) < 0) {
-			close(this->fd);
 			ERROR("Failed setting close on exec: %s", fr_syserror(errno));
 			return -1;
 		}
@@ -3251,7 +3544,6 @@ static int listen_bind(rad_listen_t *this)
 				   (char *)&ifreq, sizeof(ifreq));
 		rad_suid_down();
 		if (rcode < 0) {
-			close(this->fd);
 			ERROR("Failed binding to interface %s: %s",
 			      sock->interface, fr_syserror(errno));
 			return -1;
@@ -3263,8 +3555,7 @@ static int listen_bind(rad_listen_t *this)
 		 */
 		int idx = if_nametoindex(sock->interface);
 
-		if (idx == 0) {
-			close(this->fd);
+		if (idx == 0) {			
 			ERROR("Failed finding interface %s: %s",
 			      sock->interface, fr_syserror(errno));
 			return -1;
@@ -3274,34 +3565,32 @@ static int listen_bind(rad_listen_t *this)
 		/*
 		 *	OSX / ?BSD / Solaris: bind to interface by index for IPv4
 		 */
-		if (sock->my_ipaddr.af == AF_INET) {
+		else if (sock->my_ipaddr.af == AF_INET) {
 			rad_suid_up();
 			rcode = setsockopt(this->fd, IPPROTO_IP, IP_BOUND_IF, &idx, sizeof(idx));
 			rad_suid_down();
 			if (rcode < 0) {
-				close(this->fd);
 				ERROR("Failed binding to interface %s: %s",
 				      sock->interface, fr_syserror(errno));
 				return -1;
 			}
-		} else
+		}
 #endif
 
 #ifdef IPV6_BOUND_IF
 		/*
 		 *	OSX / ?BSD / Solaris: bind to interface by index for IPv6
 		 */
-		if (sock->my_ipaddr.af == AF_INET6) {
+		else if (sock->my_ipaddr.af == AF_INET6) {
 			rad_suid_up();
 			rcode = setsockopt(this->fd, IPPROTO_IPV6, IPV6_BOUND_IF, &idx, sizeof(idx));
 			rad_suid_down();
 			if (rcode < 0) {
-				close(this->fd);
 				ERROR("Failed binding to interface %s: %s",
 				      sock->interface, fr_syserror(errno));
 				return -1;
 			}
-		} else
+		}
 #endif
 
 #ifdef HAVE_STRUCT_SOCKADDR_IN6
@@ -3311,7 +3600,7 @@ static int listen_bind(rad_listen_t *this)
 		 *	interface, and hope that all of the read/write
 		 *	routines respect that.
 		 */
-		if (sock->my_ipaddr.af == AF_INET6) {
+		else if (sock->my_ipaddr.af == AF_INET6) {
 			if (sock->my_ipaddr.scope == 0) {
 				sock->my_ipaddr.scope = idx;
 			} /* else scope was already defined */
@@ -3323,7 +3612,6 @@ static int listen_bind(rad_listen_t *this)
 		 *	IPv4, or no socket options to bind to interface.
 		 */
 		{
-			close(this->fd);
 			ERROR("Failed binding to interface %s: \"bind to device\" is unsupported", sock->interface);
 			return -1;
 		}
@@ -3335,7 +3623,6 @@ static int listen_bind(rad_listen_t *this)
 		int on = 1;
 
 		if (setsockopt(this->fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
-			close(this->fd);
 			ERROR("Failed to reuse address: %s", fr_syserror(errno));
 			return -1;
 		}
@@ -3353,7 +3640,6 @@ static int listen_bind(rad_listen_t *this)
 	if (udpfromto_init(this->fd) != 0) {
 		ERROR("Failed initializing udpfromto: %s",
 		       fr_syserror(errno));
-		close(this->fd);
 		return -1;
 	}
 #endif
@@ -3362,7 +3648,6 @@ static int listen_bind(rad_listen_t *this)
 	 *	Set up sockaddr stuff.
 	 */
 	if (!fr_ipaddr2sockaddr(&sock->my_ipaddr, sock->my_port, &salocal, &salen)) {
-		close(this->fd);
 		return -1;
 	}
 
@@ -3382,9 +3667,7 @@ static int listen_bind(rad_listen_t *this)
 			if (setsockopt(this->fd, IPPROTO_IPV6, IPV6_V6ONLY,
 				       (char *)&on, sizeof(on)) < 0) {
 				ERROR("Failed setting socket to IPv6 "
-				       "only: %s", fr_syserror(errno));
-
-				close(this->fd);
+				       "only: %s", fr_syserror(errno));				
 				return -1;
 			}
 		}
@@ -3409,8 +3692,6 @@ static int listen_bind(rad_listen_t *this)
 			       &flag, sizeof(flag)) < 0) {
 			ERROR("Failed disabling PMTU discovery: %s",
 			       fr_syserror(errno));
-
-			close(this->fd);
 			return -1;
 		}
 #endif
@@ -3424,8 +3705,6 @@ static int listen_bind(rad_listen_t *this)
 			       &flag, sizeof(flag)) < 0) {
 			ERROR("Failed setting don't fragment flag: %s",
 			       fr_syserror(errno));
-
-			close(this->fd);
 			return -1;
 		}
 #endif
@@ -3437,7 +3716,6 @@ static int listen_bind(rad_listen_t *this)
 		int on = 1;
 
 		if (setsockopt(this->fd, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) < 0) {
-			close(this->fd);
 			ERROR("Can't set broadcast option: %s",
 			       fr_syserror(errno));
 			return -1;
@@ -3466,7 +3744,6 @@ static int listen_bind(rad_listen_t *this)
 		rad_suid_down();
 		if (rcode < 0) {
 			char buffer[256];
-			close(this->fd);
 
 			this->print(this, buffer, sizeof(buffer));
 			ERROR("Failed binding to %s: %s\n",
@@ -3486,7 +3763,6 @@ static int listen_bind(rad_listen_t *this)
 			memset(&src, 0, sizeof_src);
 			if (getsockname(this->fd, (struct sockaddr *) &src,
 					&sizeof_src) < 0) {
-				close(this->fd);
 				ERROR("Failed getting socket name: %s",
 				       fr_syserror(errno));
 				return -1;
@@ -3494,7 +3770,6 @@ static int listen_bind(rad_listen_t *this)
 
 			if (!fr_sockaddr2ipaddr(&src, sizeof_src,
 						&sock->my_ipaddr, &sock->my_port)) {
-				close(this->fd);
 				ERROR("Socket has unsupported address family");
 				return -1;
 			}
@@ -3509,7 +3784,6 @@ static int listen_bind(rad_listen_t *this)
 		 *	Otherwise, all input TCP sockets are non-blocking.
 		 */
 		if (fr_nonblock(this->fd) < 0) {
-			close(this->fd);
 			ERROR("Failed setting non-blocking on socket: %s",
 			      fr_syserror(errno));
 			return -1;
@@ -3522,7 +3796,6 @@ static int listen_bind(rad_listen_t *this)
 		if (this->type != RAD_LISTEN_PROXY)
 #endif
 		if (listen(this->fd, sock->backlog) < 0) {
-			close(this->fd);
 			ERROR("Failed in listen(): %s", fr_syserror(errno));
 			return -1;
 		}
@@ -3536,6 +3809,11 @@ static int listen_bind(rad_listen_t *this)
 	 */
 	sock->other_ipaddr.af = sock->my_ipaddr.af;
 
+	if (this->type == RAD_LISTEN_PROXY) {
+		this->proxy_state_random[0] = fr_rand();
+		this->proxy_state_random[1] = fr_rand();
+	}
+
 /*
  *	Don't screw up other people.
  */
@@ -3548,6 +3826,10 @@ static int listen_bind(rad_listen_t *this)
 
 static int _listener_free(rad_listen_t *this)
 {
+#ifdef WITH_TCP
+	listen_socket_t *sock;
+#endif
+
 	/*
 	 *	Other code may have eaten the FD.
 	 */
@@ -3557,62 +3839,94 @@ static int _listener_free(rad_listen_t *this)
 		master_listen[this->type].free(this);
 	}
 
+	/*
+	 *	No TCP means no TLS, either.  So we skip all of the
+	 *	TCP / TLS stuff if it's not in the build.
+	 */
 #ifdef WITH_TCP
-	if ((this->type == RAD_LISTEN_AUTH)
-#ifdef WITH_ACCT
-	    || (this->type == RAD_LISTEN_ACCT)
-#endif
-#ifdef WITH_PROXY
-	    || (this->type == RAD_LISTEN_PROXY)
-#endif
-#ifdef WITH_COMMAND_SOCKET
-	    || ((this->type == RAD_LISTEN_COMMAND) &&
-		(((fr_command_socket_t *) this->data)->magic != COMMAND_SOCKET_MAGIC))
-#endif
-		) {
+	/*
+	 *	Some sockets can't use TCP, in which case we just return immediately.
+	 */
+	switch (this->type) {
+	case RAD_LISTEN_DETAIL:
+	case RAD_LISTEN_VQP:
+	case RAD_LISTEN_DHCP:
+	case RAD_LISTEN_MAX:
+		return 0;
 
+	case RAD_LISTEN_COMMAND:
 		/*
-		 *	Remove the child from the parent tree.
+		 *	Some command sockets are Unix sockets, we
+		 *	don't do anything else for them.
 		 */
-		if (this->parent) {
-			rbtree_deletebydata(this->parent->children, this);
-			this->parent = NULL;
+		if (((fr_command_socket_t *) this->data)->magic != COMMAND_SOCKET_MAGIC) {
+			return 0;
 		}
+		break;
 
-		/*
-		 *	Delete / close all of the children, too!
-		 */
-		if (this->children) {
-			rbtree_walk(this->children, RBTREE_DELETE_ORDER, listener_unlink, this);
-			rbtree_free(this->children);
-			this->children = NULL;
-		}
+	default:
+		break;
+	}
+
+	/*
+	 *	UDP sockets aren't connected, and aren't put into any
+	 *	parent tree.
+	 */
+	sock = this->data;
+	if (sock->proto == IPPROTO_UDP) return 0;
+
+	/*
+	 *	Remove the child from the parent tree.
+	 */
+	if (this->parent) {
+		rbtree_deletebydata(this->parent->children, this);
+		this->parent = NULL;
+	}
+
+	/*
+	 *	Delete / close all of the children, too!
+	 */
+	if (this->children) {
+		rbtree_walk(this->children, RBTREE_DELETE_ORDER, listener_unlink, this);
+		rbtree_free(this->children);
+		this->children = NULL;
+	}
 
 #ifdef WITH_TLS
-		/*
-		 *	Note that we do NOT free this->tls, as the
-		 *	pointer is parented by its CONF_SECTION.  It
-		 *	may be used by multiple listeners.
-		 */
-		if (this->tls) {
-			listen_socket_t *sock = this->data;
+	/*
+	 *	Note that we do NOT free this->tls, as the
+	 *	pointer is parented by its CONF_SECTION.  It
+	 *	may be used by multiple listeners.
+	 */
+	if (this->tls) {
+		rad_assert(talloc_parent(sock) == this);
+		rad_assert(sock->ev == NULL);
 
-			rad_assert(talloc_parent(sock) == this);
-			rad_assert(sock->ev == NULL);
+		rad_assert(!sock->ssn || (talloc_parent(sock->ssn) == sock));
+		rad_assert(!sock->request || (talloc_parent(sock->request) == sock));
 
-			rad_assert(!sock->ssn || (talloc_parent(sock->ssn) == sock));
-			rad_assert(!sock->request || (talloc_parent(sock->request) == sock));
-
-			if (sock->home && sock->home->listeners) (void) rbtree_deletebydata(sock->home->listeners, this);
+		if (sock->home && sock->home->listeners) (void) rbtree_deletebydata(sock->home->listeners, this);
+	}
+#endif	/* WITH_TLS */
 
 #ifdef HAVE_PTHREAD_H
-			pthread_mutex_destroy(&(sock->mutex));
+	/*
+	 *	The mutex is only ever allocated for TLS (incoming)
+	 *	or proxy sockets; both keep it in a listen_socket_t.
+	 *	Guard on the type so a command socket (whose "data"
+	 *	is NOT a listen_socket_t) is never treated as one.
+	 */
+	{
+		bool has_mutex = (this->type == RAD_LISTEN_PROXY);
+
+#ifdef WITH_TLS
+		if (this->tls) has_mutex = true;
 #endif
 
-		}
-#endif	/* WITH_TLS */
+		if (has_mutex && sock->mutex) pthread_mutex_destroy(sock->mutex);
 	}
-#endif				/* WITH_TCP */
+#endif	/* HAVE_PTHREAD_H */
+#endif	/* WITH_TCP */
 
 	return 0;
 }
@@ -3627,6 +3941,7 @@ static rad_listen_t *listen_alloc(TALLOC_CTX *ctx, RAD_LISTEN_TYPE type)
 
 	this = talloc_zero(ctx, rad_listen_t);
 
+	this->fd = -1;
 	this->type = type;
 	this->recv = master_listen[this->type].recv;
 	this->send = master_listen[this->type].send;
@@ -3652,12 +3967,588 @@ static rad_listen_t *listen_alloc(TALLOC_CTX *ctx, RAD_LISTEN_TYPE type)
 #ifdef WITH_PROXY
 
 /*
+ *	We tried opening a connection to a home server, and failed.
+ */
+static void proxy_failed_open(home_server_t *home, time_t now)
+{
+	home->last_failed_open = now;
+
+#ifdef WITH_TCP
+	if (home->proto != IPPROTO_TCP) return;
+
+	/*
+	 *	Set the time first, so that a reader which sees the flag
+	 *	always sees a valid time.
+	 */
+	home->tcp_failed_time = now;
+	home->tcp_failed = true;
+
+	/*
+	 *	Back off exponentially, from one second up to
+	 *	connect_fail_interval, with some jitter.  Also limit
+	 *	the failures to a small number, as realms.c limits its
+	 *	value to 86400.  And even that value is way too large.
+	 */
+	if (home->tcp_failed_count < 17) {
+		home->tcp_failed_count++;
+		home->tcp_failed_wait = 1 << (home->tcp_failed_count - 1);
+
+		if (home->tcp_failed_wait > home->limit.connect_fail_interval) {
+			home->tcp_failed_wait = home->limit.connect_fail_interval;
+		}
+
+		home->tcp_failed_wait += fr_rand() % (home->tcp_failed_wait / 4 + 1);
+	}
+#endif
+}
+
+#ifdef WITH_TCP
+/*
+ *	Finish a non-blocking connect() on a plain TCP proxy socket.
+ *	Largely a clone of try_connect(), with some changes for TCP.
+ *
+ *	Returns -1 on failure, 1 when the socket is connected, and 2 when
+ *	the connect() is still in progress.  The caller closes the socket
+ *	on failure, as it does for the TLS try_connect().
+ *
+ *	The caller holds sock->mutex.
+ */
+static int tcp_try_connect(rad_listen_t *this)
+{
+	int error = 0;
+	socklen_t len = sizeof(error);
+	socklen_t salen;
+	time_t now = time(NULL);
+	listen_socket_t *sock = this->data;
+	home_server_t *home = sock->home;
+	struct sockaddr_storage ss;
+
+	rad_assert(!sock->connected);
+
+	/*
+	 *	The connect timeout is copied from the home server by
+	 *	proxy_new_listener().  A value of zero means that there is no
+	 *	timeout.
+	 */
+	if (sock->limit.connect_timeout &&
+	    ((sock->opened + sock->limit.connect_timeout) < now)) {
+		ERROR("Timeout connecting to home server %s", home->log_name);
+		goto failed;
+	}
+
+	/*
+	 *	A failed connect() leaves its error in SO_ERROR.
+	 */
+	if (getsockopt(this->fd, SOL_SOCKET, SO_ERROR, (void *) &error, &len) < 0) {
+		ERROR("Failed reading connect() status for home server %s: %s",
+		      home->log_name, fr_syserror(errno));
+		goto failed;
+	}
+
+	if (error != 0) {
+		ERROR("Failed connecting to home server %s: %s", home->log_name, fr_syserror(error));
+		goto failed;
+	}
+
+	if (fr_ipaddr2sockaddr(&sock->other_ipaddr, sock->other_port, &ss, &salen) < 0) {
+		ERROR("Failed connecting to home server %s: %s", home->log_name, fr_strerror());
+		goto failed;
+	}
+
+	/*
+	 *	Calling connect() again is portable.  A connected socket
+	 *	returns EISCONN, which means that the connection succeeded.
+	 */
+	if (connect(this->fd, (struct sockaddr *) &ss, salen) < 0) {
+		switch (errno) {
+		case EISCONN:
+			break;
+
+		case EINPROGRESS:
+		case EALREADY:
+			return 2;
+
+		default:
+			ERROR("Failed connecting to home server %s: %s", home->log_name, fr_syserror(errno));
+			goto failed;
+		}
+	}
+
+	sock->connected = true;
+	home->tcp_failed = false;
+	home_server_active_connections_increment(this);
+
+	return 1;
+
+failed:
+	proxy_failed_open(home, now);
+	return -1;
+}
+
+/*
+ *	Size of sock->write_buf.  A RADIUS packet is typically 1K or
+ *	less, so the buffer holds dozens of packets.
+ */
+#define TCP_WRITE_BUF_SIZE (65536)
+
+/*
+ *	Close a proxy socket.
+ *
+ *	Called with sock->mutex held, and unlocks the mutex.  We do NOT
+ *	free the listener, as a request may still be using the listener.
+ *	The listener is freed when all of the requests using it are done.
+ *	Senders see the status and stop writing.
+ */
+static void proxy_tcp_close_locked(rad_listen_t *listener)
+{
+#ifdef HAVE_PTHREAD_H
+	listen_socket_t *sock = listener->data;
+#endif
+
+	if (listener->status >= RAD_LISTEN_STATUS_EOL) {
+		PTHREAD_MUTEX_UNLOCK(sock->mutex);
+		return;
+	}
+
+	listener->status = RAD_LISTEN_STATUS_EOL;
+
+	DEBUG3("Closing proxy connection");
+	PTHREAD_MUTEX_UNLOCK(sock->mutex);
+
+	/*
+	 *	Tell the event handler that an FD has disappeared.
+	 */
+	radius_update_listener(listener);
+}
+
+/*
+ *	Close a proxy socket from a caller which does not hold
+ *	sock->mutex.
+ */
+static void proxy_tcp_close(rad_listen_t *listener)
+{
+#ifdef HAVE_PTHREAD_H
+	listen_socket_t *sock = listener->data;
+#endif
+
+	PTHREAD_MUTEX_LOCK(sock->mutex);
+	proxy_tcp_close_locked(listener);
+}
+
+/*
+ *	Append a packet to sock->write_buf.  Returns false if the packet
+ *	does not fit.  The caller drops the packet, and keeps the
+ *	connection open.
+ *
+ *	Called with sock->mutex held.
+ */
+static bool tcp_write_append(listen_socket_t *sock, uint8_t const *data, size_t len)
+{
+	if (len > (TCP_WRITE_BUF_SIZE - sock->write_used)) return false;
+
+	memcpy(sock->write_buf + sock->write_used, data, len);
+	sock->write_used += len;
+
+	return true;
+}
+
+static void tcp_write_available(fr_event_list_t *el, int fd, void *ctx);
+
+/*
+ *	Write sock->write_buf to the socket.
+ *
+ *	Called with sock->mutex held.  A short write or EWOULDBLOCK
+ *	freezes the socket until the socket is writable.  The
+ *	remaining data stays in sock->write_buf.
+ */
+static int CC_HINT(nonnull) tcp_socket_write(rad_listen_t *listener)
+{
+	ssize_t rcode;
+	listen_socket_t *sock = listener->data;
+
+	/*
+	 *	It's not writable, so we don't bother writing to it.
+	 */
+	if (listener->blocked) return 0;
+
+	if (!sock->write_used) return 0;
+
+	rcode = write(listener->fd, sock->write_buf, sock->write_used);
+	if (rcode < 0) {
+		/*
+		 *	Writing to the socket would cause it to block.
+		 *	Mark it as "don't use" until it becomes writable.
+		 */
+		if ((errno == EWOULDBLOCK) || (errno == EAGAIN)) {
+			tcp_socket_freeze(listener, tcp_write_available);
+			return 0;
+		}
+
+		ERROR("Error writing to proxy socket: %s", fr_syserror(errno));
+		return -1;
+	}
+
+	/*
+	 *	All of the data was written.
+	 */
+	if ((size_t) rcode == sock->write_used) {
+		sock->write_used = 0;
+		return 0;
+	}
+
+	/*
+	 *	Move the unwritten data to the start of the buffer, so
+	 *	that the next append and write need no offset.
+	 */
+	sock->write_used -= rcode;
+	memmove(sock->write_buf, sock->write_buf + rcode, sock->write_used);
+
+	tcp_socket_freeze(listener, tcp_write_available);
+	return 0;
+}
+
+/*
+ *	The write handler.  Finishes the connect, writes the buffered
+ *	data, and thaws the socket when the buffer is empty.
+ */
+static void tcp_write_available(UNUSED fr_event_list_t *el, UNUSED int fd, void *ctx)
+{
+	bool thaw;
+	rad_listen_t *listener = ctx;
+	listen_socket_t *sock = listener->data;
+
+	PTHREAD_MUTEX_LOCK(sock->mutex);
+	listener->blocked = false;
+
+	if (!sock->connected) {
+		int rcode;
+
+		rcode = tcp_try_connect(listener);
+		if (rcode <= 0) {
+			proxy_tcp_close_locked(listener);
+			return;
+		}
+
+		/*
+		 *	Still connecting.  Stay frozen.
+		 */
+		if (rcode == 2) {
+			listener->blocked = true;
+			PTHREAD_MUTEX_UNLOCK(sock->mutex);
+			return;
+		}
+	}
+
+	if (tcp_socket_write(listener) < 0) {
+		proxy_tcp_close_locked(listener);
+		return;
+	}
+
+	/*
+	 *	A short write has already frozen the socket, and the
+	 *	data stays in the buffer.
+	 */
+	thaw = (sock->write_used == 0);
+
+	/*
+	 *	tcp_socket_thaw() returns early unless the socket is
+	 *	blocked, and this handler cleared the flag above.
+	 */
+	listener->blocked = true;
+
+	PTHREAD_MUTEX_UNLOCK(sock->mutex);
+
+	if (thaw) tcp_socket_thaw(listener);
+}
+
+/*
+ *	Size of sock->read_buf.  sock->read_buf holds one packet, and a
+ *	RADIUS packet is never larger than MAX_PACKET_LEN.
+ */
+#define TCP_READ_BUF_SIZE (MAX_PACKET_LEN)
+
+/*
+ *	Read one packet from a proxy socket into sock->read_buf.
+ *
+ *	Returns the packet length when sock->read_buf holds a whole
+ *	packet, 0 when more data is needed, and -1 when the caller
+ *	closes the socket.  The read is in two stages.  The first
+ *	stage reads the 4 byte header, which gives the packet length.
+ *	The second stage reads the rest of the packet.  Because of the
+ *	two stages, sock->read_buf never holds more than one packet.
+ *
+ *	Called with sock->mutex held.
+ */
+static ssize_t proxy_tcp_read(rad_listen_t *listener)
+{
+	int rcode;
+	ssize_t len;
+	size_t length;
+	listen_socket_t *sock = listener->data;
+	uint8_t *data = sock->read_buf;
+
+	if (!sock->connected) {
+		rcode = tcp_try_connect(listener);
+		if (rcode <= 0) return rcode;
+
+		if (rcode == 2) return 0; /* more waiting needed */
+	}
+
+	if (sock->read_used < 4) {
+		len = recv(listener->fd, data + sock->read_used, 4 - sock->read_used, 0);
+		if (len < 0) goto recv_error;
+
+		/*
+		 *	The home server closed the connection.
+		 */
+		if (len == 0) return -1;
+
+		sock->read_used += len;
+		if (sock->read_used < 4) return 0; /* read more data */
+	}
+
+	length = (data[2] << 8) | data[3];
+
+	/*
+	 *	The same limits as fr_tcp_read_packet().  A length outside
+	 *	of the limits means that the stream is out of step with the
+	 *	packet boundaries, so we close the socket.
+	 */
+	if ((length < 20 /* RADIUS_HDR_LEN */) || (length > TCP_READ_BUF_SIZE)) {
+		ERROR("Discarding packet from home server %s: Invalid length %zu",
+		      sock->home->log_name, length);
+		return -1;
+	}
+
+	if (sock->read_used < length) {
+		len = recv(listener->fd, data + sock->read_used, length - sock->read_used, 0);
+		if (len < 0) goto recv_error;
+		if (len == 0) return -1;
+
+		sock->read_used += len;
+		if (sock->read_used < length) return 0;
+	}
+
+	sock->read_used = 0;	/* we've now read the packet */
+	return length;
+
+recv_error:
+	/*
+	 *	The socket is non-blocking, so there is no data yet.
+	 */
+	if ((errno == EWOULDBLOCK) || (errno == EAGAIN)) return 0;
+
+	/*
+	 *	The home server reset the connection.  This is not an
+	 *	error that we log.
+	 */
+	if ((errno != ECONNRESET) && (errno != ENOTCONN) && (errno != ETIMEDOUT)) {
+		ERROR("Error reading from home server %s: %s", sock->home->log_name, fr_syserror(errno));
+	}
+
+	return -1;
+}
+
+/*
+ *	Receive packets from a proxy socket.
+ */
+static int proxy_tcp_recv(rad_listen_t *listener)
+{
+	ssize_t		data_len;
+	RADIUS_PACKET	*packet;
+	listen_socket_t	*sock = listener->data;
+	char		buffer[256];
+
+	/*
+	 *	Lock the mutex before checking listener->status.
+	 *	Otherwise another thread can close the socket after the
+	 *	check, but before the read.
+	 */
+	PTHREAD_MUTEX_LOCK(sock->mutex);
+	if (listener->status != RAD_LISTEN_STATUS_KNOWN) {
+		PTHREAD_MUTEX_UNLOCK(sock->mutex);
+		return 0;
+	}
+
+	data_len = proxy_tcp_read(listener);
+	if (data_len < 0) {
+	fail:
+		DEBUG("Home server %s port %d has closed connection",
+		      ip_ntoh(&sock->other_ipaddr, buffer, sizeof(buffer)), sock->other_port);
+		proxy_tcp_close_locked(listener);
+		return 0;
+	}
+
+	if (data_len == 0) {
+		PTHREAD_MUTEX_UNLOCK(sock->mutex);
+		return 0;	/* not done yet */
+	}
+
+	packet = rad_alloc(sock, false);
+	if (!packet) goto fail;
+
+	/*
+	 *	sock->read_buf holds only one packet.  Copy the packet out,
+	 *	so that the next read can reuse sock->read_buf.
+	 */
+	packet->data = talloc_array(packet, uint8_t, data_len);
+	if (!packet->data) {
+		rad_free(&packet);
+		goto fail;
+	}
+
+	memcpy(packet->data, sock->read_buf, data_len);
+	packet->data_len = data_len;
+	PTHREAD_MUTEX_UNLOCK(sock->mutex);
+
+	packet->sockfd = listener->fd;
+	packet->src_ipaddr = sock->other_ipaddr;
+	packet->src_port = sock->other_port;
+	packet->dst_ipaddr = sock->my_ipaddr;
+	packet->dst_port = sock->my_port;
+	packet->proto = sock->proto;
+
+	/*
+	 *	Check that the packet is well formed.  This also sets the
+	 *	packet code, ID, and vector.
+	 */
+	if (!rad_packet_ok(packet, RAD_RECV_FLAG_NONE, NULL)) {
+		ERROR("Invalid packet from %s port %d, closing socket: %s",
+		      ip_ntoh(&packet->src_ipaddr, buffer, sizeof(buffer)),
+		      packet->src_port, fr_strerror());
+		rad_free(&packet);
+		proxy_tcp_close(listener);
+		return 0;
+	}
+
+	/*
+	 *	FIXME: Client MIB updates?
+	 */
+	switch (packet->code) {
+	case PW_CODE_ACCESS_ACCEPT:
+	case PW_CODE_ACCESS_CHALLENGE:
+	case PW_CODE_ACCESS_REJECT:
+	case PW_CODE_PROTOCOL_ERROR:
+		break;
+
+#ifdef WITH_ACCOUNTING
+	case PW_CODE_ACCOUNTING_RESPONSE:
+		break;
+#endif
+
+	default:
+		/*
+		 *	FIXME: Update MIB for packet types?
+		 */
+		ERROR("Invalid packet code %d sent to a proxy port "
+		       "from home server %s port %d - ID %d : IGNORED",
+		       packet->code,
+		       ip_ntoh(&packet->src_ipaddr, buffer, sizeof(buffer)),
+		       packet->src_port, packet->id);
+		rad_free(&packet);
+		return 0;
+	}
+
+	/*
+	 *	FIXME: Have it return an indication of packets that
+	 *	are OK to ignore (dups, too late), versus ones that
+	 *	aren't OK to ignore (unknown response, spoofed, etc.)
+	 *
+	 *	Close the socket on bad packets...
+	 */
+	if (!request_proxy_reply(listener, packet)) {
+		rad_free(&packet);
+		return 0;
+	}
+
+	sock->opened = sock->last_packet = time(NULL);
+
+	return 1;
+}
+
+/*
+ *	Send a packet to a home server.
+ *
+ *	Every packet goes into sock->write_buf first, so that a short
+ *	write, and a connect() which has not finished, never leave a
+ *	partial packet on the stream.  Returns 1 when the packet is
+ *	buffered or written, 0 when the packet is dropped or not
+ *	sent, and -1 when the socket is closed.
+ */
+static int proxy_tcp_send(rad_listen_t *listener, REQUEST *request)
+{
+	int rcode;
+	listen_socket_t *sock = listener->data;
+
+	VERIFY_REQUEST(request);
+
+	rad_assert(request->proxy_listener == listener);
+	rad_assert(listener->proxy_send == proxy_tcp_send);
+
+	if ((listener->status != RAD_LISTEN_STATUS_INIT) &&
+	    (listener->status != RAD_LISTEN_STATUS_KNOWN)) return 0;
+
+	/*
+	 *	Normal proxying calls us with the data already
+	 *	encoded.  The "ping home server" code does not.  So,
+	 *	if there's no packet, encode it here.
+	 */
+	if (!request->proxy->data) {
+		request->proxy_listener->proxy_encode(request->proxy_listener, request);
+	}
+
+	rad_assert(sock->write_buf != NULL);
+
+	PTHREAD_MUTEX_LOCK(sock->mutex);
+
+	/*
+	 *	The connect() has not finished.  Try to finish it, unless
+	 *	the socket is already waiting for tcp_write_available().
+	 */
+	if (!sock->connected && !listener->blocked) {
+		rcode = tcp_try_connect(listener);
+		if (rcode <= 0) {
+			proxy_tcp_close_locked(listener);
+			return -1;
+		}
+
+		/*
+		 *	Wait for the socket to become writable.  The
+		 *	write handler finishes the connect() and then
+		 *	writes the data that we buffer below.
+		 */
+		if (rcode == 2) tcp_socket_freeze(listener, tcp_write_available);
+	}
+
+	if (!tcp_write_append(sock, request->proxy->data, request->proxy->data_len)) {
+		RATE_LIMIT(ERROR("Too much data buffered for home server %s: dropping packet",
+				 request->home_server->log_name));
+		PTHREAD_MUTEX_UNLOCK(sock->mutex);
+		return 0;
+	}
+
+	/*
+	 *	Does nothing when the socket is blocked.
+	 */
+	if (tcp_socket_write(listener) < 0) {
+		proxy_tcp_close_locked(listener);
+		return -1;
+	}
+
+	PTHREAD_MUTEX_UNLOCK(sock->mutex);
+
+	return 1;
+}
+#endif	/* WITH_TCP */
+
+
+/*
  *	Externally visible function for creating a new proxy LISTENER.
  *
  *	Not thread-safe, but all calls to it are protected by the
  *	proxy mutex in event.c
  */
-rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t src_port)
+rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home)
 {
 	time_t now;
 	rad_listen_t *this;
@@ -3681,76 +4572,116 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		return NULL;
 	}
 
+
+#ifdef WITH_TCP
+	/*
+	 *	If we had TCP or TLS connection failures, then don't
+	 *	open new connections until after the relevant time
+	 *	period has passed.
+	 */
+	if (home_server_connect_blocked(home, now)) {
+		RATE_LIMIT(INFO("Suppressing attempt to open new connection to home server %s, due to a previous connection failure",
+				home->log_name));
+		return NULL;
+	}
+#endif
+
 	this = listen_alloc(ctx, RAD_LISTEN_PROXY);
 
 	sock = this->data;
 	sock->other_ipaddr = home->ipaddr;
-	sock->other_port = home->port;
-	sock->home = home;
+	sock->other_port = 0;
 
 	sock->my_ipaddr = home->src_ipaddr;
-	sock->my_port = src_port;
+	sock->my_port = 0;
 	sock->proto = home->proto;
+	sock->opened = sock->last_packet = now;
+
+	/*
+	 *	Use the default proxy listener as a template for the others.
+	 */
+	if (sock->proto == IPPROTO_UDP) {
+		if (proxy_default) {
+			listen_socket_t *sock2 = proxy_default->data;
+
+			this->filter_proxy_state = proxy_default->filter_proxy_state;
+			this->cs = proxy_default->cs;
+
+			sock->interface = sock2->interface;
+			sock->recv_buff = sock2->recv_buff;
+		}
+
+		/*
+		 *	A wildcard UDP socket can send to any server.  If we allocate a new listener with the
+		 *	destination IP of _this_ home server, then it can't be used for other home servers.
+		 *	We therefore check if the home server doesn't care about the source IP.  If so, we can
+		 *	use a wildcard source IP.
+		 *
+		 *	This matches the default proxy listener, which also has a wildcard destination.
+		 */
+		if (fr_inaddr_any(&home->src_ipaddr)) {
+			memset(&sock->other_ipaddr, 0, sizeof(sock->other_ipaddr));
+			sock->other_ipaddr.af = home->ipaddr.af;
+		}
+
+		if (listen_bind(this) < 0) {
+			listen_free(&this);
+			home->last_failed_open = now;
+			return NULL;
+		}
+
+		return this;
+	}
 
 	/*
 	 *	For error messages.
 	 */
 	this->print(this, buffer, sizeof(buffer));
+	this->proxy_state_random[0] = fr_rand();
+	this->proxy_state_random[1] = fr_rand();
 
 #ifdef WITH_TCP
-	sock->opened = sock->last_packet = now;
 
-	if (home->proto == IPPROTO_TCP) {
-		this->recv = proxy_socket_tcp_recv;
+	/*
+	 *	Only TCP sockets are connected to a destination port.
+	 */
+	sock->other_port = home->port;
+	sock->home = home;
 
-		/*
-		 *	Our limit is the smaller of the socket config and this home server config.
-		 */
-		if (home->limit.lifetime && (home->limit.lifetime < sock->limit.lifetime)) {
-			sock->limit.lifetime = home->limit.lifetime;
+	/*
+	 *	Our limit is the smaller of the socket config and this home server config.
+	 */
+	if (home->limit.lifetime && (home->limit.lifetime < sock->limit.lifetime)) {
+		sock->limit.lifetime = home->limit.lifetime;
+	}
+
+	if (home->limit.idle_timeout && (home->limit.idle_timeout < sock->limit.idle_timeout)) {
+		sock->limit.idle_timeout = home->limit.idle_timeout;
+
+		if (sock->limit.lifetime && (sock->limit.idle_timeout > sock->limit.lifetime)) {
+			sock->limit.idle_timeout = 0;
 		}
+	}
 
-		if (home->limit.idle_timeout && (home->limit.idle_timeout < sock->limit.idle_timeout)) {
-			sock->limit.idle_timeout = home->limit.idle_timeout;
+	if (!sock->limit.lifetime && !sock->limit.idle_timeout) sock->limit.idle_timeout = 30;
 
-			if (sock->limit.lifetime && (sock->limit.idle_timeout > sock->limit.lifetime)) {
-				sock->limit.idle_timeout = 0;
-			}
+	/*
+	 *	tcp_socket_timer() closes a socket whose connect() has not finished by this time.
+	 */
+	sock->limit.connect_timeout = home->limit.connect_timeout;
 
-		}
-
-		if (!sock->limit.lifetime && !sock->limit.idle_timeout) sock->limit.idle_timeout = 30;
-
-#ifdef WITH_TLS
-		this->nonblock |= home->nonblock;
-		this->nonblock |= (this->tls != NULL);		// incoming TLS connections are always nonblocking.
-		this->nonblock |= (home->tls != NULL);		// outgoing TLS connections are always nonblocking
-#endif
-
-		/*
-		 *	connect() is blocking for TCP.  The administrator has to manually set "nonblock" in
-		 *	the configuration to make it non-blocking.
-		 *
-		 *	Due to the way that TLS works, TLS sockets are always non blocking.
-		 *
-		 *	FIXME: setting nonblock=true for TCP (not TLS) means that any subsequence read() will
-		 *	return ENOTCONN, and the reader has to call connect() again.  But doing this also
-		 *	means that we need to update fr_socket_client_tcp() to return a flag which indicates
-		 *	whether or not the connection attempt was successful.  And then we need to store that
-		 *	somewhere, etc.
-		 */
-		this->fd = fr_socket_client_tcp(&home->src_ipaddr,
-						&home->ipaddr, home->port,
-						this->nonblock);
-	} else
-#endif
-		this->fd = fr_socket(&home->src_ipaddr, src_port);
-
+	/*
+	 *	Try to connect.
+	 */
+	this->fd = fr_socket_client_tcp(&home->src_ipaddr,
+					&home->ipaddr, home->port,
+					true,
+					&sock->connected);
 	if (this->fd < 0) {
 		this->print(this, buffer,sizeof(buffer));
 		ERROR("Failed opening new proxy socket '%s' : %s",
 		      buffer, fr_strerror());
-		home->last_failed_open = now;
+		proxy_failed_open(home, now);
 		listen_free(&this);
 		return NULL;
 	}
@@ -3760,15 +4691,14 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		this->print(this, buffer,sizeof(buffer));
 		ERROR("Failed opening new proxy socket '%s' : FD %d is larger than maximum %u",
 		      buffer, this->fd, FD_SETSIZE);
-		home->last_failed_open = now;
+		proxy_failed_open(home, now);
 		listen_free(&this);
 		return NULL;
 	}
 #endif
 
-#ifdef WITH_TCP
 #ifdef SO_KEEPALIVE
-	if (home->proto == IPPROTO_TCP) {
+	{
 		int on = 1;
 
 		if (setsockopt(this->fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)) < 0) {
@@ -3778,118 +4708,158 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 	}
 #endif
 
-#ifdef WITH_TLS
-	if ((home->proto == IPPROTO_TCP) && home->tls) {
-		DEBUG("(TLS) Trying new outgoing proxy connection to %s", buffer);
-
-#ifdef WITH_RADIUSV11
-		this->radiusv11 = home->tls->radiusv11;
-#endif
-
 #ifdef TCP_NODELAY
-		/*
-		 *	Also set TCP_NODELAY, to force the data to be written quickly.
-		 */
-		{
-			int on = 1;
+	/*
+	 *	Also set TCP_NODELAY, to force the data to be written quickly.
+	 */
+	{
+		int on = 1;
 
-			if (setsockopt(this->fd, SOL_TCP, TCP_NODELAY, &on, sizeof(on)) < 0) {
-				ERROR("(TLS) Failed to set TCP_NODELAY: %s", fr_syserror(errno));
-				goto error;
-			}
-		}
-#endif
-		rad_assert(home->listeners != NULL);
-
-		if (!rbtree_insert(home->listeners, this)) {
-			ERROR("(TLS) Failed adding tracking information for proxy socket '%s'", buffer);
+		if (setsockopt(this->fd, SOL_TCP, TCP_NODELAY, &on, sizeof(on)) < 0) {
+			ERROR("(TLS) Failed to set TCP_NODELAY: %s", fr_syserror(errno));
 			goto error;
 		}
-
-		/*
-		 *	Start a new client connection.
-		 */
-		sock->ssn = tls_new_client_session(sock, home->tls, this->fd, &sock->certs);
-		if (!sock->ssn) {
-			ERROR("(TLS) Failed opening connection on proxy socket '%s'", buffer);
-			goto error;
-		}
-
-		/*
-		 *	MTU limits don't apply to RadSec - just use 32k so there's plenty of headroom
-		 */
-		sock->ssn->mtu = 1 << 15;
-
-		SSL_set_ex_data(sock->ssn->ssl, FR_TLS_EX_INDEX_HOME, sock->home);
-
-#ifdef WITH_RADIUSV11
-		/*
-		 *	Must not have alpn_checked yet.  This code only runs for blocking sockets.
-		 */
-		if (sock->ssn->connected && (fr_radiusv11_client_get_alpn(this) < 0)) {
-			goto error;
-		}
-#endif
-
-		sock->connect_timeout = home->connect_timeout;
-
-		this->recv = proxy_tls_recv;
-		this->proxy_send = proxy_tls_send;
-
-#ifdef HAVE_PTHREAD_H
-		if (pthread_mutex_init(&sock->mutex, NULL) < 0) {
-			rad_assert(0 == 1);
-			listen_free(&this);
-			return 0;
-		}
-#endif
-
-		/*
-		 *	Make sure that this listener is associated with the home server.
-		 *
-		 *	Since it's TCP+TLS, this socket can only be associated with one home server.
-		 */
-
-#ifdef WITH_COA_TUNNEL
-		if (home->recv_coa) {
-			RADCLIENT *client;
-
-			this->send_coa = true;
-
-			/*
-			 *	Don't set this->send_coa, as we are
-			 *	not sending CoA-Request packets to
-			 *	this home server.  Instead, we are
-			 *	receiving CoA packets from this home
-			 *	server.
-			 */
-			this->send = proxy_tls_send_reply;
-			this->encode = master_listen[RAD_LISTEN_AUTH].encode;
-			this->decode = master_listen[RAD_LISTEN_AUTH].decode;
-
-			/*
-			 *	Automatically create a client for this
-			 *	home server.  There MAY be one already
-			 *	one for that IP in the configuration
-			 *	files, but there's no guarantee that
-			 *	it exists.
-			 *
-			 *	The only real reason to use an
-			 *	existing client is to track various
-			 *	statistics.
-			 */
-			sock->client = client = talloc_zero(sock, RADCLIENT);
-			client->ipaddr = sock->other_ipaddr;
-			client->src_ipaddr = sock->my_ipaddr;
-			client->longname = client->shortname = talloc_typed_strdup(client, home->name);
-			client->secret = talloc_typed_strdup(client, home->secret);
-			client->nas_type = "none";
-			client->server = talloc_typed_strdup(client, home->recv_coa_server);
-		}
-#endif
 	}
 #endif
+
+	/*
+	 *	Plain TCP buffers writes and reads via buffers and a
+	 *	mutex.  The TLS code below sets up its own.
+	 */
+#ifdef WITH_TLS
+	if (!home->tls)
 #endif
+	{
+		this->recv = proxy_tcp_recv;
+		this->proxy_send = proxy_tcp_send;
+
+#ifdef HAVE_PTHREAD_H
+		sock->mutex = talloc_zero(sock, pthread_mutex_t);
+		if (!sock->mutex) goto error;
+
+		if (pthread_mutex_init(sock->mutex, NULL) < 0) goto error;
+#endif
+
+		sock->read_buf = talloc_array(sock, uint8_t, TCP_READ_BUF_SIZE);
+		if (!sock->read_buf) goto error;
+
+		sock->write_buf = talloc_array(sock, uint8_t, TCP_WRITE_BUF_SIZE);
+		if (!sock->write_buf) goto error;
+	}
+
+#ifdef WITH_TLS
+	if (!home->tls) goto find_port;
+
+	DEBUG("(TLS) Trying new outgoing proxy connection to %s", buffer);
+
+	/*
+	 *	Set maximum packet size for outgoing connections, too.
+	 */
+	if (!sock->limit.max_packet_size) sock->limit.max_packet_size = home->limit.max_packet_size;
+	if (!sock->limit.certificate_fail_interval) sock->limit.certificate_fail_interval = home->limit.certificate_fail_interval;
+
+#ifdef WITH_RADIUSV11
+	this->radiusv11 = home->tls->radiusv11;
+#endif
+
+	rad_assert(home->listeners != NULL);
+
+	if (!rbtree_insert(home->listeners, this)) {
+		ERROR("(TLS) Failed adding tracking information for proxy socket '%s'", buffer);
+		goto error;
+	}
+
+	/*
+	 *	Start a new client connection.
+	 */
+	sock->ssn = tls_new_client_session(sock, home->tls, this->fd, &sock->certs);
+	if (!sock->ssn) {
+		ERROR("(TLS) Failed opening connection on proxy socket '%s'", buffer);
+		goto error;
+	}
+
+	/*
+	 *	MTU limits don't apply to RadSec - just use 32k so there's plenty of headroom
+	 */
+	sock->ssn->mtu = 1 << 15;
+
+	SSL_set_ex_data(sock->ssn->ssl, FR_TLS_EX_INDEX_HOME, sock->home);
+
+	/*
+	 *	For TLS, sock->connected means that the handshake has
+	 *	finished, and not that the TCP connect() has finished.
+	 *	try_connect() sets sock->connected.
+	 */
+	sock->connected = false;
+
+#ifdef WITH_RADIUSV11
+	/*
+	 *	Must not have alpn_checked yet.  This code only runs for blocking sockets.
+	 */
+	if (sock->ssn->connected && (fr_radiusv11_client_get_alpn(this) < 0)) {
+		goto error;
+	}
+#endif
+
+	sock->connect_timeout = home->connect_timeout;
+
+	this->recv = proxy_tls_recv;
+	this->proxy_send = proxy_tls_send;
+
+#ifdef HAVE_PTHREAD_H
+	sock->mutex = talloc_zero(sock, pthread_mutex_t);
+	if (!sock->mutex) goto error;
+
+	if (pthread_mutex_init(sock->mutex, NULL) < 0) goto error;
+#endif
+
+	/*
+	 *	Make sure that this listener is associated with the home server.
+	 *
+	 *	Since it's TCP+TLS, this socket can only be associated with one home server.
+	 */
+
+#ifdef WITH_COA_TUNNEL
+	if (home->recv_coa) {
+		RADCLIENT *client;
+
+		this->send_coa = true;
+
+		/*
+		 *	Don't set this->send_coa, as we are
+		 *	not sending CoA-Request packets to
+		 *	this home server.  Instead, we are
+		 *	receiving CoA packets from this home
+		 *	server.
+		 */
+		this->send = proxy_tls_send_reply;
+		this->encode = master_listen[RAD_LISTEN_AUTH].encode;
+		this->decode = master_listen[RAD_LISTEN_AUTH].decode;
+
+		/*
+		 *	Automatically create a client for this
+		 *	home server.  There MAY be one already
+		 *	one for that IP in the configuration
+		 *	files, but there's no guarantee that
+		 *	it exists.
+		 *
+		 *	The only real reason to use an
+		 *	existing client is to track various
+		 *	statistics.
+		 */
+		sock->client = client = talloc_zero(sock, RADCLIENT);
+		client->ipaddr = sock->other_ipaddr;
+		client->src_ipaddr = sock->my_ipaddr;
+		client->longname = client->shortname = talloc_typed_strdup(client, home->name);
+		client->secret = talloc_typed_strdup(client, home->secret);
+		client->nas_type = "none";
+		client->server = talloc_typed_strdup(client, home->recv_coa_server);
+	}
+#endif	/* WITH_COA_TUNNEL */
+
+find_port:
+#endif	/* WITH_TLS */
+
 	/*
 	 *	Figure out which port we were bound to.
 	 */
@@ -3904,7 +4874,7 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 			      buffer, fr_syserror(errno));
 		error:
 			close(this->fd);
-			home->last_failed_open = now;
+			proxy_failed_open(home, now);
 #ifdef WITH_TLS
 			if (home->listeners) rbtree_deletebydata(home->listeners, this);
 #endif
@@ -3927,9 +4897,42 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 
 	home->limit.num_connections++;
 
-	return this;
-}
+	/*
+	 *	The connect() was successful. Mark the home server as
+	 *	having no connection failures.
+	 *
+	 *	Note that the TCP handshake has not yet completed.  If
+	 *	that negotiation fails, then the TCP code will set the
+	 *	tls_failed flag, along with a new time.
+	 */
+#ifdef WITH_TLS
+	home->tls_failed = false;
 #endif
+
+	/*
+	 *	Plain TCP: if the connect() has not finished, then
+	 *	tcp_try_connect() clears home->tcp_failed and counts the
+	 *	connection when the connect() succeeds.
+	 */
+	if (sock->connected
+#ifdef WITH_TLS
+	    || home->tls
+#endif
+	    ) {
+		home->tcp_failed = false;
+
+		/*
+		 *	Count the connection as open.  For TLS, this only
+		 *	increments the active connections if the TLS
+		 *	handshake has finished.
+		 */
+		home_server_active_connections_increment(this);
+	}
+
+	return this;
+#endif	/* WITH_TCP */
+}
+#endif	/* WITH_PROXY */
 
 static const FR_NAME_NUMBER listen_compare[] = {
 #ifdef WITH_STATS
@@ -4091,9 +5094,7 @@ static rad_listen_t *listen_parse(CONF_SECTION *cs, char const *server)
 	 */
 	this = listen_alloc(cs, type);
 	this->server = server;
-	this->fd = -1;
 
-#ifdef WITH_TCP
 	/*
 	 *	Add special flags '+' for "auth+acct".
 	 */
@@ -4109,8 +5110,13 @@ static rad_listen_t *listen_parse(CONF_SECTION *cs, char const *server)
 			this->send_coa = true;
 #endif
 		}
+
+		/*
+		 *	Else it has to be valid, because the table
+		 *	above at listen_compare[] limits the accepted
+		 *	types.
+		 */
 	}
-#endif
 
 	/*
 	 *	Call per-type parser.
@@ -4143,7 +5149,7 @@ static rad_listen_t *listen_parse(CONF_SECTION *cs, char const *server)
 		 */
 		coa = cf_section_sub_find(cs, "coa");
 		if (coa) {
-			rcode = cf_section_parse(cs, this, coa_config);
+			rcode = cf_section_parse(coa, this, coa_config);
 			if (rcode < 0) {
 				listen_free(&this);
 				return NULL;
@@ -4163,6 +5169,9 @@ static rad_listen_t *listen_parse(CONF_SECTION *cs, char const *server)
 
 		FR_INTEGER_BOUND_CHECK("coa_mrd", this->coa_mrd, >=, 5);
 		FR_INTEGER_BOUND_CHECK("coa_mrd", this->coa_mrd, <=, 60);
+
+		FR_INTEGER_BOUND_CHECK("max_keys", this->coa_max_keys, >=, 1);
+		FR_INTEGER_BOUND_CHECK("max_keys", this->coa_max_keys, <=, 65536);
 	}
 #endif	/* WITH_COA_TUNNEL */
 
@@ -4182,7 +5191,6 @@ int listen_init(CONF_SECTION *config, rad_listen_t **head,
 #endif
 		bool spawn_flag)
 {
-	bool		override = false;
 	CONF_SECTION	*cs = NULL;
 	rad_listen_t	**last;
 	rad_listen_t	*this;
@@ -4224,10 +5232,20 @@ int listen_init(CONF_SECTION *config, rad_listen_t **head,
 	 */
 	if (main_config.myip.af != AF_UNSPEC) {
 		listen_socket_t *sock;
+		char const *server = NULL;
 
 		memcpy(&server_ipaddr, &main_config.myip,
 		       sizeof(server_ipaddr));
-		override = true;
+
+		/*
+		 *	The listeners use the virtual server named by
+		 *	"-n", or else "default".
+		 */
+		cs = cf_section_sub_find_name2(config, "server",
+					       main_config.name);
+		if (!cs) cs = cf_section_sub_find_name2(config, "server",
+							"default");
+		if (cs) server = cf_section_name2(cs);
 
 #ifdef WITH_VMPS
 		if (strcmp(main_config.name, "vmpsd") == 0) {
@@ -4257,13 +5275,7 @@ int listen_init(CONF_SECTION *config, rad_listen_t **head,
 			return -1;
 		}
 		auth_port = sock->my_port;	/* may have been updated in listen_bind */
-		if (override) {
-			cs = cf_section_sub_find_name2(config, "server",
-						       main_config.name);
-			if (!cs) cs = cf_section_sub_find_name2(config, "server",
-						       "default");
-			if (cs) this->server = cf_section_name2(cs);
-		}
+		this->server = server;
 
 		*last = this;
 		last = &(this->next);
@@ -4308,11 +5320,7 @@ int listen_init(CONF_SECTION *config, rad_listen_t **head,
 			return -1;
 		}
 
-		if (override) {
-			cs = cf_section_sub_find_name2(config, "server",
-						       main_config.name);
-			if (cs) this->server = main_config.name;
-		}
+		this->server = server;
 
 		*last = this;
 		last = &(this->next);
@@ -4555,10 +5563,24 @@ static int coa_key_cmp(void const *one, void const *two)
 	return strcmp(a->key, b->key);
 }
 
+/*
+ *	Only called on exit.  Freeing the hash frees the entries of
+ *	connections which are still open, so their destructor must not
+ *	touch the key.
+ */
+static int coa_entry_forget(UNUSED void *ctx, void *data)
+{
+	coa_entry_t *entry = data;
+
+	entry->coa_key = NULL;
+	return 0;
+}
+
 static void coa_key_free(void *data)
 {
 	coa_key_t *coa_key = data;
 
+	(void) fr_hash_table_walk(coa_key->ht, coa_entry_forget, NULL);
 	pthread_mutex_destroy(&coa_key->mutex);
 	fr_hash_table_free(coa_key->ht);
 	talloc_free(coa_key);
@@ -4589,6 +5611,10 @@ static void coa_entry_free(void *data)
 
 static int coa_entry_destructor(coa_entry_t *entry)
 {
+	entry->listener->num_keys--;
+
+	if (!entry->coa_key) return 0;
+
 	pthread_mutex_lock(&entry->coa_key->mutex);
 	fr_hash_table_yank(entry->coa_key->ht, entry);
 	pthread_mutex_unlock(&entry->coa_key->mutex);
@@ -4615,18 +5641,40 @@ static int listen_coa_init(void)
 void listen_coa_free(void)
 {
 	/*
-	 *	If we are freeing the tree, then all of the listeners
-	 *	must have been freed first.
+	 *	Keys are never removed from the tree, and connections
+	 *	which are still open at exit still have entries.
 	 */
-	rad_assert(rbtree_num_elements(coa_tree) == 0);
 	rbtree_free(coa_tree);
 	coa_tree = NULL;
 }
 
 /*
+ *	Check for an active listener by key.
+ */
+static bool listen_coa_exists(rad_listen_t *this, char const *key)
+{
+	coa_key_t my_key, *coa_key;
+	coa_entry_t my_entry, *entry;
+
+	/*
+	 *	Find the key.  If we can't find it, then error out.
+	 */
+	memcpy(&my_key.key, &key, sizeof(key)); /* const issues */
+	coa_key = rbtree_finddata(coa_tree, &my_key);
+	if (!coa_key) return false;
+
+	my_entry.listener = this;
+	pthread_mutex_lock(&coa_key->mutex);
+	entry = fr_hash_table_finddata(coa_key->ht, &my_entry);
+	pthread_mutex_unlock(&coa_key->mutex);
+
+	return (entry != NULL);
+}
+
+/*
  *	Adds a listener to the hash of listeners, based on key.
  */
-void listen_coa_add(rad_listen_t *this, char const *key)
+bool listen_coa_add(rad_listen_t *this, char const *key)
 {
 	int tries = 0;
 	coa_key_t my_key, *coa_key;
@@ -4634,7 +5682,19 @@ void listen_coa_add(rad_listen_t *this, char const *key)
 
 	rad_assert(this->send_coa);
 	rad_assert(this->parent);
-	rad_assert(!this->key);
+
+	/*
+	 *	A connection can carry many keys, but each one once.
+	 */
+	if (listen_coa_exists(this, key)) return false;
+
+	if (this->num_keys >= this->coa_max_keys) {
+		listen_socket_t *sock = this->data;
+
+		RATE_LIMIT(WARN("Ignoring key %s from client %s: the connection already has %u keys",
+				key, sock->client->shortname, this->num_keys));
+		return false;
+	}
 
 	/*
 	 *	Find the key.  If we can't find it, then create it.
@@ -4645,12 +5705,12 @@ retry:
 	coa_key = rbtree_finddata(coa_tree, &my_key);
 	if (!coa_key) {
 		coa_key = talloc_zero(NULL, coa_key_t);
-		if (!coa_key) return;
+		if (!coa_key) return false;
 		coa_key->key = talloc_strdup(coa_key, key);
 		if (!coa_key->key) {
 		fail:
 			talloc_free(coa_key);
-			return;
+			return false;
 		}
 
 		/*
@@ -4671,20 +5731,14 @@ retry:
 			 */
 			tries++;
 			if (tries < 3) goto retry;
-			return;
+			return false;
 		}
 
 		(void) pthread_mutex_init(&coa_key->mutex, NULL);
 	}
 
-	/*
-	 *	No need to strdup() this, coa_key will only be removed
-	 *	after the listener has been removed.
-	 */
-	if (!this->key) this->key = coa_key->key;
-
 	entry = talloc_zero(this, coa_entry_t);
-	if (!entry) return;
+	if (!entry) return false;
 	talloc_set_destructor(entry, coa_entry_destructor);
 
 	entry->coa_key = coa_key;
@@ -4696,6 +5750,14 @@ retry:
 	pthread_mutex_lock(&coa_key->mutex);
 	fr_hash_table_insert(coa_key->ht, entry);
 	pthread_mutex_unlock(&coa_key->mutex);
+
+	/*
+	 *	Remember the first key, for %{listen:Originating-Realm-Key}.
+	 */
+	if (!this->key) this->key = coa_key->key;
+
+	this->num_keys++;
+	return true;
 }
 
 /*
@@ -4703,6 +5765,10 @@ retry:
  *
  *	This function will update request->home_server, and
  *	request->proxy_listener.
+ *
+ *	Returns 0 on success, -1 if the key is unknown or every
+ *	connection with that key has gone, and -2 if the live
+ *	connections with that key cannot take a request.
  */
 int listen_coa_find(REQUEST *request, char const *key)
 {
@@ -4711,6 +5777,7 @@ int listen_coa_find(REQUEST *request, char const *key)
 	listen_socket_t *sock;
 	fr_hash_iter_t iter;
 	coa_entry_t *entry;
+	int live;
 
 	/*
 	 *	Find the key.  If we can't find it, then error out.
@@ -4725,15 +5792,23 @@ int listen_coa_find(REQUEST *request, char const *key)
 	 *	256.
 	 */
 	found = NULL;
+	live = 0;
 	pthread_mutex_lock(&coa_key->mutex);
 	for (entry = fr_hash_table_iter_init(coa_key->ht, &iter);
 	     entry != NULL;
 	     entry = fr_hash_table_iter_next(coa_key->ht, &iter)) {
 		this = entry->listener;
 
-		if (this->blocked) continue;
-
+		/*
+		 *	A listener which is closing still carries the
+		 *	key until it is freed.  It is not a connection
+		 *	the request can wait for.
+		 */
 		if (this->dead) continue;
+
+		live++;
+
+		if (this->blocked) continue;
 
 		if (!found) {
 			if (this->num_ids_used < 256) {
@@ -4771,7 +5846,14 @@ int listen_coa_find(REQUEST *request, char const *key)
 	}
 
 	pthread_mutex_unlock(&coa_key->mutex);
-	if (!found) return -1;
+
+	/*
+	 *	The key is known, but no connection carries it any
+	 *	more: that is "not routable", not "busy".  Busy is
+	 *	for live connections which have no free IDs, or
+	 *	which are blocked on write.
+	 */
+	if (!found) return live ? -2 : -1;
 
 	request->proxy_listener = found;
 
@@ -4781,35 +5863,12 @@ int listen_coa_find(REQUEST *request, char const *key)
 }
 
 /*
- *	Check for an active listener by key.
+ *	Delete a listener entry.
  */
-static bool listen_coa_exists(rad_listen_t *this, char const *key)
+void listen_coa_delete(rad_listen_t *this, char const *key)
 {
 	coa_key_t my_key, *coa_key;
 	coa_entry_t my_entry, *entry;
-
-	/*
-	 *	Find the key.  If we can't find it, then error out.
-	 */
-	memcpy(&my_key.key, &key, sizeof(key)); /* const issues */
-	coa_key = rbtree_finddata(coa_tree, &my_key);
-	if (!coa_key) return false;
-
-	my_entry.listener = this;
-	pthread_mutex_lock(&coa_key->mutex);
-	entry = fr_hash_table_finddata(coa_key->ht, &my_entry);
-	pthread_mutex_unlock(&coa_key->mutex);
-
-	return (entry != NULL);
-}
-
-/*
- *	Delete a listener entry.
- */
-static void listen_coa_delete(rad_listen_t *this, char const *key)
-{
-	coa_key_t my_key, *coa_key;
-	coa_entry_t my_entry;
 
 	/*
 	 *	Find the key.  If we can't find it, then error out.
@@ -4820,8 +5879,17 @@ static void listen_coa_delete(rad_listen_t *this, char const *key)
 
 	my_entry.listener = this;
 	pthread_mutex_lock(&coa_key->mutex);
-	(void) fr_hash_table_delete(coa_key->ht, &my_entry);
+	entry = fr_hash_table_finddata(coa_key->ht, &my_entry);
+	if (entry) {
+		fr_hash_table_yank(coa_key->ht, entry);
+		entry->coa_key = NULL;
+	}
 	pthread_mutex_unlock(&coa_key->mutex);
+
+	/*
+	 *	The destructor would lock the key again.
+	 */
+	if (entry) talloc_free(entry);
 }
 
 
@@ -4839,16 +5907,92 @@ static void listener_coa_update(rad_listen_t *this, VALUE_PAIR *vps)
 		if (vp->vp_length <= 1) continue;
 
 		if (vp->vp_strvalue[0] == '+') {
-			if (listen_coa_exists(this, vp->vp_strvalue)) continue;
-
-			listen_coa_add(this, vp->vp_strvalue);
+			(void) listen_coa_add(this, vp->vp_strvalue + 1);
 			continue;
 		}
 
 		if (vp->vp_strvalue[0] == '-') {
-			listen_coa_delete(this, vp->vp_strvalue);
+			listen_coa_delete(this, vp->vp_strvalue + 1);
 			continue;
 		}
 	}
 }
+#endif
+
+#ifdef WITH_PROXY
+#ifdef WITH_TCP
+void home_server_active_connections_increment(rad_listen_t *this)
+{
+	listen_socket_t *sock = this->data;
+	home_server_t *home;
+
+	fr_assert(this->type == RAD_LISTEN_PROXY);
+
+	if (sock->proto != IPPROTO_TCP) return;
+
+	/*
+	 *	Already counted.  Do nothing, so that callers don't have
+	 *	to track which transitions they have already done.
+	 */
+	if (sock->connection_counted) return;
+
+	/*
+	 *	The socket is not usable until sock->connected is set.
+	 *	For plain TCP, tcp_try_connect() sets sock->connected when
+	 *	the connect() finishes.  For TLS, try_connect() sets
+	 *	sock->connected when the handshake finishes.  The caller
+	 *	calls this function again when that happens.
+	 */
+	if (!sock->connected) return;
+
+	fr_assert(sock->home);
+	home = sock->home;
+
+	sock->connection_counted = true;
+	home->active_connections++;
+
+#ifdef WITH_RADIUSV11
+	if (sock->radiusv11) {
+		home->limit_outstanding = UINT32_MAX;
+		return;
+	}
+#endif
+
+	home->limit_outstanding = home->active_connections * 256;
+}
+
+void home_server_active_connections_decrement(rad_listen_t *this)
+{
+	listen_socket_t *sock = this->data;
+	home_server_t *home;
+
+	fr_assert(this->type == RAD_LISTEN_PROXY);
+
+	if (sock->proto != IPPROTO_TCP) return;
+
+	/*
+	 *	Never counted, or already un-counted.  A connection
+	 *	can be frozen or closed before the TLS handshake
+	 *	finishes, in which case it was never added to the
+	 *	active_connections count.
+	 */
+	if (!sock->connection_counted) return;
+
+	fr_assert(sock->home);
+	home = sock->home;
+
+	sock->connection_counted = false;
+	fr_assert(home->active_connections > 0);
+	home->active_connections--;
+
+#ifdef WITH_RADIUSV11
+	if (sock->radiusv11) {
+		home->limit_outstanding = (home->active_connections > 0) ? UINT32_MAX : 0;
+		return;
+	}
+#endif
+
+	home->limit_outstanding = home->active_connections * 256;
+}
+#endif
 #endif

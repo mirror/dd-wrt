@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: be62db627cd72ba74ed86a67155cc4d939815381 $
+ * $Id: 57565fd6e9a1f0e059f342e99022b85e5bc46746 $
  * @file rlm_eap.c
  * @brief Implements the EAP framework.
  *
@@ -23,7 +23,7 @@
  * @copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  * @copyright 2003  Alan DeKok <aland@freeradius.org>
  */
-RCSID("$Id: be62db627cd72ba74ed86a67155cc4d939815381 $")
+RCSID("$Id: 57565fd6e9a1f0e059f342e99022b85e5bc46746 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -201,6 +201,7 @@ static int mod_instantiate(CONF_SECTION *cs, void *instance)
 		case PW_EAP_TLS:
 		case PW_EAP_TTLS:
 		case PW_EAP_PEAP:
+		case PW_EAP_PSK:
 		case PW_EAP_PWD:
 		case PW_EAP_TEAP:
 			WARN("rlm_eap (%s): Ignoring EAP method %s because we don't have OpenSSL support",

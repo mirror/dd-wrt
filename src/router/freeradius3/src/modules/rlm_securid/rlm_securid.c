@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: ddb9bba1967e86a58349e2cf84212f67be70fc2b $
+ * $Id: 0bb8158ccc6f26a110d8a41815c03c151b15fe11 $
  * @file rlm_securid.c
  * @brief Supports auth against SecurID servers using OTP h/w tokens.
  *
@@ -203,7 +203,7 @@ static SECURID_AUTH_RC securidAuth(void *instance, REQUEST *request,
 		/* continue previous session */
 		switch (securid_session->securidSessionState) {
 		case NEXT_CODE_REQUIRED_STATE:
-			DEBUG2("Securid NEXT_CODE_REQUIRED_STATE: User [%s]", username);
+			RDEBUG2("Securid NEXT_CODE_REQUIRED_STATE: User [%s]", username);
 			/* next token code mode */
 
 			acm_ret = SD_Next(securid_session->sdiHandle, securid_pass);
@@ -464,12 +464,12 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 	 *	a User-Name attribute.
 	 */
 	if (!request->username) {
-		AUTH("rlm_securid: Attribute \"User-Name\" is required for authentication");
+		REDEBUG("Attribute \"User-Name\" is required for authentication");
 		return RLM_MODULE_INVALID;
 	}
 
 	if (!request->password) {
-		RAUTH("Attribute \"Password\" is required for authentication");
+		REDEBUG("Attribute \"Password\" is required for authentication");
 		return RLM_MODULE_INVALID;
 	}
 
@@ -477,7 +477,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 	 *	Clear-text passwords are the only ones we support.
 	 */
 	if (request->password->da->attr != PW_USER_PASSWORD) {
-		RAUTH("Attribute \"User-Password\" is required for authentication. Cannot use \"%s\".", request->password->da->name);
+		REDEBUG("Attribute \"User-Password\" is required for authentication. Cannot use \"%s\".", request->password->da->name);
 		return RLM_MODULE_INVALID;
 	}
 

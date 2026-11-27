@@ -2,7 +2,7 @@
 ##
 ##  eap.conf -- Configuration for EAP types (PEAP, TTLS, etc.)
 ##
-##	$Id: 499614bb8e296ec0078498ec4120867430f794cd $
+##	$Id: f6db0675aa0545bf8749646ff3fcdcbaf575cf80 $
 
 #######################################################################
 #
@@ -103,6 +103,25 @@ eap {
 #	}
 
 
+	#  EAP-PSK
+	#
+	#  This module implements EAP-PSK (RFC 4764).
+	#
+	#  The "known good" password must be in &config:PSK-Password,
+	#  which also must be 16 octets in length.
+	#
+	#  The PSK should be generated from a secure source, e.g. a
+	#  CSPRNG.
+	#
+	psk {
+		#  Server identifier (ID_S)
+		#  This should generally be the host name of the
+		#  RADIUS server.  Or, some information to uniquely
+		#  identify it.
+		#
+		identity = "FreeRADIUS"
+	}
+
 	#  EAP-pwd -- secure password-based authentication
 	#
 	pwd {
@@ -128,7 +147,7 @@ eap {
 	#  Cisco LEAP
 	#
 	#  We do not recommend using LEAP in new deployments.  See:
-	#  http://www.securiteam.com/tools/5TP012ACKE.html
+	#  https://www.kb.cert.org/vuls/id/473108
 	#
 	#  LEAP is not supported.
 	#  It is insecure, and no one should be using it.
@@ -332,6 +351,20 @@ eap {
 		#
 	#	random_file = /dev/urandom
 
+		#
+		#  The size of the buffers used to read / write TLS data.
+		#
+		#  Previous versions used a hard-coded buffer size of 64K, this
+		#  is now configurable.  The buffer size should be large enough
+		#  to fully one EAP frame.
+		#
+		#  The default RADIUS packet size is 4K, so that puts an upper
+		#  bound on the size of the EAP buffers.
+		#
+		#  The minimum size is 4K.  The maximum is 64K.
+		#
+#		buffer_size = 4096
+
 		#  This can never exceed the size of a RADIUS
 		#  packet (4096 bytes), and is preferably half
 		#  that, to accommodate other attributes in
@@ -425,11 +458,49 @@ eap {
 		#
 	#	reject_unknown_intermediate_ca = no
 
-		#  Set this option to specify the allowed
-		#  TLS cipher suites.  The format is listed
-		#  in "man 1 ciphers".
 		#
+		#  cipher_list:: Set the list of allowed TLS cipher suites, for TLS < 1.3
+		#
+		#  The format is listed by OpenSSL in `man 1 ciphers`.
+		#
+		#  To use only TLS 1.3 cipher sites, set this to an empty string.
 		cipher_list = "DEFAULT"
+
+		#
+		#  cipher_suites:: TLS 1.3 cipher suites.
+		#
+		#  For TLS-PSK, uncomment the following line to use standard ciphers
+		#  for TLS 1.3.
+		#
+		#  TLS-PSK may work without this line, but it is likely to not work
+		#  when the "next hop" home_server accepts both certificates and
+		#  PSK. OpenSSL will negotiate cipher suites which are incompatible
+		#  with PSK, and then fail.
+		#
+		#  Setting the `cipher_suites` here allows PSK to be negotiated.
+		#
+	#	cipher_suites = "TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
+
+		#
+		#  group_list:: Supported groups
+		#
+		#  When using TLS 1.3, the client sends keying material in a key_share
+		#  extension of the ClientHello, for one or more groups it predicts the
+		#  server will accept.
+		#
+		#  If none of the groups in that extension are supported by the server
+		#  then the server will send a HelloRetryRequest message, prompting
+		#  another ClientHello to be sent by the client, increasing the number
+		#  of round trips.
+		#
+		#  This option allows setting the groups supported by the server.
+		#
+		#  Each group can be either the NIST name (e.g. P-256), some other
+		#  commonly used name where applicable (e.g. X25519, ffdhe2048) or an
+		#  OpenSSL OID name (e.g. prime256v1).
+		#  Group names are case-insensitive in OpenSSL 3.5 and later.
+		#
+	#	group_list = 'x25519:prime256v1:x448:secp521r1:secp384r1:ffdhe2048:ffdhe3072'
 
 		#  Set this option to specify the allowed
 		#  TLS signature algorithms for OpenSSL 1.1.1 and above.
@@ -591,7 +662,13 @@ eap {
 
 			#
 			#  Lifetime of the cached entries, in hours. The sessions will be
-			#  deleted/invalidated after this time.
+			#  deleted/invalidated after this time, and the user will be
+			#  required to re-authenticate.  This limit applies even across
+			#  multiple session resumptions.
+			#
+			#  i.e. once every 24 hours, the user is required to go through
+			#  a full re-authentication, even if their session ticket is still
+			#  valid.
 			#
 #			lifetime = 24 # hours
 
@@ -1016,18 +1093,6 @@ eap {
 		#
 		virtual_server = "inner-tunnel"
 
-		# This option enables support for MS-SoH
-		# see doc/SoH.txt for more info.
-		# It is disabled by default.
-		#
-	#	soh = yes
-
-		#
-		# The SoH reply will be turned into a request which
-		# can be sent to a specific virtual server:
-		#
-	#	soh_virtual_server = "soh-server"
-
 		#
 		# Unlike EAP-TLS, PEAP does not require a client certificate.
 		# However, you can require one by setting the following
@@ -1174,6 +1239,21 @@ eap {
 	#     RADIUS traffic. The workaround we found was to close
 	#     completely the new UI page and let the 'Sign in' toast
 	#     popup open the UI.
+	#
+	#     For 26H2 (and probably 25H2 too) any required user interaction for
+	#     credentials is in general unreliable; at least for wired authentication.
+	#     We have informed Microsoft of our findings but no fixes have been
+	#     provided. Meanwhile the workarounds we discovered during our _testing_
+	#     (once configured after a reboot it settles down) has been to either:
+	#
+	#       - Restart the DOT3SVC service between authentications, which is done
+	#         from the Command Prompt and running `sc stop dot3svc`, waiting a
+	#         moment and the run `sc start dot3svc`.
+	#
+	#       - Save your user credentials by selecting a non-machine only
+	#         authentication for 'Specify authentication mode' under the
+	#         'Advanced Settings' section, and then use the 'Replace credentials'
+	#         option. You may need to first 'Save credentials' or delete them.
 	#
 	#     Failing the above, make sure you have checked 'Fall-back
 	#     to unauthorized network access', otherwise you may never

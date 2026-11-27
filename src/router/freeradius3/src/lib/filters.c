@@ -1,7 +1,7 @@
 /*
  * filters.c	Routines to parse Ascend's filter attributes.
  *
- * Version:	$Id: 58c45f8bb0cc405b27a080402f6d2ab4cef18ebe $
+ * Version:	$Id: 219f2f599dda975825a71c2f93f4a06457a49b0f $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 58c45f8bb0cc405b27a080402f6d2ab4cef18ebe $")
+RCSID("$Id: 219f2f599dda975825a71c2f93f4a06457a49b0f $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -256,6 +256,7 @@ static const FR_NAME_NUMBER filterType[] = {
 	{ "generic",	RAD_FILTER_GENERIC},
 	{ "ip", 	RAD_FILTER_IP},
 	{ "ipx", 	RAD_FILTER_IPX},
+	{ "ipv6", 	RAD_FILTER_IPV6},
 	{ NULL, 	0},
 };
 
@@ -533,7 +534,7 @@ static int ascend_parse_ipx(int argc, char **argv, ascend_ipx_filter_t *filter)
 			break;
 
 		default:
-			fr_strerror_printf("Unknown string \"%s\" in IPX data filter",
+			fr_strerror_printf("Unknown string '%s' in IPX data filter",
 				   argv[0]);
 			return -1;
 		}
@@ -562,7 +563,7 @@ static int ascend_parse_ipx(int argc, char **argv, ascend_ipx_filter_t *filter)
 static int ascend_parse_ipaddr(uint32_t *ipaddr, char *str)
 {
 	int		count = 0;
-	int		ip[4];
+	int		octet = -1;
 	int	     	masklen;
 	uint32_t	netmask = 0;
 
@@ -572,34 +573,54 @@ static int ascend_parse_ipaddr(uint32_t *ipaddr, char *str)
 	count = 0;
 	while (*str && (count < 4) && (netmask == 0)) {
 	next:
-		ip[count] = 0;
-
 		while (*str) {
 			switch (*str) {
 			case '0': case '1': case '2': case '3':
 			case '4': case '5': case '6': case '7':
 			case '8': case '9':
-				ip[count] *= 10;
-				ip[count] += (*str) - '0';
+				if (octet < 0) octet = 0;
+
+				octet *= 10;
+				octet += (*str) - '0';
+
+				if (octet > 255) {
+					fr_strerror_printf("invalid octet in IP address is >255");
+					return -1;
+				}
+
 				str++;
 				break;
 
-
 			case '.': /* dot between IP numbers. */
+				if (octet < 0) goto empty_component;
+
+				if (count == 3) {
+					fr_strerror_printf("Too many components in IP address");
+					return -1;
+				}
+
 				str++;
-				if (ip[count] > 255) return -1;
 
 				/*
 				 *	24, 16, 8, 0, done.
 				 */
-				*ipaddr |= (ip[count] << (8 * (3 - count)));
+				*ipaddr |= (octet << (8 * (3 - count)));
+				octet = -1;
 				count++;
 				goto next;
 
 			case '/': /* netmask  */
+				if (octet < 0) {
+					if (count > 0) goto empty_component;
+					octet = 0;
+				}
+
 				str++;
 				masklen = atoi(str);
-				if ((masklen < 0) || (masklen > 32)) return -1;
+				if ((masklen < 0) || (masklen > 32)) {
+					fr_strerror_printf("Invalid mask value in IP address");
+					return -1;
+				}
 				str += strspn(str, "0123456789");
 				netmask = masklen;
 				goto finalize;
@@ -611,24 +632,28 @@ static int ascend_parse_ipaddr(uint32_t *ipaddr, char *str)
 		} /* loop over one character */
 	} /* loop until the count hits 4 */
 
+	if (octet < 0) {
+	empty_component:
+		fr_strerror_printf("Empty component in IP address");
+		return -1;
+	}
+
 	if (count == 3) {
 	finalize:
 		/*
-		 *	Do the last one, too.
-		 */
-		if (ip[count] > 255) return -1;
-
-		/*
 		 *	24, 16, 8, 0, done.
 		 */
-		*ipaddr |= (ip[count] << (8 * (3 - count)));
+		*ipaddr |= (octet << (8 * (3 - count)));
 	}
 
 	/*
 	 *	We've hit the end of the IP address, and there's something
 	 *	else left over: die.
 	 */
-	if (*str) return -1;
+	if (*str) {
+		fr_strerror_printf("Unexpected text '%s' after IP address", str);
+		return -1;
+	}
 
 	/*
 	 *	Set the default netmask.
@@ -672,7 +697,10 @@ static int ascend_parse_port(uint16_t *port, char *compare, char *str)
 		token = fr_str2int(filterPortType, str, -1);
 	}
 
-	if ((token < 0) || (token > 65535)) return -1;
+	if ((token < 0) || (token > 65535)) {
+		fr_strerror_printf("Invalid port value in IP filter");
+		return -1;
+	}
 
 	*port = token;
 	*port = htons(*port);
@@ -810,7 +838,7 @@ static int ascend_parse_ip(int argc, char **argv, ascend_ip_filter_t *filter)
 			} else {
 				token = fr_str2int(filterProtoName, argv[0], -1);
 				if (token == -1) {
-					fr_strerror_printf("Unknown IP protocol \"%s\" in IP data filter",
+					fr_strerror_printf("Unknown IP protocol '%s' in IP data filter",
 						   argv[0]);
 					return -1;
 				}
@@ -828,7 +856,7 @@ static int ascend_parse_ip(int argc, char **argv, ascend_ip_filter_t *filter)
 	 *	We should have parsed everything by now.
 	 */
 	if (argc != 0) {
-		fr_strerror_printf("Unknown extra string \"%s\" in IP data filter",
+		fr_strerror_printf("Unknown extra string '%s' in IP data filter",
 			   argv[0]);
 		return -1;
 	}
@@ -894,11 +922,16 @@ static int ascend_parse_ipv6(int argc, char **argv, ascend_ipv6_filter_t *filter
 	int flags;
 
 	/*
+	 *	The binary filter is the 4 octet header, followed by the
+	 *	IPv6 filter.  print_abinary() prints a type 3 filter which
+	 *	is shorter than that as octets.
+	 */
+	*len = offsetof(ascend_filter_t, u) + sizeof(*filter);
+
+	/*
 	 *	We may have nothing, in which case we simply return.
 	 */
 	if (argc == 0) return 0;
-
-	*len = sizeof(*filter);
 
 	/*
 	 *	There may, or may not, be src & dst IP's in the string.
@@ -976,7 +1009,7 @@ static int ascend_parse_ipv6(int argc, char **argv, ascend_ipv6_filter_t *filter
 			} else {
 				token = fr_str2int(filterProtoName, argv[0], -1);
 				if (token == -1) {
-					fr_strerror_printf("Unknown IP protocol \"%s\" in IPv6 data filter",
+					fr_strerror_printf("Unknown IP protocol '%s' in IPv6 data filter",
 						   argv[0]);
 					return -1;
 				}
@@ -994,7 +1027,7 @@ static int ascend_parse_ipv6(int argc, char **argv, ascend_ipv6_filter_t *filter
 	 *	We should have parsed everything by now.
 	 */
 	if (argc != 0) {
-		fr_strerror_printf("Unknown extra string \"%s\" in IPv6 data filter",
+		fr_strerror_printf("Unknown extra string '%s' in IPv6 data filter",
 			   argv[0]);
 		return -1;
 	}
@@ -1097,7 +1130,7 @@ static int ascend_parse_generic(int argc, char **argv,
 			break;
 
 		default:
-			fr_strerror_printf("Invalid string \"%s\" in generic data filter",
+			fr_strerror_printf("Invalid string '%s' in generic data filter",
 				   argv[0]);
 			return -1;
 		}
@@ -1146,7 +1179,7 @@ int ascend_parse_filter(TALLOC_CTX *ctx, value_data_t *out, char const *value, s
 	 *	a general one here, which won't be used if the function
 	 *	returns OK.
 	 */
-	fr_strerror_printf("Failed parsing \"%s\" as ascend filer", p);
+	fr_strerror_printf("Failed parsing '%s' as ascend filer", p);
 
 	argc = str2argv(p, argv, 32);
 	if (argc < 3) {
@@ -1173,7 +1206,7 @@ int ascend_parse_filter(TALLOC_CTX *ctx, value_data_t *out, char const *value, s
 		break;
 
 	default:
-		fr_strerror_printf("Unknown Ascend filter type \"%s\"", argv[0]);
+		fr_strerror_printf("Unknown Ascend filter type '%s'", argv[0]);
 		talloc_free(p);
 		return -1;
 	}
@@ -1192,7 +1225,7 @@ int ascend_parse_filter(TALLOC_CTX *ctx, value_data_t *out, char const *value, s
 		break;
 
 	default:
-		fr_strerror_printf("Unknown Ascend filter direction \"%s\"", argv[1]);
+		fr_strerror_printf("Unknown Ascend filter direction '%s'", argv[1]);
 		talloc_free(p);
 		return -1;
 	}
@@ -1211,7 +1244,7 @@ int ascend_parse_filter(TALLOC_CTX *ctx, value_data_t *out, char const *value, s
 		break;
 
 	default:
-		fr_strerror_printf("Unknown Ascend filter action \"%s\"", argv[2]);
+		fr_strerror_printf("Unknown Ascend filter action '%s'", argv[2]);
 		talloc_free(p);
 		return -1;
 	}
@@ -1249,12 +1282,43 @@ int ascend_parse_filter(TALLOC_CTX *ctx, value_data_t *out, char const *value, s
 }
 
 /*
+ *	Append formatted text to the output buffer.
+ *
+ *	On success, advance *p past the new text and reduce *outlen.
+ *	If the text does not fit, write as much as does fit, leave *p
+ *	at the final byte of the buffer (where the NUL goes), and
+ *	return -1.  *outlen is never reduced below 1, so it can't wrap.
+ */
+static int CC_HINT(format (printf, 3, 4)) abinary_printf(char **p, size_t *outlen, char const *fmt, ...)
+{
+	va_list	ap;
+	int	i;
+
+	if (*outlen == 0) return -1;
+
+	va_start(ap, fmt);
+	i = vsnprintf(*p, *outlen, fmt, ap);
+	va_end(ap);
+
+	if ((i < 0) || ((size_t) i >= *outlen)) {
+		*p += *outlen - 1;
+		*outlen = 1;
+		return -1;
+	}
+
+	*p += i;
+	*outlen -= i;
+	return 0;
+}
+
+/*
  *	Print an Ascend binary filter attribute to a string,
  *	Grrr... Ascend makes the server do this work, instead
  *	of doing it on the NAS.
  *
- *	Note we don't bother checking 'len' after the snprintf's.
- *	This function should ONLY be called with a large (~1k) buffer.
+ *	The output is truncated if it does not fit into the buffer.  A
+ *	valid filter needs about 200 bytes.  Data which is not a valid
+ *	filter is printed as octets, which needs 2 * len + 3 bytes.
  */
 void print_abinary(char *out, size_t outlen, uint8_t const *data, size_t len, int8_t quote)
 {
@@ -1265,6 +1329,8 @@ void print_abinary(char *out, size_t outlen, uint8_t const *data, size_t len, in
 	static char const *action[] = {"drop", "forward"};
 	static char const *direction[] = {"out", "in"};
 
+	if (outlen == 0) return;
+
 	p = out;
 
 	/*
@@ -1272,28 +1338,47 @@ void print_abinary(char *out, size_t outlen, uint8_t const *data, size_t len, in
 	 */
 	if ((len < 32) || (data[0] > 3) || ((data[0] < 3) && (len != 32)) ||
 	    ((data[0] == 3) && (len < 48))) {
+		/*
+		 *	The attribute length comes from the packet, and
+		 *	the output needs 2 * len + 3 bytes.  The caller's
+		 *	buffer may be smaller, so stop when the next
+		 *	byte, and the trailing NUL, do not fit.
+		 */
+		if (outlen < 3) {
+			*p = '\0';
+			return;
+		}
+
 		strcpy(p, "0x");
 		p += 2;
 		outlen -= 2;
-		for (i = 0; i < len; i++) {
+		for (i = 0; (i < len) && (outlen >= 3); i++) {
 			snprintf(p, outlen, "%02x", data[i]);
 			p += 2;
 			outlen -= 2;
 		}
+		*p = '\0';
 		return;
 	}
 
+	/*
+	 *	The leading quote takes one byte.  Leave one byte for the
+	 *	NUL after the trailing quote.  The NUL which abinary_printf()
+	 *	writes at the end of the text is where the trailing quote goes.
+	 */
 	if (quote > 0) {
+		if (outlen < 4) {
+			*p = '\0';
+			return;
+		}
+
 		*(p++) = (char) quote;
-		outlen -= 3;			/* account for leading & trailing quotes */
+		outlen -= 2;
 	}
 
 	filter = (ascend_filter_t const *) data;
-	i = snprintf(p, outlen, "%s %s %s", fr_int2str(filterType, filter->type, "??"),
-		     direction[filter->direction & 0x01], action[filter->forward & 0x01]);
-
-	p += i;
-	outlen -= i;
+	if (abinary_printf(&p, &outlen, "%s %s %s", fr_int2str(filterType, filter->type, "??"),
+			   direction[filter->direction & 0x01], action[filter->forward & 0x01]) < 0) goto done;
 
 	/*
 	*	Handle IP filters
@@ -1301,50 +1386,39 @@ void print_abinary(char *out, size_t outlen, uint8_t const *data, size_t len, in
 	if (filter->type == RAD_FILTER_IP) {
 
 		if (filter->u.ip.srcip) {
-			i = snprintf(p, outlen, " srcip %d.%d.%d.%d/%d",
-				     ((uint8_t const *) &filter->u.ip.srcip)[0],
-				     ((uint8_t const *) &filter->u.ip.srcip)[1],
-				     ((uint8_t const *) &filter->u.ip.srcip)[2],
-				     ((uint8_t const *) &filter->u.ip.srcip)[3],
-				     filter->u.ip.srcmask);
-			p += i;
-			outlen -= i;
+			if (abinary_printf(&p, &outlen, " srcip %d.%d.%d.%d/%d",
+					   ((uint8_t const *) &filter->u.ip.srcip)[0],
+					   ((uint8_t const *) &filter->u.ip.srcip)[1],
+					   ((uint8_t const *) &filter->u.ip.srcip)[2],
+					   ((uint8_t const *) &filter->u.ip.srcip)[3],
+					   filter->u.ip.srcmask) < 0) goto done;
 		}
 
 		if (filter->u.ip.dstip) {
-			i = snprintf(p, outlen, " dstip %d.%d.%d.%d/%d",
-				     ((uint8_t const *) &filter->u.ip.dstip)[0],
-				     ((uint8_t const *) &filter->u.ip.dstip)[1],
-				     ((uint8_t const *) &filter->u.ip.dstip)[2],
-				     ((uint8_t const *) &filter->u.ip.dstip)[3],
-				     filter->u.ip.dstmask);
-			p += i;
-			outlen -= i;
+			if (abinary_printf(&p, &outlen, " dstip %d.%d.%d.%d/%d",
+					   ((uint8_t const *) &filter->u.ip.dstip)[0],
+					   ((uint8_t const *) &filter->u.ip.dstip)[1],
+					   ((uint8_t const *) &filter->u.ip.dstip)[2],
+					   ((uint8_t const *) &filter->u.ip.dstip)[3],
+					   filter->u.ip.dstmask) < 0) goto done;
 		}
 
-		i = snprintf(p, outlen, " %s", fr_int2str(filterProtoName, filter->u.ip.proto, "??"));
-		p += i;
-		outlen -= i;
+		if (abinary_printf(&p, &outlen, " %s", fr_int2str(filterProtoName, filter->u.ip.proto, "??")) < 0) goto done;
 
 		if (filter->u.ip.srcPortComp > RAD_NO_COMPARE) {
-			i = snprintf(p, outlen, " srcport %s %d",
-				     fr_int2str(filterCompare, filter->u.ip.srcPortComp, "??"),
-				     ntohs(filter->u.ip.srcport));
-			p += i;
-			outlen -= i;
+			if (abinary_printf(&p, &outlen, " srcport %s %d",
+					   fr_int2str(filterCompare, filter->u.ip.srcPortComp, "??"),
+					   ntohs(filter->u.ip.srcport)) < 0) goto done;
 		}
 
 		if (filter->u.ip.dstPortComp > RAD_NO_COMPARE) {
-			i = snprintf(p, outlen, " dstport %s %d",
-				     fr_int2str(filterCompare, filter->u.ip.dstPortComp, "??"),
-				     ntohs(filter->u.ip.dstport));
-			p += i;
-			outlen -= i;
+			if (abinary_printf(&p, &outlen, " dstport %s %d",
+					   fr_int2str(filterCompare, filter->u.ip.dstPortComp, "??"),
+					   ntohs(filter->u.ip.dstport)) < 0) goto done;
 		}
 
 		if (filter->u.ip.established) {
-			i = snprintf(p, outlen, " est");
-			p += i;
+			if (abinary_printf(&p, &outlen, " est") < 0) goto done;
 		}
 
 	} else if (filter->type == RAD_FILTER_IPV6) {
@@ -1353,44 +1427,33 @@ void print_abinary(char *out, size_t outlen, uint8_t const *data, size_t len, in
 		if (memcmp(zeros, filter->u.ipv6.srcip, 16) != 0) {
 			char const *ip = fr_inet_ntop(AF_INET6, filter->u.ipv6.srcip);
 
-			i = snprintf(p, outlen, " srcip %s/%d",
-				     ip, filter->u.ipv6.srcprefix);
-			p += i;
-			outlen -= i;
+			if (abinary_printf(&p, &outlen, " srcip %s/%d",
+					   ip, filter->u.ipv6.srcprefix) < 0) goto done;
 		}
 
 		if (memcmp(zeros, filter->u.ipv6.dstip, 16) != 0) {
 			char const *ip = fr_inet_ntop(AF_INET6, filter->u.ipv6.dstip);
 
-			i = snprintf(p, outlen, " dstip %s/%d",
-				     ip, filter->u.ipv6.dstprefix);
-			p += i;
-			outlen -= i;
+			if (abinary_printf(&p, &outlen, " dstip %s/%d",
+					   ip, filter->u.ipv6.dstprefix) < 0) goto done;
 		}
 
-		i = snprintf(p, outlen, " %s", fr_int2str(filterProtoName, filter->u.ipv6.proto, "??"));
-		p += i;
-		outlen -= i;
+		if (abinary_printf(&p, &outlen, " %s", fr_int2str(filterProtoName, filter->u.ipv6.proto, "??")) < 0) goto done;
 
-		if (filter->u.ip.srcPortComp > RAD_NO_COMPARE) {
-			i = snprintf(p, outlen, " srcport %s %d",
-				     fr_int2str(filterCompare, filter->u.ipv6.srcPortComp, "??"),
-				     ntohs(filter->u.ip.srcport));
-			p += i;
-			outlen -= i;
+		if (filter->u.ipv6.srcPortComp > RAD_NO_COMPARE) {
+			if (abinary_printf(&p, &outlen, " srcport %s %d",
+					   fr_int2str(filterCompare, filter->u.ipv6.srcPortComp, "??"),
+					   ntohs(filter->u.ipv6.srcport)) < 0) goto done;
 		}
 
-		if (filter->u.ip.dstPortComp > RAD_NO_COMPARE) {
-			i = snprintf(p, outlen, " dstport %s %d",
-				     fr_int2str(filterCompare, filter->u.ipv6.dstPortComp, "??"),
-				     ntohs(filter->u.ip.dstport));
-			p += i;
-			outlen -= i;
+		if (filter->u.ipv6.dstPortComp > RAD_NO_COMPARE) {
+			if (abinary_printf(&p, &outlen, " dstport %s %d",
+					   fr_int2str(filterCompare, filter->u.ipv6.dstPortComp, "??"),
+					   ntohs(filter->u.ipv6.dstport)) < 0) goto done;
 		}
 
 		if (filter->u.ipv6.established) {
-			i = snprintf(p, outlen, " est");
-			p += i;
+			if (abinary_printf(&p, &outlen, " est") < 0) goto done;
 		}
 
 		/*
@@ -1399,80 +1462,61 @@ void print_abinary(char *out, size_t outlen, uint8_t const *data, size_t len, in
 	} else if (filter->type == RAD_FILTER_IPX) {
 		/* print for source */
 		if (filter->u.ipx.src.net) {
-			i = snprintf(p, outlen, " srcipxnet 0x%04x srcipxnode 0x%02x%02x%02x%02x%02x%02x",
-				  (unsigned int)ntohl(filter->u.ipx.src.net),
-				  filter->u.ipx.src.node[0], filter->u.ipx.src.node[1],
-				  filter->u.ipx.src.node[2], filter->u.ipx.src.node[3],
-				  filter->u.ipx.src.node[4], filter->u.ipx.src.node[5]);
-			p += i;
-			outlen -= i;
+			if (abinary_printf(&p, &outlen, " srcipxnet 0x%04x srcipxnode 0x%02x%02x%02x%02x%02x%02x",
+					   (unsigned int)ntohl(filter->u.ipx.src.net),
+					   filter->u.ipx.src.node[0], filter->u.ipx.src.node[1],
+					   filter->u.ipx.src.node[2], filter->u.ipx.src.node[3],
+					   filter->u.ipx.src.node[4], filter->u.ipx.src.node[5]) < 0) goto done;
 
 			if (filter->u.ipx.srcSocComp > RAD_NO_COMPARE) {
-				i = snprintf(p, outlen, " srcipxsock %s 0x%04x",
-					     fr_int2str(filterCompare, filter->u.ipx.srcSocComp, "??"),
-					     ntohs(filter->u.ipx.src.socket));
-				p += i;
-				outlen -= i;
+				if (abinary_printf(&p, &outlen, " srcipxsock %s 0x%04x",
+						   fr_int2str(filterCompare, filter->u.ipx.srcSocComp, "??"),
+						   ntohs(filter->u.ipx.src.socket)) < 0) goto done;
 			}
 		}
 
 		/* same for destination */
 		if (filter->u.ipx.dst.net) {
-			i = snprintf(p, outlen, " dstipxnet 0x%04x dstipxnode 0x%02x%02x%02x%02x%02x%02x",
-				  (unsigned int)ntohl(filter->u.ipx.dst.net),
-				  filter->u.ipx.dst.node[0], filter->u.ipx.dst.node[1],
-				  filter->u.ipx.dst.node[2], filter->u.ipx.dst.node[3],
-				  filter->u.ipx.dst.node[4], filter->u.ipx.dst.node[5]);
-			p += i;
-			outlen -= i;
+			if (abinary_printf(&p, &outlen, " dstipxnet 0x%04x dstipxnode 0x%02x%02x%02x%02x%02x%02x",
+					   (unsigned int)ntohl(filter->u.ipx.dst.net),
+					   filter->u.ipx.dst.node[0], filter->u.ipx.dst.node[1],
+					   filter->u.ipx.dst.node[2], filter->u.ipx.dst.node[3],
+					   filter->u.ipx.dst.node[4], filter->u.ipx.dst.node[5]) < 0) goto done;
 
 			if (filter->u.ipx.dstSocComp > RAD_NO_COMPARE) {
-				i = snprintf(p, outlen, " dstipxsock %s 0x%04x",
-					     fr_int2str(filterCompare, filter->u.ipx.dstSocComp, "??"),
-					     ntohs(filter->u.ipx.dst.socket));
-				p += i;
+				if (abinary_printf(&p, &outlen, " dstipxsock %s 0x%04x",
+						   fr_int2str(filterCompare, filter->u.ipx.dstSocComp, "??"),
+						   ntohs(filter->u.ipx.dst.socket)) < 0) goto done;
 			}
 		}
 	} else if (filter->type == RAD_FILTER_GENERIC) {
 		size_t count, masklen;
 
 		masklen = ntohs(filter->u.generic.len);
-		if (masklen >= sizeof(filter->u.generic.mask)) {
-			*p = '\0';
-			return;
-		}
+		if (masklen > sizeof(filter->u.generic.mask)) goto done;
 
-		i = snprintf(p, outlen, " %u ", (unsigned int) ntohs(filter->u.generic.offset));
-		p += i;
+		if (abinary_printf(&p, &outlen, " %u ", (unsigned int) ntohs(filter->u.generic.offset)) < 0) goto done;
 
 		/* show the mask */
 		for (count = 0; count < masklen; count++) {
-			i = snprintf(p, outlen, "%02x", filter->u.generic.mask[count]);
-			p += i;
-			outlen -= i;
+			if (abinary_printf(&p, &outlen, "%02x", filter->u.generic.mask[count]) < 0) goto done;
 		}
 
-		strcpy(p, " ");
-		p++;
-		outlen--;
+		if (abinary_printf(&p, &outlen, " ") < 0) goto done;
 
 		/* show the value */
 		for (count = 0; count < masklen; count++) {
-			i = snprintf(p, outlen, "%02x", filter->u.generic.value[count]);
-			p += i;
-			outlen -= i;
+			if (abinary_printf(&p, &outlen, "%02x", filter->u.generic.value[count]) < 0) goto done;
 		}
 
-		i = snprintf(p, outlen, " %s", (filter->u.generic.compNeq) ? "!=" : "==");
-		p += i;
-		outlen -= i;
+		if (abinary_printf(&p, &outlen, " %s", (filter->u.generic.compNeq) ? "!=" : "==") < 0) goto done;
 
 		if (filter->u.generic.more != 0) {
-			i = snprintf(p, outlen, " more");
-			p += i;
+			if (abinary_printf(&p, &outlen, " more") < 0) goto done;
 		}
 	}
 
+done:
 	if (quote > 0) {
 		*(p++) = (char) quote;
 	}

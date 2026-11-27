@@ -14,7 +14,7 @@
  */
 
 /**
- * $Id: 580c62b0528e0395d84a491fc72f88b152733ef5 $
+ * $Id: c3bed92f7604418cae3e8dcd208444038c35aa9a $
  * @file rlm_opendirectory.c
  * @brief Allows authentication against OpenDirectory and enforces ACLS.
  *
@@ -385,12 +385,12 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST
 			/* attempt to resolve the name */
 			groupdata = getgrnam(rad_client->community);
 			if (!groupdata) {
-				AUTH("rlm_opendirectory: The group \"%s\" does not exist on this system.", rad_client->community);
+				REDEBUG("The group \"%s\" does not exist on this system.", rad_client->community);
 				return RLM_MODULE_FAIL;
 			}
 			err = mbr_gid_to_uuid(groupdata->gr_gid, guid_nasgroup);
 			if (err != 0) {
-				AUTH("rlm_opendirectory: The group \"%s\" does not have a GUID.", rad_client->community);
+				REDEBUG("The group \"%s\" does not have a GUID.", rad_client->community);
 				return RLM_MODULE_FAIL;
 			}
 		}

@@ -1,7 +1,7 @@
 /*
  * mem.c  Memory allocation, deallocation stuff.
  *
- * Version:     $Id: 680c8791301adef97effe3f935869adff565419b $
+ * Version:     $Id: 02a378367030f0aa45aa527d3e5c019bca00ac9d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  */
 
-RCSID("$Id: 680c8791301adef97effe3f935869adff565419b $")
+RCSID("$Id: 02a378367030f0aa45aa527d3e5c019bca00ac9d $")
 
 #include <stdio.h>
 #include "rlm_eap.h"
@@ -48,17 +48,9 @@ EAP_DS *eap_ds_alloc(eap_handler_t *handler)
 {
 	EAP_DS	*eap_ds;
 
-	eap_ds = talloc_zero(handler, EAP_DS);
-	eap_ds->response = talloc_zero(eap_ds, eap_packet_t);
-	if (!eap_ds->response) {
-		eap_ds_free(&eap_ds);
-		return NULL;
-	}
-	eap_ds->request = talloc_zero(eap_ds, eap_packet_t);
-	if (!eap_ds->response) {
-		eap_ds_free(&eap_ds);
-		return NULL;
-	}
+	MEM(eap_ds = talloc_zero(handler, EAP_DS));
+	MEM(eap_ds->response = talloc_zero(eap_ds, eap_packet_t));
+	MEM(eap_ds->request = talloc_zero(eap_ds, eap_packet_t));
 
 	return eap_ds;
 }
@@ -408,6 +400,37 @@ int eaplist_add(rlm_eap_t *inst, eap_handler_t *handler)
 }
 
 /*
+ *	Remove the session which matches the State attribute in the
+ *	request, and free it.
+ *
+ *	This is used when the peer starts a new authentication run while
+ *	it still holds the State of an old one.  The old session is
+ *	deleted the same way as an expired session, so that the State
+ *	cannot be used again.
+ *
+ *	The handler is keyed by the EAP Identifier and the State.  We
+ *	set the Identifier in the State, so that we can get it back
+ *	here.  See eaplist_add().
+ */
+void eaplist_cancel(rlm_eap_t *inst, REQUEST *request)
+{
+	VALUE_PAIR	*state;
+	eap_handler_t	my_handler;
+
+	state = fr_pair_find_by_num(request->packet->vps, PW_STATE, 0, TAG_ANY);
+	if (!state || (state->vp_length != EAP_STATE_LEN)) return;
+
+	memset(&my_handler, 0, sizeof(my_handler));
+	memcpy(my_handler.state, state->vp_octets, sizeof(my_handler.state));
+	my_handler.eap_id = my_handler.state[5] ^ my_handler.state[1];
+	my_handler.src_ipaddr = request->packet->src_ipaddr;
+
+	PTHREAD_MUTEX_LOCK(&(inst->session_mutex));
+	(void) eaplist_delete(inst, request, &my_handler, "Cancelling", true);
+	PTHREAD_MUTEX_UNLOCK(&(inst->session_mutex));
+}
+
+/*
  *	Find a a previous EAP-Request sent by us, which matches
  *	the current EAP-Response.
  *
@@ -458,9 +481,8 @@ eap_handler_t *eaplist_find(rlm_eap_t *inst, REQUEST *request,
 	 *	Might not have been there.
 	 */
 	if (!handler) {
-		RERROR("rlm_eap (%s): No EAP session matching state "
+		RERROR("No EAP session matching state "
 		       "0x%02x%02x%02x%02x%02x%02x%02x%02x",
-		       inst->xlat_name,
 		       state->vp_octets[0], state->vp_octets[1],
 		       state->vp_octets[2], state->vp_octets[3],
 		       state->vp_octets[4], state->vp_octets[5],
@@ -469,10 +491,9 @@ eap_handler_t *eaplist_find(rlm_eap_t *inst, REQUEST *request,
 	}
 
 	if (handler->trips >= 50) {
-		RERROR("rlm_eap (%s): Aborting! More than 50 roundtrips "
+		RERROR("Aborting! More than 50 roundtrips "
 		       "made in session with state "
 		       "0x%02x%02x%02x%02x%02x%02x%02x%02x",
-		       inst->xlat_name,
 		       state->vp_octets[0], state->vp_octets[1],
 		       state->vp_octets[2], state->vp_octets[3],
 		       state->vp_octets[4], state->vp_octets[5],
