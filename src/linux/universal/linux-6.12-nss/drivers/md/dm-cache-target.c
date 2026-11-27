@@ -2550,6 +2550,7 @@ static int cache_create(struct cache_args *ca, struct cache **result)
 	if (IS_ERR(cache->copier)) {
 		*error = "could not create kcopyd client";
 		r = PTR_ERR(cache->copier);
+		cache->copier = NULL;
 		goto bad;
 	}
 

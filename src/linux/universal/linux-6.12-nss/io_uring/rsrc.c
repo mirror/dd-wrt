@@ -348,6 +348,7 @@ static int __io_sqe_files_update(struct io_ring_ctx *ctx,
 		return -EINVAL;
 
 	for (done = 0; done < nr_args; done++) {
+		struct file *file = NULL;
 		u64 tag = 0;
 
 		if ((tags && copy_from_user(&tag, &tags[done], sizeof(tag))) ||
@@ -365,17 +366,8 @@ static int __io_sqe_files_update(struct io_ring_ctx *ctx,
 		i = array_index_nospec(up->offset + done, ctx->nr_user_files);
 		file_slot = io_fixed_file_slot(&ctx->file_table, i);
 
-		if (file_slot->file_ptr) {
-			err = io_queue_rsrc_removal(data, i,
-						    io_slot_file(file_slot));
-			if (err)
-				break;
-			file_slot->file_ptr = 0;
-			io_file_bitmap_clear(&ctx->file_table, i);
-		}
 		if (fd != -1) {
-			struct file *file = fget(fd);
-
+			file = fget(fd);
 			if (!file) {
 				err = -EBADF;
 				break;
@@ -388,6 +380,19 @@ static int __io_sqe_files_update(struct io_ring_ctx *ctx,
 				err = -EBADF;
 				break;
 			}
+		}
+		if (file_slot->file_ptr) {
+			err = io_queue_rsrc_removal(data, i,
+						    io_slot_file(file_slot));
+			if (err) {
+				if (file)
+					fput(file);
+				break;
+			}
+			file_slot->file_ptr = 0;
+			io_file_bitmap_clear(&ctx->file_table, i);
+		}
+		if (file) {
 			*io_get_tag_slot(data, i) = tag;
 			io_fixed_file_set(file_slot, file);
 			io_file_bitmap_set(&ctx->file_table, i);

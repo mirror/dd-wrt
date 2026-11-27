@@ -1239,6 +1239,9 @@ static int stmmac_reset_tc_mqprio(struct net_device *ndev,
 {
 	struct stmmac_priv *priv = netdev_priv(ndev);
 
+	priv->xmit_qdisc.num_tx_queues = priv->plat->tx_queues_to_use;
+	priv->xmit_qdisc.enabled = false;
+
 	netdev_reset_tc(ndev);
 	netif_set_real_num_tx_queues(ndev, priv->plat->tx_queues_to_use);
 
@@ -1258,6 +1261,15 @@ static int tc_setup_dwmac510_mqprio(struct stmmac_priv *priv,
 	if (!num_tc)
 		return stmmac_reset_tc_mqprio(ndev, extack);
 
+	for (u32 tc = 0; tc < num_tc; tc++) {
+		if (qopt->offset[tc] + qopt->count[tc] >
+		    priv->plat->tx_queues_to_use) {
+			NL_SET_ERR_MSG_MOD(extack,
+					   "Queues exceed hw TX queues");
+			return -EINVAL;
+		}
+	}
+
 	err = netdev_set_num_tc(ndev, num_tc);
 	if (err)
 		return err;
@@ -1265,7 +1277,8 @@ static int tc_setup_dwmac510_mqprio(struct stmmac_priv *priv,
 	for (u32 tc = 0; tc < num_tc; tc++) {
 		offset = qopt->offset[tc];
 		count = qopt->count[tc];
-		num_stack_tx_queues += count;
+		num_stack_tx_queues = max(num_stack_tx_queues,
+					  offset + count);
 
 		err = netdev_set_tc_queue(ndev, tc, count, offset);
 		if (err)
@@ -1280,6 +1293,9 @@ static int tc_setup_dwmac510_mqprio(struct stmmac_priv *priv,
 					      mqprio->preemptible_tcs);
 	if (err)
 		goto err_reset_tc;
+
+	priv->xmit_qdisc.num_tx_queues = num_stack_tx_queues;
+	priv->xmit_qdisc.enabled = true;
 
 	return 0;
 

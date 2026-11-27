@@ -639,6 +639,7 @@ static int vdpasim_set_map(struct vdpa_device *vdpa, unsigned int asid,
 	if (asid >= vdpasim->dev_attr.nas)
 		return -EINVAL;
 
+	mutex_lock(&vdpasim->mutex);
 	spin_lock(&vdpasim->iommu_lock);
 
 	iommu = &vdpasim->iommu[asid];
@@ -653,11 +654,13 @@ static int vdpasim_set_map(struct vdpa_device *vdpa, unsigned int asid,
 			goto err;
 	}
 	spin_unlock(&vdpasim->iommu_lock);
+	mutex_unlock(&vdpasim->mutex);
 	return 0;
 
 err:
 	vhost_iotlb_reset(iommu);
 	spin_unlock(&vdpasim->iommu_lock);
+	mutex_unlock(&vdpasim->mutex);
 	return ret;
 }
 
@@ -714,6 +717,7 @@ static int vdpasim_dma_map(struct vdpa_device *vdpa, unsigned int asid,
 	if (asid >= vdpasim->dev_attr.nas)
 		return -EINVAL;
 
+	mutex_lock(&vdpasim->mutex);
 	spin_lock(&vdpasim->iommu_lock);
 	if (vdpasim->iommu_pt[asid]) {
 		vhost_iotlb_reset(&vdpasim->iommu[asid]);
@@ -722,6 +726,7 @@ static int vdpasim_dma_map(struct vdpa_device *vdpa, unsigned int asid,
 	ret = vhost_iotlb_add_range_ctx(&vdpasim->iommu[asid], iova,
 					iova + size - 1, pa, perm, opaque);
 	spin_unlock(&vdpasim->iommu_lock);
+	mutex_unlock(&vdpasim->mutex);
 
 	return ret;
 }
@@ -734,6 +739,7 @@ static int vdpasim_dma_unmap(struct vdpa_device *vdpa, unsigned int asid,
 	if (asid >= vdpasim->dev_attr.nas)
 		return -EINVAL;
 
+	mutex_lock(&vdpasim->mutex);
 	spin_lock(&vdpasim->iommu_lock);
 	if (vdpasim->iommu_pt[asid]) {
 		vhost_iotlb_reset(&vdpasim->iommu[asid]);
@@ -741,6 +747,7 @@ static int vdpasim_dma_unmap(struct vdpa_device *vdpa, unsigned int asid,
 	}
 	vhost_iotlb_del_range(&vdpasim->iommu[asid], iova, iova + size - 1);
 	spin_unlock(&vdpasim->iommu_lock);
+	mutex_unlock(&vdpasim->mutex);
 
 	return 0;
 }

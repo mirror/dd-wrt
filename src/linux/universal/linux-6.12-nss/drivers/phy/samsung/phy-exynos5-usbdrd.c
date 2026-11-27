@@ -355,7 +355,7 @@ struct exynos5_usbdrd_phy;
 struct exynos5_usbdrd_phy_config {
 	u32 id;
 	void (*phy_isol)(struct phy_usb_instance *inst, bool isolate);
-	void (*phy_init)(struct exynos5_usbdrd_phy *phy_drd);
+	int (*phy_init)(struct exynos5_usbdrd_phy *phy_drd);
 	unsigned int (*set_refclk)(struct phy_usb_instance *inst);
 };
 
@@ -579,7 +579,7 @@ exynos5_usbdrd_apply_phy_tunes(struct exynos5_usbdrd_phy *phy_drd,
 	}
 }
 
-static void exynos5_usbdrd_pipe3_init(struct exynos5_usbdrd_phy *phy_drd)
+static int exynos5_usbdrd_pipe3_init(struct exynos5_usbdrd_phy *phy_drd)
 {
 	u32 reg;
 
@@ -592,6 +592,8 @@ static void exynos5_usbdrd_pipe3_init(struct exynos5_usbdrd_phy *phy_drd)
 	reg = readl(phy_drd->reg_phy + EXYNOS5_DRD_PHYTEST);
 	reg &= ~PHYTEST_POWERDOWN_SSP;
 	writel(reg, phy_drd->reg_phy + EXYNOS5_DRD_PHYTEST);
+
+	return 0;
 }
 
 static void
@@ -686,7 +688,7 @@ exynos5_usbdrd_usbdp_g2_v4_pma_check_pll_lock(struct exynos5_usbdrd_phy *phy_drd
 	return err;
 }
 
-static void
+static int
 exynos5_usbdrd_usbdp_g2_v4_pma_check_cdr_lock(struct exynos5_usbdrd_phy *phy_drd)
 {
 	static const unsigned int timeout_us = 40000;
@@ -703,7 +705,7 @@ exynos5_usbdrd_usbdp_g2_v4_pma_check_cdr_lock(struct exynos5_usbdrd_phy *phy_drd
 			phy_drd->reg_pma + EXYNOS9_PMA_USBDP_TRSV_REG03C3,
 			reg, (reg & locked) == locked, sleep_us, timeout_us);
 	if (!err)
-		return;
+		return 0;
 
 	dev_err(phy_drd->dev,
 		"timed out waiting for CDR lock (l0): %#.8x, retrying\n", reg);
@@ -715,9 +717,11 @@ exynos5_usbdrd_usbdp_g2_v4_pma_check_cdr_lock(struct exynos5_usbdrd_phy *phy_drd
 	if (err)
 		dev_err(phy_drd->dev,
 			"timed out waiting for CDR lock (l2): %#.8x\n", reg);
+
+	return err;
 }
 
-static void exynos5_usbdrd_utmi_init(struct exynos5_usbdrd_phy *phy_drd)
+static int exynos5_usbdrd_utmi_init(struct exynos5_usbdrd_phy *phy_drd)
 {
 	u32 reg;
 
@@ -739,6 +743,8 @@ static void exynos5_usbdrd_utmi_init(struct exynos5_usbdrd_phy *phy_drd)
 	reg = readl(phy_drd->reg_phy + EXYNOS5_DRD_PHYTEST);
 	reg &= ~PHYTEST_POWERDOWN_HSP;
 	writel(reg, phy_drd->reg_phy + EXYNOS5_DRD_PHYTEST);
+
+	return 0;
 }
 
 static int exynos5_usbdrd_phy_init(struct phy *phy)
@@ -775,7 +781,9 @@ static int exynos5_usbdrd_phy_init(struct phy *phy)
 	writel(reg, phy_drd->reg_phy + EXYNOS5_DRD_PHYUTMICLKSEL);
 
 	/* UTMI or PIPE3 specific init */
-	inst->phy_cfg->phy_init(phy_drd);
+	ret = inst->phy_cfg->phy_init(phy_drd);
+	if (ret)
+		goto disable_clks;
 
 	/* reference clock settings */
 	reg = inst->phy_cfg->set_refclk(inst);
@@ -798,9 +806,10 @@ static int exynos5_usbdrd_phy_init(struct phy *phy)
 	reg &= ~PHYCLKRST_PORTRESET;
 	writel(reg, phy_drd->reg_phy + EXYNOS5_DRD_PHYCLKRST);
 
+disable_clks:
 	clk_bulk_disable_unprepare(phy_drd->drv_data->n_clks, phy_drd->clks);
 
-	return 0;
+	return ret;
 }
 
 static int exynos5_usbdrd_phy_exit(struct phy *phy)
@@ -1067,7 +1076,7 @@ exynos5_usbdrd_usb_v3p1_pipe_override(struct exynos5_usbdrd_phy *phy_drd)
 	writel(reg, regs_base + EXYNOS850_DRD_SECPMACTL);
 }
 
-static void exynos850_usbdrd_utmi_init(struct exynos5_usbdrd_phy *phy_drd)
+static int exynos850_usbdrd_utmi_init(struct exynos5_usbdrd_phy *phy_drd)
 {
 	void __iomem *regs_base = phy_drd->reg_phy;
 	u32 reg;
@@ -1171,6 +1180,8 @@ static void exynos850_usbdrd_utmi_init(struct exynos5_usbdrd_phy *phy_drd)
 
 	if (ss_ports)
 		exynos5_usbdrd_usb_v3p1_pipe_override(phy_drd);
+
+	return 0;
 }
 
 static int exynos850_usbdrd_phy_init(struct phy *phy)
@@ -1184,11 +1195,11 @@ static int exynos850_usbdrd_phy_init(struct phy *phy)
 		return ret;
 
 	/* UTMI or PIPE3 specific init */
-	inst->phy_cfg->phy_init(phy_drd);
+	ret = inst->phy_cfg->phy_init(phy_drd);
 
 	clk_bulk_disable_unprepare(phy_drd->drv_data->n_clks, phy_drd->clks);
 
-	return 0;
+	return ret;
 }
 
 static int exynos850_usbdrd_phy_exit(struct phy *phy)
@@ -1235,11 +1246,12 @@ static const struct phy_ops exynos850_usbdrd_phy_ops = {
 	.owner		= THIS_MODULE,
 };
 
-static void exynos5_usbdrd_gs101_pipe3_init(struct exynos5_usbdrd_phy *phy_drd)
+static int exynos5_usbdrd_gs101_pipe3_init(struct exynos5_usbdrd_phy *phy_drd)
 {
 	void __iomem *regs_pma = phy_drd->reg_pma;
 	void __iomem *regs_phy = phy_drd->reg_phy;
 	u32 reg;
+	int ret;
 
 	exynos5_usbdrd_usbdp_g2_v4_ctrl_pma_ready(phy_drd);
 
@@ -1261,8 +1273,11 @@ static void exynos5_usbdrd_gs101_pipe3_init(struct exynos5_usbdrd_phy *phy_drd)
 		 SECPMACTL_PMA_INIT_SW_RST);
 	writel(reg, regs_phy + EXYNOS850_DRD_SECPMACTL);
 
-	if (!exynos5_usbdrd_usbdp_g2_v4_pma_check_pll_lock(phy_drd))
-		exynos5_usbdrd_usbdp_g2_v4_pma_check_cdr_lock(phy_drd);
+	ret = exynos5_usbdrd_usbdp_g2_v4_pma_check_pll_lock(phy_drd);
+	if (ret)
+		return ret;
+
+	return exynos5_usbdrd_usbdp_g2_v4_pma_check_cdr_lock(phy_drd);
 }
 
 static int exynos5_usbdrd_gs101_phy_init(struct phy *phy)
@@ -1287,7 +1302,15 @@ static int exynos5_usbdrd_gs101_phy_init(struct phy *phy)
 	 */
 	exynos5_usbdrd_phy_isol(inst, false);
 
-	return exynos850_usbdrd_phy_init(phy);
+	ret = exynos850_usbdrd_phy_init(phy);
+	if (ret) {
+		exynos5_usbdrd_phy_isol(inst, true);
+		if (inst->phy_cfg->id == EXYNOS5_DRDPHY_UTMI)
+			regulator_bulk_disable(phy_drd->drv_data->n_regulators,
+					       phy_drd->regulators);
+	}
+
+	return ret;
 }
 
 static int exynos5_usbdrd_gs101_phy_exit(struct phy *phy)

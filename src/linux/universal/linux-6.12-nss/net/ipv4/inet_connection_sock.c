@@ -443,12 +443,14 @@ static inline int sk_reuseport_match(struct inet_bind_bucket *tb,
 }
 
 void inet_csk_update_fastreuse(struct inet_bind_bucket *tb,
+			       struct inet_bind2_bucket *tb2,
 			       struct sock *sk)
 {
 	kuid_t uid = sock_i_uid(sk);
 	bool reuse = sk->sk_reuse && sk->sk_state != TCP_LISTEN;
 
-	if (hlist_empty(&tb->bhash2)) {
+	if (hlist_is_singular_node(&tb2->bhash_node, &tb->bhash2) &&
+	    hlist_empty(&tb2->owners)) {
 		tb->fastreuse = reuse;
 		if (sk->sk_reuseport) {
 			tb->fastreuseport = FASTREUSEPORT_ANY;
@@ -572,7 +574,7 @@ int inet_csk_get_port(struct sock *sk, unsigned short snum)
 	}
 
 success:
-	inet_csk_update_fastreuse(tb, sk);
+	inet_csk_update_fastreuse(tb, tb2, sk);
 
 	if (!inet_csk(sk)->icsk_bind_hash)
 		inet_bind_hash(sk, tb, tb2, port);
@@ -1257,39 +1259,60 @@ struct sock *inet_csk_clone_lock(const struct sock *sk,
 				 const gfp_t priority)
 {
 	struct sock *newsk = sk_clone_lock(sk, priority);
+	struct inet_connection_sock *newicsk;
+	struct inet_request_sock *ireq;
+	struct inet_sock *newinet;
 
-	if (newsk) {
-		struct inet_connection_sock *newicsk = inet_csk(newsk);
+	if (!newsk)
+		return NULL;
 
-		inet_sk_set_state(newsk, TCP_SYN_RECV);
-		newicsk->icsk_bind_hash = NULL;
-		newicsk->icsk_bind2_hash = NULL;
+	newicsk = inet_csk(newsk);
+	newinet = inet_sk(newsk);
+	ireq = inet_rsk(req);
 
-		inet_sk(newsk)->inet_dport = inet_rsk(req)->ir_rmt_port;
-		inet_sk(newsk)->inet_num = inet_rsk(req)->ir_num;
-		inet_sk(newsk)->inet_sport = htons(inet_rsk(req)->ir_num);
+	newicsk->icsk_bind_hash = NULL;
+	newicsk->icsk_bind2_hash = NULL;
 
-		/* listeners have SOCK_RCU_FREE, not the children */
-		sock_reset_flag(newsk, SOCK_RCU_FREE);
+	newinet->inet_dport = ireq->ir_rmt_port;
+	newinet->inet_num = ireq->ir_num;
+	newinet->inet_sport = htons(ireq->ir_num);
 
-		inet_sk(newsk)->mc_list = NULL;
+	newsk->sk_bound_dev_if = ireq->ir_iif;
 
-		newsk->sk_mark = inet_rsk(req)->ir_mark;
-		atomic64_set(&newsk->sk_cookie,
-			     atomic64_read(&inet_rsk(req)->ir_cookie));
+	newsk->sk_daddr = ireq->ir_rmt_addr;
+	newsk->sk_rcv_saddr = ireq->ir_loc_addr;
+	newinet->inet_saddr = ireq->ir_loc_addr;
 
-		newicsk->icsk_retransmits = 0;
-		newicsk->icsk_backoff	  = 0;
-		newicsk->icsk_probes_out  = 0;
-		newicsk->icsk_probes_tstamp = 0;
+#if IS_ENABLED(CONFIG_IPV6)
+	newsk->sk_v6_daddr = ireq->ir_v6_rmt_addr;
+	newsk->sk_v6_rcv_saddr = ireq->ir_v6_loc_addr;
+#endif
 
-		/* Deinitialize accept_queue to trap illegal accesses. */
-		memset(&newicsk->icsk_accept_queue, 0, sizeof(newicsk->icsk_accept_queue));
+	/* listeners have SOCK_RCU_FREE, not the children */
+	sock_reset_flag(newsk, SOCK_RCU_FREE);
 
-		inet_clone_ulp(req, newsk, priority);
+	inet_sk(newsk)->mc_list = NULL;
 
-		security_inet_csk_clone(newsk, req);
-	}
+	newsk->sk_mark = inet_rsk(req)->ir_mark;
+	atomic64_set(&newsk->sk_cookie,
+		     atomic64_read(&inet_rsk(req)->ir_cookie));
+
+	newicsk->icsk_retransmits = 0;
+	newicsk->icsk_backoff	  = 0;
+	newicsk->icsk_probes_out  = 0;
+	newicsk->icsk_probes_tstamp = 0;
+
+	/* Deinitialize accept_queue to trap illegal accesses. */
+	memset(&newicsk->icsk_accept_queue, 0,
+	       sizeof(newicsk->icsk_accept_queue));
+
+	newicsk->unhashed_state = 0;
+	inet_sk_set_state(newsk, TCP_SYN_RECV);
+
+	inet_clone_ulp(req, newsk, priority);
+
+	security_inet_csk_clone(newsk, req);
+
 	return newsk;
 }
 EXPORT_SYMBOL_GPL(inet_csk_clone_lock);
@@ -1552,17 +1575,15 @@ skip_child_forget:
 		if (!has_current_bpf_ctx())
 			cond_resched();
 	}
-	if (queue->fastopenq.rskq_rst_head) {
-		/* Free all the reqs queued in rskq_rst_head. */
-		spin_lock_bh(&queue->fastopenq.lock);
-		req = queue->fastopenq.rskq_rst_head;
-		queue->fastopenq.rskq_rst_head = NULL;
-		spin_unlock_bh(&queue->fastopenq.lock);
-		while (req != NULL) {
-			next = req->dl_next;
-			reqsk_put(req);
-			req = next;
-		}
+	/* Free all the reqs queued in rskq_rst_head. */
+	spin_lock_bh(&queue->fastopenq.lock);
+	req = queue->fastopenq.rskq_rst_head;
+	queue->fastopenq.rskq_rst_head = NULL;
+	spin_unlock_bh(&queue->fastopenq.lock);
+	while (req != NULL) {
+		next = req->dl_next;
+		reqsk_put(req);
+		req = next;
 	}
 	WARN_ON_ONCE(sk->sk_ack_backlog);
 }

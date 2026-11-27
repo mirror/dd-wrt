@@ -2611,8 +2611,6 @@ static int ____sys_sendmsg(struct socket *sock, struct msghdr *msg_sys,
 	flags &= ~MSG_INTERNAL_SENDMSG_FLAGS;
 	msg_sys->msg_flags = flags;
 
-	if (sock->file->f_flags & O_NONBLOCK)
-		msg_sys->msg_flags |= MSG_DONTWAIT;
 	/*
 	 * If this is sendmmsg() and current destination address is same as
 	 * previously succeeded address, omit asking LSM's decision.
@@ -2675,6 +2673,9 @@ static int ___sys_sendmsg(struct socket *sock, struct user_msghdr __user *msg,
 	ssize_t err;
 
 	msg_sys->msg_name = &address;
+
+	if (sock->file->f_flags & O_NONBLOCK)
+		flags |= MSG_DONTWAIT;
 
 	err = sendmsg_copy_msghdr(msg_sys, msg, flags, &iov);
 	if (err < 0)
@@ -2840,9 +2841,6 @@ static int ____sys_recvmsg(struct socket *sock, struct msghdr *msg_sys,
 	/* We assume all kernel code knows the size of sockaddr_storage */
 	msg_sys->msg_namelen = 0;
 
-	if (sock->file->f_flags & O_NONBLOCK)
-		flags |= MSG_DONTWAIT;
-
 	if (unlikely(nosec))
 		err = sock_recvmsg_nosec(sock, msg_sys, flags);
 	else
@@ -2883,6 +2881,9 @@ static int ___sys_recvmsg(struct socket *sock, struct user_msghdr __user *msg,
 	/* user mode address pointers */
 	struct sockaddr __user *uaddr;
 	ssize_t err;
+
+	if (sock->file->f_flags & O_NONBLOCK)
+		flags |= MSG_DONTWAIT;
 
 	err = recvmsg_copy_msghdr(msg_sys, msg, flags, &uaddr, &iov);
 	if (err < 0)

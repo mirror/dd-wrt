@@ -193,6 +193,27 @@ static int rose_state3_machine(struct sock *sk, struct sk_buff *skb, int framety
 			if (atomic_read(&sk->sk_rmem_alloc) >
 			    (sk->sk_rcvbuf >> 1))
 				rose->condition |= ROSE_COND_OWN_RX_BUSY;
+		} else {
+			/*
+			 * A DATA packet was lost on the way: a relay dropped
+			 * it, or a link was reset under it. ROSE never sends a
+			 * DATA packet again, so the window of the sender would
+			 * stay full and the call would hang. Acknowledge what
+			 * arrived in sequence, then reset the call (X.25:
+			 * invalid P(S)); the sender then sends its
+			 * unacknowledged packets again.
+			 */
+			rose_enquiry_response(sk);
+			rose_write_internal(sk, ROSE_RESET_REQUEST);
+			rose->condition = 0x00;
+			rose->vs        = 0;
+			rose->vr        = 0;
+			rose->va        = 0;
+			rose->vl        = 0;
+			rose->state     = ROSE_STATE_4;
+			rose_start_t2timer(sk);
+			rose_stop_idletimer(sk);
+			break;
 		}
 		/*
 		 * If the window is full, ack the frame, else start the

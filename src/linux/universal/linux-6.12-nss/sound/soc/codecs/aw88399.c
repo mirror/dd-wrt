@@ -285,6 +285,19 @@ static int aw_dev_check_sysst(struct aw_device *aw_dev)
 	else
 		check_val = AW88399_BIT_SYSST_SWS_CHECK;
 
+	/*
+	 * When an external power supply (EPS) is used to feed the amplifier
+	 * (EN_HVBAT bit in BSTCTRL10 set), the boost converter is bypassed,
+	 * and BSTS (boost finished) will never assert. Skip the BSTS check in
+	 * this case, matching the vendor driver's behavior.
+	 */
+	ret = regmap_read(aw_dev->regmap, AW88399_BSTCTRL10_REG, &reg_val);
+	if (ret)
+		return ret;
+
+	if (reg_val & (~AW88399_EPS_EN_MASK))
+		check_val &= ~AW88399_BSTS_FINISHED_VALUE;
+
 	for (i = 0; i < AW88399_DEV_SYSST_CHECK_MAX; i++) {
 		ret = regmap_read(aw_dev->regmap, AW88399_SYSST_REG, &reg_val);
 		if (ret)

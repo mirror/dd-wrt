@@ -72,6 +72,7 @@
 #include <asm/firmware.h>
 #include <asm/ftrace.h>
 #include <asm/kprobes.h>
+#include <asm/mmu.h>
 #include <asm/runlatch.h>
 
 #ifdef CONFIG_PPC_IRQ_SOFT_MASK_DEBUG
@@ -326,7 +327,7 @@ static inline void interrupt_nmi_enter_prepare(struct pt_regs *regs, struct inte
 	 */
 	if (IS_ENABLED(CONFIG_PPC_BOOK3S_64) &&
 	    firmware_has_feature(FW_FEATURE_LPAR) &&
-	    !radix_enabled())
+	    !early_radix_enabled())
 		return;
 
 	/*
@@ -355,7 +356,7 @@ static inline void interrupt_nmi_exit_prepare(struct pt_regs *regs, struct inter
 		nmi_exit();
 	} else if (IS_ENABLED(CONFIG_PPC_BOOK3S_64) &&
 		   firmware_has_feature(FW_FEATURE_LPAR) &&
-		   !radix_enabled()) {
+		   !early_radix_enabled()) {
 		// no nmi_exit for a pseries hash guest taking a real mode exception
 	} else if (IS_ENABLED(CONFIG_KASAN)) {
 		// no nmi_exit for KASAN in real mode

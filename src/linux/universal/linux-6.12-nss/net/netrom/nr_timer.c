@@ -171,6 +171,8 @@ static void nr_t4timer_expiry(struct timer_list *t)
 
 	bh_lock_sock(sk);
 	nr_sk(sk)->condition &= ~NR_COND_PEER_RX_BUSY;
+	/* the peer is assumed ready again: send what was held back */
+	nr_kick(sk);
 	bh_unlock_sock(sk);
 	sock_put(sk);
 }
@@ -238,6 +240,8 @@ static void nr_t1timer_expiry(struct timer_list *t)
 		} else {
 			nr->n2count++;
 			nr_requeue_frames(sk);
+			/* nothing else sends them if the peer stays silent */
+			nr_kick(sk);
 		}
 		break;
 	}

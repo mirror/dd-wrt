@@ -135,7 +135,12 @@ void nr_send_nak_frame(struct sock *sk)
 	nr->condition &= ~NR_COND_ACK_PENDING;
 	nr->vl         = nr->vr;
 
-	nr_stop_t1timer(sk);
+	/*
+	 * The frame just sent again, and any sent after it, still wait for
+	 * an acknowledgment: keep T1 running so that losing this copy too
+	 * is noticed.
+	 */
+	nr_start_t1timer(sk);
 }
 
 void nr_kick(struct sock *sk)

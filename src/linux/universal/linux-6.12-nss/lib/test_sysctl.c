@@ -264,7 +264,6 @@ module_init(test_sysctl_init);
 
 static void __exit test_sysctl_exit(void)
 {
-	kfree(test_data.bitmap_0001);
 	if (sysctl_test_headers.test_h_setup_node)
 		unregister_sysctl_table(sysctl_test_headers.test_h_setup_node);
 	if (sysctl_test_headers.test_h_mnt)
@@ -275,6 +274,7 @@ static void __exit test_sysctl_exit(void)
 		unregister_sysctl_table(sysctl_test_headers.empty);
 	if (sysctl_test_headers.empty_add)
 		unregister_sysctl_table(sysctl_test_headers.empty_add);
+	kfree(test_data.bitmap_0001);
 }
 
 module_exit(test_sysctl_exit);

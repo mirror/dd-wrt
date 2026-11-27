@@ -77,17 +77,19 @@ static void __disconnect(struct irq_bypass_producer *prod,
 /**
  * irq_bypass_register_producer - register IRQ bypass producer
  * @producer: pointer to producer structure
+ * @eventfd: pointer to the eventfd context associated with the producer
  *
  * Add the provided IRQ producer to the list of producers and connect
- * with any matching token found on the IRQ consumers list.
+ * with any matching eventfd found on the IRQ consumers list.
  */
-int irq_bypass_register_producer(struct irq_bypass_producer *producer)
+int irq_bypass_register_producer(struct irq_bypass_producer *producer,
+				 struct eventfd_ctx *eventfd)
 {
 	struct irq_bypass_producer *tmp;
 	struct irq_bypass_consumer *consumer;
 	int ret;
 
-	if (!producer->token)
+	if (WARN_ON_ONCE(producer->eventfd))
 		return -EINVAL;
 
 	might_sleep();
@@ -98,14 +100,14 @@ int irq_bypass_register_producer(struct irq_bypass_producer *producer)
 	mutex_lock(&lock);
 
 	list_for_each_entry(tmp, &producers, node) {
-		if (tmp->token == producer->token) {
+		if (tmp->eventfd == eventfd) {
 			ret = -EBUSY;
 			goto out_err;
 		}
 	}
 
 	list_for_each_entry(consumer, &consumers, node) {
-		if (consumer->token == producer->token) {
+		if (consumer->eventfd == eventfd) {
 			ret = __connect(producer, consumer);
 			if (ret)
 				goto out_err;
@@ -113,6 +115,7 @@ int irq_bypass_register_producer(struct irq_bypass_producer *producer)
 		}
 	}
 
+	producer->eventfd = eventfd;
 	list_add(&producer->node, &producers);
 
 	mutex_unlock(&lock);
@@ -137,7 +140,7 @@ void irq_bypass_unregister_producer(struct irq_bypass_producer *producer)
 	struct irq_bypass_producer *tmp;
 	struct irq_bypass_consumer *consumer;
 
-	if (!producer->token)
+	if (!producer->eventfd)
 		return;
 
 	might_sleep();
@@ -148,21 +151,23 @@ void irq_bypass_unregister_producer(struct irq_bypass_producer *producer)
 	mutex_lock(&lock);
 
 	list_for_each_entry(tmp, &producers, node) {
-		if (tmp->token != producer->token)
+		if (tmp->eventfd != producer->eventfd)
 			continue;
 
 		list_for_each_entry(consumer, &consumers, node) {
-			if (consumer->token == producer->token) {
+			if (consumer->eventfd == producer->eventfd) {
 				__disconnect(producer, consumer);
 				break;
 			}
 		}
 
+		producer->eventfd = NULL;
 		list_del(&producer->node);
 		module_put(THIS_MODULE);
 		break;
 	}
 
+	WARN_ON_ONCE(producer->eventfd);
 	mutex_unlock(&lock);
 
 	module_put(THIS_MODULE);
@@ -172,18 +177,22 @@ EXPORT_SYMBOL_GPL(irq_bypass_unregister_producer);
 /**
  * irq_bypass_register_consumer - register IRQ bypass consumer
  * @consumer: pointer to consumer structure
+ * @eventfd: pointer to the eventfd context associated with the consumer
  *
  * Add the provided IRQ consumer to the list of consumers and connect
- * with any matching token found on the IRQ producer list.
+ * with any matching eventfd found on the IRQ producer list.
  */
-int irq_bypass_register_consumer(struct irq_bypass_consumer *consumer)
+int irq_bypass_register_consumer(struct irq_bypass_consumer *consumer,
+				 struct eventfd_ctx *eventfd)
 {
 	struct irq_bypass_consumer *tmp;
 	struct irq_bypass_producer *producer;
 	int ret;
 
-	if (!consumer->token ||
-	    !consumer->add_producer || !consumer->del_producer)
+	if (WARN_ON_ONCE(consumer->eventfd))
+		return -EINVAL;
+
+	if (!consumer->add_producer || !consumer->del_producer)
 		return -EINVAL;
 
 	might_sleep();
@@ -194,14 +203,14 @@ int irq_bypass_register_consumer(struct irq_bypass_consumer *consumer)
 	mutex_lock(&lock);
 
 	list_for_each_entry(tmp, &consumers, node) {
-		if (tmp->token == consumer->token || tmp == consumer) {
+		if (tmp->eventfd == eventfd) {
 			ret = -EBUSY;
 			goto out_err;
 		}
 	}
 
 	list_for_each_entry(producer, &producers, node) {
-		if (producer->token == consumer->token) {
+		if (producer->eventfd == eventfd) {
 			ret = __connect(producer, consumer);
 			if (ret)
 				goto out_err;
@@ -209,6 +218,7 @@ int irq_bypass_register_consumer(struct irq_bypass_consumer *consumer)
 		}
 	}
 
+	consumer->eventfd = eventfd;
 	list_add(&consumer->node, &consumers);
 
 	mutex_unlock(&lock);
@@ -233,7 +243,7 @@ void irq_bypass_unregister_consumer(struct irq_bypass_consumer *consumer)
 	struct irq_bypass_consumer *tmp;
 	struct irq_bypass_producer *producer;
 
-	if (!consumer->token)
+	if (!consumer->eventfd)
 		return;
 
 	might_sleep();
@@ -248,17 +258,19 @@ void irq_bypass_unregister_consumer(struct irq_bypass_consumer *consumer)
 			continue;
 
 		list_for_each_entry(producer, &producers, node) {
-			if (producer->token == consumer->token) {
+			if (producer->eventfd == consumer->eventfd) {
 				__disconnect(producer, consumer);
 				break;
 			}
 		}
 
+		consumer->eventfd = NULL;
 		list_del(&consumer->node);
 		module_put(THIS_MODULE);
 		break;
 	}
 
+	WARN_ON_ONCE(consumer->eventfd);
 	mutex_unlock(&lock);
 
 	module_put(THIS_MODULE);

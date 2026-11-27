@@ -15,16 +15,17 @@
 static int min_quality[] = {0}, max_quality[] = {255};
 static int min_obs[]     = {0}, max_obs[]     = {255};
 static int min_ttl[]     = {0}, max_ttl[]     = {255};
-static int min_t1[]      = {5 * HZ};
-static int max_t1[]      = {600 * HZ};
+/* The timers are given in milliseconds */
+static int min_t1[]      = {5 * MSEC_PER_SEC};
+static int max_t1[]      = {600 * MSEC_PER_SEC};
 static int min_n2[]      = {2}, max_n2[]      = {127};
-static int min_t2[]      = {1 * HZ};
-static int max_t2[]      = {60 * HZ};
-static int min_t4[]      = {1 * HZ};
-static int max_t4[]      = {1000 * HZ};
+static int min_t2[]      = {1 * MSEC_PER_SEC};
+static int max_t2[]      = {60 * MSEC_PER_SEC};
+static int min_t4[]      = {1 * MSEC_PER_SEC};
+static int max_t4[]      = {1000 * MSEC_PER_SEC};
 static int min_window[]  = {1}, max_window[]  = {127};
-static int min_idle[]    = {0 * HZ};
-static int max_idle[]    = {65535 * HZ};
+static int min_idle[]    = {0 * MSEC_PER_SEC};
+static int max_idle[]    = {65535 * MSEC_PER_SEC};
 static int min_route[]   = {0}, max_route[]   = {1};
 static int min_fails[]   = {1}, max_fails[]   = {10};
 static int min_reset[]   = {0}, max_reset[]   = {1};

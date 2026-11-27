@@ -74,6 +74,7 @@
 #define ACP_RMB_PCI_ID				0x6F
 #define ACP63_PCI_ID				0x63
 #define ACP70_PCI_ID				0x70
+#define ACP71_PCI_ID				0x71
 
 #define HOST_BRIDGE_CZN				0x1630
 #define HOST_BRIDGE_VGH				0x1645
@@ -262,6 +263,10 @@ struct acp_dev_data {
 	bool is_dram_in_use;
 	bool is_sram_in_use;
 	bool sdw_en_stat;
+	/* acp70_sdw0_wake_event flag set to true when wake irq asserted for SW0 instance */
+	bool acp70_sdw0_wake_event;
+	/* acp70_sdw1_wake_event flag set to true when wake irq asserted for SW1 instance */
+	bool acp70_sdw1_wake_event;
 	unsigned int pci_rev;
 };
 
