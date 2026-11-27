@@ -87,6 +87,7 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 			      struct cpufreq_governor *new_gov,
 			      unsigned int new_pol);
 static bool cpufreq_boost_supported(void);
+static int cpufreq_boost_trigger_state(int state);
 
 /*
  * Two notifier lists: the "policy" list is involved in the
@@ -547,8 +548,8 @@ static unsigned int __resolve_freq(struct cpufreq_policy *policy,
 
 	idx = cpufreq_frequency_table_target(policy, target_freq, min, max, relation);
 	policy->cached_resolved_idx = idx;
-	policy->cached_target_freq = target_freq;
-	return policy->freq_table[idx].frequency;
+	policy->cached_target_freq = policy->freq_table[idx].frequency;
+	return policy->cached_target_freq;
 }
 
 /**
@@ -2818,16 +2819,24 @@ static int cpufreq_boost_set_sw(struct cpufreq_policy *policy, int state)
 	return 0;
 }
 
-int cpufreq_boost_trigger_state(int state)
+static DEFINE_MUTEX(cpufreq_boost_mutex);
+
+static int cpufreq_boost_trigger_state(int state)
 {
 	struct cpufreq_policy *policy;
 	unsigned long flags;
+	bool boost_enabled;
 	int ret = 0;
 
-	if (cpufreq_driver->boost_enabled == state)
-		return 0;
+	guard(mutex)(&cpufreq_boost_mutex);
+
+	/*
+	 * Don't compare 'cpufreq_driver->boost_enabled' with 'state' here to
+	 * make sure all policies are in sync with global boost flag.
+	 */
 
 	write_lock_irqsave(&cpufreq_driver_lock, flags);
+	boost_enabled = cpufreq_driver->boost_enabled;
 	cpufreq_driver->boost_enabled = state;
 	write_unlock_irqrestore(&cpufreq_driver_lock, flags);
 
@@ -2848,7 +2857,7 @@ err_reset_state:
 	cpus_read_unlock();
 
 	write_lock_irqsave(&cpufreq_driver_lock, flags);
-	cpufreq_driver->boost_enabled = !state;
+	cpufreq_driver->boost_enabled = boost_enabled;
 	write_unlock_irqrestore(&cpufreq_driver_lock, flags);
 
 	pr_err("%s: Cannot %s BOOST\n",

@@ -701,13 +701,15 @@ static int evlist__event2id(struct evlist *evlist, union perf_event *event, u64 
 	const __u64 *array = event->sample.array;
 	ssize_t n;
 
-	n = (event->header.size - sizeof(event->header)) >> 3;
-
 	if (event->header.type == PERF_RECORD_SAMPLE) {
+		n = (event->header.size - sizeof(event->header)) >> 3;
 		if (evlist->id_pos >= n)
 			return -1;
 		*id = array[evlist->id_pos];
 	} else {
+		u16 size = evsel__event_size(evlist__first(evlist), event);
+
+		n = (size - sizeof(event->header)) >> 3;
 		if (evlist->is_pos > n)
 			return -1;
 		n -= evlist->is_pos;

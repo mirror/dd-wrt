@@ -61,9 +61,9 @@ void nr_frames_acked(struct sock *sk, unsigned short nr)
 }
 
 /*
- * Requeue all the un-ack-ed frames on the output queue to be picked
- * up by nr_kick called from the timer. This arrangement handles the
- * possibility of an empty output queue.
+ * Requeue all the un-ack-ed frames on the output queue to be sent
+ * again by nr_kick(), which the T1 timer calls next. This arrangement
+ * handles the possibility of an empty output queue.
  */
 void nr_requeue_frames(struct sock *sk)
 {

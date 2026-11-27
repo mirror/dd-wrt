@@ -2706,6 +2706,7 @@ int cs_dsp_power_up(struct cs_dsp *dsp,
 		    const struct firmware *coeff_firmware, const char *coeff_filename,
 		    const char *fw_name)
 {
+	struct cs_dsp_coeff_ctl *ctl;
 	int ret;
 
 	mutex_lock(&dsp->pwr_lock);
@@ -2750,6 +2751,11 @@ int cs_dsp_power_up(struct cs_dsp *dsp,
 
 	return 0;
 err_ena:
+	list_for_each_entry(ctl, &dsp->ctl_list, list)
+		ctl->enabled = 0;
+
+	cs_dsp_free_alg_regions(dsp);
+
 	if (dsp->ops->disable_core)
 		dsp->ops->disable_core(dsp);
 err_mem:

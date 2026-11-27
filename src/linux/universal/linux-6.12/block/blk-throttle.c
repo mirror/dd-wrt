@@ -1211,7 +1211,8 @@ static int blk_throtl_init(struct gendisk *disk)
 	struct throtl_data *td;
 	int ret;
 
-	td = kzalloc_node(sizeof(*td), GFP_KERNEL, q->node);
+	/* The caller holds rq_qos_mutex, which is taken with the queue frozen */
+	td = kzalloc_node(sizeof(*td), GFP_NOIO, q->node);
 	if (!td)
 		return -ENOMEM;
 

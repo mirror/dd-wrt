@@ -376,8 +376,18 @@ static void le_scan_disable(struct work_struct *work)
 	bt_dev_dbg(hdev, "");
 	hci_dev_lock(hdev);
 
-	if (!hci_dev_test_flag(hdev, HCI_LE_SCAN))
+	if (!hci_dev_test_flag(hdev, HCI_LE_SCAN)) {
+		/* The scan of a discovery can be disabled while this work
+		 * waits for the lock, for example by a Stop Discovery that
+		 * timed out and still completed, so end the discovery as
+		 * le_set_scan_enable_complete() does when it cancels this
+		 * work.
+		 */
+		if (hdev->discovery.state == DISCOVERY_FINDING)
+			goto discov_stopped;
+
 		goto _return;
+	}
 
 	status = hci_cmd_sync_queue(hdev, scan_disable_sync, NULL, NULL);
 	if (status) {
@@ -1721,7 +1731,8 @@ int hci_enable_ext_advertising_sync(struct hci_dev *hdev, u8 instance)
 	 * scheduling it.
 	 */
 	if (adv && adv->timeout) {
-		u16 duration = adv->timeout * MSEC_PER_SEC;
+		u16 duration = adv->mesh ? adv->timeout :
+					   adv->timeout * MSEC_PER_SEC;
 
 		/* Time = N * 10 ms */
 		set->duration = cpu_to_le16(duration / 10);
@@ -2181,7 +2192,8 @@ int hci_schedule_adv_instance_sync(struct hci_dev *hdev, u8 instance,
 		hdev->adv_instance_timeout = timeout;
 		queue_delayed_work(hdev->req_workqueue,
 				   &hdev->adv_instance_expire,
-				   msecs_to_jiffies(timeout * 1000));
+				   adv->mesh ? msecs_to_jiffies(timeout) :
+					       msecs_to_jiffies(timeout * 1000));
 	}
 
 	/* If we're just re-scheduling the same instance again then do not
@@ -2491,15 +2503,17 @@ static int hci_le_del_resolve_list_sync(struct hci_dev *hdev,
 					bdaddr_t *bdaddr, u8 bdaddr_type)
 {
 	struct hci_cp_le_del_from_resolv_list cp;
-	struct bdaddr_list_with_irk *entry;
+	bool exists;
 
 	if (!use_ll_privacy(hdev))
 		return 0;
 
 	/* Check if the IRK has been programmed */
-	entry = hci_bdaddr_list_lookup_with_irk(&hdev->le_resolv_list, bdaddr,
-						bdaddr_type);
-	if (!entry)
+	hci_dev_lock(hdev);
+	exists = hci_bdaddr_list_lookup_with_irk(&hdev->le_resolv_list,
+						 bdaddr, bdaddr_type);
+	hci_dev_unlock(hdev);
+	if (!exists)
 		return 0;
 
 	cp.bdaddr_type = bdaddr_type;
@@ -2555,8 +2569,8 @@ static int hci_le_add_resolve_list_sync(struct hci_dev *hdev,
 {
 	struct hci_cp_le_add_to_resolv_list cp;
 	struct smp_irk *irk;
-	struct bdaddr_list_with_irk *entry;
 	struct hci_conn_params *p;
+	bool exists;
 
 	if (!use_ll_privacy(hdev))
 		return 0;
@@ -2573,20 +2587,28 @@ static int hci_le_add_resolve_list_sync(struct hci_dev *hdev,
 		goto done;
 	}
 
+	rcu_read_lock();
+
 	irk = hci_find_irk_by_addr(hdev, &params->addr, params->addr_type);
-	if (!irk)
+	if (!irk) {
+		rcu_read_unlock();
 		return 0;
+	}
+
+	memcpy(cp.peer_irk, irk->val, 16);
+
+	rcu_read_unlock();
 
 	/* Check if the IK has _not_ been programmed yet. */
-	entry = hci_bdaddr_list_lookup_with_irk(&hdev->le_resolv_list,
-						&params->addr,
-						params->addr_type);
-	if (entry)
+	hci_dev_lock(hdev);
+	exists = hci_bdaddr_list_lookup_with_irk(
+		&hdev->le_resolv_list, &params->addr, params->addr_type);
+	hci_dev_unlock(hdev);
+	if (exists)
 		return 0;
 
 	cp.bdaddr_type = params->addr_type;
 	bacpy(&cp.bdaddr, &params->addr);
-	memcpy(cp.peer_irk, irk->val, 16);
 
 	/* Default privacy mode is always Network */
 	params->privacy_mode = HCI_NETWORK_PRIVACY;
@@ -2923,6 +2945,31 @@ static struct conn_params *conn_params_copy(struct list_head *list, size_t *n)
 	return p;
 }
 
+static struct conn_params *le_accept_list_copy(struct hci_dev *hdev,
+					       size_t *n)
+{
+	struct bdaddr_list *entry;
+	struct conn_params *params;
+	size_t i = 0;
+
+	hci_dev_lock(hdev);
+
+	*n = list_count_nodes(&hdev->le_accept_list);
+	params = kvzalloc_objs(struct conn_params, *n);
+	if (!params)
+		goto unlock;
+
+	list_for_each_entry(entry, &hdev->le_accept_list, list) {
+		bacpy(&params[i].addr, &entry->bdaddr);
+		params[i].addr_type = entry->bdaddr_type;
+		i++;
+	}
+
+unlock:
+	hci_dev_unlock(hdev);
+	return params;
+}
+
 /* Clear LE Accept List */
 static int hci_le_clear_accept_list_sync(struct hci_dev *hdev)
 {
@@ -2953,7 +3000,6 @@ static int hci_le_clear_accept_list_sync(struct hci_dev *hdev)
 static u8 hci_update_accept_list_sync(struct hci_dev *hdev)
 {
 	struct conn_params *params;
-	struct bdaddr_list *b, *t;
 	u8 num_entries = 0;
 	bool pend_conn, pend_report;
 	u8 filter_policy;
@@ -3018,20 +3064,27 @@ static u8 hci_update_accept_list_sync(struct hci_dev *hdev)
 	 * report. If not present in either list, then remove it from
 	 * the controller.
 	 */
-	list_for_each_entry_safe(b, t, &hdev->le_accept_list, list) {
+	params = le_accept_list_copy(hdev, &n);
+	if (!params) {
+		err = -ENOMEM;
+		goto done;
+	}
+
+	for (i = 0; i < n; i++) {
 		rcu_read_lock();
 
-		if (hci_conn_hash_lookup_le(hdev, &b->bdaddr, b->bdaddr_type)) {
+		if (hci_conn_hash_lookup_le(hdev, &params[i].addr,
+					    params[i].addr_type)) {
 			rcu_read_unlock();
 			continue;
 		}
 
 		pend_conn = hci_pend_le_action_lookup(&hdev->pend_le_conns,
-						      &b->bdaddr,
-						      b->bdaddr_type);
-		pend_report = hci_pend_le_action_lookup(&hdev->pend_le_reports,
-							&b->bdaddr,
-							b->bdaddr_type);
+						      &params[i].addr,
+						      params[i].addr_type);
+		pend_report = hci_pend_le_action_lookup(
+			&hdev->pend_le_reports, &params[i].addr,
+			params[i].addr_type);
 
 		rcu_read_unlock();
 
@@ -3039,13 +3092,15 @@ static u8 hci_update_accept_list_sync(struct hci_dev *hdev)
 		 * remove it from the acceptlist.
 		 */
 		if (!pend_conn && !pend_report) {
-			hci_le_del_accept_list_sync(hdev, &b->bdaddr,
-						    b->bdaddr_type);
+			hci_le_del_accept_list_sync(hdev, &params[i].addr,
+						    params[i].addr_type);
 			continue;
 		}
 
 		num_entries++;
 	}
+
+	kvfree(params);
 
 	/* Since all no longer valid accept list entries have been
 	 * removed, walk through the list of pending connections
@@ -5508,6 +5563,11 @@ int hci_dev_close_sync(struct hci_dev *hdev)
 		return err;
 	}
 
+	/* Wait for hci_recv_frame() callers that still saw HCI_UP, so that
+	 * none of them queues rx_work while the workqueue is drained below.
+	 */
+	synchronize_rcu();
+
 	hci_leds_update_powered(hdev, false);
 
 	/* Flush RX and TX works */
@@ -5715,11 +5775,15 @@ int hci_stop_discovery_sync(struct hci_dev *hdev)
 		}
 
 		if (hci_dev_test_flag(hdev, HCI_LE_SCAN)) {
-			cancel_delayed_work(&hdev->le_scan_disable);
-
 			err = hci_scan_disable_sync(hdev);
 			if (err)
 				return err;
+
+			/* Only cancel the LE scan timeout once the scan is
+			 * disabled, so that the discovery still ends if
+			 * stopping it failed.
+			 */
+			cancel_delayed_work(&hdev->le_scan_disable);
 		}
 
 	} else {
@@ -6355,6 +6419,12 @@ static int hci_pause_discovery_sync(struct hci_dev *hdev)
 		return 0;
 
 	hci_discovery_set_state(hdev, DISCOVERY_STOPPING);
+
+	/* Cancel the LE scan timeout first, so that it does not run while
+	 * suspended if the scan cannot be disabled.
+	 */
+	cancel_delayed_work(&hdev->le_scan_disable);
+
 	err = hci_stop_discovery_sync(hdev);
 	if (err)
 		return err;

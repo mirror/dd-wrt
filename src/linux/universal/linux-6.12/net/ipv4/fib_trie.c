@@ -61,6 +61,7 @@
 #include <linux/export.h>
 #include <linux/vmalloc.h>
 #include <linux/notifier.h>
+#include <linux/nospec.h>
 #include <net/net_namespace.h>
 #include <net/inet_dscp.h>
 #include <net/ip.h>
@@ -967,6 +968,8 @@ static struct key_vector *fib_find_node(struct trie *t,
 			break;
 		}
 
+		index = array_index_nospec(index, 1ul << n->bits);
+
 		/* keep searching until we find a perfect match leaf or NULL */
 	} while (IS_TNODE(n));
 
@@ -1472,6 +1475,8 @@ int fib_table_lookup(struct fib_table *tb, const struct flowi4 *flp,
 		if (IS_LEAF(n))
 			goto found;
 
+		index = array_index_nospec(index, 1ul << n->bits);
+
 		/* only record pn and cindex if we are going to be chopping
 		 * bits later.  Otherwise we are just wasting cycles.
 		 */
@@ -1772,6 +1777,8 @@ static struct key_vector *leaf_walk_rcu(struct key_vector **tn, t_key key)
 		if (cindex >> pn->bits)
 			break;
 
+		cindex = array_index_nospec(cindex, 1ul << pn->bits);
+
 		/* descend into the next child */
 		n = get_child_rcu(pn, cindex++);
 		if (!n)
@@ -1792,6 +1799,8 @@ static struct key_vector *leaf_walk_rcu(struct key_vector **tn, t_key key)
 			cindex = get_index(pkey, pn) + 1;
 			continue;
 		}
+
+		cindex = array_index_nospec(cindex, 1ul << pn->bits);
 
 		/* grab the next available node */
 		n = get_child_rcu(pn, cindex++);
@@ -2444,7 +2453,10 @@ static struct key_vector *fib_trie_get_next(struct fib_trie_iter *iter)
 
 	while (!IS_TRIE(pn)) {
 		while (cindex < child_length(pn)) {
-			struct key_vector *n = get_child_rcu(pn, cindex++);
+			struct key_vector *n;
+
+			cindex = array_index_nospec(cindex, child_length(pn));
+			n = get_child_rcu(pn, cindex++);
 
 			if (!n)
 				continue;

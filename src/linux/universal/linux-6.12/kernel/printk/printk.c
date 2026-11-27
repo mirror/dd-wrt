@@ -3564,7 +3564,7 @@ EXPORT_SYMBOL(console_start);
 static int unregister_console_locked(struct console *console);
 
 /* True when system boot is far enough to create printer threads. */
-static bool printk_kthreads_ready __ro_after_init;
+bool printk_kthreads_ready __ro_after_init;
 
 static struct task_struct *printk_legacy_kthread;
 
@@ -3696,6 +3696,13 @@ static struct syscore printk_syscore = {
  * If appropriate, start nbcon kthreads and set @printk_kthreads_running.
  * If any kthreads fail to start, those consoles are unregistered.
  *
+ * Called after consoles are registered or unregistered.
+ *
+ * This MUST NOT be called within an hlist_for_each_entry_safe(console_list)
+ * loop because it can unregister multiple consoles if any kthreads fail to
+ * start. That would lead to use-after-free scenarios within the
+ * hlist_for_each_entry_safe(console_list) loop of the caller.
+ *
  * Must be called under console_list_lock().
  */
 static void printk_kthreads_check_locked(void)
@@ -3708,6 +3715,7 @@ static void printk_kthreads_check_locked(void)
 	if (!printk_kthreads_ready)
 		return;
 
+	/* Start or stop the legacy kthread when needed. */
 	if (have_legacy_console || have_boot_console) {
 		if (!printk_legacy_kthread &&
 		    force_legacy_kthread() &&
@@ -4136,7 +4144,20 @@ unlock:
 }
 EXPORT_SYMBOL(register_console);
 
-/* Must be called under console_list_lock(). */
+/*
+ * Unregister the specified console.
+ *
+ * This can be called safely from within an
+ * hlist_for_each_entry_safe(console_list) loop because it unregisters
+ * _only_ the specified console.
+ *
+ * Afterwards the caller should call printk_kthreads_check_locked() since
+ * unregistering a console may require printer threads to start/stop. Note
+ * that printk_kthreads_check_locked() cannot be called safely from within
+ * an hlist_for_each_entry_safe(console_list) loop.
+ *
+ * Must be called under console_list_lock().
+ */
 static int unregister_console_locked(struct console *console)
 {
 	bool use_device_lock = (console->flags & CON_NBCON) && console->write_atomic;
@@ -4199,14 +4220,6 @@ static int unregister_console_locked(struct console *console)
 	 */
 	synchronize_srcu(&console_srcu);
 
-	if (console->flags & CON_NBCON)
-		nbcon_free(console);
-
-	console_sysfs_notify();
-
-	if (console->exit)
-		res = console->exit(console);
-
 	/*
 	 * With this console gone, the global flags tracking registered
 	 * console types may have changed. Update them.
@@ -4227,8 +4240,14 @@ static int unregister_console_locked(struct console *console)
 	if (!found_nbcon_con)
 		have_nbcon_console = found_nbcon_con;
 
-	/* Changed console list, may require printer threads to start/stop. */
-	printk_kthreads_check_locked();
+	/* @have_nbcon_console must be updated before calling nbcon_free(). */
+	if (console->flags & CON_NBCON)
+		nbcon_free(console);
+
+	console_sysfs_notify();
+
+	if (console->exit)
+		res = console->exit(console);
 
 	return res;
 }
@@ -4238,7 +4257,12 @@ int unregister_console(struct console *console)
 	int res;
 
 	console_list_lock();
+
 	res = unregister_console_locked(console);
+
+	/* Changed console list, may require printer threads to start/stop. */
+	printk_kthreads_check_locked();
+
 	console_list_unlock();
 	return res;
 }
@@ -4357,6 +4381,10 @@ static int __init printk_late_init(void)
 			unregister_console_locked(con);
 		}
 	}
+
+	/* Changed console list, may require printer threads to start/stop. */
+	printk_kthreads_check_locked();
+
 	console_list_unlock();
 
 	ret = cpuhp_setup_state_nocalls(CPUHP_PRINTK_DEAD, "printk:dead", NULL,

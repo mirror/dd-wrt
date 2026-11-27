@@ -4269,7 +4269,10 @@ static void blk_mq_del_queue_tag_set(struct request_queue *q)
 
 	lockdep_assert_held(&set->tag_list_lock);
 
+	/* blk_mq_unquiesce_tagset() runs the hctxs, which are not RCU freed */
+	spin_lock(&set->quiesce_lock);
 	list_del_rcu(&q->tag_set_list);
+	spin_unlock(&set->quiesce_lock);
 	if (list_is_singular(&set->tag_list)) {
 		/* just transitioned to unshared */
 		set->flags &= ~BLK_MQ_F_TAG_QUEUE_SHARED;
@@ -5150,9 +5153,22 @@ static int blk_hctx_poll(struct request_queue *q, struct blk_mq_hw_ctx *hctx,
 int blk_mq_poll(struct request_queue *q, blk_qc_t cookie,
 		struct io_comp_batch *iob, unsigned int flags)
 {
+	struct blk_mq_hw_ctx *hctx;
+
 	if (!blk_mq_can_poll(q))
 		return 0;
-	return blk_hctx_poll(q, xa_load(&q->hctx_table, cookie), iob, flags);
+
+	/*
+	 * The cookie is no more than a hint. iocb_bio_iopoll() may have read it
+	 * from a bio that was reused for another queue right afterwards, and
+	 * zone write plugging keeps the number of segments in the same field.
+	 */
+	if (cookie >= q->nr_hw_queues)
+		return 0;
+	hctx = xa_load(&q->hctx_table, cookie);
+	if (!hctx || hctx->type != HCTX_TYPE_POLL)
+		return 0;
+	return blk_hctx_poll(q, hctx, iob, flags);
 }
 
 int blk_rq_poll(struct request *rq, struct io_comp_batch *iob,

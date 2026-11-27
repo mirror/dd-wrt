@@ -171,6 +171,9 @@ struct tcp_request_sock {
 	u8				ao_rcv_next;
 	bool				used_tcp_ao;
 #endif
+#if IS_ENABLED(CONFIG_IPV6)
+	__be32				syn_flowlabel;
+#endif
 };
 
 static inline struct tcp_request_sock *tcp_rsk(const struct request_sock *req)

@@ -1980,8 +1980,10 @@ static int symbol__disassemble_llvm(char *filename, struct symbol *sym,
 			       (unsigned int *)&args->line_nr, false, NULL);
 
 		dl = disasm_line__new(args);
-		if (dl == NULL)
+		if (dl == NULL) {
+			free(args->fileloc);
 			goto err;
+		}
 
 		annotation_line__add(&dl->al, &notes->src->source);
 

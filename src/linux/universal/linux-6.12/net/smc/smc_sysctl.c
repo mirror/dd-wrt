@@ -93,11 +93,9 @@ static struct ctl_table smc_table[] = {
 	{
 		.procname	= "limit_smc_hs",
 		.data		= &init_net.smc.limit_smc_hs,
-		.maxlen		= sizeof(int),
+		.maxlen		= sizeof(bool),
 		.mode		= 0644,
-		.proc_handler	= proc_dointvec_minmax,
-		.extra1		= SYSCTL_ZERO,
-		.extra2		= SYSCTL_ONE,
+		.proc_handler	= proc_dobool,
 	},
 };
 

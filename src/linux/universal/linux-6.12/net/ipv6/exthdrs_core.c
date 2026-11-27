@@ -135,9 +135,6 @@ int ipv6_find_tlv(const struct sk_buff *skb, int offset, int type)
 		int opttype = nh[offset];
 		int optlen;
 
-		if (opttype == type)
-			return offset;
-
 		switch (opttype) {
 		case IPV6_TLV_PAD1:
 			optlen = 1;
@@ -150,6 +147,10 @@ int ipv6_find_tlv(const struct sk_buff *skb, int offset, int type)
 				goto bad;
 			break;
 		}
+		/* Some callers read the option, so it must be in the header. */
+		if (opttype == type)
+			return offset;
+
 		offset += optlen;
 		len -= optlen;
 	}

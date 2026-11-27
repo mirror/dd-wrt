@@ -792,7 +792,7 @@ static ssize_t disk_badblocks_show(struct device *dev,
 	struct gendisk *disk = dev_to_disk(dev);
 
 	if (!disk->bb)
-		return sprintf(page, "\n");
+		return sysfs_emit(page, "\n");
 
 	return badblocks_show(disk->bb, page, 0);
 }
@@ -952,7 +952,7 @@ static ssize_t disk_range_show(struct device *dev,
 {
 	struct gendisk *disk = dev_to_disk(dev);
 
-	return sprintf(buf, "%d\n", disk->minors);
+	return sysfs_emit(buf, "%d\n", disk->minors);
 }
 
 static ssize_t disk_ext_range_show(struct device *dev,
@@ -960,7 +960,7 @@ static ssize_t disk_ext_range_show(struct device *dev,
 {
 	struct gendisk *disk = dev_to_disk(dev);
 
-	return sprintf(buf, "%d\n",
+	return sysfs_emit(buf, "%d\n",
 		(disk->flags & GENHD_FL_NO_PART) ? 1 : DISK_MAX_PARTS);
 }
 
@@ -969,7 +969,7 @@ static ssize_t disk_removable_show(struct device *dev,
 {
 	struct gendisk *disk = dev_to_disk(dev);
 
-	return sprintf(buf, "%d\n",
+	return sysfs_emit(buf, "%d\n",
 		       (disk->flags & GENHD_FL_REMOVABLE ? 1 : 0));
 }
 
@@ -978,7 +978,7 @@ static ssize_t disk_hidden_show(struct device *dev,
 {
 	struct gendisk *disk = dev_to_disk(dev);
 
-	return sprintf(buf, "%d\n",
+	return sysfs_emit(buf, "%d\n",
 		       (disk->flags & GENHD_FL_HIDDEN ? 1 : 0));
 }
 
@@ -987,13 +987,13 @@ static ssize_t disk_ro_show(struct device *dev,
 {
 	struct gendisk *disk = dev_to_disk(dev);
 
-	return sprintf(buf, "%d\n", get_disk_ro(disk) ? 1 : 0);
+	return sysfs_emit(buf, "%d\n", get_disk_ro(disk) ? 1 : 0);
 }
 
 ssize_t part_size_show(struct device *dev,
 		       struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%llu\n", bdev_nr_sectors(dev_to_bdev(dev)));
+	return sysfs_emit(buf, "%llu\n", bdev_nr_sectors(dev_to_bdev(dev)));
 }
 
 ssize_t part_stat_show(struct device *dev,
@@ -1010,7 +1010,7 @@ ssize_t part_stat_show(struct device *dev,
 		part_stat_unlock();
 	}
 	part_stat_read_all(bdev, &stat);
-	return sprintf(buf,
+	return sysfs_emit(buf,
 		"%8lu %8lu %8llu %8u "
 		"%8lu %8lu %8llu %8u "
 		"%8u %8u %8u "
@@ -1052,14 +1052,14 @@ ssize_t part_inflight_show(struct device *dev, struct device_attribute *attr,
 	else
 		part_in_flight_rw(bdev, inflight);
 
-	return sprintf(buf, "%8u %8u\n", inflight[0], inflight[1]);
+	return sysfs_emit(buf, "%8u %8u\n", inflight[0], inflight[1]);
 }
 
 static ssize_t disk_capability_show(struct device *dev,
 				    struct device_attribute *attr, char *buf)
 {
 	dev_warn_once(dev, "the capability attribute has been deprecated.\n");
-	return sprintf(buf, "0\n");
+	return sysfs_emit(buf, "0\n");
 }
 
 static ssize_t disk_alignment_offset_show(struct device *dev,
@@ -1068,7 +1068,7 @@ static ssize_t disk_alignment_offset_show(struct device *dev,
 {
 	struct gendisk *disk = dev_to_disk(dev);
 
-	return sprintf(buf, "%d\n", bdev_alignment_offset(disk->part0));
+	return sysfs_emit(buf, "%d\n", bdev_alignment_offset(disk->part0));
 }
 
 static ssize_t disk_discard_alignment_show(struct device *dev,
@@ -1077,7 +1077,7 @@ static ssize_t disk_discard_alignment_show(struct device *dev,
 {
 	struct gendisk *disk = dev_to_disk(dev);
 
-	return sprintf(buf, "%d\n", bdev_alignment_offset(disk->part0));
+	return sysfs_emit(buf, "%u\n", bdev_discard_alignment(disk->part0));
 }
 
 static ssize_t diskseq_show(struct device *dev,
@@ -1085,13 +1085,13 @@ static ssize_t diskseq_show(struct device *dev,
 {
 	struct gendisk *disk = dev_to_disk(dev);
 
-	return sprintf(buf, "%llu\n", disk->diskseq);
+	return sysfs_emit(buf, "%llu\n", disk->diskseq);
 }
 
 static ssize_t partscan_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%u\n", disk_has_partscan(dev_to_disk(dev)));
+	return sysfs_emit(buf, "%u\n", disk_has_partscan(dev_to_disk(dev)));
 }
 
 static DEVICE_ATTR(range, 0444, disk_range_show, NULL);
@@ -1113,7 +1113,7 @@ static DEVICE_ATTR(partscan, 0444, partscan_show, NULL);
 ssize_t part_fail_show(struct device *dev,
 		       struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%d\n",
+	return sysfs_emit(buf, "%d\n",
 		       bdev_test_flag(dev_to_bdev(dev), BD_MAKE_IT_FAIL));
 }
 

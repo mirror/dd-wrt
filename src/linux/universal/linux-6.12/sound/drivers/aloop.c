@@ -98,7 +98,7 @@ struct loopback_ops {
 struct loopback_cable {
 	spinlock_t lock;
 	struct loopback_pcm *streams[2];
-	/* in-flight peer stops running outside cable->lock */
+	/* in-flight PCM callbacks running outside cable->lock */
 	atomic_t stop_count;
 	wait_queue_head_t stop_wait;
 	struct snd_pcm_hardware hw;
@@ -809,6 +809,8 @@ static void loopback_snd_timer_period_elapsed(struct loopback_cable *cable,
 	valid_runtime = (running & (1 << SNDRV_PCM_STREAM_PLAYBACK)) ?
 				dpcm_play->substream->runtime :
 				dpcm_capt->substream->runtime;
+	/* Keep runtimes alive through the PCM callbacks. */
+	atomic_inc(&cable->stop_count);
 
 	/* resolution is only valid for SNDRV_TIMER_EVENT_TICK events */
 	if (event == SNDRV_TIMER_EVENT_TICK) {
@@ -823,7 +825,7 @@ static void loopback_snd_timer_period_elapsed(struct loopback_cable *cable,
 				snd_pcm_stop_xrun(substream_play);
 			if (substream_capt)
 				snd_pcm_stop_xrun(substream_capt);
-			return;
+			goto exit;
 		}
 	}
 
@@ -847,6 +849,10 @@ static void loopback_snd_timer_period_elapsed(struct loopback_cable *cable,
 		snd_pcm_period_elapsed(substream_play);
 	if (substream_capt)
 		snd_pcm_period_elapsed(substream_capt);
+
+exit:
+	if (atomic_dec_and_test(&cable->stop_count))
+		wake_up(&cable->stop_wait);
 }
 
 static void loopback_snd_timer_function(struct snd_timer_instance *timeri,
@@ -1092,7 +1098,7 @@ static void free_cable(struct snd_pcm_substream *substream)
 		other_alive = cable->streams[!substream->stream];
 	}
 
-	/* Pair with the stop_count increment in loopback_check_format(). */
+	/* Wait for PCM callbacks running outside cable->lock. */
 	wait_event(cable->stop_wait, !atomic_read(&cable->stop_count));
 	if (other_alive)
 		return;
@@ -1273,7 +1279,7 @@ static const struct loopback_ops loopback_snd_timer_ops = {
 	.dpcm_info = loopback_snd_timer_dpcm_info,
 };
 
-static int loopback_open(struct snd_pcm_substream *substream)
+static int __loopback_open(struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct loopback *loopback = substream->private_data;
@@ -1282,7 +1288,6 @@ static int loopback_open(struct snd_pcm_substream *substream)
 	int err = 0;
 	int dev = get_cable_index(substream);
 
-	guard(mutex)(&loopback->cable_lock);
 	dpcm = kzalloc(sizeof(*dpcm), GFP_KERNEL);
 	if (!dpcm)
 		return -ENOMEM;
@@ -1371,6 +1376,14 @@ static int loopback_open(struct snd_pcm_substream *substream)
 		kfree(dpcm);
 	}
 	return err;
+}
+
+static int loopback_open(struct snd_pcm_substream *substream)
+{
+	struct loopback *loopback = substream->private_data;
+
+	guard(mutex)(&loopback->cable_lock);
+	return __loopback_open(substream);
 }
 
 static int loopback_close(struct snd_pcm_substream *substream)

@@ -554,7 +554,8 @@ int smb2_allocate_rsp_buf(struct ksmbd_work *work)
 		req = smb_get_msg(work->request_buf);
 		if ((req->InfoType == SMB2_O_INFO_FILE &&
 		     (req->FileInfoClass == FILE_FULL_EA_INFORMATION ||
-		     req->FileInfoClass == FILE_ALL_INFORMATION)) ||
+		     req->FileInfoClass == FILE_ALL_INFORMATION ||
+		     req->FileInfoClass == FILE_STREAM_INFORMATION)) ||
 		    req->InfoType == SMB2_O_INFO_SECURITY)
 			sz = large_sz;
 	}
@@ -2460,6 +2461,11 @@ static int smb2_set_ea(struct smb2_ea_info *eabuf, unsigned int buf_len,
 		if (!eabuf->EaNameLength)
 			goto next;
 
+		if (eabuf->name[eabuf->EaNameLength]) {
+			rc = -EBADMSG;
+			break;
+		}
+
 		ksmbd_debug(SMB,
 			    "name : <%s>, name_len : %u, value_len : %u, next : %u\n",
 			    eabuf->name, eabuf->EaNameLength,
@@ -3924,6 +3930,8 @@ err_out2:
 	if (rc) {
 		if (rc == -EINVAL)
 			rsp->hdr.Status = STATUS_INVALID_PARAMETER;
+		else if (rc == -EBADMSG)
+			rsp->hdr.Status = STATUS_EA_LIST_INCONSISTENT;
 		else if (rc == -EOPNOTSUPP)
 			rsp->hdr.Status = STATUS_NOT_SUPPORTED;
 		else if (rc == -EACCES || rc == -ESTALE || rc == -EXDEV) {
@@ -5218,41 +5226,107 @@ static void get_file_alternate_info(struct ksmbd_work *work,
 		cpu_to_le32(struct_size(file_info, FileName, conv_len));
 }
 
-static int get_file_stream_info(struct ksmbd_work *work,
-				struct smb2_query_info_rsp *rsp,
-				struct ksmbd_file *fp,
-				void *rsp_org)
+struct smb2_stream_info_buffer {
+	struct smb2_query_info_rsp *rsp;
+	struct smb2_file_stream_info *last;
+	const struct nls_table *local_nls;
+	unsigned int length;
+	unsigned int capacity;
+};
+
+static int smb2_add_stream_info(struct smb2_stream_info_buffer *buf,
+				const char *name, loff_t size, u64 allocation_size)
 {
-	struct ksmbd_conn *conn = work->conn;
 	struct smb2_file_stream_info *file_info;
+	__le16 *utf16_name;
+	size_t name_len = strlen(name);
+	unsigned int offset = ALIGN(buf->length, 8), name_bytes;
+	int conv_len, ret = 0;
+
+	if (offset > buf->capacity ||
+	    buf->capacity - offset < sizeof(*file_info))
+		return -ENOSPC;
+
+	utf16_name = kmalloc_array(name_len + 1, sizeof(*utf16_name),
+				   KSMBD_DEFAULT_GFP);
+	if (!utf16_name)
+		return -ENOMEM;
+
+	conv_len = smbConvertToUTF16(utf16_name, name, name_len,
+				     buf->local_nls, 0);
+	if (conv_len < 0) {
+		ret = conv_len;
+		goto out;
+	}
+
+	name_bytes = conv_len * sizeof(*utf16_name);
+	if (name_bytes > buf->capacity - offset - sizeof(*file_info)) {
+		ret = -ENOSPC;
+		goto out;
+	}
+
+	file_info = (struct smb2_file_stream_info *)&buf->rsp->Buffer[offset];
+	if (buf->last) {
+		memset(&buf->rsp->Buffer[buf->length], 0, offset - buf->length);
+		buf->last->NextEntryOffset =
+			cpu_to_le32((char *)file_info - (char *)buf->last);
+	}
+	file_info->NextEntryOffset = 0;
+	file_info->StreamNameLength = cpu_to_le32(name_bytes);
+	file_info->StreamSize = cpu_to_le64(size);
+	file_info->StreamAllocationSize = cpu_to_le64(allocation_size);
+	memcpy(file_info->StreamName, utf16_name, name_bytes);
+
+	buf->last = file_info;
+	buf->length = offset + sizeof(*file_info) + name_bytes;
+out:
+	kfree(utf16_name);
+	return ret;
+}
+
+static int get_file_stream_info(struct ksmbd_work *work,
+				struct smb2_query_info_req *req,
+				struct smb2_query_info_rsp *rsp,
+				struct ksmbd_file *fp)
+{
+	struct smb2_stream_info_buffer buf = {
+		.rsp = rsp,
+		.local_nls = work->conn->local_nls,
+	};
 	char *stream_name, *xattr_list = NULL, *stream_buf;
 	struct kstat stat;
 	const struct path *path = &fp->filp->f_path;
 	ssize_t xattr_list_len;
 	ssize_t slen;
 	loff_t ssize;
-	int nbytes = 0, streamlen, stream_name_len, next, idx = 0;
+	unsigned int req_output_len = le32_to_cpu(req->OutputBufferLength);
+	int streamlen, idx = 0;
 	int buf_free_len;
 	int ret;
+
+	if (req_output_len < FILE_STREAM_INFORMATION_SIZE) {
+		rsp->hdr.Status = STATUS_INFO_LENGTH_MISMATCH;
+		return -EINVAL;
+	}
+
+	buf_free_len = smb2_calc_max_out_buf_len(work,
+						 offsetof(struct smb2_query_info_rsp, Buffer),
+						 req_output_len);
+	if (buf_free_len < 0)
+		return buf_free_len;
+	buf.capacity = buf_free_len;
 
 	ret = vfs_getattr(&fp->filp->f_path, &stat, STATX_BASIC_STATS,
 			  AT_STATX_SYNC_AS_STAT);
 	if (ret)
 		return ret;
 
-	file_info = (struct smb2_file_stream_info *)rsp->Buffer;
-
-	buf_free_len = smb2_resp_buf_len(work,
-			offsetof(struct smb2_query_info_rsp, Buffer));
-	if (buf_free_len < 0)
-		goto out;
-
 	xattr_list_len = ksmbd_vfs_listxattr(path->dentry, &xattr_list);
 	if (xattr_list_len < 0) {
-		goto out;
+		goto default_stream;
 	} else if (!xattr_list_len) {
 		ksmbd_debug(SMB, "empty xattr in the file\n");
-		goto out;
+		goto default_stream;
 	}
 
 	while (idx < xattr_list_len) {
@@ -5262,69 +5336,49 @@ static int get_file_stream_info(struct ksmbd_work *work,
 
 		ksmbd_debug(SMB, "%s, len %d\n", stream_name, streamlen);
 
-		if (strncmp(&stream_name[XATTR_USER_PREFIX_LEN],
-			    STREAM_PREFIX, STREAM_PREFIX_LEN))
+		if (strncmp(stream_name, XATTR_NAME_STREAM,
+			    XATTR_NAME_STREAM_LEN))
 			continue;
 
-		stream_name_len = streamlen - (XATTR_USER_PREFIX_LEN +
-				STREAM_PREFIX_LEN);
-		streamlen = stream_name_len;
-
-		/* plus : size */
-		streamlen += 1;
-		stream_buf = kmalloc(streamlen + 1, KSMBD_DEFAULT_GFP);
-		if (!stream_buf)
-			break;
-
-		streamlen = snprintf(stream_buf, streamlen + 1,
-				     ":%s", &stream_name[XATTR_NAME_STREAM_LEN]);
-
-		next = sizeof(struct smb2_file_stream_info) + streamlen * 2;
-		/* smbConvertToUTF16() also writes a terminating UTF-16 unit. */
-		if (next + sizeof(__le16) > buf_free_len) {
-			kfree(stream_buf);
-			break;
+		stream_buf = kasprintf(KSMBD_DEFAULT_GFP, ":%s",
+				       &stream_name[XATTR_NAME_STREAM_LEN]);
+		if (!stream_buf) {
+			ret = -ENOMEM;
+			goto out;
 		}
-
-		file_info = (struct smb2_file_stream_info *)&rsp->Buffer[nbytes];
-		streamlen  = smbConvertToUTF16((__le16 *)file_info->StreamName,
-					       stream_buf, streamlen,
-					       conn->local_nls, 0);
-		streamlen *= 2;
-		kfree(stream_buf);
-		file_info->StreamNameLength = cpu_to_le32(streamlen);
 		slen = ksmbd_vfs_xattr_len(file_mnt_idmap(fp->filp),
 					   path->dentry, stream_name);
 		ssize = slen < 0 ? 0 : (loff_t)slen;
-		file_info->StreamSize = cpu_to_le64(ssize);
-		file_info->StreamAllocationSize = cpu_to_le64(ssize);
-
-		nbytes += next;
-		buf_free_len -= next;
-		file_info->NextEntryOffset = cpu_to_le32(next);
+		ret = smb2_add_stream_info(&buf, stream_buf, ssize, ssize);
+		kfree(stream_buf);
+		if (ret == -ENOSPC)
+			goto overflow;
+		if (ret)
+			goto out;
 	}
 
+default_stream:
+	if (!S_ISDIR(stat.mode)) {
+		ret = smb2_add_stream_info(&buf, "::$DATA", stat.size,
+					   stat.blocks << 9);
+		if (ret == -ENOSPC)
+			goto overflow;
+		if (ret)
+			goto out;
+	}
+
+	ret = 0;
+	goto out;
+
+overflow:
+	rsp->hdr.Status = STATUS_BUFFER_OVERFLOW;
+	/* An empty overflow needs an SMB2 error response. */
+	ret = buf.length ? 0 : -EOVERFLOW;
 out:
-	if (!S_ISDIR(stat.mode) &&
-	    buf_free_len >= sizeof(struct smb2_file_stream_info) + (7 + 1) * 2) {
-		file_info = (struct smb2_file_stream_info *)
-			&rsp->Buffer[nbytes];
-		streamlen = smbConvertToUTF16((__le16 *)file_info->StreamName,
-					      "::$DATA", 7, conn->local_nls, 0);
-		streamlen *= 2;
-		file_info->StreamNameLength = cpu_to_le32(streamlen);
-		file_info->StreamSize = cpu_to_le64(stat.size);
-		file_info->StreamAllocationSize = cpu_to_le64(stat.blocks << 9);
-		nbytes += sizeof(struct smb2_file_stream_info) + streamlen;
-	}
-
-	/* last entry offset should be 0 */
-	file_info->NextEntryOffset = 0;
+	if (!ret)
+		rsp->OutputBufferLength = cpu_to_le32(buf.length);
 	kvfree(xattr_list);
-
-	rsp->OutputBufferLength = cpu_to_le32(nbytes);
-
-	return 0;
+	return ret;
 }
 
 static int get_file_internal_info(struct smb2_query_info_rsp *rsp,
@@ -5599,7 +5653,7 @@ static int smb2_get_info_file(struct ksmbd_work *work,
 		break;
 
 	case FILE_STREAM_INFORMATION:
-		rc = get_file_stream_info(work, rsp, fp, work->response_buf);
+		rc = get_file_stream_info(work, req, rsp, fp);
 		break;
 
 	case FILE_INTERNAL_INFORMATION:
@@ -6714,7 +6768,6 @@ static int set_file_mode_info(struct ksmbd_file *fp,
  * @share:	ksmbd_share_config pointer
  *
  * Return:	0 on success, otherwise error
- * TODO: need to implement an error handling for STATUS_INFO_LENGTH_MISMATCH
  */
 static int smb2_set_info_file(struct ksmbd_work *work, struct ksmbd_file *fp,
 			      struct smb2_set_info_req *req,
@@ -6727,14 +6780,14 @@ static int smb2_set_info_file(struct ksmbd_work *work, struct ksmbd_file *fp,
 	case FILE_BASIC_INFORMATION:
 	{
 		if (buf_len < sizeof(struct smb2_file_basic_info))
-			return -EINVAL;
+			return -EMSGSIZE;
 
 		return set_file_basic_info(fp, (struct smb2_file_basic_info *)buffer, share);
 	}
 	case FILE_ALLOCATION_INFORMATION:
 	{
 		if (buf_len < sizeof(struct smb2_file_alloc_info))
-			return -EINVAL;
+			return -EMSGSIZE;
 
 		return set_file_allocation_info(work, fp,
 						(struct smb2_file_alloc_info *)buffer);
@@ -6742,7 +6795,7 @@ static int smb2_set_info_file(struct ksmbd_work *work, struct ksmbd_file *fp,
 	case FILE_END_OF_FILE_INFORMATION:
 	{
 		if (buf_len < sizeof(struct smb2_file_eof_info))
-			return -EINVAL;
+			return -EMSGSIZE;
 
 		return set_end_of_file_info(work, fp,
 					    (struct smb2_file_eof_info *)buffer);
@@ -6750,7 +6803,7 @@ static int smb2_set_info_file(struct ksmbd_work *work, struct ksmbd_file *fp,
 	case FILE_RENAME_INFORMATION:
 	{
 		if (buf_len < sizeof(struct smb2_file_rename_info))
-			return -EINVAL;
+			return -EMSGSIZE;
 
 		return set_rename_info(work, fp,
 				       (struct smb2_file_rename_info *)buffer,
@@ -6761,7 +6814,7 @@ static int smb2_set_info_file(struct ksmbd_work *work, struct ksmbd_file *fp,
 		struct smb2_file_link_info *file_info;
 
 		if (buf_len < sizeof(struct smb2_file_link_info))
-			return -EINVAL;
+			return -EMSGSIZE;
 
 		file_info = (struct smb2_file_link_info *)buffer;
 		if (file_info->ReplaceIfExists && !(fp->daccess & FILE_DELETE_LE)) {
@@ -6776,7 +6829,7 @@ static int smb2_set_info_file(struct ksmbd_work *work, struct ksmbd_file *fp,
 	case FILE_DISPOSITION_INFORMATION:
 	{
 		if (buf_len < sizeof(struct smb2_file_disposition_info))
-			return -EINVAL;
+			return -EMSGSIZE;
 
 		return set_file_disposition_info(work, fp,
 						 (struct smb2_file_disposition_info *)buffer);
@@ -6790,7 +6843,7 @@ static int smb2_set_info_file(struct ksmbd_work *work, struct ksmbd_file *fp,
 		}
 
 		if (buf_len < sizeof(struct smb2_ea_info))
-			return -EINVAL;
+			return -EMSGSIZE;
 
 		return smb2_set_ea((struct smb2_ea_info *)buffer,
 				   buf_len, &fp->filp->f_path, true);
@@ -6798,14 +6851,14 @@ static int smb2_set_info_file(struct ksmbd_work *work, struct ksmbd_file *fp,
 	case FILE_POSITION_INFORMATION:
 	{
 		if (buf_len < sizeof(struct smb2_file_pos_info))
-			return -EINVAL;
+			return -EMSGSIZE;
 
 		return set_file_position_info(fp, (struct smb2_file_pos_info *)buffer);
 	}
 	case FILE_MODE_INFORMATION:
 	{
 		if (buf_len < sizeof(struct smb2_file_mode_info))
-			return -EINVAL;
+			return -EMSGSIZE;
 
 		return set_file_mode_info(fp, (struct smb2_file_mode_info *)buffer);
 	}
@@ -6913,6 +6966,10 @@ err_out:
 		rsp->hdr.Status = STATUS_ACCESS_DENIED;
 	else if (rc == -EINVAL)
 		rsp->hdr.Status = STATUS_INVALID_PARAMETER;
+	else if (rc == -EBADMSG)
+		rsp->hdr.Status = STATUS_EA_LIST_INCONSISTENT;
+	else if (rc == -EMSGSIZE)
+		rsp->hdr.Status = STATUS_INFO_LENGTH_MISMATCH;
 	else if (rc == -ESHARE)
 		rsp->hdr.Status = STATUS_SHARING_VIOLATION;
 	else if (rc == -ENOENT)
@@ -9559,6 +9616,12 @@ int smb3_decrypt_req(struct ksmbd_work *work)
 	    buf_data_size < sizeof(struct smb2_hdr)) {
 		pr_err("Transform message is too small (%u)\n",
 		       pdu_length);
+		return -ECONNABORTED;
+	}
+
+	if (tr_hdr->Flags != cpu_to_le16(TRANSFORM_FLAG_ENCRYPTED)) {
+		pr_err_ratelimited("Invalid transform flags 0x%04x\n",
+				   le16_to_cpu(tr_hdr->Flags));
 		return -ECONNABORTED;
 	}
 

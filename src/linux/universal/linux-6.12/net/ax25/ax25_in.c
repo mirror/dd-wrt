@@ -87,16 +87,26 @@ static int ax25_rx_fragment(ax25_cb *ax25, struct sk_buff *skb)
 				return 1;
 			}
 		}
-	} else {
-		/* First fragment received */
-		if (*skb->data & AX25_SEG_FIRST) {
-			skb_queue_purge(&ax25->frag_queue);
-			ax25->fragno = *skb->data & AX25_SEG_REM;
-			skb_pull(skb, 1);		/* skip fragno */
-			ax25->fraglen = skb->len;
-			skb_queue_tail(&ax25->frag_queue, skb);
-			return 1;
-		}
+
+		/*
+		 * A new first segment, or a segment out of order: the message
+		 * being reassembled can no longer be completed. Drop it, or
+		 * fragno would never come back to 0 and every later segmented
+		 * message of this connection would be thrown away as well.
+		 */
+		skb_queue_purge(&ax25->frag_queue);
+		ax25->fragno = 0;
+		ax25->fraglen = 0;
+	}
+
+	/* First fragment received */
+	if (*skb->data & AX25_SEG_FIRST) {
+		skb_queue_purge(&ax25->frag_queue);
+		ax25->fragno = *skb->data & AX25_SEG_REM;
+		skb_pull(skb, 1);		/* skip fragno */
+		ax25->fraglen = skb->len;
+		skb_queue_tail(&ax25->frag_queue, skb);
+		return 1;
 	}
 
 	return 0;

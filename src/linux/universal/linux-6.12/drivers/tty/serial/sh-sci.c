@@ -3542,7 +3542,7 @@ static int sci_probe(struct platform_device *dev)
 	if (sp->port.fifosize > 1) {
 		ret = device_create_file(&dev->dev, &dev_attr_rx_fifo_trigger);
 		if (ret)
-			return ret;
+			goto err_remove_port;
 	}
 	if (sp->port.type == PORT_SCIFA || sp->port.type == PORT_SCIFB ||
 	    sp->port.type == PORT_HSCIF) {
@@ -3552,7 +3552,7 @@ static int sci_probe(struct platform_device *dev)
 				device_remove_file(&dev->dev,
 						   &dev_attr_rx_fifo_trigger);
 			}
-			return ret;
+			goto err_remove_port;
 		}
 	}
 
@@ -3562,6 +3562,10 @@ static int sci_probe(struct platform_device *dev)
 
 	sci_ports_in_use |= BIT(dev_id);
 	return 0;
+
+err_remove_port:
+	uart_remove_one_port(&sci_uart_driver, &sp->port);
+	return ret;
 }
 
 static void sci_console_save(struct sci_port *s)

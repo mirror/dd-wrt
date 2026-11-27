@@ -897,6 +897,12 @@ static int netdev_genl_netdevice_event(struct notifier_block *nb,
 		netdev_genl_dev_notify(netdev, NETDEV_CMD_DEV_ADD_NTF);
 		break;
 	case NETDEV_UNREGISTER:
+		/* netdev_wait_allrefs_any() rebroadcasts NETDEV_UNREGISTER
+		 * while waiting for the last references to be dropped; the
+		 * netns may already be torn down by then. Notify only once.
+		 */
+		if (READ_ONCE(netdev->reg_state) == NETREG_UNREGISTERED)
+			break;
 		netdev_genl_dev_notify(netdev, NETDEV_CMD_DEV_DEL_NTF);
 		break;
 	case NETDEV_XDP_FEAT_CHANGE:

@@ -3067,7 +3067,6 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
 	memalloc_nofs_restore(nofs_flag);
 
 	atomic_dec(&fs_info->scrubs_running);
-	wake_up(&fs_info->scrub_pause_wait);
 
 	if (progress)
 		memcpy(progress, &sctx->stat, sizeof(*progress));
@@ -3079,6 +3078,13 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
 	mutex_lock(&fs_info->scrub_lock);
 	dev->scrub_ctx = NULL;
 	mutex_unlock(&fs_info->scrub_lock);
+
+	/*
+	 * We have set dev->scrub_ctx to NULL, now do the wakeup as a concurrent
+	 * scrub cancel (btrfs_scrub_cancel_dev()) waits for dev->scrub_ctx to
+	 * be set to NULL.
+	 */
+	wake_up(&fs_info->scrub_pause_wait);
 
 	scrub_workers_put(fs_info);
 	scrub_put_ctx(sctx);

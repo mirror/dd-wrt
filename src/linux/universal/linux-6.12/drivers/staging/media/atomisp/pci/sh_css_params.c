@@ -13,6 +13,7 @@
  * more details.
  */
 
+#include <linux/overflow.h>
 #include "gdc_device.h"		/* gdc_lut_store(), ... */
 #include "isp.h"			/* ISP_VEC_ELEMBITS */
 #include "vamem.h"
@@ -1390,11 +1391,11 @@ struct ia_css_morph_table *ia_css_morph_table_allocate(
 	}
 
 	for (i = 0; i < IA_CSS_MORPH_TABLE_NUM_PLANES; i++) {
-		me->coordinates_x[i] = kvmalloc(height * width *
-						sizeof(*me->coordinates_x[i]),
+		me->coordinates_x[i] = kvmalloc(array3_size(height, width,
+							    sizeof(*me->coordinates_x[i])),
 						GFP_KERNEL);
-		me->coordinates_y[i] = kvmalloc(height * width *
-						sizeof(*me->coordinates_y[i]),
+		me->coordinates_y[i] = kvmalloc(array3_size(height, width,
+							    sizeof(*me->coordinates_y[i])),
 						GFP_KERNEL);
 
 		if ((!me->coordinates_x[i]) ||
@@ -4215,13 +4216,17 @@ ia_css_dvs_statistics_allocate(const struct ia_css_dvs_grid_info *grid)
 		goto err;
 
 	me->grid = *grid;
-	me->hor_proj = kvmalloc(grid->height * IA_CSS_DVS_NUM_COEF_TYPES *
-				sizeof(*me->hor_proj), GFP_KERNEL);
+	me->hor_proj = kvmalloc(array3_size(grid->height,
+					    IA_CSS_DVS_NUM_COEF_TYPES,
+						sizeof(*me->hor_proj)),
+				GFP_KERNEL);
 	if (!me->hor_proj)
 		goto err;
 
-	me->ver_proj = kvmalloc(grid->width * IA_CSS_DVS_NUM_COEF_TYPES *
-				sizeof(*me->ver_proj), GFP_KERNEL);
+	me->ver_proj = kvmalloc(array3_size(grid->width,
+					    IA_CSS_DVS_NUM_COEF_TYPES,
+						sizeof(*me->ver_proj)),
+				GFP_KERNEL);
 	if (!me->ver_proj)
 		goto err;
 
@@ -4488,24 +4493,26 @@ ia_css_dvs2_6axis_config_allocate(const struct ia_css_stream *stream)
 				    params->pipe_dvs_6axis_config[IA_CSS_PIPE_ID_VIDEO]->height_uv;
 	IA_CSS_LOG("table Y: W %d H %d", width_y, height_y);
 	IA_CSS_LOG("table UV: W %d H %d", width_uv, height_uv);
-	dvs_config->xcoords_y = kvmalloc(width_y * height_y * sizeof(uint32_t),
+	dvs_config->xcoords_y = kvmalloc(array3_size(width_y, height_y,
+						     sizeof(uint32_t)),
 					 GFP_KERNEL);
 	if (!dvs_config->xcoords_y)
 		goto err;
 
-	dvs_config->ycoords_y = kvmalloc(width_y * height_y * sizeof(uint32_t),
+	dvs_config->ycoords_y = kvmalloc(array3_size(width_y, height_y,
+						     sizeof(uint32_t)),
 					 GFP_KERNEL);
 	if (!dvs_config->ycoords_y)
 		goto err;
 
-	dvs_config->xcoords_uv = kvmalloc(width_uv * height_uv *
-					  sizeof(uint32_t),
+	dvs_config->xcoords_uv = kvmalloc(array3_size(width_uv, height_uv,
+						      sizeof(uint32_t)),
 					  GFP_KERNEL);
 	if (!dvs_config->xcoords_uv)
 		goto err;
 
-	dvs_config->ycoords_uv = kvmalloc(width_uv * height_uv *
-					  sizeof(uint32_t),
+	dvs_config->ycoords_uv = kvmalloc(array3_size(width_uv, height_uv,
+						      sizeof(uint32_t)),
 					  GFP_KERNEL);
 	if (!dvs_config->ycoords_uv)
 		goto err;

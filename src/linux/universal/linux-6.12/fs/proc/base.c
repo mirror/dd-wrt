@@ -2527,6 +2527,7 @@ static int show_timer(struct seq_file *m, void *v)
 	struct k_itimer *timer;
 	struct timers_private *tp = m->private;
 	int notify;
+	pid_t nr = 0;
 	static const char * const nstr[] = {
 		[SIGEV_SIGNAL] = "signal",
 		[SIGEV_NONE] = "none",
@@ -2536,6 +2537,13 @@ static int show_timer(struct seq_file *m, void *v)
 	timer = hlist_entry((struct hlist_node *)v, struct k_itimer, list);
 	notify = timer->it_sigev_notify;
 
+	if (timer->it_pid &&
+	    pid_has_task(timer->it_pid,
+			 (notify & SIGEV_THREAD_ID) ? PIDTYPE_PID : PIDTYPE_TGID))
+		nr = pid_nr_ns(timer->it_pid, tp->ns);
+	else
+		notify = SIGEV_NONE;
+
 	seq_printf(m, "ID: %d\n", timer->it_id);
 	seq_printf(m, "signal: %d/%px\n",
 		   timer->sigq->info.si_signo,
@@ -2543,7 +2551,7 @@ static int show_timer(struct seq_file *m, void *v)
 	seq_printf(m, "notify: %s/%s.%d\n",
 		   nstr[notify & ~SIGEV_THREAD_ID],
 		   (notify & SIGEV_THREAD_ID) ? "tid" : "pid",
-		   pid_nr_ns(timer->it_pid, tp->ns));
+		   nr);
 	seq_printf(m, "ClockID: %d\n", timer->it_clock);
 
 	return 0;

@@ -539,7 +539,7 @@ int tcp_v4_err(struct sk_buff *skb, u32 info)
 		if (!(type == ICMP_DEST_UNREACH && code == ICMP_FRAG_NEEDED))
 			__NET_INC_STATS(net, LINUX_MIB_LOCKDROPPEDICMPS);
 	}
-	if (sk->sk_state == TCP_CLOSE)
+	if (sk->sk_state == TCP_CLOSE || inet_test_bit(DEFER_CONNECT, sk))
 		goto out;
 
 	if (static_branch_unlikely(&ip4_min_ttl)) {
@@ -1770,10 +1770,6 @@ struct sock *tcp_v4_syn_recv_sock(const struct sock *sk, struct sk_buff *skb,
 	newtp		      = tcp_sk(newsk);
 	newinet		      = inet_sk(newsk);
 	ireq		      = inet_rsk(req);
-	sk_daddr_set(newsk, ireq->ir_rmt_addr);
-	sk_rcv_saddr_set(newsk, ireq->ir_loc_addr);
-	newsk->sk_bound_dev_if = ireq->ir_iif;
-	newinet->inet_saddr   = ireq->ir_loc_addr;
 	inet_opt	      = rcu_dereference(ireq->ireq_opt);
 	RCU_INIT_POINTER(newinet->inet_opt, inet_opt);
 	newinet->mc_index     = inet_iif(skb);
@@ -3683,6 +3679,7 @@ static int __net_init tcp_sk_init(struct net *net)
 
 static void __net_exit tcp_sk_exit_batch(struct list_head *net_exit_list)
 {
+	bool synced = false;
 	struct net *net;
 
 	/* make sure concurrent calls to tcp_sk_exit_batch from net_cleanup_work
@@ -3697,9 +3694,27 @@ static void __net_exit tcp_sk_exit_batch(struct list_head *net_exit_list)
 
 	tcp_twsk_purge(net_exit_list);
 
+	/* inet_twsk_kill() unhashes a twsk before it is done with ehash
+	 * and bhash, and before it drops its tw_refcount reference,
+	 * so tcp_twsk_purge() can miss it. Such callers run with BH
+	 * disabled: wait for them before freeing a private ehash.
+	 */
+	list_for_each_entry(net, net_exit_list, exit_list) {
+		if (net->ipv4.tcp_death_row.hashinfo->pernet) {
+			synchronize_net();
+			synced = true;
+			break;
+		}
+	}
+
 	list_for_each_entry(net, net_exit_list, exit_list) {
 		inet_pernet_hashinfo_free(net->ipv4.tcp_death_row.hashinfo);
-		WARN_ON_ONCE(!refcount_dec_and_test(&net->ipv4.tcp_death_row.tw_refcount));
+		/* Without a grace period, a concurrent inet_twsk_kill() might
+		 * still hold a tw_refcount reference. Let it drop it: struct net
+		 * is freed by a later cleanup_net(), after an RCU grace period.
+		 */
+		if (!refcount_dec_if_one(&net->ipv4.tcp_death_row.tw_refcount))
+			WARN_ON_ONCE(synced);
 		tcp_fastopen_ctx_destroy(net);
 	}
 

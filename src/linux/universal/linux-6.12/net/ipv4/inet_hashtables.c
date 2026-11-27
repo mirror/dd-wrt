@@ -23,11 +23,12 @@
 #if IS_ENABLED(CONFIG_IPV6)
 #include <net/inet6_hashtables.h>
 #endif
-#include <net/secure_seq.h>
 #include <net/hotdata.h>
 #include <net/ip.h>
-#include <net/tcp.h>
+#include <net/rps.h>
+#include <net/secure_seq.h>
 #include <net/sock_reuseport.h>
+#include <net/tcp.h>
 
 u32 inet_ehashfn(const struct net *net, const __be32 laddr,
 		 const __u16 lport, const __be32 faddr,
@@ -276,7 +277,7 @@ bhash2_find:
 		}
 	}
 	if (update_fastreuse)
-		inet_csk_update_fastreuse(tb, child);
+		inet_csk_update_fastreuse(tb, tb2, child);
 	inet_bind_hash(child, tb, tb2, port);
 	spin_unlock(&head2->lock);
 	spin_unlock(&head->lock);
@@ -743,6 +744,11 @@ int __inet_hash(struct sock *sk, struct sock *osk)
 		return 0;
 	}
 	WARN_ON(!sk_unhashed(sk));
+
+	if (unlikely(inet_csk(sk)->unhashed_state &&
+		     inet_csk(sk)->unhashed_state != TCP_LISTEN))
+		return -EINVAL;
+
 	ilb2 = inet_lhash2_bucket_sk(hashinfo, sk);
 
 	spin_lock(&ilb2->lock);
@@ -782,6 +788,10 @@ void inet_unhash(struct sock *sk)
 
 	if (sk_unhashed(sk))
 		return;
+
+	sock_rps_delete_flow(sk);
+
+	inet_csk(sk)->unhashed_state = sk->sk_state;
 
 	if (sk->sk_state == TCP_LISTEN) {
 		struct inet_listen_hashbucket *ilb2;
@@ -1014,6 +1024,9 @@ int __inet_hash_connect(struct inet_timewait_death_row *death_row,
 	bool local_ports;
 	int step, l3mdev;
 	u32 index;
+
+	if (unlikely(inet_csk(sk)->unhashed_state == TCP_LISTEN))
+		return -EINVAL;
 
 	if (port) {
 		local_bh_disable();

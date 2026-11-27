@@ -781,9 +781,7 @@ static u8 hci_cc_read_local_commands(struct hci_dev *hdev, void *data,
 	if (rp->status)
 		return rp->status;
 
-	if (hci_dev_test_flag(hdev, HCI_SETUP) ||
-	    hci_dev_test_flag(hdev, HCI_CONFIG))
-		memcpy(hdev->commands, rp->commands, sizeof(hdev->commands));
+	memcpy(hdev->commands, rp->commands, sizeof(hdev->commands));
 
 	return rp->status;
 }
@@ -1759,6 +1757,8 @@ static void store_pending_adv_report(struct hci_dev *hdev, bdaddr_t *bdaddr,
 
 static void le_set_scan_enable_complete(struct hci_dev *hdev, u8 enable)
 {
+	bool timeout_pending;
+
 	hci_dev_lock(hdev);
 
 	switch (enable) {
@@ -1788,9 +1788,17 @@ static void le_set_scan_enable_complete(struct hci_dev *hdev, u8 enable)
 		/* Cancel this timer so that we don't try to disable scanning
 		 * when it's already disabled.
 		 */
-		cancel_delayed_work(&hdev->le_scan_disable);
+		timeout_pending = cancel_delayed_work(&hdev->le_scan_disable);
 
 		hci_dev_clear_flag(hdev, HCI_LE_SCAN);
+
+		/* The scan of a discovery was disabled before its timeout,
+		 * for example by a Stop Discovery that timed out and still
+		 * completed, so nothing else would end the discovery.
+		 */
+		if (timeout_pending &&
+		    hdev->discovery.state == DISCOVERY_FINDING)
+			hci_discovery_set_state(hdev, DISCOVERY_STOPPED);
 
 		if (hdev->discovery.type == DISCOV_TYPE_INTERLEAVED &&
 		    test_bit(HCI_QUIRK_SIMULTANEOUS_DISCOVERY, &hdev->quirks) &&
@@ -2922,6 +2930,22 @@ static void hci_cs_le_read_remote_features(struct hci_dev *hdev, u8 status)
 	conn = hci_conn_hash_lookup_handle(hdev, __le16_to_cpu(cp->handle));
 	if (conn) {
 		if (conn->state == BT_CONFIG) {
+			/* If the local controller supports peripheral-initiated
+			 * features exchange, but the remote controller does not,
+			 * then the controller may already return the error code
+			 * 0x1a for unsupported remote feature in the command
+			 * status.
+			 *
+			 * Handle it as hci_le_remote_feat_complete_evt() does and
+			 * allow the connection to transition into connected state.
+			 */
+			if (!conn->out &&
+			    status == HCI_ERROR_UNSUPPORTED_REMOTE_FEATURE &&
+			    (hdev->le_features[0] & HCI_LE_PERIPHERAL_FEATURES)) {
+				conn->state = BT_CONNECTED;
+				status = 0x00;
+			}
+
 			hci_connect_cfm(conn, status);
 			hci_conn_drop(conn);
 		}
@@ -3843,13 +3867,16 @@ static u8 hci_cc_le_set_cig_params(struct hci_dev *hdev, void *data,
 	struct hci_conn *conn;
 	u8 status = rp->status;
 	bool pending = false;
+	size_t len;
 	int i;
 
 	bt_dev_dbg(hdev, "status 0x%2.2x", rp->status);
 
-	cp = hci_sent_cmd_data(hdev, HCI_OP_LE_SET_CIG_PARAMS);
+	cp = hci_sent_cmd_data_len(hdev, HCI_OP_LE_SET_CIG_PARAMS, &len);
 	if (!rp->status &&
-	    (!cp || rp->num_handles != cp->num_cis ||
+	    (!cp || len < sizeof(*cp) ||
+	     len < struct_size(cp, cis, cp->num_cis) ||
+	     rp->num_handles != cp->num_cis ||
 	     rp->cig_id != cp->cig_id ||
 	     skb->len < array_size(rp->num_handles, sizeof(*rp->handle)))) {
 		bt_dev_err(hdev, "unexpected Set CIG Parameters response data");
@@ -4293,6 +4320,7 @@ static void hci_cs_le_create_cis(struct hci_dev *hdev, u8 status)
 {
 	struct hci_cp_le_create_cis *cp;
 	bool pending = false;
+	size_t len;
 	int i;
 
 	bt_dev_dbg(hdev, "status 0x%2.2x", status);
@@ -4300,8 +4328,12 @@ static void hci_cs_le_create_cis(struct hci_dev *hdev, u8 status)
 	if (!status)
 		return;
 
-	cp = hci_sent_cmd_data(hdev, HCI_OP_LE_CREATE_CIS);
+	cp = hci_sent_cmd_data_len(hdev, HCI_OP_LE_CREATE_CIS, &len);
 	if (!cp)
+		return;
+
+	if (len < sizeof(*cp) ||
+	    len < struct_size(cp, cis, cp->num_cis))
 		return;
 
 	hci_dev_lock(hdev);
@@ -5861,6 +5893,28 @@ static void le_conn_complete_evt(struct hci_dev *hdev, u8 status,
 			hci_conn_drop(params->conn);
 			hci_conn_put(params->conn);
 			params->conn = NULL;
+		}
+
+		/* An explicit connect request is complete once connected, so
+		 * clean it up here: hci_connect_le_scan_cleanup() no longer
+		 * finds the params since they have just been removed from
+		 * pend_le_conns.
+		 */
+		if (params->explicit_connect) {
+			params->explicit_connect = false;
+
+			switch (params->auto_connect) {
+			case HCI_AUTO_CONN_EXPLICIT:
+				hci_conn_params_del(hdev, &conn->dst,
+						    conn->dst_type);
+				break;
+			case HCI_AUTO_CONN_REPORT:
+				hci_pend_le_list_add(params,
+						     &hdev->pend_le_reports);
+				break;
+			default:
+				break;
+			}
 		}
 	}
 

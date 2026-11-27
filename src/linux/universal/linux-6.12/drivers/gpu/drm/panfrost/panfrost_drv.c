@@ -644,6 +644,11 @@ static int panfrost_probe(struct platform_device *pdev)
 		goto err_out0;
 	}
 
+	/* The reason we must manually set the PM status and usage counter is
+	 * we have just powered the device up but did not go through the PM
+	 * runtime resume callback, so we need to update these ourselves.
+	 */
+	pm_runtime_get_noresume(pfdev->dev);
 	pm_runtime_set_active(pfdev->dev);
 	pm_runtime_mark_last_busy(pfdev->dev);
 	pm_runtime_enable(pfdev->dev);
@@ -662,14 +667,19 @@ static int panfrost_probe(struct platform_device *pdev)
 	if (err)
 		goto err_out2;
 
+	pm_runtime_mark_last_busy(pfdev->dev);
+	pm_runtime_put_autosuspend(pfdev->dev);
+
 	return 0;
 
 err_out2:
 	drm_dev_unregister(ddev);
 err_out1:
+	pm_runtime_dont_use_autosuspend(pfdev->dev);
 	pm_runtime_disable(pfdev->dev);
 	panfrost_device_fini(pfdev);
 	pm_runtime_set_suspended(pfdev->dev);
+	pm_runtime_put_noidle(pfdev->dev);
 err_out0:
 	drm_dev_put(ddev);
 	return err;
@@ -684,9 +694,11 @@ static void panfrost_remove(struct platform_device *pdev)
 	panfrost_gem_shrinker_cleanup(ddev);
 
 	pm_runtime_get_sync(pfdev->dev);
+	pm_runtime_dont_use_autosuspend(pfdev->dev);
 	pm_runtime_disable(pfdev->dev);
 	panfrost_device_fini(pfdev);
 	pm_runtime_set_suspended(pfdev->dev);
+	pm_runtime_put_noidle(pfdev->dev);
 
 	drm_dev_put(ddev);
 }

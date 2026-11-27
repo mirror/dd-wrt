@@ -101,6 +101,7 @@ struct inet_connection_sock {
 	__u32                     icsk_rto_min;
 	__u32                     icsk_delack_max;
 	__u32			  icsk_pmtu_cookie;
+	unsigned char		  unhashed_state;
 	const struct tcp_congestion_ops *icsk_ca_ops;
 	const struct inet_connection_sock_af_ops *icsk_af_ops;
 	const struct tcp_ulp_ops  *icsk_ulp_ops;
@@ -325,6 +326,7 @@ void inet_csk_addr2sockaddr(struct sock *sk, struct sockaddr *uaddr);
 
 /* update the fast reuse flag when adding a socket */
 void inet_csk_update_fastreuse(struct inet_bind_bucket *tb,
+			       struct inet_bind2_bucket *tb2,
 			       struct sock *sk);
 
 struct dst_entry *inet_csk_update_pmtu(struct sock *sk, u32 mtu);

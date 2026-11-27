@@ -1945,8 +1945,13 @@ static blk_status_t __send_zone_reset_all(struct clone_info *ci)
 			break;
 	}
 
-	/* Release the reference that alloc_io() took for submission. */
-	atomic_sub(1, &ci->io->io_count);
+	/*
+	 * Release the reference that alloc_io() took for submission. On error,
+	 * that reference was not consumed: dm_split_and_process_bio() releases
+	 * it on the error path, so do not release it here a second time.
+	 */
+	if (sts == BLK_STS_OK)
+		atomic_dec(&ci->io->io_count);
 
 	return sts;
 }
@@ -2590,13 +2595,17 @@ int dm_setup_md_queue(struct mapped_device *md, struct dm_table *t)
 
 	WARN_ON_ONCE(type == DM_TYPE_NONE);
 
+	/* A failed setup may have left the queue initialized or the disk dead. */
+	if (md->tag_set || test_bit(GD_DEAD, &md->disk->state))
+		return -ENODEV;
+
 	if (type == DM_TYPE_REQUEST_BASED) {
-		md->disk->fops = &dm_rq_blk_dops;
 		r = dm_mq_init_request_queue(md, t);
 		if (r) {
 			DMERR("Cannot initialize queue for request-based dm mapped device");
 			return r;
 		}
+		md->disk->fops = &dm_rq_blk_dops;
 	}
 
 	r = dm_calculate_queue_limits(t, &limits);

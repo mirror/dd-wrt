@@ -27,6 +27,7 @@
 #include <linux/cleanup.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/fs_context.h>
 #include <linux/usb/composite.h>
 #include <linux/usb/func_utils.h>
 
@@ -392,8 +393,9 @@ out:
 	return ret;
 }
 
-static int p9_usbg_create(struct p9_client *client, const char *devname, char *args)
+static int p9_usbg_create(struct p9_client *client, struct fs_context *fc)
 {
+	const char *devname = fc->source;
 	struct f_usb9pfs_dev *dev;
 	struct f_usb9pfs *usb9pfs;
 	int ret = -ENOENT;
@@ -458,6 +460,11 @@ static void usb9pfs_clear_tx(struct f_usb9pfs *usb9pfs)
 	if (!req || !client)
 		return;
 
+	usb9pfs->in_req->context = NULL;
+
+	if (!usb9pfs->client)
+		return;
+
 	if (!req->t_err)
 		req->t_err = -ECONNRESET;
 
@@ -481,6 +488,7 @@ static void p9_usbg_close(struct p9_client *client)
 	client->status = Disconnected;
 
 	usb9pfs_clear_tx(usb9pfs);
+	usb9pfs->client = NULL;
 
 	opts = container_of(usb9pfs->function.fi,
 			    struct f_usb9pfs_opts, func_inst);
@@ -751,8 +759,6 @@ static void usb9pfs_free_func(struct usb_function *f)
 	struct f_usb9pfs *usb9pfs = func_to_usb9pfs(f);
 	struct f_usb9pfs_opts *opts;
 
-	kfree(usb9pfs);
-
 	opts = container_of(f->fi, struct f_usb9pfs_opts, func_inst);
 
 	mutex_lock(&opts->lock);
@@ -760,6 +766,8 @@ static void usb9pfs_free_func(struct usb_function *f)
 	mutex_unlock(&opts->lock);
 
 	usb_free_all_descriptors(f);
+
+	kfree(usb9pfs);
 }
 
 static int usb9pfs_set_alt(struct usb_function *f,
