@@ -8,7 +8,6 @@
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/net/qcom-ipq-ess.h>
 #include "ipq9574.dtsi"
-//#include "ipq9574-ess.dtsi"
 #include <dt-bindings/net/qcom,qca808x.h>
 
 / {
@@ -524,7 +523,6 @@
 
 	mdio_clk_fixup; /* MDIO clock sequence fix up flag */
 
-#if 1
 	phy0: ethernet-phy@0 {
 		      reg = <1>;
 		      fixup;
@@ -541,24 +539,6 @@
 		      reg = <4>;
 		      fixup;
 	      };
-/*	phy4: ethernet-phy@4 {
-		      compatible ="ethernet-phy-ieee802.3-c45";
-		      reg = <8>;
-	      };
-	phy5: ethernet-phy@5 {
-		      compatible ="ethernet-phy-ieee802.3-c45";
-		      reg = <0>;
-	      };*/
-#endif
-
-/*	phy4: ethernet-phy@4 {
-		      compatible ="ethernet-phy-ieee802.3-c45";
-		      reg = <8>;
-	      };
-	phy5: ethernet-phy@5 {
-		      compatible ="ethernet-phy-ieee802.3-c45";
-		      reg = <0>;
-	      };*/
 
 };
 
