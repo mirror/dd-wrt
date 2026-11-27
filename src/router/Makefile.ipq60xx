@@ -376,7 +376,10 @@ ifneq ($(CONFIG_IPQ95XX),y)
 
 
 	cp -urv $(ARCH)-uclibc/target/* $(ARCH)-uclibc/ipq807x
-	rm -rf $(ARCH)-uclibc/ipq807x/lib/firmware/ath10k
+	rm -rf $(ARCH)-uclibc/ipq807x/lib/firmware/ath10k/QCA9887
+	rm -rf $(ARCH)-uclibc/ipq807x/lib/firmware/ath10k/QCA9888
+	rm -rf $(ARCH)-uclibc/ipq807x/lib/firmware/ath10k/QCA988X
+	rm -rf $(ARCH)-uclibc/ipq807x/lib/firmware/ath10k/QCA99X0
 	rm -rf $(ARCH)-uclibc/ipq807x/lib/firmware/ath11k/IPQ5018
 	rm -rf $(ARCH)-uclibc/ipq807x/lib/firmware/ath11k/IPQ6018
 	rm -rf $(ARCH)-uclibc/ipq807x/lib/firmware/ath11k/IPQ9574
