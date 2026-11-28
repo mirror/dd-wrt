@@ -938,6 +938,18 @@ static void wait_for_eth(const char *eth)
 	}
 }
 
+void start_sys_devinit(void)
+{
+	int brand = getRouterBrand();
+	switch (brand) {
+	case ROUTER_8DEVICES_KIWI:
+		insmod("nvram-mmc");
+		break;
+	default:
+		insmod("nvram-mtd");
+		break;
+	}
+}
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
