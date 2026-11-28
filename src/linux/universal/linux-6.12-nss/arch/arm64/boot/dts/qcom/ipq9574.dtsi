@@ -770,8 +770,119 @@
 				drive-strength = <8>;
 				bias-disable;
 			};
-		};
 
+			mdio_pins: mdio-default-state {
+				mdc {
+					pins = "gpio38";
+					function = "mdc";
+					drive-strength = <8>;
+					bias-disable;
+				};
+
+				mdio {
+					pins = "gpio39";
+					function = "mdio";
+					drive-strength = <8>;
+					bias-pull-up;
+				};
+		    	};
+
+			pcie0_default: pcie0-default-state {
+				clkreq-n-pins {
+					pins = "gpio22";
+					function = "pcie0_clk";
+					drive-strength = <6>;
+					bias-pull-up;
+				};
+
+				perst-n-pins {
+					pins = "gpio23";
+					function = "gpio";
+					drive-strength = <8>;
+					bias-pull-down;
+					output-low;
+				};
+
+				wake-n-pins {
+					pins = "gpio24";
+					function = "pcie0_wake";
+					drive-strength = <6>;
+					bias-pull-up;
+				};
+			};
+
+			pcie1_default: pcie1-default-state {
+				clkreq-n-pins {
+					pins = "gpio25";
+					function = "pcie1_clk";
+					drive-strength = <6>;
+					bias-pull-up;
+				};
+
+				perst-n-pins {
+					pins = "gpio26";
+					function = "gpio";
+					drive-strength = <8>;
+	    				bias-pull-down;
+					output-low;
+				};
+
+				wake-n-pins {
+					pins = "gpio27";
+					function = "pcie1_wake";
+					drive-strength = <6>;
+					bias-pull-up;
+				};
+			};
+
+			pcie2_default: pcie2-default-state {
+				clkreq-n-pins {
+					pins = "gpio28";
+					function = "pcie2_clk";
+					drive-strength = <6>;
+					bias-pull-up;
+				};
+	
+				perst-n-pins {
+					pins = "gpio29";
+					function = "gpio";
+					drive-strength = <8>;
+					bias-pull-down;
+					output-low;
+				};
+
+				wake-n-pins {
+					pins = "gpio30";
+					function = "pcie2_wake";
+					drive-strength = <6>;
+					bias-pull-up;
+				};
+			};
+
+			pcie3_default: pcie3-default-state {
+				clkreq-n-pins {
+					pins = "gpio31";
+					function = "pcie3_clk";
+					drive-strength = <6>;
+					bias-pull-up;
+				};
+
+				perst-n-pins {
+					pins = "gpio32";
+					function = "gpio";
+					drive-strength = <8>;
+					bias-pull-up;
+					output-low;
+				};
+
+				wake-n-pins {
+					pins = "gpio33";
+					function = "pcie3_wake";
+					drive-strength = <6>;
+        				bias-pull-up;
+				};
+			};
+		};
 		gcc: clock-controller@1800000 {
 			compatible = "qcom,ipq9574-gcc";
 			reg = <0x01800000 0x80000>;
@@ -797,6 +908,16 @@
 		tcsr: syscon@1937000 {
 			compatible = "qcom,tcsr-ipq9574", "syscon";
 			reg = <0x01937000 0x21000>;
+		};
+
+		pwm: pwm@1941010 {
+			compatible = "qcom,ipq9574-pwm", "qcom,ipq6018-pwm";
+			reg = <0x01941010 0x20>;
+			clocks = <&gcc GCC_ADSS_PWM_CLK>;
+			assigned-clocks = <&gcc GCC_ADSS_PWM_CLK>;
+			assigned-clock-rates = <100000000>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		sdhc_1: mmc@7804000 {

@@ -112,28 +112,24 @@
 	reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
-	ethernet-phy@0 {
+	phy0: ethernet-phy@0 {
 		reg = <0x10>;
 	};
-	ethernet-phy@1 {
+	phy1: ethernet-phy@1 {
 		reg = <0x11>;
 	};
 
-	ethernet-phy@2 {
+	phy2: ethernet-phy@2 {
 		reg = <0x12>;
 	};
 
-	ethernet-phy@3 {
+	phy3: ethernet-phy@3 {
 		reg = <0x13>;
 	};
 
-	ethernet-phy@5 {
+	phy5: ethernet-phy@5 {
 		reg = <0x1c>;
 	};
-};
-
-&pcs1 {
-	status = "disabled";
 };
 
 &pwm {
@@ -141,6 +137,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
 
 &soc {
 	ess-uniphy@7a00000 {
@@ -747,10 +744,10 @@
 		};
 		port@5 {
 			port_id = <6>;
-			phy_address = <x01c>;
+			phy_address = <0x1c>;
 		        ethernet-phy-id004d.d180;
 			port_mac_sel = "QGMAC_PORT";
-			phy-handle = <&phy3>;
+			phy-handle = <&phy5>;
 			phy-mode = "qusgmii";
 		};
 	};
@@ -867,7 +864,7 @@
 			qcom,link-poll = <0x1>;
 			local-mac-address = [00 00 00 00 00 00];
 			qcom,phy-mdio-addr = <0x1c>;
-			phy-handle = <&phy4>;
+			phy-handle = <&phy5>;
 			phy-mode = "sgmii";
 			label = "wan";
 		};

@@ -429,45 +429,6 @@
 		};
 	};
 
-	pcie2_default: pcie2-default-state {
-		clkreq-n-pins {
-			pins = "gpio28";
-			function = "pcie2_clk";
-			drive-strength = <6>;
-			bias-pull-up;
-		};
-
-		perst-n-pins {
-			pins = "gpio29";
-			function = "gpio";
-			drive-strength = <8>;
-			bias-pull-down;
-			output-low;
-		};
-
-		wake-n-pins {
-			pins = "gpio30";
-			function = "pcie2_wake";
-			drive-strength = <6>;
-			bias-pull-up;
-		};
-	};
-
-	mdio_pins: mdio-default-state {
-		mdc {
-			pins = "gpio38";
-			function = "mdc";
-			drive-strength = <8>;
-			bias-disable;
-		};
-		mdio {
-			pins = "gpio39";
-			function = "mdio";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-	};
-
 	QCC710_pins {
 		uart4_pins: blsp1_uart4_pinmux {
 			pins = "gpio50", "gpio51", "gpio52", "gpio53";
