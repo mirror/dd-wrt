@@ -472,6 +472,7 @@ int main(int argc, char **argv)
 	sigemptyset(&sigset);
 
 	dd_loginfo("init", "starting devinit");
+	start_service("sys_devinit"); // everything which must come before and is arch specific
 	start_service("devinit"); //init /dev /proc etc.
 	writeproc("/proc/sys/kernel/sysrq", "1");
 	start_service("check_bootfails");
