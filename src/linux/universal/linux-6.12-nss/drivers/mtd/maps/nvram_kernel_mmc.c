@@ -35,6 +35,10 @@ void MFREE(void *ptr)
 	else
 		kfree(ptr);
 }
+static char *mmcdev =  "/dev/mmcblk0p30";
+
+module_param(mmcdev, charp, 0);
+MODULE_PARM_DESC(mmcdev, "path for mmc partition (/dev/mmcblk0p30 default)");
 
 #ifdef MODULE
 
@@ -55,7 +59,8 @@ static void early_nvram_init(void)
 	int len;
 	char *wr;
 	loff_t offs;
-	srcf = filp_open("/dev/mmcblk0p30", O_RDONLY, 0);
+	srcf = filp_open(mmcdev, O_RDONLY, 0);
+//	srcf = filp_open("/dev/mmcblk0p30", O_RDONLY, 0);
 	if (IS_ERR(srcf)) {
 		printk("nvram not yet ready\n");
 		return;
@@ -147,7 +152,7 @@ int _nvram_read(char *buf)
 	int i;
 
 
-	srcf = filp_open("/dev/mmcblk0p30", O_RDONLY, 0);
+	srcf = filp_open(mmcdev, O_RDONLY, 0);
 	if (IS_ERR(srcf)) {
 		printk(KERN_INFO "Can't init nvram (filesystem error)\n");
 		/* Maybe we can recover some data from early initialization */
@@ -315,7 +320,7 @@ int nvram_commit(void)
 		goto done;
 	}
 
-	srcf = filp_open("/dev/mmcblk0p30", O_CREAT | O_RDWR | O_LARGEFILE, 0600);
+	srcf = filp_open(mmcdev, O_CREAT | O_RDWR | O_LARGEFILE, 0600);
 	if (IS_ERR(srcf)) {
 		printk(KERN_INFO "Open error\n");
 		ret = -EIO;

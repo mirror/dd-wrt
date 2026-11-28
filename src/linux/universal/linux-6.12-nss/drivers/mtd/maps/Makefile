@@ -5,6 +5,7 @@
 
 #EXTRA_CFLAGS := -g
 
+
 ifeq ($(CONFIG_MTD_COMPLEX_MAPPINGS),y)
 obj-$(CONFIG_MTD)		+= map_funcs.o
 endif
@@ -58,13 +59,12 @@ obj-$(CONFIG_MACH_HORNET)	+= nvram_kernel.o nvram.o
 obj-$(CONFIG_MACH_GW2388)	+= nvram_kernel.o nvram.o 
 obj-$(CONFIG_ARCH_MVEBU)	+= nvram_kernel.o nvram.o 
 ifeq ($(CONFIG_PINCTRL_IPQ9574), y)
-ifeq ($(CONFIG_NVRAM_MMC), y)
-obj-y		+= nvram_kernel_mmc.o nvram.o
+obj-m		+= nvram-mtd.o
+obj-m		+= nvram-mmc.o
+nvram-mtd-y+=nvram_kernel.o nvram.o
+nvram-mmc-y+=nvram_kernel_mmc.o nvram.o
 else
-obj-y		+= nvram_kernel.o nvram.o
-endif
-else
-obj-$(CONFIG_ARCH_QCOM)		+= nvram_kernel.o nvram.o
+obj-$(CONFIG_ARCH_QCOM)		+= nvram_kernel nvram.o
 endif
 obj-$(CONFIG_MACH_REALTEK_RTL)		+= nvram_kernel.o nvram.o
 obj-$(CONFIG_LANTIQ)		+= nvram_kernel.o nvram.o
