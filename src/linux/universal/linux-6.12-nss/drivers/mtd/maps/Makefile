@@ -64,7 +64,7 @@ obj-m		+= nvram-mmc.o
 nvram-mtd-y+=nvram_kernel.o nvram.o
 nvram-mmc-y+=nvram_kernel_mmc.o nvram.o
 else
-obj-$(CONFIG_ARCH_QCOM)		+= nvram_kernel nvram.o
+obj-$(CONFIG_ARCH_QCOM)		+= nvram_kernel.o nvram.o
 endif
 obj-$(CONFIG_MACH_REALTEK_RTL)		+= nvram_kernel.o nvram.o
 obj-$(CONFIG_LANTIQ)		+= nvram_kernel.o nvram.o
